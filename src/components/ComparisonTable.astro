@@ -1,0 +1,159 @@
+---
+const rows = [
+  { feature: 'Terminal-First Design', patapim: true, vscode: false, cursor: false, terminal: true },
+  { feature: 'Multi-Terminal Grid (up to 9)', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'Claude Code Integration', patapim: true, vscode: false, cursor: false, terminal: true },
+  { feature: 'Context Preservation Files', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'Remote Access (Phone/Browser)', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'Voice Dictation', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'Task Management (tasks.json)', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'GitHub Issues Panel', patapim: true, vscode: true, cursor: true, terminal: false },
+  { feature: 'Plugin System', patapim: true, vscode: true, cursor: true, terminal: false },
+  { feature: 'File Editor', patapim: true, vscode: true, cursor: true, terminal: false },
+  { feature: 'Auto-Updates', patapim: true, vscode: true, cursor: true, terminal: false },
+  { feature: 'Keyboard-Centric Workflow', patapim: true, vscode: true, cursor: true, terminal: true },
+  { feature: 'Project Standardization', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'PassKey/Biometric Auth', patapim: true, vscode: false, cursor: false, terminal: false },
+  { feature: 'Free & Open Source', patapim: true, vscode: true, cursor: false, terminal: true },
+];
+---
+
+<section class="section comparison-section" id="comparison">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Comparison</span>
+      <h2 class="section-title">PATAPIM vs. The Rest</h2>
+      <p class="section-subtitle">
+        Not another code editor. A terminal framework built for AI development.
+      </p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th class="feature-col">Feature</th>
+            <th class="tool-col highlight">PATAPIM</th>
+            <th class="tool-col">VS Code</th>
+            <th class="tool-col">Cursor</th>
+            <th class="tool-col">Terminal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <td class="feature-col">{row.feature}</td>
+              <td class={`tool-col highlight ${row.patapim ? 'yes' : 'no'}`}>
+                {row.patapim ? <span class="check-mark">&#x2714;</span> : <span class="x-mark">&#x2014;</span>}
+              </td>
+              <td class={`tool-col ${row.vscode ? 'yes' : 'no'}`}>
+                {row.vscode ? <span class="check-mark dim">&#x2714;</span> : <span class="x-mark">&#x2014;</span>}
+              </td>
+              <td class={`tool-col ${row.cursor ? 'yes' : 'no'}`}>
+                {row.cursor ? <span class="check-mark dim">&#x2714;</span> : <span class="x-mark">&#x2014;</span>}
+              </td>
+              <td class={`tool-col ${row.terminal ? 'yes' : 'no'}`}>
+                {row.terminal ? <span class="check-mark dim">&#x2714;</span> : <span class="x-mark">&#x2014;</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<style>
+  .comparison-section {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-default);
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead {
+    background: var(--bg-secondary);
+  }
+
+  th {
+    padding: 16px 20px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  th.feature-col {
+    text-align: left;
+  }
+
+  th.highlight {
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+  }
+
+  td {
+    padding: 14px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  td.feature-col {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  td.highlight {
+    background: rgba(212, 165, 116, 0.04);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: var(--bg-tertiary);
+  }
+  tr:hover td.highlight {
+    background: rgba(212, 165, 116, 0.08);
+  }
+
+  .check-mark {
+    color: var(--success);
+    font-size: 16px;
+  }
+  .check-mark.dim {
+    opacity: 0.6;
+  }
+
+  .x-mark {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    td.feature-col {
+      white-space: normal;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+    }
+  }
+</style>

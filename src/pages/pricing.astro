@@ -1,0 +1,259 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+const freeFeatures = [
+  { name: 'Terminals', value: 'Up to 5' },
+  { name: 'Active Projects', value: 'Up to 3' },
+  { name: 'View Mode', value: 'Tab only' },
+  { name: 'Voice Dictation', value: 'No' },
+  { name: 'Remote Access', value: 'Local network only' },
+  { name: 'Remote Sessions', value: '1 max, 30-min timeout' },
+  { name: 'Remote Auth', value: 'PIN only' },
+  { name: 'Task Panel', value: 'No' },
+  { name: 'GitHub Panel', value: 'No' },
+  { name: 'Plugin Marketplace', value: 'No' },
+  { name: 'MCP Browser', value: 'No' },
+  { name: 'File Editor', value: 'Yes' },
+  { name: 'Context Preservation', value: 'Yes' },
+  { name: 'Session Persistence', value: 'Yes' },
+  { name: 'Auto-Updates', value: 'Yes' },
+];
+
+const proFeatures = [
+  { name: 'Terminals', value: 'Up to 9' },
+  { name: 'Active Projects', value: 'Unlimited' },
+  { name: 'View Mode', value: 'Tab + Grid (all layouts)' },
+  { name: 'Voice Dictation', value: 'Whisper + Web Speech' },
+  { name: 'Remote Access', value: 'Local + Cloudflare Tunnels' },
+  { name: 'Remote Sessions', value: 'Unlimited, no timeout' },
+  { name: 'Remote Auth', value: 'PassKey / Biometric' },
+  { name: 'Task Panel', value: 'Yes' },
+  { name: 'GitHub Panel', value: 'Yes' },
+  { name: 'Plugin Marketplace', value: 'Yes' },
+  { name: 'MCP Browser', value: 'Yes' },
+  { name: 'File Editor', value: 'Yes' },
+  { name: 'Context Preservation', value: 'Yes' },
+  { name: 'Session Persistence', value: 'Yes' },
+  { name: 'Auto-Updates', value: 'Yes' },
+];
+
+const faq = [
+  {
+    q: 'What happens after the 14-day trial?',
+    a: 'You automatically switch to the Free plan. No data is lost, no features are deleted &mdash; Pro features simply become unavailable. You can upgrade anytime.'
+  },
+  {
+    q: 'How does the trial extension work?',
+    a: 'Submit a structured feedback form with at least 100 characters of genuine feedback. You get 14 more days of Pro features. One extension per user.'
+  },
+  {
+    q: 'Can I use PATAPIM commercially for free?',
+    a: 'Yes. The Free plan is free for commercial use. Pro features like voice dictation, full remote access, and task management require a Pro subscription.'
+  },
+  {
+    q: 'What payment methods are accepted?',
+    a: 'We use Stripe for payments. All major credit cards, debit cards, and regional payment methods supported by Stripe.'
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. Cancel via Stripe Customer Portal. Your Pro access continues until the end of the billing period. Then you switch to Free.'
+  },
+  {
+    q: 'Is PATAPIM open source?',
+    a: 'Yes. The core codebase is on GitHub. Pro features are gated by license validation, but the code itself is visible.'
+  },
+];
+---
+
+<BaseLayout title="Pricing — PATAPIM" description="PATAPIM pricing plans. Start free, upgrade to Pro for full multi-terminal, remote access, voice dictation, and more.">
+  <Navbar />
+
+  <main class="pricing-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">Pricing</span>
+        <h1 class="section-title">Simple, Transparent Pricing</h1>
+        <p class="section-subtitle">
+          Start with a 14-day Pro trial. No credit card required.
+        </p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-cards">
+        <div class="p-card">
+          <h3>Free</h3>
+          <div class="p-price"><span class="p-amount">$0</span> <span class="p-period">forever</span></div>
+          <p class="p-desc">Core features for individual developers.</p>
+          <a href="/download" class="btn btn-secondary" style="width:100%; justify-content:center;">Download Free</a>
+          <ul class="p-list">
+            {freeFeatures.map((f) => (
+              <li>
+                <span class="p-label">{f.name}</span>
+                <span class={`p-value ${f.value === 'No' ? 'dim' : ''}`}>{f.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="p-card featured">
+          <div class="p-badge">14-Day Free Trial</div>
+          <h3>Pro</h3>
+          <div class="p-price">
+            <span class="p-amount">$12</span>
+            <span class="p-period">/month</span>
+          </div>
+          <p class="p-annual">or $96/year (save $48)</p>
+          <p class="p-desc">Full power for professional AI development.</p>
+          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">Start Free Trial</a>
+          <ul class="p-list">
+            {proFeatures.map((f) => (
+              <li>
+                <span class="p-label">{f.name}</span>
+                <span class="p-value highlight">{f.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="faq-section section">
+        <h2 class="section-title" style="font-size: 28px;">Frequently Asked Questions</h2>
+        <div class="faq-grid">
+          {faq.map((item) => (
+            <div class="faq-item">
+              <h4>{item.q}</h4>
+              <p set:html={item.a} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .pricing-page {
+    min-height: 100vh;
+  }
+
+  .pricing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .p-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    position: relative;
+  }
+
+  .p-card.featured {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 40px rgba(212, 165, 116, 0.1);
+  }
+
+  .p-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .p-card h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+  }
+
+  .p-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: var(--space-xs);
+  }
+  .p-amount {
+    font-size: 48px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+  .p-period {
+    font-size: 16px;
+    color: var(--text-tertiary);
+  }
+  .p-annual {
+    font-size: 13px;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-xs);
+  }
+  .p-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .p-list {
+    list-style: none;
+    margin-top: var(--space-xl);
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-lg);
+  }
+  .p-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px;
+  }
+  .p-label { color: var(--text-secondary); }
+  .p-value { color: var(--text-primary); font-weight: 500; }
+  .p-value.dim { color: var(--text-muted); font-weight: 400; }
+  .p-value.highlight { color: var(--accent-primary); }
+
+  /* FAQ */
+  .faq-section {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-top: var(--space-2xl);
+  }
+
+  .faq-item h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+  .faq-item p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 640px) {
+    .pricing-cards { grid-template-columns: 1fr; }
+    .faq-grid { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,189 @@
+---
+const features = [
+  {
+    icon: '&#x2630;',
+    title: 'Multi-Terminal',
+    desc: 'Up to 9 terminals simultaneously. Tab view for focus, grid view for multitasking. 2x1, 2x2, 3x2, 3x3 layouts.',
+    tag: 'Core'
+  },
+  {
+    icon: '&#x1F310;',
+    title: 'Remote Access',
+    desc: 'Access PATAPIM from anywhere via Cloudflare Tunnels. Work from your phone, tablet, or any browser.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x1F399;',
+    title: 'Voice Dictation',
+    desc: 'Talk to your terminals. Whisper API for accuracy, Web Speech as free fallback. Persistent dictation mode.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x2611;',
+    title: 'Task Management',
+    desc: 'Built-in task panel synced with tasks.json. Create, track, delegate tasks directly to Claude Code.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x1F4CB;',
+    title: 'GitHub Integration',
+    desc: 'View issues, labels, and filters directly in the sidebar. No context switching to the browser.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x1F9E9;',
+    title: 'Plugin System',
+    desc: 'Official marketplace + community plugins. Install, enable, disable with one click.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x1F5A5;',
+    title: 'MCP Browser Control',
+    desc: 'Let Claude control a browser via MCP. Automate web tasks, scrape data, test UIs.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x270F;',
+    title: 'File Editor',
+    desc: 'Multi-tab editor with syntax highlighting, Find & Replace, and keyboard shortcuts. Quick edits without leaving PATAPIM.',
+    tag: 'Free'
+  },
+  {
+    icon: '&#x1F4C1;',
+    title: 'Project Management',
+    desc: 'File explorer, workspace with multiple projects, quick switching. All your projects in one place.',
+    tag: 'Free'
+  },
+  {
+    icon: '&#x1F504;',
+    title: 'Claude Code Native',
+    desc: 'Built specifically for Claude Code workflows. Keyboard shortcuts for /init, /commit, and Claude commands.',
+    tag: 'Core'
+  },
+  {
+    icon: '&#x1F4BE;',
+    title: 'Session Persistence',
+    desc: 'Terminal sessions are saved per-project. Switch between projects without losing state.',
+    tag: 'Free'
+  },
+  {
+    icon: '&#x1F4DD;',
+    title: 'Context Preservation',
+    desc: 'CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, tasks.json &mdash; standardized context files in every project.',
+    tag: 'Core'
+  },
+  {
+    icon: '&#x1F511;',
+    title: 'PassKey Auth',
+    desc: 'WebAuthn biometric authentication for remote sessions. Touch ID, Windows Hello, hardware keys.',
+    tag: 'Pro'
+  },
+  {
+    icon: '&#x2B06;',
+    title: 'Auto-Updates',
+    desc: 'One-click updates via Git. Version check on startup + every 30 minutes. Never miss a release.',
+    tag: 'Free'
+  },
+  {
+    icon: '&#x2328;',
+    title: 'Keyboard-First',
+    desc: 'Ctrl+1-9 for terminals, Ctrl+Shift+G for grid, Ctrl+K for Claude. Everything has a shortcut.',
+    tag: 'Core'
+  }
+];
+---
+
+<section class="section feature-grid-section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Features</span>
+      <h2 class="section-title">Everything You Need, Nothing You Don't</h2>
+      <p class="section-subtitle">
+        30+ features designed for terminal-centric AI development.
+        No bloat, no complexity &mdash; just the tools that matter.
+      </p>
+    </div>
+
+    <div class="feature-grid">
+      {features.map((f) => (
+        <div class="feature-card glow-card">
+          <div class="feature-top">
+            <span class="feature-icon" set:html={f.icon} />
+            <span class={`feature-tag tag-${f.tag.toLowerCase()}`}>{f.tag}</span>
+          </div>
+          <h3 class="feature-title">{f.title}</h3>
+          <p class="feature-desc" set:html={f.desc} />
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+  }
+
+  .feature-card {
+    padding: var(--space-xl);
+  }
+
+  .feature-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+  }
+
+  .feature-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .feature-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+  .tag-core {
+    background: var(--accent-subtle);
+    color: var(--accent-primary);
+  }
+  .tag-pro {
+    background: rgba(120, 165, 212, 0.15);
+    color: var(--info);
+  }
+  .tag-free {
+    background: var(--success-subtle);
+    color: var(--success);
+  }
+
+  .feature-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .feature-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 1024px) {
+    .feature-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

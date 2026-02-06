@@ -1,0 +1,138 @@
+<section class="section download-section" id="download">
+  <div class="container">
+    <div class="download-card">
+      <div class="download-content">
+        <span class="section-label">Get Started</span>
+        <h2 class="download-title">Ready to Supercharge Your Terminal?</h2>
+        <p class="download-desc">
+          Download PATAPIM and start developing with Claude Code the way it was meant to be.
+          Free forever for core features. Pro trial included.
+        </p>
+        <div class="download-actions">
+          <a href="https://github.com/G3dar/patapim/releases/latest" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download for Windows
+          </a>
+          <a href="https://github.com/G3dar/patapim" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+        <div class="download-meta">
+          <span>Windows 10+ required</span>
+          <span class="meta-dot">&#x2022;</span>
+          <span>macOS &amp; Linux coming soon</span>
+        </div>
+      </div>
+
+      <div class="download-terminal">
+        <div class="dt-header">
+          <span class="dt-dot"></span>
+          <span class="dt-dot"></span>
+          <span class="dt-dot"></span>
+        </div>
+        <div class="dt-body">
+          <div class="dt-line"><span class="dt-comment"># Clone and install</span></div>
+          <div class="dt-line"><span class="dt-prompt">$</span> git clone https://github.com/G3dar/patapim</div>
+          <div class="dt-line"><span class="dt-prompt">$</span> cd patapim &amp;&amp; npm install</div>
+          <div class="dt-line"><span class="dt-prompt">$</span> npm start</div>
+          <div class="dt-line dt-accent">&nbsp;</div>
+          <div class="dt-line dt-accent">&#x276F;_ PATAPIM is ready.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .download-section {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .download-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4xl);
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-4xl);
+  }
+
+  .download-title {
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 700;
+    margin-bottom: var(--space-lg);
+    line-height: 1.2;
+  }
+
+  .download-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-xl);
+  }
+
+  .download-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+  }
+
+  .download-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .meta-dot {
+    font-size: 8px;
+  }
+
+  /* Terminal install block */
+  .download-terminal {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .dt-header {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .dt-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+  }
+
+  .dt-body {
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 2;
+  }
+  .dt-line { color: var(--text-secondary); }
+  .dt-prompt { color: var(--accent-primary); margin-right: 8px; }
+  .dt-comment { color: var(--text-muted); }
+  .dt-accent { color: var(--accent-primary); font-weight: 500; }
+
+  @media (max-width: 768px) {
+    .download-card {
+      grid-template-columns: 1fr;
+      padding: var(--space-2xl);
+    }
+    .download-terminal {
+      order: -1;
+    }
+  }
+</style>

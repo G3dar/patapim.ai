@@ -1,0 +1,204 @@
+---
+const free = [
+  'Up to 5 terminals',
+  'Tab view only',
+  '3 active projects',
+  'File editor',
+  'Context preservation',
+  'Session persistence',
+  'Auto-updates',
+  'Local network remote (limited)',
+];
+
+const pro = [
+  'Up to 9 terminals',
+  'Tab + Grid view (all layouts)',
+  'Unlimited projects',
+  'Voice dictation (Whisper + Web Speech)',
+  'Full remote access (Cloudflare Tunnels)',
+  'Task management panel',
+  'GitHub issues panel',
+  'Plugin marketplace',
+  'MCP browser control',
+  'PassKey authentication',
+  'Unlimited remote sessions',
+  'Priority support',
+];
+---
+
+<section class="section pricing-section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Pricing</span>
+      <h2 class="section-title">Start Free. Upgrade When You're Ready.</h2>
+      <p class="section-subtitle">
+        14-day Pro trial &mdash; no credit card required. Extend by sharing feedback.
+      </p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-header">
+          <h3>Free</h3>
+          <div class="pricing-price">
+            <span class="price-amount">$0</span>
+            <span class="price-period">forever</span>
+          </div>
+          <p class="pricing-desc">For individual developers exploring Claude Code.</p>
+        </div>
+        <ul class="pricing-features">
+          {free.map((f) => (
+            <li><span class="check">&#x2714;</span> {f}</li>
+          ))}
+        </ul>
+        <a href="/download" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+          Download Free
+        </a>
+      </div>
+
+      <div class="pricing-card pro">
+        <div class="pro-badge">Most Popular</div>
+        <div class="pricing-header">
+          <h3>Pro</h3>
+          <div class="pricing-price">
+            <span class="price-amount">$12</span>
+            <span class="price-period">/month</span>
+          </div>
+          <p class="pricing-desc-alt">or $96/year (2 months free)</p>
+          <p class="pricing-desc">Full power for professional AI development.</p>
+        </div>
+        <ul class="pricing-features">
+          {pro.map((f) => (
+            <li><span class="check">&#x2714;</span> {f}</li>
+          ))}
+        </ul>
+        <a href="/pricing" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          Start 14-Day Free Trial
+        </a>
+      </div>
+    </div>
+
+    <p class="pricing-note">
+      Trial extension: Submit structured feedback to get <strong>14 more days</strong> of Pro features. One extension per user.
+    </p>
+  </div>
+</section>
+
+<style>
+  .pricing-section {
+    background: var(--bg-deep);
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .pricing-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .pricing-card.pro {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 40px rgba(212, 165, 116, 0.1);
+  }
+
+  .pro-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .pricing-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .pricing-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+  }
+
+  .pricing-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: var(--space-sm);
+  }
+  .price-amount {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+  }
+  .price-period {
+    font-size: 15px;
+    color: var(--text-tertiary);
+  }
+
+  .pricing-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+  }
+  .pricing-desc-alt {
+    font-size: 13px;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-xs);
+  }
+
+  .pricing-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+    flex: 1;
+  }
+  .pricing-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .pricing-features .check {
+    color: var(--success);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .pricing-note {
+    text-align: center;
+    margin-top: var(--space-2xl);
+    font-size: 14px;
+    color: var(--text-tertiary);
+  }
+  .pricing-note strong {
+    color: var(--accent-primary);
+    font-weight: 500;
+  }
+
+  @media (max-width: 640px) {
+    .pricing-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

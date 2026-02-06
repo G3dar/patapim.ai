@@ -1,0 +1,348 @@
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="container hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Open Source &mdash; Built for Claude Code
+    </div>
+
+    <h1 class="hero-title">
+      Your Terminal.<br />
+      <span class="hero-accent">Supercharged</span> for AI Development.
+    </h1>
+
+    <p class="hero-subtitle">
+      PATAPIM is a terminal-first IDE framework. Multi-terminal grid, remote access from your phone,
+      voice dictation, task management, GitHub integration, and context preservation &mdash;
+      all built around Claude Code.
+    </p>
+
+    <div class="hero-actions">
+      <a href="/download" class="btn btn-primary btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Windows
+      </a>
+      <a href="/docs/getting-started/quick-start" class="btn btn-secondary btn-lg">
+        Quick Start Guide
+      </a>
+    </div>
+
+    <div class="hero-terminal">
+      <div class="terminal-chrome">
+        <div class="terminal-dots">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+        </div>
+        <div class="terminal-title">PATAPIM &mdash; Terminal 1</div>
+        <div class="terminal-tabs">
+          <span class="ttab active">Terminal 1</span>
+          <span class="ttab">Terminal 2</span>
+          <span class="ttab">Terminal 3</span>
+          <span class="ttab-add">+</span>
+        </div>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line" style="--delay: 0">
+          <span class="prompt">~/my-project $</span>
+          <span class="cmd" id="typed-cmd"></span>
+          <span class="cursor" id="cursor">|</span>
+        </div>
+        <div class="terminal-line output" style="--delay: 1" id="output-1">
+          <span class="text-accent">&#x276F;</span> Claude Code initialized in /home/user/my-project
+        </div>
+        <div class="terminal-line output" style="--delay: 2" id="output-2">
+          <span class="text-success">&#x2714;</span> Found CLAUDE.md, STRUCTURE.json, tasks.json
+        </div>
+        <div class="terminal-line output" style="--delay: 3" id="output-3">
+          <span class="text-success">&#x2714;</span> Context restored from previous session
+        </div>
+        <div class="terminal-line output" style="--delay: 4" id="output-4">
+          <span class="text-info">&#x25B6;</span> Ready. 3 pending tasks, 2 GitHub issues open.
+        </div>
+        <div class="terminal-line" style="--delay: 5" id="output-5">
+          <span class="prompt">~/my-project $</span>
+          <span class="cursor blink">|</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-value">30+</span>
+        <span class="stat-label">Features</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value">9</span>
+        <span class="stat-label">Max Terminals</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value">0 JS</span>
+        <span class="stat-label">Default Ship</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value">MIT</span>
+        <span class="stat-label">License</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding: 140px 0 80px;
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212, 165, 116, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 165, 116, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+  }
+
+  .hero-inner {
+    position: relative;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 8px 18px;
+    border-radius: 100px;
+    margin-bottom: var(--space-2xl);
+    border: 1px solid rgba(212, 165, 116, 0.2);
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .hero-title {
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: var(--space-xl);
+    letter-spacing: -1px;
+  }
+
+  .hero-accent {
+    background: linear-gradient(135deg, var(--accent-primary), #e8c29e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(16px, 2vw, 19px);
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin: 0 auto var(--space-2xl);
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: var(--space-4xl);
+    flex-wrap: wrap;
+  }
+
+  /* Terminal mock */
+  .hero-terminal {
+    max-width: 740px;
+    margin: 0 auto var(--space-4xl);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), var(--shadow-glow);
+  }
+
+  .terminal-chrome {
+    background: var(--bg-tertiary);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green { background: #28c840; }
+
+  .terminal-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .terminal-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  .ttab {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: default;
+  }
+  .ttab.active {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+  .ttab-add {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 2px 8px;
+    cursor: default;
+  }
+
+  .terminal-body {
+    background: var(--bg-deep);
+    padding: 20px 24px;
+    min-height: 200px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .terminal-line {
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+    animation-delay: calc(var(--delay) * 0.6s + 0.3s);
+  }
+
+  .prompt {
+    color: var(--accent-primary);
+    margin-right: 8px;
+  }
+
+  .cmd {
+    color: var(--text-primary);
+  }
+
+  .cursor {
+    color: var(--accent-primary);
+    animation: blink-cursor 1s step-end infinite;
+  }
+  .cursor.blink {
+    animation: blink-cursor 1s step-end infinite;
+  }
+
+  @keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .output { color: var(--text-secondary); }
+
+  .text-accent { color: var(--accent-primary); }
+  .text-success { color: var(--success); }
+  .text-info { color: var(--info); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stats */
+  .hero-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xl);
+  }
+
+  .stat {
+    text-align: center;
+  }
+  .stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+  }
+  .stat-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+  .stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border-default);
+  }
+
+  @media (max-width: 768px) {
+    .hero { padding: 120px 0 60px; min-height: auto; }
+    .terminal-tabs { display: none; }
+    .hero-stats { gap: var(--space-lg); }
+    .stat-divider { height: 24px; }
+  }
+</style>
+
+<script>
+  // Typing animation for the command
+  const cmd = document.getElementById('typed-cmd');
+  const cursor = document.getElementById('cursor');
+  const text = 'claude';
+  let i = 0;
+
+  function typeChar() {
+    if (!cmd) return;
+    if (i < text.length) {
+      cmd.textContent += text.charAt(i);
+      i++;
+      setTimeout(typeChar, 80 + Math.random() * 60);
+    } else {
+      if (cursor) cursor.style.display = 'none';
+    }
+  }
+
+  setTimeout(typeChar, 800);
+</script>

@@ -1,0 +1,134 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="brand-icon">&#x276F;_</span>
+          <span>PATAPIM</span>
+        </div>
+        <p class="footer-tagline">Terminal-first IDE framework for Claude Code development.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="/#features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/download">Download</a>
+        <a href="https://github.com/G3dar/patapim/releases" target="_blank" rel="noopener">Changelog</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="/docs/getting-started/installation">Installation</a>
+        <a href="/docs/getting-started/quick-start">Quick Start</a>
+        <a href="/docs/features/multi-terminal">Multi-Terminal</a>
+        <a href="/docs/features/remote-access">Remote Access</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Community</h4>
+        <a href="https://github.com/G3dar/patapim" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">Issues</a>
+        <a href="https://github.com/G3dar/patapim/discussions" target="_blank" rel="noopener">Discussions</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {year} PATAPIM. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-default);
+    padding: var(--space-4xl) 0 var(--space-2xl);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-4xl);
+    margin-bottom: var(--space-4xl);
+  }
+
+  .footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+  }
+
+  .brand-icon {
+    font-family: var(--font-mono);
+    color: var(--accent-primary);
+    font-size: 14px;
+    background: var(--accent-subtle);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .footer-tagline {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+
+  .footer-col h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+  }
+
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .footer-col a {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  .footer-col a:hover {
+    color: var(--text-secondary);
+  }
+
+  .footer-bottom {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-xl);
+    text-align: center;
+  }
+  .footer-bottom p {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xl);
+    }
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

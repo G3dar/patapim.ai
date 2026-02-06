@@ -1,0 +1,253 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const sidebar = [
+  {
+    title: 'Getting Started',
+    items: [
+      { title: 'Installation', slug: 'getting-started/installation' },
+      { title: 'Quick Start', slug: 'getting-started/quick-start' },
+      { title: 'System Requirements', slug: 'getting-started/system-requirements' },
+    ]
+  },
+  {
+    title: 'Core Concepts',
+    items: [
+      { title: 'Terminal-First Philosophy', slug: 'core-concepts/terminal-first-philosophy' },
+      { title: 'PATAPIM Projects', slug: 'core-concepts/patapim-projects' },
+      { title: 'Context Preservation', slug: 'core-concepts/context-preservation' },
+    ]
+  },
+  {
+    title: 'Features',
+    items: [
+      { title: 'Multi-Terminal', slug: 'features/multi-terminal' },
+      { title: 'Remote Access', slug: 'features/remote-access' },
+      { title: 'Voice Dictation', slug: 'features/voice-dictation' },
+      { title: 'Project Management', slug: 'features/project-management' },
+      { title: 'Task Management', slug: 'features/task-management' },
+      { title: 'GitHub Integration', slug: 'features/github-integration' },
+      { title: 'Plugin System', slug: 'features/plugin-system' },
+      { title: 'MCP Browser Control', slug: 'features/mcp-browser-control' },
+      { title: 'File Editor', slug: 'features/file-editor' },
+      { title: 'Session Persistence', slug: 'features/session-persistence' },
+      { title: 'PassKey Authentication', slug: 'features/passkey-auth' },
+      { title: 'Auto-Updates', slug: 'features/auto-updates' },
+    ]
+  },
+  {
+    title: 'Reference',
+    items: [
+      { title: 'Keyboard Shortcuts', slug: 'reference/keyboard-shortcuts' },
+      { title: 'Configuration', slug: 'reference/configuration' },
+      { title: 'CLAUDE.md Reference', slug: 'reference/claude-md-reference' },
+      { title: 'STRUCTURE.json Reference', slug: 'reference/structure-json-reference' },
+      { title: 'tasks.json Reference', slug: 'reference/tasks-json-reference' },
+    ]
+  }
+];
+---
+
+<BaseLayout title={`${title} — PATAPIM Docs`} description={description}>
+  <Navbar />
+
+  <div class="docs-layout">
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <nav class="docs-nav">
+        {sidebar.map((group) => (
+          <div class="nav-group">
+            <h4 class="nav-group-title">{group.title}</h4>
+            <ul class="nav-group-items">
+              {group.items.map((item) => (
+                <li>
+                  <a
+                    href={`/docs/${item.slug}`}
+                    class={`nav-item ${currentPath.includes(item.slug) ? 'active' : ''}`}
+                  >
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <main class="docs-content">
+      <article class="docs-article">
+        <h1>{title}</h1>
+        <slot />
+      </article>
+    </main>
+  </div>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    padding-top: 64px;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-default);
+    padding: var(--space-xl) 0;
+  }
+
+  .docs-nav {
+    padding: 0 var(--space-lg);
+  }
+
+  .nav-group {
+    margin-bottom: var(--space-xl);
+  }
+
+  .nav-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    padding: 0 var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+
+  .nav-group-items {
+    list-style: none;
+  }
+
+  .nav-item {
+    display: block;
+    padding: 6px var(--space-md);
+    font-size: 14px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+  }
+  .nav-item:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+  .nav-item.active {
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    font-weight: 500;
+  }
+
+  .docs-content {
+    padding: var(--space-3xl) var(--space-4xl);
+    max-width: 800px;
+  }
+
+  .docs-article {
+    line-height: 1.8;
+  }
+
+  .docs-article h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .docs-article :global(h2) {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: var(--space-3xl);
+    margin-bottom: var(--space-lg);
+    color: var(--text-primary);
+  }
+
+  .docs-article :global(h3) {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+    color: var(--text-primary);
+  }
+
+  .docs-article :global(p) {
+    margin-bottom: var(--space-lg);
+    color: var(--text-secondary);
+  }
+
+  .docs-article :global(ul), .docs-article :global(ol) {
+    margin-bottom: var(--space-lg);
+    padding-left: var(--space-xl);
+    color: var(--text-secondary);
+  }
+  .docs-article :global(li) {
+    margin-bottom: var(--space-sm);
+  }
+
+  .docs-article :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--space-xl);
+    font-size: 14px;
+  }
+  .docs-article :global(th) {
+    text-align: left;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .docs-article :global(td) {
+    padding: 10px 16px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  .docs-article :global(blockquote) {
+    border-left: 3px solid var(--accent-primary);
+    padding: var(--space-md) var(--space-lg);
+    margin: var(--space-lg) 0;
+    background: var(--accent-subtle);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--text-secondary);
+  }
+
+  .docs-article :global(img) {
+    max-width: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+  }
+
+  @media (max-width: 768px) {
+    .docs-layout {
+      grid-template-columns: 1fr;
+    }
+    .docs-sidebar {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .docs-content {
+      padding: var(--space-xl);
+    }
+  }
+</style>

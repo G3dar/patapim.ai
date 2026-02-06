@@ -1,0 +1,3 @@
+# Redirect docs root to installation
+/docs /docs/getting-started/installation 301
+/docs/ /docs/getting-started/installation 301

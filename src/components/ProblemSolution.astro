@@ -1,0 +1,129 @@
+<section class="section problem-solution" id="problem">
+  <div class="container">
+    <div class="ps-grid">
+      <div class="ps-card problem">
+        <div class="ps-icon">&#x2717;</div>
+        <h3>The Problem</h3>
+        <ul>
+          <li>VS Code and Cursor are built for <strong>manual coding</strong> &mdash; you don't need that with Claude Code</li>
+          <li>Terminal-only workflow means <strong>projects stay disorganized</strong></li>
+          <li><strong>Context is lost</strong> between sessions &mdash; decisions forgotten, progress unclear</li>
+          <li>No standardization across projects &mdash; every project is a <strong>different mess</strong></li>
+          <li>Juggling multiple terminals, files, and tasks is <strong>chaos</strong></li>
+        </ul>
+      </div>
+
+      <div class="ps-arrow">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
+
+      <div class="ps-card solution">
+        <div class="ps-icon">&#x2714;</div>
+        <h3>The PATAPIM Way</h3>
+        <ul>
+          <li><strong>Terminal-first</strong> &mdash; the terminal IS the IDE, not an afterthought</li>
+          <li>Up to <strong>9 terminals in a grid</strong> &mdash; all visible, all productive</li>
+          <li><strong>Context preservation</strong> &mdash; CLAUDE.md, tasks.json, STRUCTURE.json in every project</li>
+          <li>Every project follows the <strong>same standard structure</strong> &mdash; PATAPIM projects</li>
+          <li>Remote access, voice dictation, GitHub issues, plugins &mdash; <strong>everything integrated</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .problem-solution {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .ps-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-2xl);
+    align-items: center;
+  }
+
+  .ps-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+  }
+
+  .ps-card.problem {
+    border-color: rgba(212, 120, 120, 0.2);
+  }
+  .ps-card.solution {
+    border-color: rgba(124, 179, 130, 0.2);
+  }
+
+  .ps-icon {
+    font-size: 24px;
+    margin-bottom: var(--space-md);
+  }
+  .problem .ps-icon { color: var(--error); }
+  .solution .ps-icon { color: var(--success); }
+
+  .ps-card h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+  }
+  .problem h3 { color: var(--error); }
+  .solution h3 { color: var(--success); }
+
+  .ps-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .ps-card li {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding-left: 20px;
+    position: relative;
+  }
+  .ps-card li::before {
+    position: absolute;
+    left: 0;
+    font-size: 12px;
+  }
+  .problem li::before {
+    content: '\\2717';
+    color: var(--error);
+  }
+  .solution li::before {
+    content: '\\2714';
+    color: var(--success);
+  }
+
+  .ps-card li strong {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .ps-arrow {
+    color: var(--accent-primary);
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .ps-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+    .ps-arrow {
+      transform: rotate(90deg);
+      justify-self: center;
+    }
+  }
+</style>

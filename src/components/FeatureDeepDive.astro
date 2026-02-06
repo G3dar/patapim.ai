@@ -1,0 +1,324 @@
+<section class="section deep-dive">
+  <div class="container">
+
+    <!-- Deep Dive: Remote Access -->
+    <div class="dive-block">
+      <div class="dive-content">
+        <span class="section-label">Remote Access</span>
+        <h2 class="dive-title">Work From Anywhere</h2>
+        <p class="dive-desc">
+          Access your PATAPIM instance from your phone, tablet, or any browser.
+          Local network mode works instantly. Cloudflare Tunnels give you a public URL
+          &mdash; no port forwarding, no VPN, no complexity.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> QR code quick connect from mobile</li>
+          <li><span class="check">&#x2714;</span> Responsive mobile UI optimized for touch</li>
+          <li><span class="check">&#x2714;</span> PassKey/biometric authentication (Touch ID, Windows Hello)</li>
+          <li><span class="check">&#x2714;</span> Unlimited concurrent sessions (Pro)</li>
+          <li><span class="check">&#x2714;</span> Cloudflare edge network &mdash; fast globally</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <div class="phone-mock">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <span class="phone-title">&#x276F;_ PATAPIM Remote</span>
+            </div>
+            <div class="phone-terminal">
+              <div class="pline"><span class="p-prompt">$</span> claude "fix the auth bug"</div>
+              <div class="pline p-accent">&#x276F; Analyzing auth module...</div>
+              <div class="pline p-success">&#x2714; Fixed: token refresh logic updated</div>
+              <div class="pline p-dim">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</div>
+              <div class="pline"><span class="p-prompt">$</span> <span class="p-cursor">|</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deep Dive: Multi-Terminal + Dictation -->
+    <div class="dive-block reverse">
+      <div class="dive-content">
+        <span class="section-label">Multi-Terminal + Voice</span>
+        <h2 class="dive-title">Run 9 Terminals. Talk to All of Them.</h2>
+        <p class="dive-desc">
+          Grid view lets you see up to 9 terminals at once. Run builds, tests, servers, and Claude Code
+          sessions side by side. Voice dictation sends speech directly to the active terminal.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> Tab view for focus, grid view for overview</li>
+          <li><span class="check">&#x2714;</span> 2x1, 2x2, 3x1, 3x2, 3x3 grid layouts</li>
+          <li><span class="check">&#x2714;</span> Resizable grid cells with drag handles</li>
+          <li><span class="check">&#x2714;</span> Whisper API transcription ($0.006/min)</li>
+          <li><span class="check">&#x2714;</span> Free fallback: browser Web Speech API</li>
+          <li><span class="check">&#x2714;</span> Persistent dictation mode &mdash; keep talking</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <div class="grid-mock">
+          <div class="grid-cell"><span>Terminal 1</span><div class="gc-text">claude "build the API"</div></div>
+          <div class="grid-cell"><span>Terminal 2</span><div class="gc-text">npm run dev</div></div>
+          <div class="grid-cell"><span>Terminal 3</span><div class="gc-text">npm test --watch</div></div>
+          <div class="grid-cell"><span>Terminal 4</span><div class="gc-text">docker logs app</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deep Dive: Context Preservation -->
+    <div class="dive-block">
+      <div class="dive-content">
+        <span class="section-label">Context Preservation</span>
+        <h2 class="dive-title">Never Lose Context Again</h2>
+        <p class="dive-desc">
+          Every PATAPIM project comes with standardized files that preserve your development context.
+          Claude Code reads these automatically &mdash; no re-explaining, no lost decisions.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> <code>CLAUDE.md</code> &mdash; instructions for Claude Code</li>
+          <li><span class="check">&#x2714;</span> <code>STRUCTURE.json</code> &mdash; auto-updated module map</li>
+          <li><span class="check">&#x2714;</span> <code>PROJECT_NOTES.md</code> &mdash; session notes, decisions</li>
+          <li><span class="check">&#x2714;</span> <code>tasks.json</code> &mdash; structured task tracking</li>
+          <li><span class="check">&#x2714;</span> Pre-commit hooks auto-update structure</li>
+          <li><span class="check">&#x2714;</span> Context prompts after completing tasks</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <div class="files-mock">
+          <div class="file-item">
+            <span class="file-icon">&#x1F4C4;</span>
+            <div class="file-info">
+              <span class="file-name">CLAUDE.md</span>
+              <span class="file-desc">Project instructions for AI</span>
+            </div>
+            <span class="file-badge">Auto</span>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">&#x1F4CA;</span>
+            <div class="file-info">
+              <span class="file-name">STRUCTURE.json</span>
+              <span class="file-desc">Module map &amp; IPC channels</span>
+            </div>
+            <span class="file-badge">Auto</span>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">&#x1F4DD;</span>
+            <div class="file-info">
+              <span class="file-name">PROJECT_NOTES.md</span>
+              <span class="file-desc">Session notes &amp; decisions</span>
+            </div>
+            <span class="file-badge">Prompted</span>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">&#x2611;</span>
+            <div class="file-info">
+              <span class="file-name">tasks.json</span>
+              <span class="file-desc">Structured task tracking</span>
+            </div>
+            <span class="file-badge">Synced</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .deep-dive {
+    background: var(--bg-deep);
+  }
+
+  .dive-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4xl);
+    align-items: center;
+    margin-bottom: var(--space-5xl);
+  }
+  .dive-block:last-child {
+    margin-bottom: 0;
+  }
+  .dive-block.reverse {
+    direction: rtl;
+  }
+  .dive-block.reverse > * {
+    direction: ltr;
+  }
+
+  .dive-title {
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 700;
+    margin-bottom: var(--space-lg);
+    line-height: 1.2;
+  }
+
+  .dive-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dive-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .dive-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .dive-list .check {
+    color: var(--success);
+    font-size: 14px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .dive-list code {
+    font-size: 13px;
+  }
+
+  /* Phone mock */
+  .phone-mock {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-strong);
+    border-radius: 32px;
+    padding: 12px;
+    max-width: 320px;
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .phone-screen {
+    background: var(--bg-deep);
+    border-radius: 22px;
+    overflow: hidden;
+  }
+  .phone-header {
+    background: var(--bg-tertiary);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .phone-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-primary);
+  }
+  .phone-terminal {
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 2;
+  }
+  .pline { color: var(--text-secondary); }
+  .p-prompt { color: var(--accent-primary); margin-right: 6px; }
+  .p-accent { color: var(--accent-primary); }
+  .p-success { color: var(--success); }
+  .p-dim { color: var(--text-muted); }
+  .p-cursor {
+    color: var(--accent-primary);
+    animation: blink-cursor 1s step-end infinite;
+  }
+
+  @keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Grid mock */
+  .grid-mock {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    padding: 12px;
+    box-shadow: var(--shadow-lg);
+  }
+  .grid-cell {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    min-height: 100px;
+  }
+  .grid-cell span {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .gc-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent-primary);
+  }
+
+  /* Files mock */
+  .files-mock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+  }
+  .file-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .file-info {
+    flex: 1;
+  }
+  .file-name {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .file-desc {
+    display: block;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .file-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 3px 8px;
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .dive-block, .dive-block.reverse {
+      grid-template-columns: 1fr;
+      direction: ltr;
+    }
+    .dive-visual {
+      order: -1;
+    }
+    .phone-mock {
+      max-width: 260px;
+    }
+  }
+</style>
