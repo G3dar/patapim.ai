@@ -86,7 +86,6 @@ const sidebar = [
 
     <main class="docs-content">
       <article class="docs-article">
-        <h1>{title}</h1>
         <slot />
       </article>
     </main>
@@ -163,7 +162,7 @@ const sidebar = [
     line-height: 1.8;
   }
 
-  .docs-article h1 {
+  .docs-article :global(h1) {
     font-size: 32px;
     font-weight: 700;
     margin-bottom: var(--space-xl);
