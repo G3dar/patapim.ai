@@ -1,0 +1,493 @@
+<div class="vd-demo" data-vd-demo>
+  <div class="vd-cursor" data-vd-cursor>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M1 1L6.5 14L8.5 8.5L14 6.5L1 1Z" fill="white" stroke="white" stroke-width="0.5"/>
+    </svg>
+    <span class="vd-cursor-ripple" data-vd-ripple></span>
+  </div>
+
+  <div class="vd-window">
+    <div class="vd-chrome">
+      <div class="vd-dots">
+        <span class="vd-dot vd-dot-r"></span>
+        <span class="vd-dot vd-dot-y"></span>
+        <span class="vd-dot vd-dot-g"></span>
+      </div>
+      <span class="vd-title">PATAPIM &mdash; Dev Session</span>
+      <div class="vd-mic-btn" data-vd-mic>
+        <svg class="vd-mic-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="1" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+        </svg>
+        <span class="vd-mic-label" data-vd-mic-label></span>
+      </div>
+    </div>
+    <div class="vd-body">
+      <div class="vd-line vd-prompt-line">
+        <span class="vd-p">~/project $</span>
+        <span class="vd-cmd" data-vd-cmd></span>
+        <span class="vd-caret" data-vd-caret>|</span>
+      </div>
+      <div class="vd-output-area" data-vd-output></div>
+    </div>
+    <div class="vd-waveform" data-vd-wave>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+      <span class="vd-bar"></span>
+    </div>
+    <div class="vd-badge-flash" data-vd-badge>Whisper API</div>
+  </div>
+</div>
+
+<style>
+  .vd-demo {
+    position: relative;
+    max-width: 520px;
+    margin: 0 auto;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* Cursor */
+  .vd-cursor {
+    position: absolute;
+    top: 20px;
+    left: 40%;
+    z-index: 10;
+    pointer-events: none;
+    transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1), left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: top, left;
+  }
+  .vd-cursor-ripple {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(212, 165, 116, 0.3);
+    transform: scale(0);
+    opacity: 0;
+  }
+  .vd-cursor-ripple.active {
+    animation: vdRipple 0.4s ease-out forwards;
+  }
+  @keyframes vdRipple {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* Window */
+  .vd-window {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+  }
+
+  /* Chrome */
+  .vd-chrome {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .vd-dots { display: flex; gap: 5px; }
+  .vd-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .vd-dot-r { background: #ff5f57; }
+  .vd-dot-y { background: #febc2e; }
+  .vd-dot-g { background: #28c840; }
+  .vd-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    flex: 1;
+  }
+
+  /* Mic button */
+  .vd-mic-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+    position: relative;
+  }
+  .vd-mic-btn.active {
+    color: var(--warning);
+    background: rgba(224, 164, 88, 0.12);
+    box-shadow: 0 0 8px rgba(224, 164, 88, 0.15);
+  }
+  .vd-mic-btn.active .vd-mic-icon {
+    animation: vdMicPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes vdMicPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .vd-mic-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+  .vd-mic-btn.active .vd-mic-label {
+    opacity: 1;
+  }
+
+  /* Body */
+  .vd-body {
+    background: var(--bg-deep);
+    padding: 16px 18px;
+    min-height: 180px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .vd-prompt-line {
+    display: flex;
+    align-items: center;
+  }
+  .vd-p {
+    color: var(--accent-primary);
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+  .vd-cmd {
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .vd-caret {
+    color: var(--accent-primary);
+    animation: vdBlink 1s step-end infinite;
+  }
+  @keyframes vdBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .vd-output-area {
+    margin-top: 2px;
+  }
+  .vd-line {
+    min-height: 1.7em;
+  }
+
+  /* Waveform */
+  .vd-waveform {
+    position: absolute;
+    bottom: 50px;
+    right: 16px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 24px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+  .vd-waveform.active {
+    opacity: 1;
+  }
+  .vd-bar {
+    width: 3px;
+    height: 4px;
+    background: var(--warning);
+    border-radius: 2px;
+    transform-origin: bottom;
+  }
+  .vd-waveform.active .vd-bar {
+    animation: vdWave 0.6s ease-in-out infinite alternate;
+  }
+  .vd-bar:nth-child(1) { animation-delay: 0s; }
+  .vd-bar:nth-child(2) { animation-delay: 0.1s; }
+  .vd-bar:nth-child(3) { animation-delay: 0.05s; }
+  .vd-bar:nth-child(4) { animation-delay: 0.15s; }
+  .vd-bar:nth-child(5) { animation-delay: 0.08s; }
+  .vd-bar:nth-child(6) { animation-delay: 0.12s; }
+  .vd-bar:nth-child(7) { animation-delay: 0.03s; }
+  @keyframes vdWave {
+    0% { height: 4px; }
+    100% { height: 20px; }
+  }
+
+  /* Badge flash */
+  .vd-badge-flash {
+    position: absolute;
+    top: 48px;
+    right: 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(212, 165, 116, 0.2);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: all var(--transition-fast);
+  }
+  .vd-badge-flash.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .vd-cursor { display: none; }
+    .vd-demo { max-width: 340px; }
+    .vd-body { font-size: 11px; min-height: 160px; padding: 12px 14px; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .vd-cursor,
+    .vd-waveform { display: none; }
+    .vd-mic-btn.active .vd-mic-icon { animation: none; }
+    .vd-caret { animation: none; opacity: 1; }
+    .vd-bar { animation: none !important; }
+  }
+</style>
+
+<script>
+(function() {
+  const demos = document.querySelectorAll('[data-vd-demo]');
+  demos.forEach(initDemo);
+
+  function initDemo(root) {
+    const cursor = root.querySelector('[data-vd-cursor]');
+    const ripple = root.querySelector('[data-vd-ripple]');
+    const mic = root.querySelector('[data-vd-mic]');
+    const micLabel = root.querySelector('[data-vd-mic-label]');
+    const cmd = root.querySelector('[data-vd-cmd]');
+    const caret = root.querySelector('[data-vd-caret]');
+    const output = root.querySelector('[data-vd-output]');
+    const wave = root.querySelector('[data-vd-wave]');
+    const badge = root.querySelector('[data-vd-badge]');
+
+    let animId = null;
+    let running = false;
+
+    // Check reduced motion
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      showStaticState();
+      return;
+    }
+
+    function showStaticState() {
+      mic.classList.add('active');
+      micLabel.textContent = 'Listening...';
+      cmd.textContent = 'implement the login form with email validation';
+      caret.style.display = 'none';
+      addOutputLine('\u25B7 Analyzing requirements...', 'secondary');
+      addOutputLine('\u2714 Created src/components/LoginForm.tsx', 'success');
+    }
+
+    // IntersectionObserver
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          cancelLoop();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+
+    function cancelLoop() {
+      if (animId) clearTimeout(animId);
+      animId = null;
+    }
+
+    function schedule(fn, ms) {
+      return new Promise(resolve => {
+        animId = setTimeout(() => { fn(); resolve(); }, ms);
+      });
+    }
+
+    function resetState() {
+      mic.classList.remove('active');
+      micLabel.textContent = '';
+      cmd.textContent = '';
+      caret.style.display = '';
+      output.innerHTML = '';
+      wave.classList.remove('active');
+      badge.classList.remove('show');
+      cursor.style.top = '20px';
+      cursor.style.left = '40%';
+    }
+
+    function doRipple() {
+      ripple.classList.remove('active');
+      void ripple.offsetWidth;
+      ripple.classList.add('active');
+    }
+
+    function moveCursor(top, left) {
+      cursor.style.top = top;
+      cursor.style.left = left;
+    }
+
+    function typeText(el, text) {
+      return new Promise(resolve => {
+        let i = 0;
+        function next() {
+          if (!running) return;
+          if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i++;
+            animId = setTimeout(next, 60 + Math.random() * 50);
+          } else {
+            resolve();
+          }
+        }
+        next();
+      });
+    }
+
+    function addOutputLine(text, type) {
+      const line = document.createElement('div');
+      line.className = 'vd-line';
+      if (type === 'success') {
+        line.innerHTML = '<span style="color:var(--success)">\u2714</span> ' + escHtml(text.replace('\u2714 ', ''));
+      } else if (type === 'secondary') {
+        line.innerHTML = '<span style="color:var(--accent-primary)">\u25B7</span> ' + escHtml(text.replace('\u25B7 ', ''));
+      } else {
+        line.innerHTML = '<span style="color:var(--text-secondary)">' + escHtml(text) + '</span>';
+      }
+      line.style.opacity = '0';
+      output.appendChild(line);
+      void line.offsetWidth;
+      line.style.transition = 'opacity 0.3s';
+      line.style.opacity = '1';
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function startLoop() {
+      while (running) {
+        resetState();
+
+        // 0-2s: Idle
+        await schedule(() => {}, 2000);
+        if (!running) break;
+
+        // 2-3s: Move cursor to mic, click
+        await schedule(() => {
+          moveCursor('8px', 'calc(100% - 60px)');
+        }, 600);
+        if (!running) break;
+        await schedule(() => {
+          doRipple();
+          mic.classList.add('active');
+          micLabel.textContent = 'Listening...';
+        }, 400);
+        if (!running) break;
+
+        // 3-3.5s: Waveform appears
+        await schedule(() => {
+          wave.classList.add('active');
+        }, 500);
+        if (!running) break;
+
+        // 3.5-6.5s: Type first transcription
+        caret.style.display = 'none';
+        await typeText(cmd, 'implement the login form with email validation');
+        if (!running) break;
+
+        // Badge flash
+        badge.classList.add('show');
+        await schedule(() => {}, 500);
+        if (!running) break;
+        badge.classList.remove('show');
+
+        // 6.5-8.5s: Claude response
+        wave.classList.remove('active');
+        mic.classList.remove('active');
+        micLabel.textContent = '';
+
+        await schedule(() => {
+          addOutputLine('\u25B7 Analyzing requirements...', 'secondary');
+        }, 400);
+        if (!running) break;
+        await schedule(() => {
+          addOutputLine('\u2714 Created src/components/LoginForm.tsx', 'success');
+        }, 1200);
+        if (!running) break;
+
+        // 8.5-9.5s: Second dictation
+        await schedule(() => {
+          mic.classList.add('active');
+          micLabel.textContent = 'Listening...';
+          wave.classList.add('active');
+        }, 800);
+        if (!running) break;
+
+        // Add new prompt line
+        const prompt2 = document.createElement('div');
+        prompt2.className = 'vd-line vd-prompt-line';
+        prompt2.innerHTML = '<span class="vd-p">~/project $</span><span class="vd-cmd" data-vd-cmd2></span>';
+        prompt2.style.opacity = '0';
+        output.appendChild(prompt2);
+        void prompt2.offsetWidth;
+        prompt2.style.transition = 'opacity 0.3s';
+        prompt2.style.opacity = '1';
+
+        // 9.5-11.5s: Type second transcription
+        const cmd2 = prompt2.querySelector('[data-vd-cmd2]');
+        await schedule(() => {}, 300);
+        if (!running) break;
+        await typeText(cmd2, 'now add unit tests for it');
+        if (!running) break;
+
+        badge.classList.add('show');
+        await schedule(() => {}, 400);
+        if (!running) break;
+        badge.classList.remove('show');
+
+        // 11.5-13s: Claude response
+        wave.classList.remove('active');
+        mic.classList.remove('active');
+        micLabel.textContent = '';
+
+        await schedule(() => {
+          addOutputLine('\u25B7 Writing tests...', 'secondary');
+        }, 400);
+        if (!running) break;
+        await schedule(() => {
+          addOutputLine('\u2714 8 tests passing', 'success');
+        }, 800);
+        if (!running) break;
+
+        // 13-14s: Pause then fade
+        await schedule(() => {
+          root.style.transition = 'opacity 0.6s';
+          root.style.opacity = '0';
+        }, 1000);
+        if (!running) break;
+        await schedule(() => {
+          root.style.opacity = '1';
+        }, 700);
+        if (!running) break;
+      }
+    }
+  }
+})();
+</script>

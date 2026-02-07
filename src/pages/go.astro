@@ -94,11 +94,24 @@ const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId
         <!-- Device Pairing -->
         <div class="pair-section">
           <h3>Link Desktop App</h3>
-          <p class="pair-desc">Generate a pairing code to connect your PATAPIM desktop app to this account.</p>
-          <button class="btn btn-secondary" id="generate-pair-btn">Generate Pairing Code</button>
-          <div class="pair-code-display" id="pair-code-display" style="display:none;">
-            <code id="pair-code-value"></code>
-            <span class="pair-expires">Expires in 10 minutes</span>
+          <p class="pair-desc">Generate a one-time code, then paste it in your PATAPIM desktop app.</p>
+
+          <!-- Before generation -->
+          <div id="pair-pre">
+            <button class="btn btn-primary" id="generate-pair-btn">Generate Pairing Code</button>
+          </div>
+
+          <!-- After generation -->
+          <div id="pair-post" style="display:none;">
+            <div class="pair-code-card" id="pair-code-card" title="Click to copy">
+              <span class="pair-code-chars" id="pair-code-value"></span>
+              <span class="pair-copy-hint" id="pair-copy-hint">Click to copy</span>
+            </div>
+            <div class="pair-meta">
+              <span class="pair-timer" id="pair-timer"></span>
+              <button class="pair-regen" id="pair-regen-btn">Regenerate</button>
+            </div>
+            <p class="pair-instruction">Open PATAPIM desktop → Settings → Paste this code</p>
           </div>
         </div>
       </div>
@@ -369,27 +382,86 @@ const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId
     margin-bottom: var(--space-lg);
   }
 
-  .pair-code-display {
-    margin-top: var(--space-lg);
+  .pair-code-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-lg);
+    gap: var(--space-sm);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl) var(--space-2xl);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    user-select: all;
   }
 
-  .pair-code-display code {
-    font-size: 32px;
+  .pair-code-card:hover {
+    border-color: var(--accent-primary);
+    background: var(--bg-secondary);
+  }
+
+  .pair-code-chars {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 40px;
     font-weight: 700;
     color: var(--accent-primary);
-    letter-spacing: 4px;
-    background: var(--bg-tertiary);
-    padding: var(--space-md) var(--space-xl);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-default);
+    letter-spacing: 8px;
   }
 
-  .pair-expires {
+  .pair-copy-hint {
     font-size: 12px;
     color: var(--text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .pair-copy-hint.copied {
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .pair-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-lg);
+  }
+
+  .pair-timer {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 14px;
+    color: var(--text-tertiary);
+  }
+
+  .pair-timer.warning {
+    color: #e57c23;
+  }
+
+  .pair-timer.expired {
+    color: var(--text-muted);
+  }
+
+  .pair-regen {
+    background: none;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-xs) var(--space-md);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .pair-regen:hover {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+
+  .pair-instruction {
+    margin-top: var(--space-lg);
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
   }
 
   @media (max-width: 640px) {
@@ -831,22 +903,68 @@ const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId
     }
   });
 
-  // Generate pairing code
-  document.getElementById('generate-pair-btn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('generate-pair-btn');
-    btn.disabled = true;
-    btn.textContent = 'Generating...';
-    try {
-      const res = await fetch('/api/device/pair-code', { method: 'POST' });
-      const data = await res.json();
-      if (data.code) {
-        document.getElementById('pair-code-value').textContent = data.code;
-        document.getElementById('pair-code-display').style.display = 'flex';
-        btn.textContent = 'Generate New Code';
+  // Pairing code logic
+  {
+    let pairTimerInterval = null;
+
+    function flashCopied() {
+      const hint = document.getElementById('pair-copy-hint');
+      hint.textContent = 'Copied!';
+      hint.classList.add('copied');
+      setTimeout(() => {
+        hint.textContent = 'Click to copy';
+        hint.classList.remove('copied');
+      }, 1500);
+    }
+
+    async function copyCode() {
+      const code = document.getElementById('pair-code-value').textContent;
+      if (!code) return;
+      try { await navigator.clipboard.writeText(code); } catch {}
+      flashCopied();
+    }
+
+    function startTimer(seconds) {
+      if (pairTimerInterval) clearInterval(pairTimerInterval);
+      let remaining = seconds;
+      const timerEl = document.getElementById('pair-timer');
+      function tick() {
+        if (remaining <= 0) {
+          timerEl.textContent = 'Expired';
+          timerEl.className = 'pair-timer expired';
+          clearInterval(pairTimerInterval);
+          pairTimerInterval = null;
+          return;
+        }
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        timerEl.textContent = m + ':' + String(s).padStart(2, '0');
+        timerEl.className = remaining <= 60 ? 'pair-timer warning' : 'pair-timer';
+        remaining--;
       }
-    } catch {}
-    btn.disabled = false;
-  });
+      tick();
+      pairTimerInterval = setInterval(tick, 1000);
+    }
+
+    async function generateCode() {
+      try {
+        const res = await fetch('/api/device/pair-code', { method: 'POST' });
+        const data = await res.json();
+        if (data.code) {
+          document.getElementById('pair-code-value').textContent = data.code;
+          document.getElementById('pair-pre').style.display = 'none';
+          document.getElementById('pair-post').style.display = 'block';
+          startTimer(600);
+          try { await navigator.clipboard.writeText(data.code); } catch {}
+          flashCopied();
+        }
+      } catch {}
+    }
+
+    document.getElementById('generate-pair-btn')?.addEventListener('click', generateCode);
+    document.getElementById('pair-regen-btn')?.addEventListener('click', generateCode);
+    document.getElementById('pair-code-card')?.addEventListener('click', copyCode);
+  }
 
   // Sign out
   document.getElementById('sign-out-btn')?.addEventListener('click', async () => {

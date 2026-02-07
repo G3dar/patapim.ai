@@ -1,0 +1,1149 @@
+<!-- MultiTerminalDemo.astro — Animated HTML5 demo of the Multi-Terminal Grid feature -->
+<div class="mt-demo" id="mt-demo">
+  <!-- Animated cursor -->
+  <div class="mt-cursor" id="mt-cursor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#222" stroke-width="1.2">
+      <path d="M5.5 3.2l12.3 9.8-5.4 1.1-3.3 5.2z"/>
+    </svg>
+    <div class="mt-cursor-ripple" id="mt-cursor-ripple"></div>
+  </div>
+
+  <!-- Resize cursor (hidden by default) -->
+  <div class="mt-cursor-resize" id="mt-cursor-resize">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+      <line x1="8" y1="4" x2="8" y2="20"/>
+      <line x1="16" y1="4" x2="16" y2="20"/>
+      <polyline points="5,8 3,12 5,16" fill="none"/>
+      <polyline points="19,8 21,12 19,16" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- Terminal window -->
+  <div class="mt-window">
+    <!-- Chrome bar -->
+    <div class="mt-chrome">
+      <div class="mt-dots">
+        <span class="mt-dot mt-dot-red"></span>
+        <span class="mt-dot mt-dot-yellow"></span>
+        <span class="mt-dot mt-dot-green"></span>
+      </div>
+      <div class="mt-tabs" id="mt-tabs">
+        <span class="mt-tab active" data-tab="devserver">Dev Server</span>
+        <span class="mt-tab" data-tab="tests">Tests</span>
+        <span class="mt-tab" data-tab="build">Build</span>
+        <span class="mt-tab" data-tab="claude">Claude</span>
+      </div>
+      <div class="mt-chrome-right">
+        <div class="mt-grid-btn" id="mt-grid-btn">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="1" width="5" height="5" rx="1"/>
+            <rect x="8" y="1" width="5" height="5" rx="1"/>
+            <rect x="1" y="8" width="5" height="5" rx="1"/>
+            <rect x="8" y="8" width="5" height="5" rx="1"/>
+          </svg>
+          <div class="mt-grid-tooltip" id="mt-grid-tooltip">Grid View (Ctrl+Shift+G)</div>
+        </div>
+        <div class="mt-dropdown-arrow" id="mt-dropdown-arrow">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+            <path d="M2 3.5l3 3 3-3z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout dropdown -->
+    <div class="mt-dropdown" id="mt-dropdown">
+      <div class="mt-dropdown-item" data-layout="2x1">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="1" y="1" width="6" height="10" rx="1"/><rect x="9" y="1" width="6" height="10" rx="1"/>
+        </svg>
+        <span>2x1</span>
+      </div>
+      <div class="mt-dropdown-item checked" data-layout="2x2">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="1" y="1" width="6" height="4" rx="1"/><rect x="9" y="1" width="6" height="4" rx="1"/>
+          <rect x="1" y="7" width="6" height="4" rx="1"/><rect x="9" y="7" width="6" height="4" rx="1"/>
+        </svg>
+        <span>2x2</span>
+        <svg class="mt-check" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="2,6 5,9 10,3"/>
+        </svg>
+      </div>
+      <div class="mt-dropdown-item" data-layout="3x2">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="1" y="1" width="4" height="4" rx="0.5"/><rect x="6" y="1" width="4" height="4" rx="0.5"/><rect x="11" y="1" width="4" height="4" rx="0.5"/>
+          <rect x="1" y="7" width="4" height="4" rx="0.5"/><rect x="6" y="7" width="4" height="4" rx="0.5"/><rect x="11" y="7" width="4" height="4" rx="0.5"/>
+        </svg>
+        <span>3x2</span>
+      </div>
+      <div class="mt-dropdown-item" data-layout="3x3">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="1" y="1" width="4" height="3" rx="0.5"/><rect x="6" y="1" width="4" height="3" rx="0.5"/><rect x="11" y="1" width="4" height="3" rx="0.5"/>
+          <rect x="1" y="5" width="4" height="3" rx="0.5"/><rect x="6" y="5" width="4" height="3" rx="0.5"/><rect x="11" y="5" width="4" height="3" rx="0.5"/>
+          <rect x="1" y="9" width="4" height="3" rx="0.5"/><rect x="6" y="9" width="4" height="3" rx="0.5"/><rect x="11" y="9" width="4" height="3" rx="0.5"/>
+        </svg>
+        <span>3x3</span>
+      </div>
+    </div>
+
+    <!-- Terminal body: single-tab view -->
+    <div class="mt-body" id="mt-body">
+      <!-- Tab content panels -->
+      <div class="mt-panel active" data-panel="devserver" id="panel-devserver">
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run dev</span></div>
+        <div class="mt-line"><span class="mt-out">ready - started server on localhost:3000</span></div>
+        <div class="mt-line"><span class="mt-out-success">compiled client and server successfully</span></div>
+        <div class="mt-line"><span class="mt-blink-cursor">_</span></div>
+      </div>
+      <div class="mt-panel" data-panel="tests" id="panel-tests">
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm test --watch</span></div>
+        <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/auth.test.ts (4 tests)</span></div>
+        <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/api.test.ts (8 tests)</span></div>
+        <div class="mt-line"><span class="mt-out">Tests: </span><span class="mt-out-success">12 passed</span><span class="mt-out">, 0 failed</span></div>
+      </div>
+      <div class="mt-panel" data-panel="build" id="panel-build">
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run build</span></div>
+        <div class="mt-line"><span class="mt-out-success">Compiled successfully in 3.2s</span></div>
+        <div class="mt-line"><span class="mt-out">Output: dist/ (1.2 MB)</span></div>
+      </div>
+      <div class="mt-panel" data-panel="claude" id="panel-claude">
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">claude "optimize queries"</span></div>
+        <div class="mt-line"><span class="mt-out-accent">&#x25B7; Analyzing 3 slow queries...</span></div>
+        <div class="mt-line"><span class="mt-out-success">&#x2714; Optimized: added indexes</span></div>
+      </div>
+
+      <!-- Grid view (hidden initially) -->
+      <div class="mt-grid" id="mt-grid">
+        <!-- Cell 1: Dev Server -->
+        <div class="mt-cell" data-cell="0" id="cell-0">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#28c840"></span><span class="mt-cell-name">Dev Server</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run dev</span></div>
+            <div class="mt-line"><span class="mt-out">ready - started server on localhost:3000</span></div>
+            <div class="mt-line"><span class="mt-out-success">compiled client and server successfully</span></div>
+          </div>
+        </div>
+        <!-- Cell 2: Tests -->
+        <div class="mt-cell" data-cell="1" id="cell-1">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">Tests</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm test --watch</span></div>
+            <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/auth.test.ts (4 tests)</span></div>
+            <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/api.test.ts (8 tests)</span></div>
+          </div>
+        </div>
+        <!-- Cell 3: Build -->
+        <div class="mt-cell" data-cell="2" id="cell-2">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">Build</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run build</span></div>
+            <div class="mt-line"><span class="mt-out-success">Compiled successfully in 3.2s</span></div>
+            <div class="mt-line"><span class="mt-out">Output: dist/ (1.2 MB)</span></div>
+          </div>
+        </div>
+        <!-- Cell 4: Claude -->
+        <div class="mt-cell" data-cell="3" id="cell-3">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d4a574"></span><span class="mt-cell-name">Claude</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">claude "optimize queries"</span></div>
+            <div class="mt-line"><span class="mt-out-accent">&#x25B7; Analyzing 3 slow queries...</span></div>
+            <div class="mt-line"><span class="mt-out-success">&#x2714; Optimized: added indexes</span></div>
+          </div>
+        </div>
+        <!-- Cell 5: Docker (3x3 only) -->
+        <div class="mt-cell mt-cell-extra" data-cell="4" id="cell-4">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">Docker</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">docker logs -f app</span></div>
+            <div class="mt-line"><span class="mt-out">[info] Server started</span></div>
+            <div class="mt-line"><span class="mt-out">[info] Connected to Redis</span></div>
+          </div>
+        </div>
+        <!-- Cell 6: Logs (3x3 only) -->
+        <div class="mt-cell mt-cell-extra" data-cell="5" id="cell-5">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">Logs</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">tail -f /var/log/app.log</span></div>
+            <div class="mt-line"><span class="mt-out">[200] GET /api/health</span></div>
+            <div class="mt-line"><span class="mt-out">[200] POST /api/auth</span></div>
+          </div>
+        </div>
+        <!-- Cell 7: Git (3x3 only) -->
+        <div class="mt-cell mt-cell-extra" data-cell="6" id="cell-6">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">Git</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">git status</span></div>
+            <div class="mt-line"><span class="mt-out">2 files modified</span></div>
+            <div class="mt-line"><span class="mt-out">1 file staged</span></div>
+          </div>
+        </div>
+        <!-- Cell 8: DB (3x3 only) -->
+        <div class="mt-cell mt-cell-extra" data-cell="7" id="cell-7">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d47878"></span><span class="mt-cell-name">DB</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">psql mydb</span></div>
+            <div class="mt-line"><span class="mt-out">mydb=# SELECT count(*) FROM users;</span></div>
+            <div class="mt-line"><span class="mt-out-accent">count: 1,247</span></div>
+          </div>
+        </div>
+        <!-- Cell 9: API (3x3 only) -->
+        <div class="mt-cell mt-cell-extra" data-cell="8" id="cell-8">
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">API</span></div>
+          <div class="mt-cell-body">
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">node api.js</span></div>
+            <div class="mt-line"><span class="mt-out">API listening on :4000</span></div>
+            <div class="mt-line"><span class="mt-out">Routes: 12 loaded</span></div>
+          </div>
+        </div>
+        <!-- Vertical divider for resize scene -->
+        <div class="mt-divider" id="mt-divider"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* === Container === */
+  .mt-demo {
+    position: relative;
+    overflow: hidden;
+    max-width: 780px;
+    margin: 0 auto;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* === Animated Cursor === */
+  .mt-cursor {
+    position: absolute;
+    top: 40px;
+    left: 200px;
+    z-index: 50;
+    pointer-events: none;
+    transition: top 0.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+                left 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    will-change: top, left;
+  }
+
+  .mt-cursor svg {
+    display: block;
+  }
+
+  .mt-cursor-ripple {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(212, 165, 116, 0.4);
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .mt-cursor-ripple.active {
+    animation: mt-ripple 0.35s ease-out forwards;
+  }
+
+  @keyframes mt-ripple {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  .mt-cursor-resize {
+    position: absolute;
+    z-index: 51;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    transition: top 0.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+                left 0.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+                opacity 0.2s ease;
+    will-change: top, left, opacity;
+  }
+
+  /* === Terminal Window === */
+  .mt-window {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 165, 116, 0.04);
+  }
+
+  /* === Chrome Bar === */
+  .mt-chrome {
+    background: var(--bg-tertiary);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border-default);
+    position: relative;
+    z-index: 10;
+  }
+
+  .mt-dots {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .mt-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .mt-dot-red { background: #ff5f57; }
+  .mt-dot-yellow { background: #febc2e; }
+  .mt-dot-green { background: #28c840; }
+
+  /* === Tabs === */
+  .mt-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mt-tab {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: default;
+    white-space: nowrap;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .mt-tab.active {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+
+  /* === Chrome Right Controls === */
+  .mt-chrome-right {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .mt-grid-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .mt-grid-btn.hovered {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+
+  .mt-grid-tooltip {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .mt-grid-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .mt-dropdown-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 28px;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .mt-dropdown-arrow.hovered {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+
+  /* === Layout Dropdown === */
+  .mt-dropdown {
+    position: absolute;
+    top: 48px;
+    right: 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    z-index: 30;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    min-width: 120px;
+  }
+
+  .mt-dropdown.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .mt-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: default;
+    transition: background 0.15s ease;
+  }
+
+  .mt-dropdown-item.hovered {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .mt-dropdown-item .mt-check {
+    margin-left: auto;
+  }
+
+  /* === Terminal Body === */
+  .mt-body {
+    background: var(--bg-deep);
+    position: relative;
+    min-height: 240px;
+    overflow: hidden;
+  }
+
+  /* === Tab Panels (Single View) === */
+  .mt-panel {
+    position: absolute;
+    inset: 0;
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.75;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .mt-panel.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* === Terminal Text Styles === */
+  .mt-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mt-prompt {
+    color: var(--accent-primary);
+    margin-right: 6px;
+  }
+
+  .mt-cmd {
+    color: var(--text-primary);
+  }
+
+  .mt-out {
+    color: var(--text-secondary);
+  }
+
+  .mt-out-success {
+    color: var(--success);
+  }
+
+  .mt-out-accent {
+    color: var(--accent-primary);
+  }
+
+  .mt-blink-cursor {
+    color: var(--accent-primary);
+    animation: mt-blink 1s step-end infinite;
+  }
+
+  @keyframes mt-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* === Grid View === */
+  .mt-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    gap: 1px;
+    background: var(--border-default);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+
+  .mt-grid.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mt-grid.layout-2x2 {
+    grid-template-columns: 50% 50%;
+    grid-template-rows: 50% 50%;
+  }
+
+  .mt-grid.layout-3x3 {
+    grid-template-columns: 33.333% 33.334% 33.333%;
+    grid-template-rows: 33.333% 33.334% 33.333%;
+  }
+
+  .mt-cell {
+    background: var(--bg-deep);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+    transition: opacity 0.35s ease;
+  }
+
+  .mt-cell-extra {
+    display: none;
+    opacity: 0;
+  }
+
+  .mt-grid.layout-3x3 .mt-cell-extra {
+    display: flex;
+  }
+
+  .mt-cell-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  .mt-cell-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .mt-cell-name {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mt-cell-body {
+    padding: 4px 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.5;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .mt-cell-body .mt-line {
+    font-size: inherit;
+  }
+
+  .mt-cell-body .mt-prompt {
+    margin-right: 3px;
+  }
+
+  /* === Live Activity Line (fade in) === */
+  .mt-live-line {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .mt-live-line.visible {
+    opacity: 1;
+  }
+
+  /* === Resize Divider === */
+  .mt-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--border-strong);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
+
+  .mt-divider.visible {
+    opacity: 1;
+  }
+
+  .mt-divider.active {
+    background: var(--accent-primary);
+  }
+
+  /* === Reduced Motion === */
+  @media (prefers-reduced-motion: reduce) {
+    .mt-cursor,
+    .mt-cursor-resize {
+      display: none !important;
+    }
+
+    .mt-panel {
+      display: none !important;
+    }
+
+    .mt-tabs {
+      display: none !important;
+    }
+
+    .mt-grid {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      position: relative !important;
+    }
+
+    .mt-grid.layout-2x2 {
+      grid-template-columns: 50% 50% !important;
+      grid-template-rows: 50% 50% !important;
+    }
+
+    .mt-body {
+      min-height: 240px;
+    }
+
+    .mt-cell {
+      opacity: 1 !important;
+    }
+
+    .mt-dropdown,
+    .mt-grid-tooltip {
+      display: none !important;
+    }
+  }
+
+  /* === Responsive === */
+  @media (max-width: 768px) {
+    .mt-cursor,
+    .mt-cursor-resize {
+      display: none !important;
+    }
+
+    .mt-demo {
+      max-width: 100%;
+    }
+
+    .mt-cell-body {
+      font-size: 7px;
+    }
+
+    .mt-cell-name {
+      font-size: 7px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mt-cell-body {
+      font-size: 6px;
+      padding: 2px 4px;
+    }
+
+    .mt-cell-bar {
+      padding: 2px 4px;
+    }
+
+    .mt-cell-name {
+      font-size: 6px;
+    }
+
+    .mt-body {
+      min-height: 200px;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const root = document.getElementById('mt-demo');
+    if (!root) return;
+
+    // --- Preflight: reduced motion check ---
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 768;
+    const isSmall = window.innerWidth < 640;
+
+    // --- DOM refs ---
+    const cursor = document.getElementById('mt-cursor') as HTMLElement;
+    const cursorRipple = document.getElementById('mt-cursor-ripple') as HTMLElement;
+    const cursorResize = document.getElementById('mt-cursor-resize') as HTMLElement;
+    const tabs = root.querySelectorAll('.mt-tab');
+    const panels = root.querySelectorAll('.mt-panel');
+    const gridBtn = document.getElementById('mt-grid-btn') as HTMLElement;
+    const gridTooltip = document.getElementById('mt-grid-tooltip') as HTMLElement;
+    const dropdownArrow = document.getElementById('mt-dropdown-arrow') as HTMLElement;
+    const dropdown = document.getElementById('mt-dropdown') as HTMLElement;
+    const dropdownItems = root.querySelectorAll('.mt-dropdown-item');
+    const grid = document.getElementById('mt-grid') as HTMLElement;
+    const cells = root.querySelectorAll('.mt-cell');
+    const extraCells = root.querySelectorAll('.mt-cell-extra');
+    const divider = document.getElementById('mt-divider') as HTMLElement;
+    const mtBody = document.getElementById('mt-body') as HTMLElement;
+    const chromeRight = root.querySelector('.mt-chrome-right') as HTMLElement;
+
+    // If reduced motion, show static 2x2 grid and exit
+    if (prefersReducedMotion) {
+      grid.classList.add('visible', 'layout-2x2');
+      grid.style.position = 'relative';
+      for (let i = 0; i < 4; i++) {
+        (cells[i] as HTMLElement).style.opacity = '1';
+      }
+      return;
+    }
+
+    // --- State ---
+    let animationRunning = false;
+    let animationTimer: ReturnType<typeof setTimeout> | null = null;
+    let rafId: number | null = null;
+    let currentAbort: AbortController | null = null;
+
+    // --- Helpers ---
+    function moveCursor(x: number, y: number, duration?: number) {
+      const d = duration ?? Math.max(400, Math.min(800, Math.hypot(
+        x - parseFloat(cursor.style.left || '200'),
+        y - parseFloat(cursor.style.top || '40')
+      ) * 1.2));
+      cursor.style.transition = `top ${d}ms cubic-bezier(0.25,0.1,0.25,1), left ${d}ms cubic-bezier(0.25,0.1,0.25,1)`;
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+      return d;
+    }
+
+    function moveResizeCursor(x: number, y: number, duration?: number) {
+      const d = duration ?? 500;
+      cursorResize.style.transition = `top ${d}ms cubic-bezier(0.25,0.1,0.25,1), left ${d}ms cubic-bezier(0.25,0.1,0.25,1), opacity 0.2s ease`;
+      cursorResize.style.left = x + 'px';
+      cursorResize.style.top = y + 'px';
+      return d;
+    }
+
+    function clickEffect() {
+      cursorRipple.classList.remove('active');
+      void cursorRipple.offsetWidth; // reflow
+      cursorRipple.classList.add('active');
+      setTimeout(() => cursorRipple.classList.remove('active'), 350);
+    }
+
+    function setActiveTab(name: string) {
+      tabs.forEach(t => {
+        if ((t as HTMLElement).dataset.tab === name) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+      panels.forEach(p => {
+        if ((p as HTMLElement).dataset.panel === name) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    }
+
+    function getTabPos(name: string): { x: number; y: number } {
+      const tab = root.querySelector(`.mt-tab[data-tab="${name}"]`) as HTMLElement;
+      if (!tab) return { x: 200, y: 20 };
+      const rootRect = root.getBoundingClientRect();
+      const tabRect = tab.getBoundingClientRect();
+      return {
+        x: tabRect.left - rootRect.left + tabRect.width / 2,
+        y: tabRect.top - rootRect.top + tabRect.height / 2
+      };
+    }
+
+    function getElPos(el: HTMLElement): { x: number; y: number } {
+      const rootRect = root.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      return {
+        x: elRect.left - rootRect.left + elRect.width / 2,
+        y: elRect.top - rootRect.top + elRect.height / 2
+      };
+    }
+
+    function wait(ms: number, signal?: AbortSignal): Promise<void> {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, ms);
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            clearTimeout(timer);
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }
+      });
+    }
+
+    function addLiveLine(cellIndex: number, text: string, colorClass: string) {
+      const cellBody = (cells[cellIndex] as HTMLElement).querySelector('.mt-cell-body');
+      if (!cellBody) return;
+      const line = document.createElement('div');
+      line.className = 'mt-line mt-live-line';
+      const span = document.createElement('span');
+      span.className = colorClass;
+      span.textContent = text;
+      line.appendChild(span);
+      cellBody.appendChild(line);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          line.classList.add('visible');
+        });
+      });
+    }
+
+    function removeLiveLines() {
+      root.querySelectorAll('.mt-live-line').forEach(el => el.remove());
+    }
+
+    function animateGridColumns(from: number, to: number, duration: number): Promise<void> {
+      return new Promise(resolve => {
+        const start = performance.now();
+        function frame(now: number) {
+          const elapsed = now - start;
+          const t = Math.min(elapsed / duration, 1);
+          const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+          const left = from + (to - from) * eased;
+          const right = 100 - left;
+          grid.style.gridTemplateColumns = `${left}% ${right}%`;
+          if (t < 1) {
+            rafId = requestAnimationFrame(frame);
+          } else {
+            resolve();
+          }
+        }
+        rafId = requestAnimationFrame(frame);
+      });
+    }
+
+    // --- Reset everything to initial state ---
+    function resetAll() {
+      // Cursor
+      cursor.style.display = isMobile ? 'none' : '';
+      cursor.style.left = '200px';
+      cursor.style.top = '40px';
+      cursor.style.opacity = '1';
+      cursor.style.transition = 'none';
+      cursorResize.style.opacity = '0';
+
+      // Tabs
+      setActiveTab('devserver');
+
+      // Grid
+      grid.classList.remove('visible', 'layout-2x2', 'layout-3x3');
+      grid.style.gridTemplateColumns = '';
+      grid.style.gridTemplateRows = '';
+      grid.style.opacity = '0';
+
+      // Panels
+      panels.forEach(p => {
+        (p as HTMLElement).style.display = '';
+      });
+
+      // Extra cells
+      extraCells.forEach(c => {
+        (c as HTMLElement).style.opacity = '0';
+        (c as HTMLElement).style.display = 'none';
+      });
+
+      // Cells normal
+      for (let i = 0; i < 4; i++) {
+        (cells[i] as HTMLElement).style.opacity = '1';
+      }
+
+      // Remove live lines
+      removeLiveLines();
+
+      // Tooltip, dropdown
+      gridTooltip.classList.remove('visible');
+      gridBtn.classList.remove('hovered');
+      dropdown.classList.remove('visible');
+      dropdownArrow.classList.remove('hovered');
+      dropdownItems.forEach(d => d.classList.remove('hovered'));
+      divider.classList.remove('visible', 'active');
+      divider.style.left = '50%';
+    }
+
+    // --- Main animation sequence ---
+    async function runAnimation(signal: AbortSignal) {
+      resetAll();
+
+      try {
+        // Scene 1: Tab View (0-3s) - Dev Server shown, cursor blinks
+        await wait(3000, signal);
+
+        // Scene 2: Switch to Tests tab (3-5s)
+        const testsPos = getTabPos('tests');
+        const moveDur = moveCursor(testsPos.x, testsPos.y);
+        await wait(moveDur + 100, signal);
+        clickEffect();
+        setActiveTab('tests');
+        await wait(1700, signal);
+
+        // Scene 3: Switch to Claude tab (5-7.5s)
+        const claudePos = getTabPos('claude');
+        const moveDur2 = moveCursor(claudePos.x, claudePos.y);
+        await wait(moveDur2 + 100, signal);
+        clickEffect();
+        setActiveTab('claude');
+        await wait(2000, signal);
+
+        // Scene 4: Hover grid icon (7.5-9s)
+        const gridBtnPos = getElPos(gridBtn);
+        const moveDur3 = moveCursor(gridBtnPos.x, gridBtnPos.y);
+        await wait(moveDur3 + 100, signal);
+        gridBtn.classList.add('hovered');
+        gridTooltip.classList.add('visible');
+        await wait(1300, signal);
+
+        // Scene 5: Click grid - split to 2x2 (9-11s)
+        clickEffect();
+        gridTooltip.classList.remove('visible');
+        gridBtn.classList.remove('hovered');
+
+        // Hide tab panels, show grid
+        panels.forEach(p => {
+          (p as HTMLElement).style.display = 'none';
+        });
+
+        grid.classList.add('layout-2x2');
+        grid.style.gridTemplateColumns = '50% 50%';
+        grid.style.gridTemplateRows = '50% 50%';
+
+        // Animate grid fade in
+        requestAnimationFrame(() => {
+          grid.classList.add('visible');
+        });
+        await wait(2000, signal);
+
+        // Scene 6: Live activity (11-14s)
+        await wait(400, signal);
+        addLiveLine(0, 'GET /api/users 200 12ms', 'mt-out');
+        await wait(600, signal);
+        addLiveLine(1, 'Test Suites: 4 passed', 'mt-out-success');
+        await wait(500, signal);
+        addLiveLine(3, '▷ Rewriting query #2...', 'mt-out-accent');
+        await wait(600, signal);
+        addLiveLine(0, 'GET /api/posts 200 8ms', 'mt-out');
+        await wait(400, signal);
+        addLiveLine(2, 'Bundle size: 142 kB', 'mt-out');
+        await wait(500, signal);
+
+        // Scene 7: Resize drag (14-17s)
+        // Show divider
+        divider.classList.add('visible');
+        await wait(200, signal);
+
+        // Switch to resize cursor
+        const bodyRect = mtBody.getBoundingClientRect();
+        const rootRect = root.getBoundingClientRect();
+        const dividerX = bodyRect.left - rootRect.left + bodyRect.width / 2;
+        const dividerY = bodyRect.top - rootRect.top + bodyRect.height / 2;
+
+        cursor.style.opacity = '0';
+        cursorResize.style.left = (dividerX - 12) + 'px';
+        cursorResize.style.top = (dividerY - 12) + 'px';
+        cursorResize.style.transition = 'none';
+        await wait(50, signal);
+        cursorResize.style.opacity = '1';
+        await wait(300, signal);
+
+        divider.classList.add('active');
+
+        // Animate columns from 50/50 to 62/38
+        await animateGridColumns(50, 62, 2000);
+
+        // Move divider visual to match
+        divider.style.left = '62%';
+
+        await wait(500, signal);
+
+        // Hide resize cursor, show normal cursor
+        cursorResize.style.opacity = '0';
+        divider.classList.remove('active');
+        await wait(200, signal);
+        cursor.style.opacity = '1';
+
+        // Scene 8: Grid dropdown (17-18.5s)
+        const arrowPos = getElPos(dropdownArrow);
+        const moveDur4 = moveCursor(arrowPos.x, arrowPos.y);
+        await wait(moveDur4 + 100, signal);
+        dropdownArrow.classList.add('hovered');
+        await wait(200, signal);
+        clickEffect();
+        dropdown.classList.add('visible');
+        await wait(600, signal);
+
+        // Hover over 3x3 item
+        const item3x3 = root.querySelector('.mt-dropdown-item[data-layout="3x3"]') as HTMLElement;
+        if (item3x3) {
+          const itemPos = getElPos(item3x3);
+          const moveDur5 = moveCursor(itemPos.x, itemPos.y, 350);
+          await wait(moveDur5 + 100, signal);
+          item3x3.classList.add('hovered');
+        }
+        await wait(400, signal);
+
+        // Scene 9: Expand to 3x3 (18.5-20.5s) - skip on small screens
+        if (!isSmall) {
+          clickEffect();
+          dropdown.classList.remove('visible');
+          dropdownArrow.classList.remove('hovered');
+          if (item3x3) item3x3.classList.remove('hovered');
+
+          // Reset columns to equal thirds
+          divider.classList.remove('visible');
+          divider.style.left = '33.333%';
+
+          // Transition from 2x2 to 3x3
+          grid.classList.remove('layout-2x2');
+          grid.style.gridTemplateColumns = '50% 50%';
+          grid.style.gridTemplateRows = '50% 50%';
+
+          // Show extra cells but keep them invisible
+          extraCells.forEach(c => {
+            (c as HTMLElement).style.display = 'flex';
+            (c as HTMLElement).style.opacity = '0';
+          });
+
+          await wait(50, signal);
+
+          // Animate to 3x3
+          grid.classList.add('layout-3x3');
+          grid.style.gridTemplateColumns = '';
+          grid.style.gridTemplateRows = '';
+
+          await wait(150, signal);
+
+          // Fade in extra cells staggered
+          for (let i = 0; i < extraCells.length; i++) {
+            await wait(120, signal);
+            (extraCells[i] as HTMLElement).style.opacity = '1';
+          }
+
+          await wait(1200, signal);
+        } else {
+          // Small screen: skip 3x3, just close dropdown
+          clickEffect();
+          dropdown.classList.remove('visible');
+          dropdownArrow.classList.remove('hovered');
+          if (item3x3) item3x3.classList.remove('hovered');
+          await wait(1500, signal);
+        }
+
+        // Scene 10: Reset (20.5-22s)
+        // Fade everything out
+        cursor.style.transition = 'opacity 0.6s ease';
+        cursor.style.opacity = '0';
+        grid.style.transition = 'opacity 0.8s ease';
+        grid.style.opacity = '0';
+
+        await wait(1200, signal);
+
+      } catch (e: any) {
+        if (e.name === 'AbortError') return;
+        throw e;
+      }
+    }
+
+    // --- Loop controller ---
+    async function startLoop() {
+      if (animationRunning) return;
+      animationRunning = true;
+
+      while (animationRunning) {
+        currentAbort = new AbortController();
+        try {
+          await runAnimation(currentAbort.signal);
+          if (!animationRunning) break;
+          // Small pause before restart
+          await wait(400, currentAbort.signal);
+        } catch (e: any) {
+          if (e.name === 'AbortError') break;
+        }
+      }
+    }
+
+    function stopLoop() {
+      animationRunning = false;
+      if (currentAbort) {
+        currentAbort.abort();
+        currentAbort = null;
+      }
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    }
+
+    // --- IntersectionObserver ---
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            startLoop();
+          } else {
+            stopLoop();
+            resetAll();
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(root);
+
+    // Cleanup on page navigation (Astro)
+    document.addEventListener('astro:before-swap', () => {
+      stopLoop();
+      observer.disconnect();
+    });
+  })();
+</script>

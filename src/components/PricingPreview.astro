@@ -1,27 +1,25 @@
 ---
 const free = [
-  'Up to 5 terminals',
-  'Tab view only',
-  '3 active projects',
+  'Up to 9 terminals',
+  'Up to 3 projects',
+  '60 min dictation / week',
+  'Remote access from LAN',
   'File editor',
   'Context preservation',
   'Session persistence',
   'Auto-updates',
-  'Local network remote (limited)',
 ];
 
 const pro = [
-  'Up to 9 terminals',
-  'Tab + Grid view (all layouts)',
+  'Unlimited terminals',
   'Unlimited projects',
-  'Voice dictation (Whisper + Web Speech)',
-  'Full remote access (Cloudflare Tunnels)',
+  'Unlimited dictation',
+  'Remote access from anywhere (URL)',
+  'Cloudflare Tunnels',
+  'PassKey authentication',
   'Task management panel',
   'GitHub issues panel',
   'Plugin marketplace',
-  'MCP browser control',
-  'PassKey authentication',
-  'Unlimited remote sessions',
   'Priority support',
 ];
 ---
@@ -32,7 +30,7 @@ const pro = [
       <span class="section-label">Pricing</span>
       <h2 class="section-title">Start Free. Upgrade When You're Ready.</h2>
       <p class="section-subtitle">
-        14-day Pro trial &mdash; no credit card required. Extend by sharing feedback.
+        14-day Pro trial &mdash; no credit card required.
       </p>
     </div>
 
@@ -44,7 +42,7 @@ const pro = [
             <span class="price-amount">$0</span>
             <span class="price-period">forever</span>
           </div>
-          <p class="pricing-desc">For individual developers exploring Claude Code.</p>
+          <p class="pricing-desc">Everything you need to get started.</p>
         </div>
         <ul class="pricing-features">
           {free.map((f) => (
@@ -61,11 +59,10 @@ const pro = [
         <div class="pricing-header">
           <h3>Pro</h3>
           <div class="pricing-price">
-            <span class="price-amount">$12</span>
+            <span class="price-amount">$6.99</span>
             <span class="price-period">/month</span>
           </div>
-          <p class="pricing-desc-alt">or $96/year (2 months free)</p>
-          <p class="pricing-desc">Full power for professional AI development.</p>
+          <p class="pricing-desc">Full power, no limits.</p>
         </div>
         <ul class="pricing-features">
           {pro.map((f) => (
@@ -78,15 +75,27 @@ const pro = [
       </div>
     </div>
 
-    <p class="pricing-note">
-      Trial extension: Submit structured feedback to get <strong>14 more days</strong> of Pro features. One extension per user.
-    </p>
+    <div class="unlock-banner">
+      <div class="unlock-inner">
+        <div class="unlock-content">
+          <span class="unlock-badge">Limited Time</span>
+          <h3 class="unlock-title">Unlock Forever</h3>
+          <p class="unlock-desc">One-time payment. Pro features for life. No subscriptions, no renewals.</p>
+        </div>
+        <div class="unlock-price-area">
+          <span class="unlock-price">$29.99</span>
+          <span class="unlock-once">one-time</span>
+        </div>
+        <a href="/pricing" class="btn btn-primary">Get Lifetime Access</a>
+      </div>
+    </div>
   </div>
 </section>
 
 <style>
   .pricing-section {
     background: var(--bg-deep);
+    scroll-margin-top: 120px;
   }
 
   .pricing-grid {
@@ -157,11 +166,6 @@ const pro = [
     font-size: 14px;
     color: var(--text-tertiary);
   }
-  .pricing-desc-alt {
-    font-size: 13px;
-    color: var(--accent-primary);
-    margin-bottom: var(--space-xs);
-  }
 
   .pricing-features {
     list-style: none;
@@ -185,20 +189,77 @@ const pro = [
     margin-top: 1px;
   }
 
-  .pricing-note {
-    text-align: center;
-    margin-top: var(--space-2xl);
-    font-size: 14px;
-    color: var(--text-tertiary);
+  /* Unlock Forever Banner */
+  .unlock-banner {
+    max-width: 800px;
+    margin: var(--space-xl) auto 0;
   }
-  .pricing-note strong {
-    color: var(--accent-primary);
-    font-weight: 500;
+
+  .unlock-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+  }
+
+  .unlock-content {
+    flex: 1;
+  }
+
+  .unlock-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--warning);
+    background: rgba(224, 164, 88, 0.12);
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .unlock-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .unlock-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .unlock-price-area {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .unlock-price {
+    display: block;
+    font-size: 36px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  .unlock-once {
+    display: block;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
   }
 
   @media (max-width: 640px) {
     .pricing-grid {
       grid-template-columns: 1fr;
+    }
+    .unlock-inner {
+      flex-direction: column;
+      text-align: center;
+      gap: var(--space-lg);
     }
   }
 </style>

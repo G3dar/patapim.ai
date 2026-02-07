@@ -1,0 +1,107 @@
+---
+const features = [
+  { icon: '&#x1F4DD;', title: 'Context Preservation', desc: 'CLAUDE.md, STRUCTURE.json &mdash; auto-updated context files in every project' },
+  { icon: '&#x1F4BE;', title: 'Session Persistence', desc: 'Terminal sessions saved per-project, survive restarts' },
+  { icon: '&#x2611;', title: 'Task Management', desc: 'Built-in task panel synced with tasks.json' },
+  { icon: '&#x1F4CB;', title: 'GitHub Integration', desc: 'Issues, labels, and filters directly in the sidebar' },
+  { icon: '&#x1F9E9;', title: 'Plugin System', desc: 'Official marketplace + community plugins' },
+  { icon: '&#x270F;', title: 'File Editor', desc: 'Multi-tab editor with syntax highlighting' },
+  { icon: '&#x1F4C1;', title: 'Project Management', desc: 'File explorer, workspace with multi-project switching' },
+  { icon: '&#x2328;', title: 'Keyboard-First', desc: 'Ctrl+1-9 for terminals, Ctrl+K for Claude' },
+  { icon: '&#x1F511;', title: 'PassKey Auth', desc: 'Touch ID, Windows Hello for remote sessions' },
+  { icon: '&#x2B06;', title: 'Auto-Updates', desc: 'One-click updates via Git, version check on startup' },
+];
+---
+
+<section class="section more-features" id="more-features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">And Much More</span>
+      <h2 class="section-title">Everything Else You Need</h2>
+    </div>
+
+    <div class="mf-grid">
+      {features.map((f) => (
+        <div class="mf-item">
+          <span class="mf-icon" set:html={f.icon} />
+          <span class="mf-title">{f.title}</span>
+          <span class="mf-sep">&mdash;</span>
+          <span class="mf-desc" set:html={f.desc} />
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .more-features {
+    background: var(--bg-deep);
+    scroll-margin-top: 120px;
+  }
+
+  .mf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .mf-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .mf-item:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+
+  .mf-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+  }
+
+  .mf-title {
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .mf-sep {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .mf-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    .mf-grid {
+      grid-template-columns: 1fr;
+    }
+    .mf-item:last-child {
+      border-bottom: none;
+    }
+    .mf-item:nth-last-child(2) {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .mf-item {
+      flex-wrap: wrap;
+    }
+    .mf-sep { display: none; }
+    .mf-desc {
+      flex-basis: 100%;
+      padding-left: 34px;
+      margin-top: -4px;
+    }
+  }
+</style>

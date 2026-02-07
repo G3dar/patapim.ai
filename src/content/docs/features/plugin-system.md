@@ -78,6 +78,6 @@ The official marketplace is maintained as a Git repository containing verified p
 - Reviewed for security and compatibility
 - Versioned using Git tags
 - Documented with installation and usage instructions
-- Open source and community-maintained
+- Community-maintained
 
 To submit a plugin to the official marketplace, see the [Plugin Submission Guidelines](/docs/guides/plugin-submission).

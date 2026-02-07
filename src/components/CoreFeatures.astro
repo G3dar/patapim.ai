@@ -1,0 +1,146 @@
+---
+import RemoteAccessDemo from './RemoteAccessDemo.astro';
+import MultiTerminalDemo from './MultiTerminalDemo.astro';
+import VoiceDictationDemo from './VoiceDictationDemo.astro';
+---
+
+<section class="section core-features">
+  <div class="container">
+
+    <!-- Pillar 1: Multi-Terminal -->
+    <div class="dive-block" id="multi-terminal">
+      <div class="dive-content">
+        <span class="section-label">Core Feature</span>
+        <h2 class="dive-title">Organized Multi-Terminal</h2>
+        <p class="dive-desc">
+          Persistent sessions that survive app restarts. Run up to 9 terminals simultaneously and
+          multitask across multiple AI agents &mdash; each in its own dedicated space.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> Tab view for focus, grid view for overview</li>
+          <li><span class="check">&#x2714;</span> Layouts: 2x1, 2x2, 3x2, 3x3</li>
+          <li><span class="check">&#x2714;</span> Persistent sessions per project</li>
+          <li><span class="check">&#x2714;</span> Resizable grid cells with drag handles</li>
+          <li><span class="check">&#x2714;</span> Ctrl+1-9 instant terminal switching</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <MultiTerminalDemo />
+      </div>
+    </div>
+
+    <!-- Pillar 2: Voice Dictation -->
+    <div class="dive-block reverse" id="voice-dictation">
+      <div class="dive-content">
+        <span class="section-label">Core Feature</span>
+        <h2 class="dive-title">Built-In Voice Dictation</h2>
+        <p class="dive-desc">
+          Talk to each terminal instead of typing. Whisper API for accurate transcription, with
+          Web Speech API as a free fallback. Persistent mode lets you keep talking.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> Whisper API transcription ($0.006/min)</li>
+          <li><span class="check">&#x2714;</span> Free fallback: browser Web Speech API</li>
+          <li><span class="check">&#x2714;</span> Per-terminal dictation</li>
+          <li><span class="check">&#x2714;</span> Persistent dictation mode</li>
+          <li><span class="check">&#x2714;</span> Works with remote access sessions</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <VoiceDictationDemo />
+      </div>
+    </div>
+
+    <!-- Pillar 3: Remote Access -->
+    <div class="dive-block" id="remote-access">
+      <div class="dive-content">
+        <span class="section-label">Core Feature</span>
+        <h2 class="dive-title">Access From Any Device</h2>
+        <p class="dive-desc">
+          Control your PATAPIM instance from your phone, tablet, or another computer.
+          Your desktop executes everything &mdash; you just control it remotely via URL.
+        </p>
+        <ul class="dive-list">
+          <li><span class="check">&#x2714;</span> QR code quick connect from mobile</li>
+          <li><span class="check">&#x2714;</span> Cloudflare Tunnels &mdash; no port forwarding</li>
+          <li><span class="check">&#x2714;</span> PassKey/biometric authentication</li>
+          <li><span class="check">&#x2714;</span> Responsive mobile UI</li>
+          <li><span class="check">&#x2714;</span> Local network + cloud modes</li>
+          <li><span class="check">&#x2714;</span> Unlimited concurrent sessions (Pro)</li>
+        </ul>
+      </div>
+      <div class="dive-visual">
+        <RemoteAccessDemo />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .core-features {
+    background: var(--bg-deep);
+  }
+
+  .dive-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4xl);
+    align-items: center;
+    margin-bottom: var(--space-5xl);
+    scroll-margin-top: 120px;
+  }
+  .dive-block:last-child {
+    margin-bottom: 0;
+  }
+  .dive-block.reverse {
+    direction: rtl;
+  }
+  .dive-block.reverse > * {
+    direction: ltr;
+  }
+
+  .dive-title {
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 700;
+    margin-bottom: var(--space-lg);
+    line-height: 1.2;
+  }
+
+  .dive-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dive-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .dive-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .dive-list .check {
+    color: var(--success);
+    font-size: 14px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .dive-block, .dive-block.reverse {
+      grid-template-columns: 1fr;
+      direction: ltr;
+    }
+    .dive-visual {
+      order: -1;
+    }
+  }
+</style>

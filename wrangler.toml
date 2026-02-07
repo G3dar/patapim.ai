@@ -1,17 +1,35 @@
 name = "patapim-ai"
+main = "dist/_worker.js"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "d5e2374c14ca5e3c166e84f47265f5cd"
+
+routes = [
+  { pattern = "patapim.ai/*", zone_name = "patapim.ai" },
+  { pattern = "www.patapim.ai/*", zone_name = "patapim.ai" }
+]
+
+[assets]
+directory = "./dist"
 
 [vars]
 SITE_URL = "https://patapim.ai"
 
-# Uncomment and fill IDs after creating KV namespaces:
-#   wrangler kv namespace create LICENSES
-#   wrangler kv namespace create FEEDBACK
-#
-# [[kv_namespaces]]
-# binding = "LICENSES"
-# id = "YOUR_LICENSES_KV_ID"
-#
-# [[kv_namespaces]]
-# binding = "FEEDBACK"
-# id = "YOUR_FEEDBACK_KV_ID"
+[[kv_namespaces]]
+binding = "LICENSES"
+id = "241dd65cb1a94944b3b3ea870d28f372"
+
+[[kv_namespaces]]
+binding = "FEEDBACK"
+id = "5a9c98b6432343bfbee7404add18c8f3"
+
+# Auth sessions KV — create with: wrangler kv namespace create SESSIONS
+# Then fill in the id below
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "99d2f45febe345dd96dc07e2edd631b0"
+
+# Google OAuth secrets — set with:
+#   wrangler secret put GOOGLE_CLIENT_ID
+#   wrangler secret put GOOGLE_CLIENT_SECRET
+# For local dev, create .dev.vars with GOOGLE_CLIENT_ID=... and GOOGLE_CLIENT_SECRET=...

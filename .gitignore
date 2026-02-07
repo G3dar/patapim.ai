@@ -10,8 +10,12 @@ dist/
 .env.local
 .env.production
 
+# Stripe keys (NEVER commit)
+.stripe-keys*.txt
+
 # Cloudflare
 .wrangler/
+.dev.vars
 
 # OS
 .DS_Store

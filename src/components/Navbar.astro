@@ -1,4 +1,8 @@
 ---
+interface Props {
+  showSectionNav?: boolean;
+}
+const { showSectionNav = false } = Astro.props;
 const currentPath = Astro.url.pathname;
 ---
 
@@ -10,13 +14,15 @@ const currentPath = Astro.url.pathname;
     </a>
 
     <div class="navbar-links">
-      <a href="/#features" class="nav-link">Features</a>
+      <a href="/#multi-terminal" class="nav-link">Features</a>
       <a href="/docs/getting-started/installation" class="nav-link">Docs</a>
       <a href="/pricing" class="nav-link">Pricing</a>
       <a href="https://github.com/G3dar/patapim" class="nav-link" target="_blank" rel="noopener">GitHub</a>
     </div>
 
     <div class="navbar-actions">
+      <a href="/go" class="nav-auth-link" id="nav-remote-link" style="display:none;">Remote Terminals</a>
+      <a href="/api/auth/google" class="nav-signin" id="nav-signin" style="display:none;">Sign In</a>
       <a href="/download" class="btn btn-primary btn-nav">Download</a>
     </div>
 
@@ -28,12 +34,26 @@ const currentPath = Astro.url.pathname;
   </div>
 
   <div class="mobile-menu" id="mobile-menu">
-    <a href="/#features">Features</a>
+    <a href="/#multi-terminal">Features</a>
     <a href="/docs/getting-started/installation">Docs</a>
     <a href="/pricing">Pricing</a>
     <a href="https://github.com/G3dar/patapim" target="_blank" rel="noopener">GitHub</a>
+    <a href="/go" class="mobile-auth-link" id="mobile-remote-link" style="display:none;">Remote Terminals</a>
+    <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">Sign In</a>
     <a href="/download" class="btn btn-primary" style="margin-top: 8px; justify-content: center;">Download</a>
   </div>
+
+  {showSectionNav && (
+    <div class="section-nav" id="section-nav">
+      <div class="section-nav-inner container">
+        <a href="#multi-terminal" class="section-pill" data-section="multi-terminal">Multi-Terminal</a>
+        <a href="#voice-dictation" class="section-pill" data-section="voice-dictation">Voice</a>
+        <a href="#remote-access" class="section-pill" data-section="remote-access">Remote Access</a>
+        <a href="#more-features" class="section-pill" data-section="more-features">More</a>
+        <a href="#pricing" class="section-pill" data-section="pricing">Pricing</a>
+      </div>
+    </div>
+  )}
 </nav>
 
 <style>
@@ -137,19 +157,187 @@ const currentPath = Astro.url.pathname;
   .navbar-actions {
     display: flex;
     align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .nav-auth-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+  }
+  .nav-auth-link:hover {
+    color: var(--accent-secondary);
+  }
+
+  .nav-signin {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+  }
+  .nav-signin:hover {
+    color: var(--text-primary);
+  }
+
+  .mobile-auth-link {
+    color: var(--accent-primary) !important;
+    font-weight: 500;
+  }
+
+  .mobile-signin {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Section Nav Strip */
+  .section-nav {
+    background: rgba(15, 15, 16, 0.9);
+    border-top: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .section-nav::-webkit-scrollbar { display: none; }
+
+  .section-nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    white-space: nowrap;
+  }
+
+  .section-pill {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    padding: 5px 14px;
+    border-radius: 100px;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+  .section-pill:hover {
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+  }
+  .section-pill.active {
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
   }
 
   @media (max-width: 768px) {
     .navbar-links, .navbar-actions { display: none; }
     .mobile-toggle { display: flex; }
     .mobile-menu.open { display: flex; }
+
+    .section-nav-inner {
+      padding: 0 var(--space-lg);
+    }
   }
 </style>
 
 <script>
+  // Mobile menu toggle
   const toggle = document.getElementById('mobile-toggle');
   const menu = document.getElementById('mobile-menu');
   toggle?.addEventListener('click', () => {
     menu?.classList.toggle('open');
   });
+
+  // Auth state check
+  (async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      const data = await res.json();
+      if (data.authenticated) {
+        document.getElementById('nav-remote-link')?.style.setProperty('display', '');
+        document.getElementById('mobile-remote-link')?.style.setProperty('display', '');
+      } else {
+        document.getElementById('nav-signin')?.style.setProperty('display', '');
+        document.getElementById('mobile-signin')?.style.setProperty('display', '');
+      }
+    } catch {
+      document.getElementById('nav-signin')?.style.setProperty('display', '');
+      document.getElementById('mobile-signin')?.style.setProperty('display', '');
+    }
+  })();
+
+  // Section nav IntersectionObserver
+  const sectionNav = document.getElementById('section-nav');
+  if (sectionNav) {
+    const pills = sectionNav.querySelectorAll('.section-pill');
+    const sectionIds = Array.from(pills).map(p => (p as HTMLAnchorElement).dataset.section!);
+    const sections = sectionIds.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+
+    let currentActive = '';
+
+    const observer = new IntersectionObserver((entries) => {
+      // Find the topmost visible section
+      let topSection = '';
+      let topY = Infinity;
+      sections.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        // Consider a section "in view" if its top is within the viewport
+        if (rect.top < window.innerHeight * 0.5 && rect.bottom > 120) {
+          if (rect.top < topY) {
+            topY = rect.top;
+            topSection = section.id;
+          }
+        }
+      });
+
+      if (topSection && topSection !== currentActive) {
+        currentActive = topSection;
+        pills.forEach(pill => {
+          const p = pill as HTMLAnchorElement;
+          if (p.dataset.section === topSection) {
+            p.classList.add('active');
+          } else {
+            p.classList.remove('active');
+          }
+        });
+      }
+    }, {
+      threshold: 0,
+      rootMargin: '-120px 0px -50% 0px'
+    });
+
+    sections.forEach(section => observer.observe(section));
+
+    // Also update on scroll for more accurate tracking
+    let scrollTick = false;
+    window.addEventListener('scroll', () => {
+      if (!scrollTick) {
+        scrollTick = true;
+        requestAnimationFrame(() => {
+          let topSection = '';
+          let topY = Infinity;
+          sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top < window.innerHeight * 0.5 && rect.bottom > 120) {
+              if (rect.top < topY) {
+                topY = rect.top;
+                topSection = section.id;
+              }
+            }
+          });
+          if (topSection && topSection !== currentActive) {
+            currentActive = topSection;
+            pills.forEach(pill => {
+              const p = pill as HTMLAnchorElement;
+              if (p.dataset.section === topSection) {
+                p.classList.add('active');
+              } else {
+                p.classList.remove('active');
+              }
+            });
+          }
+          scrollTick = false;
+        });
+      }
+    }, { passive: true });
+  }
 </script>

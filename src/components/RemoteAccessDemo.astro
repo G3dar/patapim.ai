@@ -1,0 +1,1152 @@
+<div class="ra-demo">
+  <!-- Animated Cursor -->
+  <div class="ra-cursor" id="raCursor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#222" stroke-width="1.5">
+      <path d="M5 3l14 9-6.5 1.5L9 20z"/>
+    </svg>
+    <div class="ra-cursor-ripple"></div>
+  </div>
+
+  <!-- Desktop Terminal -->
+  <div class="ra-terminal" id="raTerminal">
+    <div class="ra-chrome">
+      <div class="ra-dots">
+        <span class="ra-dot ra-dot-red"></span>
+        <span class="ra-dot ra-dot-yellow"></span>
+        <span class="ra-dot ra-dot-green"></span>
+      </div>
+      <div class="ra-chrome-title">PATAPIM &mdash; Dev Session</div>
+    </div>
+    <div class="ra-workspace">
+      <!-- Sidebar -->
+      <div class="ra-sidebar">
+        <div class="ra-sidebar-icon" data-icon="home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="ra-sidebar-icon ra-sidebar-active" data-icon="terminal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </div>
+        <div class="ra-sidebar-icon" data-icon="gear" id="raGearIcon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="ra-sidebar-icon" data-icon="info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+      </div>
+
+      <!-- Terminal Body -->
+      <div class="ra-body">
+        <div class="ra-line"><span class="ra-prompt">~/project $</span> <span class="ra-cmd">claude</span></div>
+        <div class="ra-line ra-output"><span class="ra-accent-text">&#x276F;</span> Claude Code initialized in ~/project</div>
+        <div class="ra-line ra-output"><span class="ra-success-text">&#x2714;</span> Found CLAUDE.md, STRUCTURE.json</div>
+        <div class="ra-line ra-output"><span class="ra-success-text">&#x2714;</span> Context restored from session #4</div>
+        <div class="ra-line"><span class="ra-prompt">~/project $</span> <span class="ra-blink-cursor">|</span></div>
+      </div>
+
+      <!-- Settings Panel (slides in from right) -->
+      <div class="ra-settings" id="raSettings">
+        <div class="ra-settings-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Remote Access</span>
+        </div>
+        <div class="ra-toggle-row">
+          <span class="ra-toggle-label">Enable Remote Access</span>
+          <div class="ra-toggle" id="raToggle">
+            <div class="ra-toggle-thumb"></div>
+          </div>
+        </div>
+        <div class="ra-qr-section" id="raQrSection">
+          <div class="ra-qr-url">192.168.1.100:3000</div>
+          <div class="ra-qr-code" id="raQrCode">
+            <svg viewBox="0 0 21 21" width="110" height="110" shape-rendering="crispEdges">
+              <!-- Position detection pattern: top-left -->
+              <rect x="0" y="0" width="7" height="7" fill="#1a1a1c"/>
+              <rect x="1" y="1" width="5" height="5" fill="#e8e6e3"/>
+              <rect x="2" y="2" width="3" height="3" fill="#1a1a1c"/>
+              <!-- Position detection pattern: top-right -->
+              <rect x="14" y="0" width="7" height="7" fill="#1a1a1c"/>
+              <rect x="15" y="1" width="5" height="5" fill="#e8e6e3"/>
+              <rect x="16" y="2" width="3" height="3" fill="#1a1a1c"/>
+              <!-- Position detection pattern: bottom-left -->
+              <rect x="0" y="14" width="7" height="7" fill="#1a1a1c"/>
+              <rect x="1" y="15" width="5" height="5" fill="#e8e6e3"/>
+              <rect x="2" y="16" width="3" height="3" fill="#1a1a1c"/>
+              <!-- Timing patterns -->
+              <rect x="8" y="0" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="0" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="0" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="0" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="0" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="0" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <!-- Data modules (decorative) -->
+              <rect x="8" y="2" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="3" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="2" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="4" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="3" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="5" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="5" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="5" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="1" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="1" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="15" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="17" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="15" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="17" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="19" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="13" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="15" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="15" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="17" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="17" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="8" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="10" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="12" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="15" y="15" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="17" y="15" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="19" y="15" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="14" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="16" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="15" y="17" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="17" y="17" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="19" y="17" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="18" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="15" y="19" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="17" y="19" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="14" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="16" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="18" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="20" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="19" y="19" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="19" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="19" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="9" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="11" y="20" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="2" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="4" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="6" y="8" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="3" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="5" y="9" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="2" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="4" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="6" y="10" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="3" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="5" y="11" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="2" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="4" y="12" width="1" height="1" fill="#1a1a1c"/>
+              <rect x="6" y="12" width="1" height="1" fill="#1a1a1c"/>
+            </svg>
+          </div>
+          <div class="ra-qr-label">Scan with your phone</div>
+          <div class="ra-qr-pin">PIN: <span class="ra-pin-dots">&#x25CF;&#x25CF;&#x25CF;&#x25CF;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone Mock -->
+  <div class="ra-phone" id="raPhone">
+    <div class="ra-phone-screen">
+      <!-- Scene: Camera Viewfinder -->
+      <div class="ra-phone-scene ra-scene-viewfinder" id="raSceneViewfinder">
+        <div class="ra-viewfinder">
+          <div class="ra-vf-corner ra-vf-tl"></div>
+          <div class="ra-vf-corner ra-vf-tr"></div>
+          <div class="ra-vf-corner ra-vf-bl"></div>
+          <div class="ra-vf-corner ra-vf-br"></div>
+          <div class="ra-scan-line" id="raScanLine"></div>
+        </div>
+        <div class="ra-vf-label">Point camera at QR code</div>
+      </div>
+
+      <!-- Scene: PIN Entry -->
+      <div class="ra-phone-scene ra-scene-pin" id="raScenePin">
+        <div class="ra-pin-title">Enter PIN</div>
+        <div class="ra-pin-dots-entry">
+          <span class="ra-pin-dot" id="raPinDot0">&#x25CB;</span>
+          <span class="ra-pin-dot" id="raPinDot1">&#x25CB;</span>
+          <span class="ra-pin-dot" id="raPinDot2">&#x25CB;</span>
+          <span class="ra-pin-dot" id="raPinDot3">&#x25CB;</span>
+        </div>
+      </div>
+
+      <!-- Scene: Authenticated -->
+      <div class="ra-phone-scene ra-scene-auth" id="raSceneAuth">
+        <div class="ra-auth-check">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="ra-auth-text">Authenticated</div>
+      </div>
+
+      <!-- Scene: Remote Terminal -->
+      <div class="ra-phone-scene ra-scene-remote" id="raSceneRemote">
+        <div class="ra-remote-header">
+          <span class="ra-remote-title">&#x276F;_ PATAPIM Remote</span>
+        </div>
+        <div class="ra-remote-body">
+          <div class="ra-remote-line" id="raRemoteLine0"><span class="ra-remote-prompt">$</span> claude "fix the auth bug"</div>
+          <div class="ra-remote-line ra-remote-accent" id="raRemoteLine1">&#x25B7; Analyzing auth module...</div>
+          <div class="ra-remote-line ra-remote-success" id="raRemoteLine2">&#x2714; Fixed: token refresh logic updated</div>
+          <div class="ra-remote-line" id="raRemoteLine3"><span class="ra-remote-prompt">$</span> <span class="ra-blink-cursor">|</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── Container ── */
+  .ra-demo {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow: hidden;
+    aspect-ratio: 4 / 3.2;
+  }
+
+  /* ── Animated Cursor ── */
+  .ra-cursor {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 50;
+    pointer-events: none;
+    transition: top cubic-bezier(0.25, 0.1, 0.25, 1), left cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition-duration: 600ms;
+    will-change: transform, opacity;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    opacity: 0;
+  }
+
+  .ra-cursor.visible {
+    opacity: 1;
+  }
+
+  .ra-cursor-ripple {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(212, 165, 116, 0.4);
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ra-cursor.clicking .ra-cursor-ripple {
+    animation: ra-ripple 300ms ease-out forwards;
+  }
+
+  @keyframes ra-ripple {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ── Desktop Terminal ── */
+  .ra-terminal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    will-change: opacity;
+  }
+
+  .ra-chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .ra-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .ra-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .ra-dot-red { background: #ff5f57; }
+  .ra-dot-yellow { background: #febc2e; }
+  .ra-dot-green { background: #28c840; }
+
+  .ra-chrome-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    flex: 1;
+    text-align: center;
+  }
+
+  .ra-workspace {
+    display: flex;
+    height: calc(100% - 33px);
+    position: relative;
+  }
+
+  /* ── Sidebar ── */
+  .ra-sidebar {
+    width: 36px;
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .ra-sidebar-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: default;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .ra-sidebar-icon.ra-sidebar-active {
+    color: var(--text-primary);
+    background: var(--accent-subtle);
+  }
+
+  .ra-sidebar-icon.ra-sidebar-highlight {
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+  }
+
+  /* ── Terminal Body ── */
+  .ra-body {
+    flex: 1;
+    padding: 10px 12px;
+    background: var(--bg-deep);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.7;
+    overflow: hidden;
+  }
+
+  .ra-line {
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+
+  .ra-output {
+    color: var(--text-secondary);
+  }
+
+  .ra-prompt {
+    color: var(--accent-primary);
+  }
+
+  .ra-cmd {
+    color: var(--text-primary);
+  }
+
+  .ra-accent-text {
+    color: var(--accent-primary);
+  }
+
+  .ra-success-text {
+    color: var(--success);
+  }
+
+  .ra-blink-cursor {
+    animation: ra-blink 1s step-end infinite;
+    color: var(--accent-primary);
+  }
+
+  @keyframes ra-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* ── Settings Panel ── */
+  .ra-settings {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 58%;
+    height: 100%;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-strong);
+    padding: 12px;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    will-change: transform;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 5;
+  }
+
+  .ra-settings.open {
+    transform: translateX(0);
+  }
+
+  .ra-settings-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  /* ── Toggle ── */
+  .ra-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ra-toggle-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+  }
+
+  .ra-toggle {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    position: relative;
+    cursor: default;
+    transition: background 0.3s, border-color 0.3s;
+    flex-shrink: 0;
+  }
+
+  .ra-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.3s;
+  }
+
+  .ra-toggle.active {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  .ra-toggle.active .ra-toggle-thumb {
+    transform: translateX(16px);
+    background: #fff;
+  }
+
+  /* ── QR Section ── */
+  .ra-qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    will-change: opacity, transform;
+  }
+
+  .ra-qr-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ra-qr-url {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--accent-primary);
+    background: var(--bg-deep);
+    padding: 3px 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+  }
+
+  .ra-qr-code {
+    padding: 6px;
+    background: var(--text-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ra-qr-label {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ra-qr-pin {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+  }
+
+  .ra-pin-dots {
+    letter-spacing: 2px;
+    color: var(--accent-primary);
+  }
+
+  /* ── Phone Mock ── */
+  .ra-phone {
+    position: absolute;
+    bottom: -12px;
+    right: -16px;
+    width: 150px;
+    height: 260px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-strong);
+    border-radius: 32px;
+    padding: 12px;
+    z-index: 10;
+    transform: translateY(120%);
+    transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    will-change: transform;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .ra-phone.visible {
+    transform: translateY(0);
+  }
+
+  .ra-phone-screen {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-deep);
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Phone Scenes ── */
+  .ra-phone-scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    will-change: opacity;
+  }
+
+  .ra-phone-scene.active {
+    opacity: 1;
+  }
+
+  /* Viewfinder */
+  .ra-viewfinder {
+    width: 80px;
+    height: 80px;
+    position: relative;
+  }
+
+  .ra-vf-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--text-primary);
+    border-style: solid;
+    border-width: 0;
+    transition: border-color 0.3s ease;
+  }
+
+  .ra-vf-corner.scanned {
+    border-color: var(--success);
+  }
+
+  .ra-vf-tl { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 4px; }
+  .ra-vf-tr { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 4px; }
+  .ra-vf-bl { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 4px; }
+  .ra-vf-br { bottom: 0; right: 0; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 4px; }
+
+  .ra-scan-line {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    border-radius: 1px;
+    top: 10%;
+    opacity: 0;
+    will-change: transform;
+  }
+
+  .ra-scan-line.scanning {
+    opacity: 0.8;
+    animation: ra-scan 1.5s ease-in-out infinite;
+  }
+
+  @keyframes ra-scan {
+    0% { top: 10%; }
+    50% { top: 85%; }
+    100% { top: 10%; }
+  }
+
+  .ra-vf-label {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* Viewfinder flash effect */
+  .ra-viewfinder.flash::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    background: rgba(124, 179, 130, 0.25);
+    border-radius: 6px;
+    animation: ra-flash 400ms ease-out forwards;
+  }
+
+  @keyframes ra-flash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* PIN Entry */
+  .ra-pin-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .ra-pin-dots-entry {
+    display: flex;
+    gap: 12px;
+  }
+
+  .ra-pin-dot {
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+    line-height: 1;
+  }
+
+  .ra-pin-dot.filled {
+    color: var(--accent-primary);
+  }
+
+  /* Authenticated */
+  .ra-auth-check {
+    margin-bottom: 8px;
+    animation: ra-auth-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform: scale(0);
+  }
+
+  .ra-scene-auth.active .ra-auth-check {
+    transform: scale(1);
+  }
+
+  @keyframes ra-auth-pop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  .ra-auth-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--success);
+  }
+
+  /* Remote Terminal */
+  .ra-scene-remote {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .ra-remote-header {
+    padding: 10px 10px 6px;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .ra-remote-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .ra-remote-body {
+    padding: 8px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ra-remote-line {
+    font-family: var(--font-mono);
+    font-size: 7.5px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    will-change: opacity, transform;
+  }
+
+  .ra-remote-line.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ra-remote-prompt {
+    color: var(--accent-primary);
+  }
+
+  .ra-remote-accent {
+    color: var(--accent-primary);
+  }
+
+  .ra-remote-success {
+    color: var(--success);
+  }
+
+  /* ── Reduced Motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .ra-cursor { display: none !important; }
+
+    .ra-settings {
+      transform: translateX(0) !important;
+      transition: none !important;
+    }
+
+    .ra-settings.open {
+      transform: translateX(0) !important;
+    }
+
+    .ra-qr-section {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+
+    .ra-toggle {
+      background: var(--success) !important;
+      border-color: var(--success) !important;
+      transition: none !important;
+    }
+
+    .ra-toggle-thumb {
+      transform: translateX(16px) !important;
+      background: #fff !important;
+      transition: none !important;
+    }
+
+    .ra-phone {
+      transform: translateY(0) !important;
+      transition: none !important;
+    }
+
+    .ra-phone-scene { transition: none !important; }
+
+    .ra-scene-remote { opacity: 1 !important; }
+    .ra-scene-viewfinder,
+    .ra-scene-pin,
+    .ra-scene-auth { opacity: 0 !important; }
+
+    .ra-remote-line {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+
+    .ra-scan-line { display: none !important; }
+    .ra-blink-cursor { animation: none !important; opacity: 1 !important; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .ra-cursor {
+      display: none !important;
+    }
+
+    .ra-demo {
+      max-width: 340px;
+    }
+
+    .ra-phone {
+      width: 120px;
+      height: 210px;
+      right: -10px;
+      bottom: -8px;
+      padding: 8px;
+      border-radius: 24px;
+    }
+
+    .ra-phone-screen {
+      border-radius: 17px;
+    }
+
+    .ra-body {
+      font-size: 8px;
+      padding: 6px 8px;
+    }
+
+    .ra-chrome-title {
+      font-size: 8px;
+    }
+
+    .ra-settings {
+      padding: 8px;
+      gap: 8px;
+    }
+
+    .ra-settings-header {
+      font-size: 9px;
+    }
+
+    .ra-toggle-label {
+      font-size: 7px;
+    }
+
+    .ra-qr-code svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .ra-qr-url {
+      font-size: 6.5px;
+    }
+
+    .ra-qr-label {
+      font-size: 6px;
+    }
+
+    .ra-qr-pin {
+      font-size: 7px;
+    }
+  }
+</style>
+
+<script>
+  function initRemoteAccessDemo() {
+    const demo = document.querySelector('.ra-demo') as HTMLElement | null;
+    if (!demo) return;
+
+    const cursor = demo.querySelector('#raCursor') as HTMLElement;
+    const settings = demo.querySelector('#raSettings') as HTMLElement;
+    const toggle = demo.querySelector('#raToggle') as HTMLElement;
+    const qrSection = demo.querySelector('#raQrSection') as HTMLElement;
+    const gearIcon = demo.querySelector('#raGearIcon') as HTMLElement;
+    const phone = demo.querySelector('#raPhone') as HTMLElement;
+    const scanLine = demo.querySelector('#raScanLine') as HTMLElement;
+    const viewfinder = demo.querySelector('.ra-viewfinder') as HTMLElement;
+    const sceneViewfinder = demo.querySelector('#raSceneViewfinder') as HTMLElement;
+    const scenePin = demo.querySelector('#raScenePin') as HTMLElement;
+    const sceneAuth = demo.querySelector('#raSceneAuth') as HTMLElement;
+    const sceneRemote = demo.querySelector('#raSceneRemote') as HTMLElement;
+    const vfCorners = demo.querySelectorAll('.ra-vf-corner');
+    const pinDots = [
+      demo.querySelector('#raPinDot0') as HTMLElement,
+      demo.querySelector('#raPinDot1') as HTMLElement,
+      demo.querySelector('#raPinDot2') as HTMLElement,
+      demo.querySelector('#raPinDot3') as HTMLElement,
+    ];
+    const remoteLines = [
+      demo.querySelector('#raRemoteLine0') as HTMLElement,
+      demo.querySelector('#raRemoteLine1') as HTMLElement,
+      demo.querySelector('#raRemoteLine2') as HTMLElement,
+      demo.querySelector('#raRemoteLine3') as HTMLElement,
+    ];
+
+    // Check for reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      // Show final state statically
+      settings.classList.add('open');
+      toggle.classList.add('active');
+      qrSection.classList.add('visible');
+      phone.classList.add('visible');
+      sceneRemote.classList.add('active');
+      remoteLines.forEach((line) => line.classList.add('show'));
+      return;
+    }
+
+    let animationId: number | null = null;
+    let running = false;
+    let cancelRequested = false;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise((resolve, reject) => {
+        const id = window.setTimeout(() => {
+          if (cancelRequested) { reject(new Error('cancelled')); }
+          else { resolve(); }
+        }, ms);
+        // store for potential cleanup
+        animationId = id as unknown as number;
+      });
+    }
+
+    function moveCursor(targetEl: HTMLElement, offsetX = 0, offsetY = 0): Promise<void> {
+      const demoRect = demo!.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const x = targetRect.left - demoRect.left + targetRect.width / 2 + offsetX;
+      const y = targetRect.top - demoRect.top + targetRect.height / 2 + offsetY;
+
+      // Calculate distance for duration
+      const currentLeft = parseFloat(cursor.style.left) || demoRect.width / 2;
+      const currentTop = parseFloat(cursor.style.top) || demoRect.height / 2;
+      const dist = Math.sqrt((x - currentLeft) ** 2 + (y - currentTop) ** 2);
+      const duration = Math.min(800, Math.max(400, dist * 2.5));
+
+      cursor.style.transitionDuration = `${duration}ms`;
+      cursor.style.left = `${x}px`;
+      cursor.style.top = `${y}px`;
+
+      return wait(duration + 50);
+    }
+
+    function clickEffect(): Promise<void> {
+      cursor.classList.add('clicking');
+      return wait(300).then(() => {
+        cursor.classList.remove('clicking');
+      });
+    }
+
+    function showPhoneScene(scene: HTMLElement) {
+      [sceneViewfinder, scenePin, sceneAuth, sceneRemote].forEach((s) => {
+        s.classList.remove('active');
+      });
+      scene.classList.add('active');
+    }
+
+    function resetAll() {
+      // Cursor
+      cursor.classList.remove('visible', 'clicking');
+      cursor.style.left = '50%';
+      cursor.style.top = '50%';
+      cursor.style.transitionDuration = '0ms';
+
+      // Settings
+      settings.classList.remove('open');
+      toggle.classList.remove('active');
+      qrSection.classList.remove('visible');
+
+      // Gear icon
+      gearIcon.classList.remove('ra-sidebar-highlight');
+
+      // Phone
+      phone.classList.remove('visible');
+      scanLine.classList.remove('scanning');
+      viewfinder.classList.remove('flash');
+      vfCorners.forEach((c) => c.classList.remove('scanned'));
+
+      // Phone scenes
+      [sceneViewfinder, scenePin, sceneAuth, sceneRemote].forEach((s) => {
+        s.classList.remove('active');
+      });
+
+      // PIN dots
+      pinDots.forEach((d) => {
+        d.classList.remove('filled');
+        d.textContent = '\u25CB';
+      });
+
+      // Remote lines
+      remoteLines.forEach((l) => l.classList.remove('show'));
+    }
+
+    async function runSequence() {
+      if (cancelRequested) return;
+
+      try {
+        resetAll();
+
+        // ── Scene 1 (0-2.5s): Terminal idle with blinking cursor ──
+        await wait(2500);
+
+        // ── Scene 2 (2.5-3.5s): Cursor moves to gear icon, clicks ──
+        cursor.classList.add('visible');
+        await wait(200);
+        await moveCursor(gearIcon);
+        await clickEffect();
+        gearIcon.classList.add('ra-sidebar-highlight');
+
+        // ── Scene 3 (3.5-5.0s): Settings panel slides in ──
+        settings.classList.add('open');
+        await wait(1500);
+
+        // ── Scene 4 (5.0-6.0s): Cursor moves to toggle, clicks ──
+        await moveCursor(toggle);
+        await clickEffect();
+        toggle.classList.add('active');
+        await wait(300);
+
+        // ── Scene 5 (6.0-7.5s): QR section fades in ──
+        qrSection.classList.add('visible');
+        cursor.classList.remove('visible');
+        await wait(1500);
+
+        // ── Scene 6 (7.5-9.5s): Phone slides in with viewfinder ──
+        showPhoneScene(sceneViewfinder);
+        scanLine.classList.add('scanning');
+        phone.classList.add('visible');
+        await wait(2000);
+
+        // ── Scene 7 (9.5-10.5s): QR recognized ──
+        scanLine.classList.remove('scanning');
+        vfCorners.forEach((c) => c.classList.add('scanned'));
+        viewfinder.classList.add('flash');
+        await wait(1000);
+
+        // ── Scene 8 (10.5-12.5s): PIN entry, dots fill one by one ──
+        showPhoneScene(scenePin);
+        await wait(400);
+        for (let i = 0; i < 4; i++) {
+          if (cancelRequested) return;
+          await wait(400);
+          pinDots[i].classList.add('filled');
+          pinDots[i].textContent = '\u25CF';
+        }
+        await wait(200);
+
+        // ── Scene 9 (12.5-13.5s): Authenticated ──
+        showPhoneScene(sceneAuth);
+        await wait(1000);
+
+        // ── Scene 10 (13.5-16.5s): Remote terminal ──
+        showPhoneScene(sceneRemote);
+        await wait(300);
+        for (let i = 0; i < remoteLines.length; i++) {
+          if (cancelRequested) return;
+          await wait(600);
+          remoteLines[i].classList.add('show');
+        }
+        await wait(800);
+
+        // ── Scene 11 (16.5-18.0s): Pause then fade out ──
+        await wait(1000);
+
+        // Fade everything out
+        demo!.style.transition = 'opacity 0.5s ease';
+        demo!.style.opacity = '0';
+        await wait(500);
+        demo!.style.opacity = '1';
+
+      } catch {
+        // cancelled
+        return;
+      }
+
+      // Loop
+      if (running && !cancelRequested) {
+        runSequence();
+      }
+    }
+
+    function startAnimation() {
+      if (running) return;
+      running = true;
+      cancelRequested = false;
+      resetAll();
+      runSequence();
+    }
+
+    function stopAnimation() {
+      running = false;
+      cancelRequested = true;
+      if (animationId !== null) {
+        clearTimeout(animationId);
+        animationId = null;
+      }
+      resetAll();
+    }
+
+    // IntersectionObserver
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            startAnimation();
+          } else {
+            stopAnimation();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(demo);
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRemoteAccessDemo);
+  } else {
+    initRemoteAccessDemo();
+  }
+</script>

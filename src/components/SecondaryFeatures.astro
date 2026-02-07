@@ -1,0 +1,903 @@
+<section class="section secondary-features" id="secondary-features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Also Built In</span>
+      <h2 class="section-title">More Power Out of the Box</h2>
+    </div>
+
+    <div class="sf-grid">
+      <!-- Card 1: Multi-AI -->
+      <div class="sf-card glow-card">
+        <div class="sf-card-content">
+          <div class="sf-icon-row">
+            <span class="sf-ai-dot sf-dot-amber" title="Claude"></span>
+            <span class="sf-ai-dot sf-dot-blue" title="Codex"></span>
+            <span class="sf-ai-dot sf-dot-multi" title="Gemini"></span>
+          </div>
+          <h3 class="sf-title">Claude, Codex &amp; Gemini</h3>
+          <p class="sf-desc">
+            Run different AI agents in different terminals simultaneously.
+            PATAPIM integrates all three major coding AIs.
+          </p>
+        </div>
+        <div class="sf-card-visual">
+          <div class="sf-multi-demo" data-sf-multi>
+            <div class="sf-mw-chrome">
+              <div class="sf-mw-dots">
+                <span class="sf-mw-d sf-d-r"></span>
+                <span class="sf-mw-d sf-d-y"></span>
+                <span class="sf-mw-d sf-d-g"></span>
+              </div>
+              <div class="sf-mw-tabs">
+                <div class="sf-mw-tab active" data-sf-tab="0">
+                  <span class="sf-mw-tab-dot" style="background:var(--accent-primary)"></span>
+                  Claude
+                </div>
+                <div class="sf-mw-tab" data-sf-tab="1">
+                  <span class="sf-mw-tab-dot" style="background:var(--info)"></span>
+                  Codex
+                </div>
+                <div class="sf-mw-tab" data-sf-tab="2">
+                  <span class="sf-mw-tab-dot" style="background:#34a853"></span>
+                  Gemini
+                </div>
+              </div>
+            </div>
+            <div class="sf-mw-body">
+              <!-- Claude panel -->
+              <div class="sf-mw-panel active" data-sf-panel="0">
+                <div class="sf-mw-line"><span class="sf-p-accent">~/app $</span> claude</div>
+                <div class="sf-mw-line" data-sf-typed="0"></div>
+                <div class="sf-mw-out" data-sf-out="0"></div>
+              </div>
+              <!-- Codex panel -->
+              <div class="sf-mw-panel" data-sf-panel="1">
+                <div class="sf-mw-line"><span class="sf-p-info">~/app $</span> codex</div>
+                <div class="sf-mw-line" data-sf-typed="1"></div>
+                <div class="sf-mw-out" data-sf-out="1"></div>
+              </div>
+              <!-- Gemini panel -->
+              <div class="sf-mw-panel" data-sf-panel="2">
+                <div class="sf-mw-line"><span class="sf-p-green">~/app $</span> gemini</div>
+                <div class="sf-mw-line" data-sf-typed="2"></div>
+                <div class="sf-mw-out" data-sf-out="2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Chrome Integration -->
+      <div class="sf-card glow-card">
+        <div class="sf-card-content">
+          <div class="sf-icon-row">
+            <svg class="sf-browser-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="18" rx="3"/>
+              <line x1="2" y1="8" x2="22" y2="8"/>
+              <circle cx="5.5" cy="5.5" r="0.8" fill="var(--error)"/>
+              <circle cx="8" cy="5.5" r="0.8" fill="var(--warning)"/>
+              <circle cx="10.5" cy="5.5" r="0.8" fill="var(--success)"/>
+            </svg>
+          </div>
+          <h3 class="sf-title">Built-In Browser Panel</h3>
+          <p class="sf-desc">
+            Test code visually without leaving PATAPIM. AI agents can test their
+            own code and see results in a Chrome panel.
+          </p>
+        </div>
+        <div class="sf-card-visual">
+          <div class="sf-chrome-demo" data-sf-chrome>
+            <div class="sf-cd-window">
+              <!-- Terminal side -->
+              <div class="sf-cd-terminal">
+                <div class="sf-cd-term-chrome">
+                  <span class="sf-cd-term-dot" style="background:var(--accent-primary)"></span>
+                  <span class="sf-cd-term-title">Terminal 1</span>
+                </div>
+                <div class="sf-cd-term-body">
+                  <div class="sf-cd-tl"><span class="sf-p-accent">$</span> <span data-sf-cmd></span><span class="sf-cd-caret" data-sf-caret>|</span></div>
+                  <div class="sf-cd-term-out" data-sf-term-out></div>
+                </div>
+              </div>
+              <!-- Divider -->
+              <div class="sf-cd-divider">
+                <div class="sf-cd-grip"></div>
+              </div>
+              <!-- Browser side -->
+              <div class="sf-cd-browser">
+                <div class="sf-cd-browser-chrome">
+                  <div class="sf-cd-br-dots">
+                    <span class="sf-mw-d sf-d-r"></span>
+                    <span class="sf-mw-d sf-d-y"></span>
+                    <span class="sf-mw-d sf-d-g"></span>
+                  </div>
+                  <div class="sf-cd-url-bar" data-sf-url>about:blank</div>
+                  <svg class="sf-cd-refresh" data-sf-refresh width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                </div>
+                <div class="sf-cd-viewport" data-sf-viewport>
+                  <div class="sf-cd-blank" data-sf-blank></div>
+                  <div class="sf-cd-page" data-sf-page>
+                    <!-- Fake rendered page -->
+                    <div class="sf-pg-nav">
+                      <span class="sf-pg-logo"></span>
+                      <span class="sf-pg-link"></span>
+                      <span class="sf-pg-link"></span>
+                      <span class="sf-pg-link"></span>
+                    </div>
+                    <div class="sf-pg-hero">
+                      <div class="sf-pg-h1"></div>
+                      <div class="sf-pg-p"></div>
+                      <div class="sf-pg-btn"></div>
+                    </div>
+                    <div class="sf-pg-cards">
+                      <div class="sf-pg-card"></div>
+                      <div class="sf-pg-card"></div>
+                      <div class="sf-pg-card"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .secondary-features {
+    background: var(--bg-primary);
+    scroll-margin-top: 120px;
+  }
+
+  .sf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+  }
+
+  .sf-card {
+    padding: var(--space-2xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .sf-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .sf-ai-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .sf-dot-amber { background: var(--accent-primary); }
+  .sf-dot-blue { background: var(--info); }
+  .sf-dot-multi { background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc04, #34a853); }
+
+  .sf-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .sf-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .sf-browser-icon { flex-shrink: 0; }
+
+  /* ========================================
+     MULTI-AI DEMO
+     ======================================== */
+  .sf-multi-demo {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+
+  .sf-mw-chrome {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .sf-mw-dots { display: flex; gap: 4px; }
+  .sf-mw-d { width: 7px; height: 7px; border-radius: 50%; }
+  .sf-d-r { background: #ff5f57; }
+  .sf-d-y { background: #febc2e; }
+  .sf-d-g { background: #28c840; }
+
+  .sf-mw-tabs {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+  }
+  .sf-mw-tab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: default;
+    transition: all var(--transition-fast);
+  }
+  .sf-mw-tab.active {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+  .sf-mw-tab-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .sf-mw-body {
+    background: var(--bg-deep);
+    min-height: 140px;
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .sf-mw-panel {
+    display: none;
+    padding: 12px 14px;
+  }
+  .sf-mw-panel.active { display: block; }
+  .sf-mw-line { color: var(--text-secondary); min-height: 1.6em; }
+  .sf-mw-out { margin-top: 2px; }
+
+  .sf-p-accent { color: var(--accent-primary); margin-right: 6px; }
+  .sf-p-info { color: var(--info); margin-right: 6px; }
+  .sf-p-green { color: #34a853; margin-right: 6px; }
+
+  /* Activity indicator on tabs */
+  .sf-mw-tab .sf-mw-tab-dot {
+    transition: box-shadow var(--transition-fast);
+  }
+  .sf-mw-tab.working .sf-mw-tab-dot {
+    box-shadow: 0 0 6px 2px currentColor;
+    animation: sfDotPulse 1s ease-in-out infinite;
+  }
+  @keyframes sfDotPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ========================================
+     CHROME INTEGRATION DEMO
+     ======================================== */
+  .sf-chrome-demo {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+
+  .sf-cd-window {
+    display: flex;
+    min-height: 200px;
+  }
+
+  /* Terminal side */
+  .sf-cd-terminal {
+    flex: 0.45;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .sf-cd-term-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .sf-cd-term-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+  .sf-cd-term-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+  .sf-cd-term-body {
+    background: var(--bg-deep);
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.6;
+    flex: 1;
+    overflow: hidden;
+  }
+  .sf-cd-tl { color: var(--text-secondary); display: flex; }
+  .sf-cd-caret {
+    color: var(--accent-primary);
+    animation: sfBlink 1s step-end infinite;
+  }
+  @keyframes sfBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .sf-cd-term-out { margin-top: 2px; }
+
+  /* Divider */
+  .sf-cd-divider {
+    width: 3px;
+    background: var(--border-default);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .sf-cd-grip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 20px;
+    border-radius: 2px;
+    background: var(--bg-hover);
+  }
+
+  /* Browser side */
+  .sf-cd-browser {
+    flex: 0.55;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .sf-cd-browser-chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .sf-cd-br-dots { display: flex; gap: 3px; }
+  .sf-cd-url-bar {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
+  }
+  .sf-cd-refresh {
+    flex-shrink: 0;
+    transition: transform 0.4s ease;
+  }
+  .sf-cd-refresh.spinning {
+    animation: sfSpin 0.6s linear;
+  }
+  @keyframes sfSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .sf-cd-viewport {
+    flex: 1;
+    background: var(--bg-secondary);
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+  }
+  .sf-cd-blank {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+  }
+  .sf-cd-blank.hidden { opacity: 0; pointer-events: none; }
+
+  .sf-cd-page {
+    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .sf-cd-page.visible { opacity: 1; }
+
+  /* Fake rendered webpage */
+  .sf-pg-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .sf-pg-logo {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: var(--accent-primary);
+    flex-shrink: 0;
+  }
+  .sf-pg-link {
+    width: 24px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-hover);
+  }
+
+  .sf-pg-hero {
+    margin-bottom: 12px;
+    text-align: center;
+    padding: 8px 0;
+  }
+  .sf-pg-h1 {
+    width: 70%;
+    height: 8px;
+    border-radius: 3px;
+    background: var(--text-muted);
+    margin: 0 auto 6px;
+  }
+  .sf-pg-p {
+    width: 85%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-hover);
+    margin: 0 auto 8px;
+  }
+  .sf-pg-btn {
+    width: 40px;
+    height: 10px;
+    border-radius: 4px;
+    background: var(--accent-primary);
+    margin: 0 auto;
+  }
+
+  .sf-pg-cards {
+    display: flex;
+    gap: 6px;
+  }
+  .sf-pg-card {
+    flex: 1;
+    height: 36px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* Loading spinner in viewport */
+  .sf-cd-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-default);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: sfSpinnerSpin 0.6s linear infinite;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .sf-cd-spinner.show { opacity: 1; }
+  @keyframes sfSpinnerSpin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  @media (max-width: 768px) {
+    .sf-grid {
+      grid-template-columns: 1fr;
+    }
+    .sf-mw-body { min-height: 120px; }
+    .sf-cd-viewport { min-height: 130px; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .sf-mw-tab.working .sf-mw-tab-dot { animation: none; }
+    .sf-cd-caret { animation: none; opacity: 1; }
+    .sf-cd-refresh.spinning { animation: none; }
+    .sf-cd-spinner { animation: none; }
+  }
+</style>
+
+<script>
+(function() {
+
+  /* ==========================================
+     MULTI-AI DEMO
+     ========================================== */
+  const multiDemo = document.querySelector('[data-sf-multi]');
+  if (multiDemo) {
+    const tabs = multiDemo.querySelectorAll('[data-sf-tab]');
+    const panels = multiDemo.querySelectorAll('[data-sf-panel]');
+    const typedEls = [
+      multiDemo.querySelector('[data-sf-typed="0"]'),
+      multiDemo.querySelector('[data-sf-typed="1"]'),
+      multiDemo.querySelector('[data-sf-typed="2"]'),
+    ];
+    const outEls = [
+      multiDemo.querySelector('[data-sf-out="0"]'),
+      multiDemo.querySelector('[data-sf-out="1"]'),
+      multiDemo.querySelector('[data-sf-out="2"]'),
+    ];
+
+    const prompts = [
+      'refactor the auth module to use JWT',
+      'write integration tests for the API',
+      'optimize the database queries',
+    ];
+    const responses = [
+      [
+        { t: 'accent', text: '\u25B7 Analyzing auth module...' },
+        { t: 'success', text: '\u2714 Refactored to JWT tokens' },
+        { t: 'success', text: '\u2714 Updated 3 middleware files' },
+      ],
+      [
+        { t: 'info', text: '\u25B7 Scanning API endpoints...' },
+        { t: 'success', text: '\u2714 12 test cases generated' },
+        { t: 'success', text: '\u2714 All tests passing' },
+      ],
+      [
+        { t: 'green', text: '\u25B7 Profiling slow queries...' },
+        { t: 'success', text: '\u2714 Added indexes to 4 tables' },
+        { t: 'success', text: '\u2714 Query time \u221293%' },
+      ],
+    ];
+
+    let mAnim = null;
+    let mRunning = false;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      // Static state: show all 3 with Claude active, responses shown
+      typedEls[0]!.textContent = prompts[0];
+      addLine(outEls[0]!, responses[0][1].text, responses[0][1].t);
+      showTab(0);
+    }
+
+    function showTab(idx) {
+      tabs.forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+        t.classList.remove('working');
+      });
+      panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+    }
+
+    function addLine(container, text, type) {
+      const line = document.createElement('div');
+      line.className = 'sf-mw-line';
+      const colorMap = {
+        accent: 'var(--accent-primary)',
+        info: 'var(--info)',
+        green: '#34a853',
+        success: 'var(--success)',
+      };
+      const icon = text.charAt(0);
+      const rest = text.slice(2);
+      line.innerHTML = `<span style="color:${colorMap[type] || colorMap.accent}">${icon}</span> ${escHtml(rest)}`;
+      line.style.opacity = '0';
+      container.appendChild(line);
+      void line.offsetWidth;
+      line.style.transition = 'opacity 0.3s';
+      line.style.opacity = '1';
+    }
+
+    function typeInto(el, text) {
+      return new Promise(resolve => {
+        let i = 0;
+        function next() {
+          if (!mRunning) return;
+          if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i++;
+            mAnim = setTimeout(next, 40 + Math.random() * 30);
+          } else { resolve(); }
+        }
+        next();
+      });
+    }
+
+    function wait(ms) {
+      return new Promise(r => { mAnim = setTimeout(r, ms); });
+    }
+
+    function resetMulti() {
+      typedEls.forEach(el => { if (el) el.textContent = ''; });
+      outEls.forEach(el => { if (el) el.innerHTML = ''; });
+      tabs.forEach(t => t.classList.remove('working'));
+      showTab(0);
+    }
+
+    if (!reduced) {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting && !mRunning) { mRunning = true; runMultiLoop(); }
+          else if (!e.isIntersecting && mRunning) { mRunning = false; if (mAnim) clearTimeout(mAnim); }
+        });
+      }, { threshold: 0.3 });
+      obs.observe(multiDemo);
+    }
+
+    async function runMultiLoop() {
+      while (mRunning) {
+        resetMulti();
+
+        // Phase 1: Type in Claude tab
+        await wait(800);
+        if (!mRunning) break;
+        await typeInto(typedEls[0]!, prompts[0]);
+        if (!mRunning) break;
+
+        // Claude starts working, switch to Codex
+        tabs[0].classList.add('working');
+        await wait(600);
+        if (!mRunning) break;
+        showTab(1);
+        await wait(400);
+        if (!mRunning) break;
+
+        // Type in Codex
+        await typeInto(typedEls[1]!, prompts[1]);
+        if (!mRunning) break;
+
+        // Codex working, switch to Gemini
+        tabs[1].classList.add('working');
+        await wait(600);
+        if (!mRunning) break;
+        showTab(2);
+        await wait(400);
+        if (!mRunning) break;
+
+        // Type in Gemini
+        await typeInto(typedEls[2]!, prompts[2]);
+        if (!mRunning) break;
+        tabs[2].classList.add('working');
+
+        // Phase 2: Show responses coming back
+        await wait(800);
+        if (!mRunning) break;
+
+        // Claude done - switch to see it
+        showTab(0);
+        tabs[0].classList.remove('working');
+        for (const r of responses[0]) {
+          addLine(outEls[0]!, r.text, r.t);
+          await wait(500);
+          if (!mRunning) break;
+        }
+        if (!mRunning) break;
+
+        // Codex done
+        await wait(400);
+        if (!mRunning) break;
+        showTab(1);
+        tabs[1].classList.remove('working');
+        for (const r of responses[1]) {
+          addLine(outEls[1]!, r.text, r.t);
+          await wait(500);
+          if (!mRunning) break;
+        }
+        if (!mRunning) break;
+
+        // Gemini done
+        await wait(400);
+        if (!mRunning) break;
+        showTab(2);
+        tabs[2].classList.remove('working');
+        for (const r of responses[2]) {
+          addLine(outEls[2]!, r.text, r.t);
+          await wait(500);
+          if (!mRunning) break;
+        }
+        if (!mRunning) break;
+
+        // Hold, then fade & restart
+        await wait(1500);
+        if (!mRunning) break;
+        multiDemo.style.transition = 'opacity 0.5s';
+        multiDemo.style.opacity = '0';
+        await wait(600);
+        if (!mRunning) break;
+        multiDemo.style.opacity = '1';
+        await wait(300);
+      }
+    }
+  }
+
+  /* ==========================================
+     CHROME INTEGRATION DEMO
+     ========================================== */
+  const chromeDemo = document.querySelector('[data-sf-chrome]');
+  if (chromeDemo) {
+    const cmdEl = chromeDemo.querySelector('[data-sf-cmd]');
+    const caretEl = chromeDemo.querySelector('[data-sf-caret]');
+    const termOut = chromeDemo.querySelector('[data-sf-term-out]');
+    const urlBar = chromeDemo.querySelector('[data-sf-url]');
+    const refreshBtn = chromeDemo.querySelector('[data-sf-refresh]');
+    const blankEl = chromeDemo.querySelector('[data-sf-blank]');
+    const pageEl = chromeDemo.querySelector('[data-sf-page]');
+    const viewport = chromeDemo.querySelector('[data-sf-viewport]');
+
+    let cAnim = null;
+    let cRunning = false;
+    let spinner = null;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      // Static: show completed state
+      cmdEl.textContent = 'npm run dev';
+      caretEl.style.display = 'none';
+      addTermLine('\u2714 Server running on localhost:3000', 'success');
+      urlBar.textContent = 'localhost:3000';
+      blankEl.classList.add('hidden');
+      pageEl.classList.add('visible');
+    }
+
+    function addTermLine(text, type) {
+      const line = document.createElement('div');
+      line.className = 'sf-cd-tl';
+      const colors = { success: 'var(--success)', accent: 'var(--accent-primary)', info: 'var(--info)' };
+      const icon = text.charAt(0);
+      const rest = text.slice(2);
+      line.innerHTML = `<span style="color:${colors[type] || colors.accent}">${icon}</span> ${escHtml(rest)}`;
+      line.style.opacity = '0';
+      termOut.appendChild(line);
+      void line.offsetWidth;
+      line.style.transition = 'opacity 0.3s';
+      line.style.opacity = '1';
+    }
+
+    function typeCmd(text) {
+      return new Promise(resolve => {
+        let i = 0;
+        function next() {
+          if (!cRunning) return;
+          if (i < text.length) {
+            cmdEl.textContent += text.charAt(i);
+            i++;
+            cAnim = setTimeout(next, 50 + Math.random() * 40);
+          } else { resolve(); }
+        }
+        next();
+      });
+    }
+
+    function wait(ms) {
+      return new Promise(r => { cAnim = setTimeout(r, ms); });
+    }
+
+    function showSpinner() {
+      spinner = document.createElement('div');
+      spinner.className = 'sf-cd-spinner show';
+      viewport.appendChild(spinner);
+    }
+    function hideSpinner() {
+      if (spinner) { spinner.remove(); spinner = null; }
+    }
+
+    function resetChrome() {
+      cmdEl.textContent = '';
+      caretEl.style.display = '';
+      termOut.innerHTML = '';
+      urlBar.textContent = 'about:blank';
+      blankEl.classList.remove('hidden');
+      pageEl.classList.remove('visible');
+      refreshBtn.classList.remove('spinning');
+      hideSpinner();
+    }
+
+    if (!reduced) {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting && !cRunning) { cRunning = true; runChromeLoop(); }
+          else if (!e.isIntersecting && cRunning) { cRunning = false; if (cAnim) clearTimeout(cAnim); }
+        });
+      }, { threshold: 0.3 });
+      obs.observe(chromeDemo);
+    }
+
+    async function runChromeLoop() {
+      while (cRunning) {
+        resetChrome();
+
+        // 1. Type command
+        await wait(1000);
+        if (!cRunning) break;
+        await typeCmd('npm run dev');
+        if (!cRunning) break;
+        caretEl.style.display = 'none';
+
+        // 2. Server starts
+        await wait(500);
+        if (!cRunning) break;
+        addTermLine('\u25B7 Starting dev server...', 'accent');
+        await wait(800);
+        if (!cRunning) break;
+        addTermLine('\u2714 Compiled successfully', 'success');
+        await wait(400);
+        if (!cRunning) break;
+        addTermLine('\u2714 Server running on localhost:3000', 'success');
+
+        // 3. Browser navigates
+        await wait(600);
+        if (!cRunning) break;
+        urlBar.textContent = 'localhost:3000';
+        urlBar.style.color = 'var(--text-secondary)';
+        refreshBtn.classList.add('spinning');
+        showSpinner();
+        blankEl.classList.add('hidden');
+
+        // 4. Page loads
+        await wait(1000);
+        if (!cRunning) break;
+        hideSpinner();
+        refreshBtn.classList.remove('spinning');
+        pageEl.classList.add('visible');
+
+        // 5. Claude makes a change
+        await wait(1200);
+        if (!cRunning) break;
+        addTermLine('\u25B7 Claude editing Hero component...', 'accent');
+        await wait(1000);
+        if (!cRunning) break;
+        addTermLine('\u2714 Saved src/Hero.tsx', 'success');
+
+        // 6. Hot reload
+        await wait(400);
+        if (!cRunning) break;
+        addTermLine('\u25B7 HMR update...', 'info');
+        refreshBtn.classList.add('spinning');
+        pageEl.classList.remove('visible');
+        await wait(500);
+        if (!cRunning) break;
+        refreshBtn.classList.remove('spinning');
+        pageEl.classList.add('visible');
+        addTermLine('\u2714 Page updated', 'success');
+
+        // Hold
+        await wait(2000);
+        if (!cRunning) break;
+        chromeDemo.style.transition = 'opacity 0.5s';
+        chromeDemo.style.opacity = '0';
+        await wait(600);
+        if (!cRunning) break;
+        chromeDemo.style.opacity = '1';
+        urlBar.style.color = '';
+        await wait(300);
+      }
+    }
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+})();
+</script>
