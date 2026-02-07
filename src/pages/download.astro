@@ -1,10 +1,12 @@
 ---
+export const prerender = true;
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 ---
 
-<BaseLayout title="Download PATAPIM" description="Download PATAPIM for Windows. Terminal-first IDE framework for Claude Code development.">
+<BaseLayout title="Download PATAPIM" description="Download PATAPIM for Windows. Terminal-first IDE framework for AI development.">
   <Navbar />
 
   <main class="download-page">
@@ -17,6 +19,19 @@ import Footer from '../components/Footer.astro';
         </p>
       </div>
 
+      <!-- License Banner (shown after purchase) -->
+      <div class="license-banner" id="license-banner" style="display:none;">
+        <span class="license-badge">Purchase Complete</span>
+        <p class="license-text">Your license key:</p>
+        <div class="license-key-display">
+          <code id="license-key-value"></code>
+          <button class="dl-copy-btn" id="copy-license-btn" aria-label="Copy license key">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <p class="license-note">Save this key. It's also been emailed to your Stripe billing address.</p>
+      </div>
+
       <div class="download-grid">
         <!-- Windows -->
         <div class="dl-card active">
@@ -27,12 +42,28 @@ import Footer from '../components/Footer.astro';
           </div>
           <h3>Windows</h3>
           <p class="dl-version">Windows 10 or later</p>
-          <a href="https://github.com/G3dar/patapim/releases/latest" class="btn btn-primary" style="width: 100%; justify-content: center;" target="_blank" rel="noopener">
+          <a href="https://github.com/g3dar/patapim/releases/latest" class="btn btn-primary" style="width: 100%; justify-content: center;" target="_blank" rel="noopener">
             Download Installer (.exe)
           </a>
-          <div class="dl-alt">
-            or install from source:
-            <code>git clone https://github.com/G3dar/patapim && cd patapim && npm install && npm start</code>
+          <div class="dl-install-cmds">
+            <div class="dl-cmd-block">
+              <span class="dl-cmd-label">PowerShell</span>
+              <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex">
+                <code>irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex</code>
+                <button class="dl-copy-btn" aria-label="Copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="dl-cmd-block">
+              <span class="dl-cmd-label">CMD</span>
+              <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+                <code>curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+                <button class="dl-copy-btn" aria-label="Copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -84,8 +115,8 @@ import Footer from '../components/Footer.astro';
             <p>~200 MB (with dependencies)</p>
           </div>
           <div class="req-item">
-            <h4>Claude Code</h4>
-            <p>Claude Code CLI installed and authenticated</p>
+            <h4>AI CLI</h4>
+            <p>Claude Code, Codex, or Gemini CLI installed</p>
           </div>
         </div>
       </div>
@@ -98,9 +129,9 @@ import Footer from '../components/Footer.astro';
             <span class="st-dot"></span><span class="st-dot"></span><span class="st-dot"></span>
           </div>
           <div class="st-body">
-            <div class="st-line"><span class="st-comment"># Prerequisites: Node.js 18+, Git, Claude Code CLI</span></div>
+            <div class="st-line"><span class="st-comment"># Prerequisites: Node.js 18+, Git</span></div>
             <div class="st-line">&nbsp;</div>
-            <div class="st-line"><span class="st-prompt">$</span> git clone https://github.com/G3dar/patapim.git</div>
+            <div class="st-line"><span class="st-prompt">$</span> git clone https://github.com/g3dar/patapim.git</div>
             <div class="st-line"><span class="st-prompt">$</span> cd patapim</div>
             <div class="st-line"><span class="st-prompt">$</span> npm install</div>
             <div class="st-line"><span class="st-prompt">$</span> npm start</div>
@@ -159,21 +190,58 @@ import Footer from '../components/Footer.astro';
     margin-bottom: var(--space-xl);
   }
 
-  .dl-alt {
+  /* Install commands */
+  .dl-install-cmds {
     margin-top: var(--space-lg);
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .dl-alt code {
-    display: block;
-    margin-top: var(--space-sm);
-    font-size: 11px;
-    background: var(--bg-tertiary);
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    color: var(--accent-primary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
     text-align: left;
+  }
+  .dl-cmd-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .dl-cmd-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dl-cmd-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+  }
+  .dl-cmd-line code {
+    flex: 1;
+    font-size: 10px;
+    background: none;
+    padding: 0;
+    color: var(--accent-primary);
     word-break: break-all;
+    line-height: 1.4;
+  }
+  .dl-copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    transition: color var(--transition-fast);
+  }
+  .dl-copy-btn:hover {
+    color: var(--accent-primary);
+  }
+  .dl-copy-btn.copied {
+    color: var(--success);
   }
 
   .dl-note {
@@ -244,6 +312,56 @@ import Footer from '../components/Footer.astro';
   .st-comment { color: var(--text-muted); }
   .st-accent { color: var(--accent-primary); }
 
+  /* License Banner */
+  .license-banner {
+    max-width: 600px;
+    margin: 0 auto var(--space-3xl);
+    padding: var(--space-2xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-xl);
+    text-align: center;
+    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
+  }
+  .license-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--bg-deep);
+    background: var(--accent-primary);
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: var(--space-md);
+  }
+  .license-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+  }
+  .license-key-display {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-md);
+  }
+  .license-key-display code {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    background: none;
+    padding: 0;
+    letter-spacing: 1px;
+  }
+  .license-note {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
   @media (max-width: 768px) {
     .download-grid { grid-template-columns: 1fr; max-width: 400px; }
     .req-grid { grid-template-columns: 1fr 1fr; }
@@ -252,3 +370,60 @@ import Footer from '../components/Footer.astro';
     .req-grid { grid-template-columns: 1fr; }
   }
 </style>
+
+<script>
+  // Copy command buttons
+  document.querySelectorAll('[data-dl-copy] .dl-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const line = btn.closest('[data-dl-copy]') as HTMLElement;
+      const text = line?.dataset.dlCopy;
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
+        });
+      }
+    });
+  });
+
+  // Copy license key button
+  document.getElementById('copy-license-btn')?.addEventListener('click', () => {
+    const key = document.getElementById('license-key-value')?.textContent;
+    if (key) {
+      navigator.clipboard.writeText(key).then(() => {
+        const btn = document.getElementById('copy-license-btn')!;
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
+      });
+    }
+  });
+
+  // Detect ?session_id from Stripe checkout redirect
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+
+  if (sessionId) {
+    (async () => {
+      const delays = [1000, 2000, 4000];
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const res = await fetch('/api/stripe/session-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+          const data = await res.json();
+          if (data.found && data.licenseKey) {
+            const banner = document.getElementById('license-banner')!;
+            document.getElementById('license-key-value')!.textContent = data.licenseKey;
+            banner.style.display = 'block';
+            return;
+          }
+        } catch {}
+        if (attempt < delays.length) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+        }
+      }
+    })();
+  }
+</script>

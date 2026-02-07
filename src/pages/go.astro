@@ -1,0 +1,942 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { getUserFromRequest } from '../lib/auth';
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  return Astro.redirect('/api/auth/google');
+}
+
+// Server-side data fetch
+const [licenseRaw, userRaw] = await Promise.all([
+  env.LICENSES.get(`license:${user.email}`),
+  env.LICENSES.get(`user:${user.googleId}`),
+]);
+
+const license = licenseRaw ? JSON.parse(licenseRaw) : null;
+const userData = userRaw ? JSON.parse(userRaw) : null;
+const plan = license?.plan || userData?.plan || 'free';
+const licenseKey = license?.licenseKey || userData?.licenseKey || null;
+const licenseStatus = license?.status || null;
+const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId || null;
+---
+
+<BaseLayout title="Dashboard — PATAPIM" description="Manage your PATAPIM account, devices, and referrals.">
+  <Navbar />
+
+  <main class="dashboard-page">
+    <div class="container">
+      <!-- Dashboard Header -->
+      <div class="dash-header">
+        <div class="dash-user">
+          <img src={user.picture} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
+          <div class="dash-user-info">
+            <span class="dash-name">{user.name}</span>
+            <span class="dash-email">{user.email}</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="sign-out-btn">Sign Out</button>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="dash-tabs">
+        <button class="dash-tab active" data-tab="account">Account</button>
+        <button class="dash-tab" data-tab="devices">Devices</button>
+        <button class="dash-tab" data-tab="referrals">Referrals</button>
+      </div>
+
+      <!-- Account Tab (server-rendered) -->
+      <div class="dash-panel active" id="panel-account">
+        <div class="license-card">
+          <div class="license-card-header">
+            <h3>License</h3>
+            <span class={`plan-badge plan-${plan}`}>
+              {plan === 'free' ? 'Free' : plan === 'pro' ? 'Pro' : 'Lifetime'}
+            </span>
+          </div>
+
+          {licenseStatus && (
+            <div class="license-status-row">
+              <span class={`status-dot status-${licenseStatus}`}></span>
+              <span class="status-label">{licenseStatus.replace('_', ' ')}</span>
+            </div>
+          )}
+
+          {licenseKey ? (
+            <div class="license-key-section">
+              <label class="field-label">License Key</label>
+              <div class="license-key-row">
+                <code id="license-key-display">{licenseKey}</code>
+                <button class="copy-btn" id="copy-key-btn" aria-label="Copy license key">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p class="no-license-text">No active license. Upgrade to Pro for unlimited features.</p>
+          )}
+
+          <div class="license-actions">
+            {plan === 'free' ? (
+              <a href="/pricing" class="btn btn-primary">Upgrade to Pro</a>
+            ) : stripeCustomerId && stripeCustomerId !== 'referral' ? (
+              <button class="btn btn-secondary" id="manage-billing-btn">Manage Billing</button>
+            ) : null}
+          </div>
+        </div>
+
+        <!-- Device Pairing -->
+        <div class="pair-section">
+          <h3>Link Desktop App</h3>
+          <p class="pair-desc">Generate a pairing code to connect your PATAPIM desktop app to this account.</p>
+          <button class="btn btn-secondary" id="generate-pair-btn">Generate Pairing Code</button>
+          <div class="pair-code-display" id="pair-code-display" style="display:none;">
+            <code id="pair-code-value"></code>
+            <span class="pair-expires">Expires in 10 minutes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Devices Tab (client-rendered) -->
+      <div class="dash-panel" id="panel-devices">
+        <div class="panel-loading" id="devices-loading">Loading devices...</div>
+        <div id="devices-content" style="display:none;"></div>
+      </div>
+
+      <!-- Referrals Tab (client-rendered) -->
+      <div class="dash-panel" id="panel-referrals">
+        <div class="panel-loading" id="referrals-loading">Loading referrals...</div>
+        <div id="referrals-content" style="display:none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .dashboard-page {
+    min-height: 100vh;
+    padding-top: 96px;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xl) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .dash-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border-default);
+  }
+
+  .dash-user-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dash-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .dash-email {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .btn-sm {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+
+  /* Tabs */
+  .dash-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .dash-tab {
+    padding: var(--space-md) var(--space-xl);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .dash-tab:hover {
+    color: var(--text-secondary);
+  }
+
+  .dash-tab.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+
+  .dash-panel {
+    display: none;
+  }
+
+  .dash-panel.active {
+    display: block;
+  }
+
+  .panel-loading {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* License Card */
+  .license-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .license-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+  }
+
+  .license-card-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .plan-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+  }
+
+  .plan-free {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .plan-pro {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+  }
+
+  .plan-lifetime {
+    background: rgba(224, 164, 88, 0.15);
+    color: var(--warning);
+  }
+
+  .license-status-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .status-dot.status-active, .status-dot.status-trialing {
+    background: var(--success);
+  }
+
+  .status-dot.status-past_due, .status-dot.status-payment_failed {
+    background: var(--warning);
+  }
+
+  .status-dot.status-canceled, .status-dot.status-expired {
+    background: var(--error);
+  }
+
+  .status-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+  }
+
+  .license-key-section {
+    margin-bottom: var(--space-xl);
+  }
+
+  .field-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .license-key-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-lg);
+  }
+
+  .license-key-row code {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    background: none;
+    padding: 0;
+    letter-spacing: 1px;
+  }
+
+  .copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    transition: color var(--transition-fast);
+  }
+
+  .copy-btn:hover {
+    color: var(--accent-primary);
+  }
+
+  .copy-btn.copied {
+    color: var(--success);
+  }
+
+  .no-license-text {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .license-actions {
+    display: flex;
+    gap: var(--space-md);
+  }
+
+  /* Pairing */
+  .pair-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+  }
+
+  .pair-section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+  }
+
+  .pair-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+  }
+
+  .pair-code-display {
+    margin-top: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .pair-code-display code {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    letter-spacing: 4px;
+    background: var(--bg-tertiary);
+    padding: var(--space-md) var(--space-xl);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+  }
+
+  .pair-expires {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Device Cards */
+  .devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .device-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+  }
+
+  .device-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+  }
+
+  .device-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .online-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 100px;
+  }
+
+  .online-badge.online {
+    background: rgba(124, 179, 130, 0.15);
+    color: var(--success);
+  }
+
+  .online-badge.offline {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+
+  .device-meta {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-md);
+  }
+
+  .device-meta span {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .unlink-btn {
+    font-size: 12px;
+    color: var(--error);
+    background: none;
+    border: 1px solid var(--error);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .unlink-btn:hover {
+    background: rgba(212, 120, 120, 0.1);
+  }
+
+  /* Empty state */
+  .dash-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-4xl) var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+  }
+
+  .dash-empty-icon {
+    color: var(--text-muted);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dash-empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .dash-empty-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-3xl);
+    max-width: 400px;
+  }
+
+  .dash-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    max-width: 380px;
+    width: 100%;
+  }
+
+  .dash-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-lg);
+    text-align: left;
+    padding: var(--space-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+  }
+
+  .dash-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: var(--accent-subtle);
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .dash-step div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dash-step strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .dash-step span {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  /* Referrals */
+  .referral-section {
+    max-width: 600px;
+  }
+
+  .referral-progress {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .referral-progress h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+  }
+
+  .progress-bar-container {
+    background: var(--bg-tertiary);
+    border-radius: 100px;
+    height: 8px;
+    margin-bottom: var(--space-sm);
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent-primary);
+    border-radius: 100px;
+    transition: width var(--transition-normal);
+  }
+
+  .progress-label {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .reward-banner {
+    margin-top: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
+    background: rgba(124, 179, 130, 0.1);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--success);
+  }
+
+  .invite-form {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .invite-input {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+
+  .invite-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .invite-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+  }
+
+  .referral-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .referral-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+  }
+
+  .referral-email {
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .referral-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 100px;
+  }
+
+  .referral-badge.activated {
+    background: rgba(124, 179, 130, 0.15);
+    color: var(--success);
+  }
+
+  .referral-badge.pending {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+
+  .invite-error {
+    color: var(--error);
+    font-size: 13px;
+    margin-top: var(--space-sm);
+  }
+
+  @media (max-width: 640px) {
+    .dash-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-lg);
+    }
+
+    .devices-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .invite-form {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script define:vars={{ userEmail: user.email, stripeCustomerId, licenseKey }}>
+  // Tab switching
+  document.querySelectorAll('.dash-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panelId = 'panel-' + tab.dataset.tab;
+      document.getElementById(panelId)?.classList.add('active');
+
+      // Lazy-load data on first tab click
+      if (tab.dataset.tab === 'devices' && !tab.dataset.loaded) {
+        tab.dataset.loaded = 'true';
+        loadDevices();
+      }
+      if (tab.dataset.tab === 'referrals' && !tab.dataset.loaded) {
+        tab.dataset.loaded = 'true';
+        loadReferrals();
+      }
+    });
+  });
+
+  // Copy license key
+  document.getElementById('copy-key-btn')?.addEventListener('click', () => {
+    const key = document.getElementById('license-key-display')?.textContent;
+    if (key) {
+      navigator.clipboard.writeText(key).then(() => {
+        const btn = document.getElementById('copy-key-btn');
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
+      });
+    }
+  });
+
+  // Manage billing
+  document.getElementById('manage-billing-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('manage-billing-btn');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: stripeCustomerId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else { btn.disabled = false; btn.textContent = 'Manage Billing'; }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Manage Billing';
+    }
+  });
+
+  // Generate pairing code
+  document.getElementById('generate-pair-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('generate-pair-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    try {
+      const res = await fetch('/api/device/pair-code', { method: 'POST' });
+      const data = await res.json();
+      if (data.code) {
+        document.getElementById('pair-code-value').textContent = data.code;
+        document.getElementById('pair-code-display').style.display = 'flex';
+        btn.textContent = 'Generate New Code';
+      }
+    } catch {}
+    btn.disabled = false;
+  });
+
+  // Sign out
+  document.getElementById('sign-out-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('sign-out-btn');
+    btn.disabled = true;
+    btn.textContent = 'Signing out...';
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/';
+  });
+
+  // Load devices
+  async function loadDevices() {
+    try {
+      const res = await fetch('/api/device/list');
+      const data = await res.json();
+      const container = document.getElementById('devices-content');
+      document.getElementById('devices-loading').style.display = 'none';
+      container.style.display = 'block';
+
+      if (!data.devices || data.devices.length === 0) {
+        container.innerHTML = `
+          <div class="dash-empty">
+            <div class="dash-empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+            </div>
+            <h3 class="dash-empty-title">No devices connected yet</h3>
+            <p class="dash-empty-desc">Connect your local PATAPIM instance to access terminals remotely.</p>
+            <div class="dash-steps">
+              <div class="dash-step">
+                <span class="dash-step-num">1</span>
+                <div><strong>Open PATAPIM</strong><span>Launch the desktop app on your machine</span></div>
+              </div>
+              <div class="dash-step">
+                <span class="dash-step-num">2</span>
+                <div><strong>Generate a Pairing Code</strong><span>Go to Account tab and click "Generate Pairing Code"</span></div>
+              </div>
+              <div class="dash-step">
+                <span class="dash-step-num">3</span>
+                <div><strong>Enter code in the desktop app</strong><span>Your device will appear here once paired</span></div>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = '<div class="devices-grid">' + data.devices.map(d => {
+        const lastSeen = new Date(d.lastSeen);
+        const ago = timeAgo(lastSeen);
+        return `
+          <div class="device-card">
+            <div class="device-card-header">
+              <span class="device-name">${escapeHtml(d.deviceName)}</span>
+              <span class="online-badge ${d.online ? 'online' : 'offline'}">${d.online ? 'Online' : 'Offline'}</span>
+            </div>
+            <div class="device-meta">
+              <span>Last seen: ${ago}</span>
+              ${d.tunnelUrl ? `<span>Tunnel: ${escapeHtml(d.tunnelUrl)}</span>` : ''}
+              ${d.terminalCount ? `<span>Terminals: ${d.terminalCount}</span>` : ''}
+            </div>
+            <button class="unlink-btn" data-token="${escapeHtml(d.token)}">Unlink</button>
+          </div>`;
+      }).join('') + '</div>';
+
+      // Unlink handlers
+      container.querySelectorAll('.unlink-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Unlink this device?')) return;
+          btn.disabled = true;
+          btn.textContent = 'Unlinking...';
+          try {
+            await fetch('/api/device/unlink', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceToken: btn.dataset.token }),
+            });
+            loadDevices();
+          } catch {
+            btn.disabled = false;
+            btn.textContent = 'Unlink';
+          }
+        });
+      });
+    } catch {
+      document.getElementById('devices-loading').textContent = 'Failed to load devices.';
+    }
+  }
+
+  // Load referrals
+  async function loadReferrals() {
+    try {
+      const res = await fetch('/api/account/status');
+      const data = await res.json();
+      const referral = data.referral;
+      const container = document.getElementById('referrals-content');
+      document.getElementById('referrals-loading').style.display = 'none';
+      container.style.display = 'block';
+
+      const pct = Math.min(100, (referral.activatedCount / 10) * 100);
+
+      let html = `
+        <div class="referral-section">
+          <div class="referral-progress">
+            <h3>Refer friends, earn Pro for life</h3>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" style="width: ${pct}%"></div>
+            </div>
+            <span class="progress-label">${referral.activatedCount} / 10 activated</span>
+            ${referral.rewardGranted ? '<div class="reward-banner">Lifetime Pro unlocked! Your license key: ' + escapeHtml(referral.licenseKey) + '</div>' : ''}
+          </div>
+
+          <div class="invite-form">
+            <input type="email" class="invite-input" id="invite-email" placeholder="friend@example.com" />
+            <button class="btn btn-primary" id="invite-btn">Invite</button>
+          </div>
+          <div class="invite-error" id="invite-error" style="display:none;"></div>
+
+          <div class="referral-list" id="referral-list">
+            ${referral.referrals.map(r => `
+              <div class="referral-item">
+                <span class="referral-email">${escapeHtml(r.email)}</span>
+                <span class="referral-badge ${r.activated ? 'activated' : 'pending'}">${r.activated ? 'Activated' : 'Pending'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+
+      container.innerHTML = html;
+
+      // Invite handler
+      document.getElementById('invite-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('invite-email');
+        const friendEmail = input.value.trim();
+        const errEl = document.getElementById('invite-error');
+        errEl.style.display = 'none';
+
+        if (!friendEmail) return;
+
+        const btn = document.getElementById('invite-btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+          const res = await fetch('/api/referral/invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, friendEmail }),
+          });
+          const data = await res.json();
+          if (data.error) {
+            errEl.textContent = data.error;
+            errEl.style.display = 'block';
+          } else {
+            input.value = '';
+            // Reload referrals
+            const tab = document.querySelector('[data-tab="referrals"]');
+            tab.dataset.loaded = '';
+            loadReferrals();
+            return;
+          }
+        } catch {
+          errEl.textContent = 'Failed to send invite.';
+          errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Invite';
+      });
+    } catch {
+      document.getElementById('referrals-loading').textContent = 'Failed to load referrals.';
+    }
+  }
+
+  function timeAgo(date) {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    return days + 'd ago';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+</script>
