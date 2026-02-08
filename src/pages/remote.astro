@@ -1,0 +1,741 @@
+---
+export const prerender = false;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PATAPIM Remote</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-surface: #131316;
+      --bg-elevated: #1a1a1f;
+      --border: #2a2a30;
+      --border-active: #c9a227;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --text-muted: #52525b;
+      --accent: #c9a227;
+      --accent-dim: rgba(201, 162, 39, 0.15);
+      --success: #7cb382;
+      --error: #d47878;
+      --radius: 8px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      padding: 0 12px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-logo {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .topbar-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-weight: 500;
+    }
+
+    .topbar-status.connecting {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .topbar-status.connected {
+      background: rgba(124, 179, 130, 0.12);
+      color: var(--success);
+    }
+
+    .topbar-status.disconnected {
+      background: rgba(212, 120, 120, 0.12);
+      color: var(--error);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .topbar-btn:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    /* Terminal tabs */
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 8px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .tabs-bar::-webkit-scrollbar { display: none; }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      height: 100%;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tab:hover { color: var(--text); }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .tab.active .tab-dot { background: var(--accent); }
+
+    /* Terminal container */
+    .terminal-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .terminal-wrap .xterm {
+      height: 100%;
+      padding: 4px 0 0 4px;
+    }
+
+    /* Special keys toolbar (mobile) */
+    .keys-bar {
+      display: none;
+      align-items: center;
+      height: 36px;
+      padding: 0 8px;
+      gap: 4px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .keys-bar::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 768px) {
+      .keys-bar { display: flex; }
+    }
+
+    .key-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .key-btn:hover, .key-btn:active {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .key-btn.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Scroll to bottom */
+    .scroll-bottom {
+      display: none;
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.15s;
+    }
+
+    .scroll-bottom:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .scroll-bottom.visible { display: flex; }
+
+    /* Loading screen */
+    .loading-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      z-index: 100;
+      gap: 12px;
+    }
+
+    .loading-screen.hidden { display: none; }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .loading-error {
+      font-size: 13px;
+      color: var(--error);
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .loading-error a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Full-page layout */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a href="/go" class="topbar-logo">PATAPIM</a>
+        <span class="topbar-status connecting" id="status">Connecting...</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" id="btn-font-dec" title="Decrease font">A-</button>
+        <button class="topbar-btn" id="btn-font-inc" title="Increase font">A+</button>
+        <button class="topbar-btn" id="btn-disconnect" title="Disconnect">Disconnect</button>
+      </div>
+    </div>
+
+    <div class="tabs-bar" id="tabs"></div>
+
+    <div class="terminal-wrap" id="terminal-wrap">
+      <div class="loading-screen" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">Connecting to device...</div>
+      </div>
+      <button class="scroll-bottom" id="scroll-bottom" title="Scroll to bottom">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div class="keys-bar" id="keys-bar">
+      <button class="key-btn" data-modifier="ctrl">Ctrl</button>
+      <button class="key-btn" data-modifier="alt">Alt</button>
+      <button class="key-btn" data-key="Tab">Tab</button>
+      <button class="key-btn" data-key="Escape">Esc</button>
+      <button class="key-btn" data-key="ArrowUp">&uarr;</button>
+      <button class="key-btn" data-key="ArrowDown">&darr;</button>
+      <button class="key-btn" data-key="ArrowLeft">&larr;</button>
+      <button class="key-btn" data-key="ArrowRight">&rarr;</button>
+      <button class="key-btn" data-seq="\x01">^A</button>
+      <button class="key-btn" data-seq="\x03">^C</button>
+      <button class="key-btn" data-seq="\x04">^D</button>
+      <button class="key-btn" data-seq="\x0c">^L</button>
+      <button class="key-btn" data-seq="\x1a">^Z</button>
+    </div>
+  </div>
+
+  <script is:inline type="module">
+    import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
+    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+
+    // Parse URL params
+    const params = new URLSearchParams(location.search);
+    const connectToken = params.get('t');
+    const tunnelUrl = params.get('url');
+
+    // DOM
+    const statusEl = document.getElementById('status');
+    const tabsEl = document.getElementById('tabs');
+    const loadingEl = document.getElementById('loading');
+    const loadingText = document.getElementById('loading-text');
+    const terminalWrap = document.getElementById('terminal-wrap');
+    const scrollBottomBtn = document.getElementById('scroll-bottom');
+
+    // State
+    let ws = null;
+    let term = null;
+    let fitAddon = null;
+    let currentTerminalId = null;
+    let terminals = [];
+    let isSwitching = false;
+    let fontSize = 14;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+    let isAuthenticated = false;
+    const modifiers = { ctrl: false, alt: false };
+
+    // Validate params
+    if (!connectToken || !tunnelUrl) {
+      showError('Missing connection parameters. <a href="/go">Go back to dashboard</a>');
+    } else {
+      initTerminal();
+      connect();
+    }
+
+    function showError(html) {
+      loadingText.remove();
+      const spinner = loadingEl.querySelector('.loading-spinner');
+      if (spinner) spinner.remove();
+      const err = document.createElement('div');
+      err.className = 'loading-error';
+      err.innerHTML = html;
+      loadingEl.appendChild(err);
+    }
+
+    function setStatus(state, text) {
+      statusEl.textContent = text;
+      statusEl.className = 'topbar-status ' + state;
+    }
+
+    function initTerminal() {
+      term = new Terminal({
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize,
+        theme: {
+          background: '#0a0a0b',
+          foreground: '#e4e4e7',
+          cursor: '#c9a227',
+          cursorAccent: '#0a0a0b',
+          selectionBackground: 'rgba(201, 162, 39, 0.3)',
+          black: '#27272a',
+          red: '#d47878',
+          green: '#7cb382',
+          yellow: '#c9a227',
+          blue: '#6b9bd2',
+          magenta: '#b07eb5',
+          cyan: '#6bbfb8',
+          white: '#e4e4e7',
+          brightBlack: '#52525b',
+          brightRed: '#e89090',
+          brightGreen: '#96c99b',
+          brightYellow: '#d4b84a',
+          brightBlue: '#87b3e0',
+          brightMagenta: '#c89bcb',
+          brightCyan: '#88d3cd',
+          brightWhite: '#fafafa',
+        },
+        cursorBlink: true,
+        scrollback: 5000,
+        allowProposedApi: true,
+      });
+
+      fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(terminalWrap);
+      fitAddon.fit();
+
+      // Handle user input
+      term.onData(data => {
+        if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
+
+        // Apply modifiers
+        let sendData = data;
+        if (modifiers.ctrl && data.length === 1) {
+          const code = data.toUpperCase().charCodeAt(0) - 64;
+          if (code > 0 && code < 32) {
+            sendData = String.fromCharCode(code);
+          }
+          modifiers.ctrl = false;
+          updateModifierButtons();
+        }
+        if (modifiers.alt) {
+          sendData = '\x1b' + data;
+          modifiers.alt = false;
+          updateModifierButtons();
+        }
+
+        ws.send(JSON.stringify({
+          type: 'input',
+          terminalId: currentTerminalId,
+          data: sendData,
+        }));
+      });
+
+      // Track scroll position
+      term.onScroll(() => {
+        const buf = term.buffer.active;
+        const atBottom = buf.viewportY >= buf.baseY;
+        scrollBottomBtn.classList.toggle('visible', !atBottom);
+      });
+
+      // Resize
+      const ro = new ResizeObserver(() => {
+        if (fitAddon) {
+          fitAddon.fit();
+          if (ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
+            ws.send(JSON.stringify({
+              type: 'resize',
+              terminalId: currentTerminalId,
+              cols: term.cols,
+              rows: term.rows,
+            }));
+          }
+        }
+      });
+      ro.observe(terminalWrap);
+    }
+
+    function connect() {
+      if (!tunnelUrl) return;
+
+      // Build WebSocket URL from tunnel URL
+      const wsUrl = tunnelUrl.replace(/^https?:/, 'wss:');
+      setStatus('connecting', 'Connecting...');
+      loadingText && (loadingText.textContent = 'Connecting to device...');
+
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch (e) {
+        showError('Failed to connect. <a href="/go">Go back</a>');
+        return;
+      }
+
+      ws.onopen = () => {
+        setStatus('connecting', 'Authenticating...');
+        loadingText && (loadingText.textContent = 'Authenticating...');
+        reconnectAttempts = 0;
+
+        // Send connect-token auth
+        ws.send(JSON.stringify({
+          type: 'auth',
+          connectToken,
+        }));
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          handleMessage(JSON.parse(e.data));
+        } catch (err) {
+          console.error('[WS] Parse error:', err);
+        }
+      };
+
+      ws.onclose = () => {
+        setStatus('disconnected', 'Disconnected');
+        if (isAuthenticated && reconnectAttempts < 10) {
+          reconnectTimer = setTimeout(() => {
+            reconnectAttempts++;
+            connect();
+          }, 2000);
+        }
+      };
+
+      ws.onerror = () => {
+        setStatus('disconnected', 'Connection error');
+      };
+    }
+
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case 'welcome':
+          // Server sent welcome, now authenticate with connect token
+          ws.send(JSON.stringify({
+            type: 'auth',
+            connectToken,
+          }));
+          break;
+
+        case 'auth_result':
+          if (msg.success) {
+            isAuthenticated = true;
+            setStatus('connected', 'Connected');
+            loadingEl.classList.add('hidden');
+
+            // Clear URL params to prevent token reuse on refresh
+            const cleanUrl = new URL(location.href);
+            cleanUrl.searchParams.delete('t');
+            history.replaceState(null, '', cleanUrl.toString());
+
+            if (msg.terminals) {
+              terminals = msg.terminals;
+              renderTabs();
+            }
+            if (msg.currentTerminal) {
+              currentTerminalId = msg.currentTerminal;
+              highlightTab(currentTerminalId);
+            }
+
+            // Request terminal list
+            ws.send(JSON.stringify({ type: 'get_terminals' }));
+
+            // Focus terminal
+            term.focus();
+          } else {
+            showError(
+              'Authentication failed: ' + (msg.error || 'Unknown error') +
+              '<br><br><a href="/go">Go back to dashboard</a>'
+            );
+          }
+          break;
+
+        case 'output':
+          if (isSwitching) break;
+          if (term && msg.terminalId === currentTerminalId) {
+            term.write(msg.data);
+          }
+          break;
+
+        case 'terminals':
+        case 'switched':
+          if (msg.terminals) {
+            terminals = msg.terminals;
+            renderTabs();
+          }
+          if (msg.currentTerminal || msg.terminalId) {
+            currentTerminalId = msg.currentTerminal || msg.terminalId;
+            highlightTab(currentTerminalId);
+          }
+          if (msg.type === 'switched' && term) {
+            if (msg.buffer) {
+              term.write(msg.buffer);
+            }
+            isSwitching = false;
+          }
+          break;
+
+        case 'terminal_created':
+          ws.send(JSON.stringify({ type: 'get_terminals' }));
+          break;
+
+        case 'terminal_closed':
+          if (msg.terminalId === currentTerminalId) {
+            currentTerminalId = null;
+            term.clear();
+          }
+          ws.send(JSON.stringify({ type: 'get_terminals' }));
+          break;
+
+        case 'pong':
+          break;
+      }
+    }
+
+    function renderTabs() {
+      tabsEl.innerHTML = '';
+      terminals.forEach((t, i) => {
+        const tab = document.createElement('div');
+        tab.className = 'tab' + (t.id === currentTerminalId ? ' active' : '');
+        tab.dataset.terminalId = t.id;
+
+        const dot = document.createElement('span');
+        dot.className = 'tab-dot';
+        tab.appendChild(dot);
+
+        const label = document.createElement('span');
+        const name = t.projectPath
+          ? t.projectPath.split(/[/\\]/).pop()
+          : t.cwd
+          ? t.cwd.split(/[/\\]/).pop()
+          : 'Terminal ' + (i + 1);
+        label.textContent = name;
+        tab.appendChild(label);
+
+        tab.addEventListener('click', () => switchTerminal(t.id));
+        tabsEl.appendChild(tab);
+      });
+    }
+
+    function highlightTab(id) {
+      tabsEl.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.terminalId === id);
+      });
+    }
+
+    function switchTerminal(id) {
+      if (id === currentTerminalId || !ws || ws.readyState !== WebSocket.OPEN) return;
+      isSwitching = true;
+      term.clear();
+      ws.send(JSON.stringify({ type: 'switch', terminalId: id }));
+    }
+
+    // Font size controls
+    document.getElementById('btn-font-dec').addEventListener('click', () => {
+      fontSize = Math.max(8, fontSize - 1);
+      term.options.fontSize = fontSize;
+      fitAddon.fit();
+    });
+
+    document.getElementById('btn-font-inc').addEventListener('click', () => {
+      fontSize = Math.min(28, fontSize + 1);
+      term.options.fontSize = fontSize;
+      fitAddon.fit();
+    });
+
+    // Disconnect
+    document.getElementById('btn-disconnect').addEventListener('click', () => {
+      isAuthenticated = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) ws.close();
+      location.href = '/go';
+    });
+
+    // Scroll to bottom
+    scrollBottomBtn.addEventListener('click', () => {
+      term.scrollToBottom();
+      scrollBottomBtn.classList.remove('visible');
+    });
+
+    // Special keys bar
+    document.querySelectorAll('.key-btn[data-modifier]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mod = btn.dataset.modifier;
+        modifiers[mod] = !modifiers[mod];
+        updateModifierButtons();
+        term.focus();
+      });
+    });
+
+    document.querySelectorAll('.key-btn[data-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const key = btn.dataset.key;
+        const keyMap = {
+          Tab: '\t',
+          Escape: '\x1b',
+          ArrowUp: '\x1b[A',
+          ArrowDown: '\x1b[B',
+          ArrowRight: '\x1b[C',
+          ArrowLeft: '\x1b[D',
+        };
+        const data = keyMap[key] || '';
+        if (data) {
+          ws.send(JSON.stringify({
+            type: 'input',
+            terminalId: currentTerminalId,
+            data,
+          }));
+        }
+        term.focus();
+      });
+    });
+
+    document.querySelectorAll('.key-btn[data-seq]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({
+          type: 'input',
+          terminalId: currentTerminalId,
+          data: btn.dataset.seq,
+        }));
+        term.focus();
+      });
+    });
+
+    function updateModifierButtons() {
+      document.querySelectorAll('.key-btn[data-modifier]').forEach(btn => {
+        const mod = btn.dataset.modifier;
+        btn.classList.toggle('active', modifiers[mod]);
+      });
+    }
+
+    // Keepalive ping
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+  </script>
+</body>
+</html>
