@@ -39,8 +39,8 @@
         <div class="dt-body">
           <div class="dt-panel active" data-dt-panel="ps">
             <div class="dt-line"><span class="dt-comment"># One-line install (PowerShell)</span></div>
-            <div class="dt-line dt-copy-line" data-dt-copy="irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex">
-              <span class="dt-prompt">PS&gt;</span> irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex
+            <div class="dt-line dt-copy-line" data-dt-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+              <span class="dt-prompt">PS&gt;</span> irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex
               <button class="dt-copy-btn" aria-label="Copy to clipboard">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               </button>
@@ -48,8 +48,8 @@
           </div>
           <div class="dt-panel" data-dt-panel="cmd">
             <div class="dt-line"><span class="dt-comment"># One-line install (CMD)</span></div>
-            <div class="dt-line dt-copy-line" data-dt-copy='curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
-              <span class="dt-prompt">C:\&gt;</span> curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"
+            <div class="dt-line dt-copy-line" data-dt-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+              <span class="dt-prompt">C:\&gt;</span> curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"
               <button class="dt-copy-btn" aria-label="Copy to clipboard">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               </button>
@@ -233,12 +233,32 @@
   });
 
   // Copy buttons
+  function copyText(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
   document.querySelectorAll('.dt-copy-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const line = btn.closest('[data-dt-copy]') as HTMLElement;
       const text = line?.dataset.dtCopy;
       if (text) {
-        navigator.clipboard.writeText(text).then(() => {
+        copyText(text).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
+        }).catch(() => {
           btn.classList.add('copied');
           setTimeout(() => btn.classList.remove('copied'), 1500);
         });
