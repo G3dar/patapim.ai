@@ -76,9 +76,7 @@ import Footer from '../components/Footer.astro';
           </div>
           <h3>macOS</h3>
           <p class="dl-version">Coming Soon</p>
-          <button class="btn btn-secondary" disabled style="width: 100%; justify-content: center; opacity: 0.5; cursor: not-allowed;">
-            Coming Soon
-          </button>
+          <span class="dl-coming-soon">Coming Soon</span>
           <p class="dl-note">Build from source works on macOS today. Native app packaging in progress.</p>
         </div>
 
@@ -91,9 +89,7 @@ import Footer from '../components/Footer.astro';
           </div>
           <h3>Linux</h3>
           <p class="dl-version">Coming Soon</p>
-          <button class="btn btn-secondary" disabled style="width: 100%; justify-content: center; opacity: 0.5; cursor: not-allowed;">
-            Coming Soon
-          </button>
+          <span class="dl-coming-soon">Coming Soon</span>
           <p class="dl-note">Build from source works on Linux today. AppImage and .deb packages planned.</p>
         </div>
       </div>
@@ -154,7 +150,7 @@ import Footer from '../components/Footer.astro';
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-xl);
-    max-width: 960px;
+    max-width: 720px;
     margin: 0 auto;
   }
 
@@ -217,6 +213,14 @@ import Footer from '../components/Footer.astro';
     border: 1px solid var(--border-default);
     border-radius: var(--radius-sm);
     padding: 6px 10px;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+  }
+  .dl-cmd-line:hover {
+    border-color: var(--accent-primary);
+  }
+  .dl-cmd-line.copied {
+    border-color: var(--success);
   }
   .dl-cmd-line code {
     flex: 1;
@@ -241,6 +245,17 @@ import Footer from '../components/Footer.astro';
   }
   .dl-copy-btn.copied {
     color: var(--success);
+  }
+
+  .dl-coming-soon {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
+    padding: 8px 24px;
+    border-radius: var(--radius-md);
   }
 
   .dl-note {
@@ -392,15 +407,23 @@ import Footer from '../components/Footer.astro';
     setTimeout(() => btn.classList.remove('copied'), 1500);
   }
 
-  // Copy command buttons
-  document.querySelectorAll('.dl-copy-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  // Copy on click anywhere in the command line
+  document.querySelectorAll('[data-dl-copy]').forEach(line => {
+    line.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      const line = btn.closest('[data-dl-copy]') as HTMLElement;
-      const text = line?.dataset.dlCopy;
+      const el = line as HTMLElement;
+      const text = el.dataset.dlCopy;
+      const btn = el.querySelector('.dl-copy-btn');
       if (text) {
-        copyText(text).then(() => markCopied(btn)).catch(() => markCopied(btn));
+        copyText(text).then(() => {
+          if (btn) markCopied(btn);
+          el.classList.add('copied');
+          setTimeout(() => el.classList.remove('copied'), 1500);
+        }).catch(() => {
+          if (btn) markCopied(btn);
+          el.classList.add('copied');
+          setTimeout(() => el.classList.remove('copied'), 1500);
+        });
       }
     });
   });
