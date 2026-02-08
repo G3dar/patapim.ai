@@ -32,66 +32,51 @@ import Footer from '../components/Footer.astro';
         <p class="license-note">Save this key. It's also been emailed to your Stripe billing address.</p>
       </div>
 
-      <div class="download-grid">
-        <!-- Windows -->
-        <div class="dl-card active">
+      <!-- Windows - Full Width -->
+      <div class="dl-card-windows">
+        <div class="dl-windows-top">
           <div class="dl-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
               <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
             </svg>
           </div>
           <h3>Windows</h3>
           <p class="dl-version">Windows 10 or later</p>
-          <a href="https://github.com/G3dar/patapim-releases/releases/latest" class="btn btn-primary" style="width: 100%; justify-content: center;" target="_blank" rel="noopener">
+          <a href="/api/download/latest" class="btn btn-primary" style="justify-content: center; max-width: 320px; width: 100%;">
             Download Installer (.exe)
           </a>
-          <div class="dl-install-cmds">
-            <div class="dl-cmd-block">
-              <span class="dl-cmd-label">PowerShell</span>
-              <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
-                <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
-                <button class="dl-copy-btn" aria-label="Copy">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-              </div>
-            </div>
-            <div class="dl-cmd-block">
-              <span class="dl-cmd-label">CMD</span>
-              <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
-                <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
-                <button class="dl-copy-btn" aria-label="Copy">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-              </div>
+        </div>
+        <div class="dl-install-cmds">
+          <div class="dl-cmd-block">
+            <span class="dl-cmd-label">PowerShell</span>
+            <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+              <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
+              <button class="dl-copy-btn" aria-label="Copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
             </div>
           </div>
-        </div>
-
-        <!-- macOS -->
-        <div class="dl-card disabled">
-          <div class="dl-icon dim">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
+          <div class="dl-cmd-block">
+            <span class="dl-cmd-label">CMD</span>
+            <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+              <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+              <button class="dl-copy-btn" aria-label="Copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
           </div>
-          <h3>macOS</h3>
-          <p class="dl-version">Coming Soon</p>
-          <span class="dl-coming-soon">Coming Soon</span>
-          <p class="dl-note">Build from source works on macOS today. Native app packaging in progress.</p>
         </div>
+      </div>
 
-        <!-- Linux -->
-        <div class="dl-card disabled">
-          <div class="dl-icon dim">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.868.07 1.723-.136 2.582-.796 1.227-.935 1.576-2.076 2.034-3.186.121-.297.239-.594.371-.886.283-.605.457-1.264.365-1.938-.098-.727-.56-1.36-1.14-1.543a.715.715 0 00-.095-.03c-.195-1.244-.842-1.648-1.305-2.527-.317-.6-.672-.972-1.067-1.24-.15-.1-.3-.186-.456-.26.029-.067.06-.134.086-.203.27-.717.196-1.594-.26-2.457.016-.148.023-.297.023-.45-.002-2.675-1.645-4.923-4.293-5.08zM12.5 1.17c2.032.128 3.266 1.898 3.267 4.063 0 .15-.008.298-.025.445C15.32 5.308 14.63 5.16 13.85 5.3c-.494.089-1.019.34-1.345.773-.09-.067-.179-.15-.279-.212-.236-.161-.479-.249-.748-.271-.135-.01-.272.01-.4.044-.236-.587-.493-1.132-.81-1.469-.318-.336-.672-.55-1.12-.573-.455-.023-.91.149-1.346.397-.436.249-.861.554-1.244.868l-.03.025c-.032-1.407-.127-4.796 2.972-5.068a3.715 3.715 0 01.48-.021z"/>
-            </svg>
-          </div>
-          <h3>Linux</h3>
-          <p class="dl-version">Coming Soon</p>
-          <span class="dl-coming-soon">Coming Soon</span>
-          <p class="dl-note">Build from source works on Linux today. AppImage and .deb packages planned.</p>
+      <!-- macOS - Coming Soon -->
+      <div class="dl-card-macos">
+        <div class="dl-icon dim">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
         </div>
+        <h3>macOS</h3>
+        <span class="dl-coming-soon">Coming Soon</span>
       </div>
 
       <!-- Requirements -->
@@ -117,24 +102,6 @@ import Footer from '../components/Footer.astro';
         </div>
       </div>
 
-      <!-- Quick Install -->
-      <div class="source-install">
-        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">Quick Install via Terminal</h2>
-        <div class="source-terminal">
-          <div class="st-header">
-            <span class="st-dot"></span><span class="st-dot"></span><span class="st-dot"></span>
-          </div>
-          <div class="st-body">
-            <div class="st-line"><span class="st-comment"># PowerShell (recommended)</span></div>
-            <div class="st-line"><span class="st-prompt">$</span> irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</div>
-            <div class="st-line">&nbsp;</div>
-            <div class="st-line"><span class="st-comment"># CMD</span></div>
-            <div class="st-line"><span class="st-prompt">&gt;</span> curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</div>
-            <div class="st-line">&nbsp;</div>
-            <div class="st-line st-accent">&#x276F;_ Downloads, installs, and registers MCP server automatically.</div>
-          </div>
-        </div>
-      </div>
     </div>
   </main>
 
@@ -146,37 +113,63 @@ import Footer from '../components/Footer.astro';
     min-height: 100vh;
   }
 
-  .download-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-xl);
-    max-width: 720px;
-    margin: 0 auto;
+  /* Windows card - full width */
+  .dl-card-windows {
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl) var(--space-3xl);
+    text-align: center;
+    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
+    margin-bottom: var(--space-xl);
+  }
+  .dl-windows-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-xl);
+  }
+  .dl-card-windows h3 {
+    font-size: 24px;
+    margin-bottom: var(--space-xs);
   }
 
-  .dl-card {
+  /* macOS card - compact */
+  .dl-card-macos {
     background: var(--bg-secondary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
-    text-align: center;
+    padding: var(--space-xl) var(--space-2xl);
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    max-width: 420px;
+    margin: 0 auto;
   }
-  .dl-card.active {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
+  .dl-card-macos h3 {
+    font-size: 18px;
+    margin-bottom: 0;
+  }
+  .dl-coming-soon {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-left: auto;
   }
 
   .dl-icon {
     color: var(--text-primary);
     margin-bottom: var(--space-lg);
   }
+  .dl-card-macos .dl-icon {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
   .dl-icon.dim {
     color: var(--text-muted);
-  }
-
-  .dl-card h3 {
-    font-size: 20px;
-    margin-bottom: var(--space-xs);
   }
 
   .dl-version {
@@ -200,8 +193,8 @@ import Footer from '../components/Footer.astro';
   }
   .dl-cmd-label {
     font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-muted);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -213,23 +206,15 @@ import Footer from '../components/Footer.astro';
     border: 1px solid var(--border-default);
     border-radius: var(--radius-sm);
     padding: 6px 10px;
-    cursor: pointer;
-    transition: border-color var(--transition-fast);
-  }
-  .dl-cmd-line:hover {
-    border-color: var(--accent-primary);
-  }
-  .dl-cmd-line.copied {
-    border-color: var(--success);
   }
   .dl-cmd-line code {
     flex: 1;
-    font-size: 10px;
+    font-size: 12px;
     background: none;
     padding: 0;
-    color: var(--accent-primary);
+    color: rgba(255, 255, 255, 0.85);
     word-break: break-all;
-    line-height: 1.4;
+    line-height: 1.5;
   }
   .dl-copy-btn {
     flex-shrink: 0;
@@ -245,17 +230,6 @@ import Footer from '../components/Footer.astro';
   }
   .dl-copy-btn.copied {
     color: var(--success);
-  }
-
-  .dl-coming-soon {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    border: 1px solid var(--border-strong);
-    padding: 8px 24px;
-    border-radius: var(--radius-md);
   }
 
   .dl-note {
@@ -290,41 +264,6 @@ import Footer from '../components/Footer.astro';
     color: var(--text-secondary);
   }
 
-  /* Source install */
-  .source-install {
-    max-width: 640px;
-    margin: 0 auto;
-    padding-bottom: var(--space-4xl);
-  }
-  .source-terminal {
-    background: var(--bg-deep);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-  }
-  .st-header {
-    display: flex;
-    gap: 6px;
-    padding: 12px 16px;
-    background: var(--bg-tertiary);
-    border-bottom: 1px solid var(--border-default);
-  }
-  .st-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--bg-hover);
-  }
-  .st-body {
-    padding: 20px 24px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 2;
-  }
-  .st-line { color: var(--text-secondary); }
-  .st-prompt { color: var(--accent-primary); margin-right: 8px; }
-  .st-comment { color: var(--text-muted); }
-  .st-accent { color: var(--accent-primary); }
 
   /* License Banner */
   .license-banner {
@@ -377,7 +316,8 @@ import Footer from '../components/Footer.astro';
   }
 
   @media (max-width: 768px) {
-    .download-grid { grid-template-columns: 1fr; max-width: 400px; }
+    .dl-card-windows { padding: var(--space-xl); }
+    .dl-card-macos { max-width: 100%; }
     .req-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 480px) {
@@ -386,55 +326,29 @@ import Footer from '../components/Footer.astro';
 </style>
 
 <script>
-  function copyText(text: string): Promise<void> {
-    if (navigator.clipboard?.writeText) {
-      return navigator.clipboard.writeText(text);
-    }
-    // Fallback for insecure contexts or older browsers
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    return Promise.resolve();
-  }
-
-  function markCopied(btn: Element) {
-    btn.classList.add('copied');
-    setTimeout(() => btn.classList.remove('copied'), 1500);
-  }
-
-  // Copy on click anywhere in the command line
-  document.querySelectorAll('[data-dl-copy]').forEach(line => {
-    line.addEventListener('click', (e) => {
-      e.preventDefault();
-      const el = line as HTMLElement;
-      const text = el.dataset.dlCopy;
-      const btn = el.querySelector('.dl-copy-btn');
+  // Copy command buttons
+  document.querySelectorAll('[data-dl-copy] .dl-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const line = btn.closest('[data-dl-copy]') as HTMLElement;
+      const text = line?.dataset.dlCopy;
       if (text) {
-        copyText(text).then(() => {
-          if (btn) markCopied(btn);
-          el.classList.add('copied');
-          setTimeout(() => el.classList.remove('copied'), 1500);
-        }).catch(() => {
-          if (btn) markCopied(btn);
-          el.classList.add('copied');
-          setTimeout(() => el.classList.remove('copied'), 1500);
+        navigator.clipboard.writeText(text).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
         });
       }
     });
   });
 
   // Copy license key button
-  document.getElementById('copy-license-btn')?.addEventListener('click', (e) => {
-    e.preventDefault();
+  document.getElementById('copy-license-btn')?.addEventListener('click', () => {
     const key = document.getElementById('license-key-value')?.textContent;
     if (key) {
-      const btn = document.getElementById('copy-license-btn')!;
-      copyText(key).then(() => markCopied(btn)).catch(() => markCopied(btn));
+      navigator.clipboard.writeText(key).then(() => {
+        const btn = document.getElementById('copy-license-btn')!;
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
+      });
     }
   });
 

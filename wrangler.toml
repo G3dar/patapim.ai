@@ -29,6 +29,10 @@ id = "5a9c98b6432343bfbee7404add18c8f3"
 binding = "SESSIONS"
 id = "99d2f45febe345dd96dc07e2edd631b0"
 
+[[r2_buckets]]
+binding = "RELEASES"
+bucket_name = "patapim-releases"
+
 # Google OAuth secrets — set with:
 #   wrangler secret put GOOGLE_CLIENT_ID
 #   wrangler secret put GOOGLE_CLIENT_SECRET

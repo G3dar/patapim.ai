@@ -13,6 +13,7 @@ interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   SESSIONS: KVNamespace;
+  RELEASES: R2Bucket;
 }
 
 declare namespace App {
