@@ -1,9 +1,6 @@
 ---
 export const prerender = false;
 
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Navbar from '../components/Navbar.astro';
-import Footer from '../components/Footer.astro';
 import { getUserFromRequest } from '../lib/auth';
 import { isAdmin } from '../lib/admin';
 
@@ -19,775 +16,863 @@ if (!isAdmin(user)) {
 }
 ---
 
-<BaseLayout title="Admin — PATAPIM" description="Admin dashboard">
-  <Navbar />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — PATAPIM</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
 
-  <main class="admin-page">
-    <div class="container">
-      <div class="admin-header">
-        <h1 class="admin-title">Admin Dashboard</h1>
-        <span class="admin-badge">Admin</span>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <a href="/" class="topbar-brand">
+          <span class="brand-icon">&#x276F;_</span>
+          <span class="brand-text">PATAPIM</span>
+        </a>
+        <span class="topbar-sep"></span>
+        <span class="topbar-label">Admin</span>
       </div>
+      <div class="topbar-right">
+        <img src={user.picture} alt="" class="topbar-avatar" referrerpolicy="no-referrer" />
+        <span class="topbar-email">{user.email}</span>
+        <a href="/go" class="topbar-link">Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
 
       <!-- Tabs -->
-      <div class="admin-tabs">
-        <button class="tab-btn active" data-tab="overview">Overview</button>
-        <button class="tab-btn" data-tab="users">Users</button>
-        <button class="tab-btn" data-tab="referrals">Referrals</button>
-        <button class="tab-btn" data-tab="feedback">Feedback</button>
-      </div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="users">Users</button>
+        <button class="tab" data-tab="referrals">Referrals</button>
+        <button class="tab" data-tab="feedback">Feedback</button>
+      </nav>
 
-      <!-- Tab Content -->
-      <div class="tab-content" id="tab-overview">
-        <div class="panel-loading" id="overview-loading">Loading stats...</div>
+      <!-- Overview -->
+      <section class="pane" id="tab-overview">
+        <div class="loader" id="overview-loading">Loading...</div>
         <div id="overview-content" style="display:none;"></div>
-      </div>
+      </section>
 
-      <div class="tab-content" id="tab-users" style="display:none;">
-        <div class="users-toolbar">
-          <input type="text" class="search-input" id="user-search" placeholder="Search by email or name..." />
-          <select class="filter-select" id="plan-filter">
+      <!-- Users -->
+      <section class="pane" id="tab-users" style="display:none;">
+        <div class="toolbar">
+          <input type="text" class="toolbar-search" id="user-search" placeholder="Search by email or name..." />
+          <select class="toolbar-select" id="plan-filter">
             <option value="all">All Plans</option>
             <option value="free">Free</option>
             <option value="pro">Pro</option>
             <option value="lifetime">Lifetime</option>
           </select>
         </div>
-        <div class="panel-loading" id="users-loading">Loading users...</div>
+        <div class="loader" id="users-loading">Loading...</div>
         <div id="users-content" style="display:none;"></div>
-      </div>
+      </section>
 
-      <div class="tab-content" id="tab-referrals" style="display:none;">
-        <div class="panel-loading" id="referrals-loading">Loading referrals...</div>
+      <!-- Referrals -->
+      <section class="pane" id="tab-referrals" style="display:none;">
+        <div class="loader" id="referrals-loading">Loading...</div>
         <div id="referrals-content" style="display:none;"></div>
-      </div>
+      </section>
 
-      <div class="tab-content" id="tab-feedback" style="display:none;">
-        <div class="panel-loading" id="feedback-loading">Loading feedback...</div>
+      <!-- Feedback -->
+      <section class="pane" id="tab-feedback" style="display:none;">
+        <div class="loader" id="feedback-loading">Loading...</div>
         <div id="feedback-content" style="display:none;"></div>
-      </div>
+      </section>
+
     </div>
   </main>
 
-  <Footer />
-</BaseLayout>
-
-<style>
-  .admin-page {
-    min-height: 100vh;
-    padding-top: 96px;
-    padding-bottom: var(--space-4xl);
-  }
-
-  .admin-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-lg);
-    padding: var(--space-xl) 0;
-    border-bottom: 1px solid var(--border-subtle);
-    margin-bottom: var(--space-2xl);
-  }
-
-  .admin-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  .admin-badge {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 100px;
-    background: rgba(212, 120, 120, 0.15);
-    color: var(--error);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .admin-tabs {
-    display: flex;
-    gap: var(--space-xs);
-    margin-bottom: var(--space-2xl);
-    border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: 0;
-  }
-
-  .tab-btn {
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: var(--space-md) var(--space-xl);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    transition: color var(--transition-fast), border-color var(--transition-fast);
-  }
-
-  .tab-btn:hover {
-    color: var(--text-secondary);
-  }
-
-  .tab-btn.active {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
-  }
-
-  .panel-loading {
-    text-align: center;
-    padding: var(--space-4xl);
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-
-  /* Users toolbar */
-  .users-toolbar {
-    display: flex;
-    gap: var(--space-lg);
-    margin-bottom: var(--space-xl);
-  }
-
-  .search-input {
-    flex: 1;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-lg);
-    font-size: 14px;
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    outline: none;
-    transition: border-color var(--transition-fast);
-  }
-
-  .search-input::placeholder {
-    color: var(--text-muted);
-  }
-
-  .search-input:focus {
-    border-color: var(--accent-primary);
-  }
-
-  .filter-select {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-lg);
-    font-size: 14px;
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    outline: none;
-    cursor: pointer;
-    min-width: 140px;
-  }
-
-  .filter-select option {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  @media (max-width: 640px) {
-    .admin-tabs {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .tab-btn {
-      white-space: nowrap;
-      padding: var(--space-sm) var(--space-lg);
-      font-size: 13px;
-    }
-
-    .users-toolbar {
-      flex-direction: column;
-    }
-  }
-</style>
-
-<!-- Dynamic content styles -->
 <style is:global>
-  /* Stats Grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--space-lg);
-    margin-bottom: var(--space-2xl);
+  /* ── Reset ────────────────────────────── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+
+    --green-50: #f0fdf4;
+    --green-100: #dcfce7;
+    --green-500: #22c55e;
+    --green-600: #16a34a;
+    --green-700: #15803d;
+
+    --amber-50: #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+
+    --red-50: #fef2f2;
+    --red-100: #fee2e2;
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+
+    --purple-50: #faf5ff;
+    --purple-500: #a855f7;
+    --purple-600: #9333ea;
+
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   }
 
-  .stat-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    transition: border-color var(--transition-fast);
+  body {
+    font-family: var(--font);
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
-  .stat-card:hover {
-    border-color: var(--border-strong);
+  /* ── Top Bar ──────────────────────────── */
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
-  .stat-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: var(--space-sm);
+  .topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .stat-value {
-    font-family: var(--font-mono);
-    font-size: 28px;
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--gray-900);
     font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.2;
+    font-size: 15px;
   }
 
-  .stat-sub {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    margin-top: var(--space-xs);
+  .brand-icon {
+    font-family: var(--mono);
+    color: var(--blue-600);
   }
 
-  .stat-sub .accent {
-    color: var(--accent-primary);
-    font-weight: 600;
+  .topbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--gray-200);
   }
 
-  /* Revenue card */
-  .stat-card.revenue {
-    border-color: rgba(212, 165, 116, 0.2);
-  }
-
-  .stat-card.revenue .stat-value {
-    color: var(--accent-primary);
-  }
-
-  /* Trends */
-  .trends-section {
-    margin-bottom: var(--space-2xl);
-  }
-
-  .trends-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-lg);
-  }
-
-  .trends-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--space-sm);
-    height: 120px;
-    padding: var(--space-lg);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-  }
-
-  .trend-day {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xs);
-    height: 100%;
-    justify-content: flex-end;
-  }
-
-  .trend-bars {
-    display: flex;
-    gap: 2px;
-    align-items: flex-end;
-    width: 100%;
-    justify-content: center;
-    flex: 1;
-  }
-
-  .trend-bar {
-    width: 12px;
-    min-height: 2px;
-    border-radius: 2px 2px 0 0;
-    transition: height var(--transition-normal);
-  }
-
-  .trend-bar.signups {
-    background: var(--accent-primary);
-  }
-
-  .trend-bar.downloads {
-    background: var(--info);
-  }
-
-  .trend-label {
-    font-size: 10px;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-  }
-
-  .trends-legend {
-    display: flex;
-    gap: var(--space-xl);
-    margin-top: var(--space-md);
-    justify-content: center;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: 11px;
-    color: var(--text-tertiary);
-  }
-
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-  }
-
-  .legend-dot.signups { background: var(--accent-primary); }
-  .legend-dot.downloads { background: var(--info); }
-
-  /* Users Table */
-  .users-table-wrap {
-    overflow-x: auto;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-  }
-
-  .users-table {
-    width: 100%;
-    border-collapse: collapse;
+  .topbar-label {
     font-size: 13px;
-  }
-
-  .users-table th {
-    text-align: left;
-    padding: var(--space-md) var(--space-lg);
-    font-size: 11px;
     font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border-default);
-    white-space: nowrap;
+    color: var(--red-600);
+    background: var(--red-50);
+    padding: 2px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.3px;
   }
 
-  .users-table td {
-    padding: var(--space-md) var(--space-lg);
-    border-bottom: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
-    vertical-align: middle;
-  }
-
-  .users-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  .users-table tr:hover td {
-    background: var(--bg-tertiary);
-  }
-
-  .user-cell {
+  .topbar-right {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: 12px;
   }
 
-  .user-cell-avatar {
+  .topbar-avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    border: 1px solid var(--border-default);
+    border: 2px solid var(--gray-200);
   }
 
-  .user-cell-info {
+  .topbar-email {
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+
+  .topbar-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--blue-600);
+    text-decoration: none;
+    margin-left: 8px;
+  }
+
+  .topbar-link:hover { text-decoration: underline; }
+
+  /* ── Main ──────────────────────────────── */
+  .admin-main {
+    padding: 32px 24px 64px;
+  }
+
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── Tabs ──────────────────────────────── */
+  .tabs {
     display: flex;
-    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--gray-200);
   }
 
-  .user-cell-name {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 13px;
-  }
-
-  .user-cell-email {
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .plan-badge {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
-
-  .plan-free {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-  }
-
-  .plan-pro {
-    background: var(--accent-primary);
-    color: var(--bg-deep);
-  }
-
-  .plan-lifetime {
-    background: rgba(224, 164, 88, 0.15);
-    color: var(--warning);
-  }
-
-  .status-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 100px;
-    font-family: var(--font-mono);
-    white-space: nowrap;
-  }
-
-  .status-active { background: var(--success-subtle); color: var(--success); }
-  .status-trialing { background: rgba(120, 165, 212, 0.15); color: var(--info); }
-  .status-past_due, .status-payment_failed { background: rgba(224, 164, 88, 0.15); color: var(--warning); }
-  .status-canceled, .status-expired { background: var(--error-subtle); color: var(--error); }
-
-  .plan-select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    padding: 3px 8px;
-    font-size: 11px;
-    color: var(--text-primary);
-    font-family: var(--font-mono);
+  .tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 20px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-400);
     cursor: pointer;
-    outline: none;
+    transition: all 150ms;
   }
 
-  .plan-select option {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+  .tab:hover { color: var(--gray-600); }
+
+  .tab.active {
+    color: var(--blue-600);
+    border-bottom-color: var(--blue-600);
   }
 
-  .users-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-lg);
-    font-size: 13px;
-    color: var(--text-tertiary);
-  }
-
-  .pagination-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    padding: var(--space-xs) var(--space-lg);
-    font-size: 13px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: color var(--transition-fast), border-color var(--transition-fast);
-  }
-
-  .pagination-btn:hover {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .pagination-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .users-count {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: var(--space-lg);
-  }
-
-  .no-results {
+  /* ── Loader ────────────────────────────── */
+  .loader {
     text-align: center;
-    padding: var(--space-3xl);
-    color: var(--text-muted);
+    padding: 48px;
+    color: var(--gray-400);
     font-size: 14px;
   }
 
-  /* Referrals */
-  .referral-summary {
+  /* ── Stats Grid ────────────────────────── */
+  .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: var(--space-lg);
-    margin-bottom: var(--space-2xl);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
-  .referrals-table-wrap {
+  .kpi {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 150ms;
+  }
+
+  .kpi:hover { box-shadow: var(--shadow-md); }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--gray-500);
+    line-height: 1.4;
+  }
+
+  .kpi-sub .up {
+    color: var(--green-600);
+    font-weight: 600;
+  }
+
+  .kpi.revenue { border-left: 3px solid var(--green-500); }
+  .kpi.revenue .kpi-value { color: var(--green-700); }
+
+  /* ── Breakdown chips ───────────────────── */
+  .breakdown-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .breakdown-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--gray-700);
+    box-shadow: var(--shadow-card);
+  }
+
+  .breakdown-chip .chip-count {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .breakdown-chip .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .chip-dot.active { background: var(--green-500); }
+  .chip-dot.trialing { background: var(--blue-500); }
+  .chip-dot.past_due, .chip-dot.payment_failed { background: var(--amber-500); }
+  .chip-dot.canceled, .chip-dot.expired { background: var(--red-500); }
+  .chip-dot.unknown { background: var(--gray-400); }
+
+  /* ── Trends Chart ──────────────────────── */
+  .trends-section {
+    margin-bottom: 8px;
+  }
+
+  .section-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 14px;
+  }
+
+  .chart-wrap {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 20px 24px 16px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 140px;
+  }
+
+  .chart-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .chart-pair {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    flex: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bar {
+    width: 14px;
+    min-height: 3px;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+  }
+
+  .bar:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gray-800);
+    color: var(--white);
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .bar.signups { background: var(--blue-500); }
+  .bar.downloads { background: var(--amber-500); }
+
+  .chart-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--gray-400);
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  .legend-swatch.signups { background: var(--blue-500); }
+  .legend-swatch.downloads { background: var(--amber-500); }
+
+  /* ── Toolbar ───────────────────────────── */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .toolbar-search {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    font-size: 14px;
+    font-family: var(--font);
+    color: var(--gray-800);
+    outline: none;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+
+  .toolbar-search::placeholder { color: var(--gray-400); }
+  .toolbar-search:focus {
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+
+  .toolbar-select {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    font-size: 14px;
+    font-family: var(--font);
+    color: var(--gray-700);
+    cursor: pointer;
+    outline: none;
+    min-width: 140px;
+  }
+
+  /* ── Table ─────────────────────────────── */
+  .tbl-wrap {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
     overflow-x: auto;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
   }
 
-  .referrals-table {
+  .tbl {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
   }
 
-  .referrals-table th {
+  .tbl th {
     text-align: left;
-    padding: var(--space-md) var(--space-lg);
+    padding: 12px 16px;
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--gray-400);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--gray-200);
     white-space: nowrap;
+    background: var(--gray-50);
   }
 
-  .referrals-table td {
-    padding: var(--space-md) var(--space-lg);
-    border-bottom: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
+  .tbl td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-600);
     vertical-align: middle;
   }
 
-  .referrals-table tr:last-child td {
-    border-bottom: none;
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tbody tr:hover td { background: var(--blue-50); }
+
+  /* User cell */
+  .ucell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .referrals-table tr:hover td {
-    background: var(--bg-tertiary);
+  .ucell-av {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-200);
   }
 
-  .reward-badge {
-    font-size: 10px;
+  .ucell-info { display: flex; flex-direction: column; }
+
+  .ucell-name {
     font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 100px;
-    font-family: var(--font-mono);
+    color: var(--gray-800);
+    font-size: 13px;
   }
 
-  .reward-granted { background: var(--success-subtle); color: var(--success); }
-  .reward-pending { background: var(--bg-tertiary); color: var(--text-muted); }
-
-  /* Expandable referral details */
-  .referral-toggle {
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 12px;
-    transition: color var(--transition-fast);
-  }
-
-  .referral-toggle:hover {
-    color: var(--accent-primary);
-  }
-
-  .referral-details {
-    display: none;
-  }
-
-  .referral-details.open {
-    display: table-row;
-  }
-
-  .referral-details td {
-    padding: var(--space-sm) var(--space-lg) var(--space-lg);
-    background: var(--bg-tertiary);
-  }
-
-  .referral-detail-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-  }
-
-  .referral-detail-item {
+  .ucell-email {
     font-size: 11px;
-    font-family: var(--font-mono);
+    color: var(--gray-400);
+  }
+
+  /* Badges */
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
     padding: 3px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .badge-free { background: var(--gray-100); color: var(--gray-600); }
+  .badge-pro { background: var(--blue-100); color: var(--blue-700); }
+  .badge-lifetime { background: var(--purple-50); color: var(--purple-600); }
+
+  .badge-active { background: var(--green-100); color: var(--green-700); }
+  .badge-trialing { background: var(--blue-100); color: var(--blue-700); }
+  .badge-past_due, .badge-payment_failed { background: var(--amber-100); color: var(--amber-700); }
+  .badge-canceled, .badge-expired { background: var(--red-100); color: var(--red-600); }
+
+  .badge-granted { background: var(--green-100); color: var(--green-700); }
+  .badge-pending { background: var(--gray-100); color: var(--gray-500); }
+
+  /* Plan change select */
+  .plan-sel {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
     border-radius: var(--radius-sm);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--gray-700);
+    cursor: pointer;
+    outline: none;
   }
 
-  .referral-detail-item.activated {
-    border-color: rgba(124, 179, 130, 0.3);
-    color: var(--success);
-  }
-
-  .referral-detail-item.pending {
-    color: var(--text-muted);
-  }
-
-  /* Feedback */
-  .feedback-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-  }
-
-  .feedback-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-  }
-
-  .feedback-header {
+  /* Pagination */
+  .tbl-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--space-md);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-100);
   }
 
-  .feedback-email {
+  .tbl-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-bottom: 16px;
+  }
+
+  .btn-load {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .btn-load:hover {
+    background: var(--gray-50);
+    border-color: var(--blue-500);
+    color: var(--blue-600);
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 48px;
+    color: var(--gray-400);
+    font-size: 14px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+  }
+
+  /* ── Referrals ─────────────────────────── */
+  .ref-toggle {
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 13px;
+    transition: color 150ms;
+  }
+
+  .ref-toggle:hover { color: var(--blue-600); }
+
+  .ref-detail { display: none; }
+  .ref-detail.open { display: table-row; }
+
+  .ref-detail td {
+    padding: 8px 16px 16px;
+    background: var(--gray-50);
+  }
+
+  .ref-chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ref-chip {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+  }
+
+  .ref-chip.ok {
+    border-color: var(--green-500);
+    color: var(--green-700);
+    background: var(--green-50);
+  }
+
+  .ref-chip.wait {
+    color: var(--gray-400);
+  }
+
+  /* ── Feedback ──────────────────────────── */
+  .fb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .fb-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .fb-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .fb-email {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--gray-800);
   }
 
-  .feedback-time {
+  .fb-time {
     font-size: 11px;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--mono);
+    color: var(--gray-400);
   }
 
-  .feedback-text {
+  .fb-text {
     font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.6;
+    color: var(--gray-600);
+    line-height: 1.7;
   }
 
-  .feedback-rating {
-    margin-top: var(--space-md);
-    font-size: 12px;
-    color: var(--text-tertiary);
-  }
-
-  .feedback-rating .stars {
-    color: var(--warning);
+  .fb-rating {
+    margin-top: 10px;
+    font-size: 16px;
     letter-spacing: 2px;
+    color: var(--amber-500);
   }
 
-  .feedback-empty {
-    text-align: center;
-    padding: var(--space-3xl);
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-
-  /* Confirmation modal */
-  .confirm-overlay {
+  /* ── Confirm Modal ─────────────────────── */
+  .modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(10, 10, 11, 0.85);
+    background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(4px);
   }
 
-  .confirm-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
+  .modal-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 32px;
     max-width: 400px;
     width: 90%;
     text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   }
 
-  .confirm-title {
+  .modal-title {
     font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-md);
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 8px;
   }
 
-  .confirm-desc {
+  .modal-desc {
     font-size: 14px;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-xl);
+    color: var(--gray-500);
+    margin-bottom: 24px;
     line-height: 1.5;
   }
 
-  .confirm-actions {
+  .modal-actions {
     display: flex;
-    gap: var(--space-md);
+    gap: 10px;
     justify-content: center;
   }
 
-  .confirm-btn {
-    padding: var(--space-sm) var(--space-xl);
-    border-radius: var(--radius-md);
-    font-size: 13px;
+  .modal-btn {
+    padding: 9px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    border: 1px solid var(--border-default);
-    transition: all var(--transition-fast);
+    border: 1px solid var(--gray-300);
+    transition: all 150ms;
+    font-family: var(--font);
   }
 
-  .confirm-btn.primary {
-    background: var(--accent-primary);
-    color: var(--bg-deep);
-    border-color: var(--accent-primary);
+  .modal-btn.ok {
+    background: var(--blue-600);
+    color: var(--white);
+    border-color: var(--blue-600);
   }
 
-  .confirm-btn.primary:hover {
-    background: var(--accent-secondary);
+  .modal-btn.ok:hover { background: var(--blue-700); }
+
+  .modal-btn.no {
+    background: var(--white);
+    color: var(--gray-600);
   }
 
-  .confirm-btn.cancel {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
+  .modal-btn.no:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
   }
 
-  .confirm-btn.cancel:hover {
-    color: var(--text-primary);
-    border-color: var(--border-strong);
+  /* ── Responsive ────────────────────────── */
+  @media (max-width: 900px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (max-width: 640px) {
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
+    .topbar-email { display: none; }
+
+    .kpi-grid {
+      grid-template-columns: 1fr 1fr;
     }
 
-    .referral-summary {
-      grid-template-columns: repeat(2, 1fr);
+    .kpi-value { font-size: 24px; }
+
+    .tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .stat-value {
-      font-size: 22px;
+    .tab {
+      white-space: nowrap;
+      padding: 8px 16px;
+      font-size: 13px;
     }
+
+    .toolbar {
+      flex-direction: column;
+    }
+
+    .chart-bars { height: 100px; }
   }
 </style>
 
 <script>
-  // State
+  // ── State ──
   let currentTab = 'overview';
   const loaded: Record<string, boolean> = {};
   let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-  let currentCursor: string | null = null;
 
-  // Tab switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  // ── Tab switching ──
+  document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = (btn as HTMLElement).dataset.tab!;
       switchTab(tab);
@@ -796,9 +881,8 @@ if (!isAdmin(user)) {
 
   function switchTab(tab: string) {
     currentTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab));
-    document.querySelectorAll('.tab-content').forEach(c => (c as HTMLElement).style.display = c.id === `tab-${tab}` ? 'block' : 'none');
-
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab));
+    document.querySelectorAll('.pane').forEach(c => (c as HTMLElement).style.display = c.id === `tab-${tab}` ? 'block' : 'none');
     if (!loaded[tab]) {
       loaded[tab] = true;
       if (tab === 'overview') loadOverview();
@@ -808,75 +892,86 @@ if (!isAdmin(user)) {
     }
   }
 
-  // Search + filter
+  // ── Search / filter ──
   document.getElementById('user-search')?.addEventListener('input', () => {
     if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => { currentCursor = null; loadUsers(); }, 300);
+    searchTimeout = setTimeout(() => loadUsers(), 300);
   });
+  document.getElementById('plan-filter')?.addEventListener('change', () => loadUsers());
 
-  document.getElementById('plan-filter')?.addEventListener('change', () => {
-    currentCursor = null;
-    loadUsers();
-  });
+  // ── Helpers ──
+  function esc(s: string) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
-  // Load overview
+  function fmtDate(iso: string) {
+    if (!iso) return '\u2014';
+    try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    catch { return iso; }
+  }
+
+  // ── Overview ──
   async function loadOverview() {
     try {
       const res = await fetch('/api/admin/stats');
-      const data = await res.json();
+      const s = await res.json();
       document.getElementById('overview-loading')!.style.display = 'none';
       const el = document.getElementById('overview-content')!;
       el.style.display = 'block';
 
-      const s = data;
       el.innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Users</div>
-            <div class="stat-value">${s.users.total}</div>
-            <div class="stat-sub"><span class="accent">+${s.users.newToday}</span> today · +${s.users.newThisWeek} this week · +${s.users.newThisMonth} this month</div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Total Users</div>
+            <div class="kpi-value">${s.users.total}</div>
+            <div class="kpi-sub"><span class="up">+${s.users.newToday}</span> today &middot; +${s.users.newThisWeek} this week &middot; +${s.users.newThisMonth} month</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Licensed Users</div>
-            <div class="stat-value">${s.licenses.total}</div>
-            <div class="stat-sub">${s.licenses.pro} Pro · ${s.licenses.lifetime} Lifetime</div>
+          <div class="kpi">
+            <div class="kpi-label">Licensed Users</div>
+            <div class="kpi-value">${s.licenses.total}</div>
+            <div class="kpi-sub">${s.licenses.pro} Pro &middot; ${s.licenses.lifetime} Lifetime</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Active Devices</div>
-            <div class="stat-value">${s.devices.total}</div>
-            <div class="stat-sub"><span class="accent">${s.devices.onlineNow}</span> online now · ${s.devices.avgPerUser} avg/user</div>
+          <div class="kpi">
+            <div class="kpi-label">Active Devices</div>
+            <div class="kpi-value">${s.devices.total}</div>
+            <div class="kpi-sub"><span class="up">${s.devices.onlineNow}</span> online now &middot; ${s.devices.avgPerUser} avg/user</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Downloads</div>
-            <div class="stat-value">${s.downloads.total}</div>
-            <div class="stat-sub"><span class="accent">+${s.downloads.today}</span> today · +${s.downloads.thisWeek} this week</div>
+          <div class="kpi">
+            <div class="kpi-label">Downloads</div>
+            <div class="kpi-value">${s.downloads.total}</div>
+            <div class="kpi-sub"><span class="up">+${s.downloads.today}</span> today &middot; +${s.downloads.thisWeek} this week</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Referral Program</div>
-            <div class="stat-value">${s.referrals.totalReferrers}</div>
-            <div class="stat-sub">${s.referrals.totalInvitations} invited · ${s.referrals.totalActivations} activated · ${s.referrals.totalRewards} rewarded</div>
+          <div class="kpi">
+            <div class="kpi-label">Referral Program</div>
+            <div class="kpi-value">${s.referrals.totalReferrers}</div>
+            <div class="kpi-sub">${s.referrals.totalInvitations} invited &middot; ${s.referrals.totalActivations} activated &middot; ${s.referrals.totalRewards} rewarded</div>
           </div>
-          <div class="stat-card revenue">
-            <div class="stat-label">Est. MRR</div>
-            <div class="stat-value">$${s.revenue.mrr.toFixed(2)}</div>
-            <div class="stat-sub">Lifetime total: $${s.revenue.lifetimeRevenue.toFixed(2)}</div>
+          <div class="kpi revenue">
+            <div class="kpi-label">Est. MRR</div>
+            <div class="kpi-value">$${s.revenue.mrr.toFixed(2)}</div>
+            <div class="kpi-sub">Lifetime total: $${s.revenue.lifetimeRevenue.toFixed(2)}</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Feedback</div>
-            <div class="stat-value">${s.feedback.total}</div>
+          <div class="kpi">
+            <div class="kpi-label">Feedback</div>
+            <div class="kpi-value">${s.feedback.total}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Referral Conv. Rate</div>
+            <div class="kpi-value">${s.referrals.conversionRate}%</div>
           </div>
         </div>
 
-        ${buildStatusBreakdown(s.licenses.statusBreakdown)}
+        ${buildBreakdown(s.licenses.statusBreakdown)}
 
         <div class="trends-section">
-          <div class="trends-title">Last 7 Days</div>
-          <div class="trends-chart">
-            ${buildTrends(s.trends)}
-          </div>
-          <div class="trends-legend">
-            <span class="legend-item"><span class="legend-dot signups"></span> Signups</span>
-            <span class="legend-item"><span class="legend-dot downloads"></span> Downloads</span>
+          <div class="section-heading">Last 7 Days</div>
+          <div class="chart-wrap">
+            <div class="chart-bars">${buildChart(s.trends)}</div>
+            <div class="chart-legend">
+              <span class="legend"><span class="legend-swatch signups"></span> Signups</span>
+              <span class="legend"><span class="legend-swatch downloads"></span> Downloads</span>
+            </div>
           </div>
         </div>
       `;
@@ -885,160 +980,114 @@ if (!isAdmin(user)) {
     }
   }
 
-  function buildStatusBreakdown(breakdown: Record<string, number>) {
-    const entries = Object.entries(breakdown);
-    if (entries.length === 0) return '';
-    return `
-      <div class="stats-grid" style="margin-bottom: var(--space-2xl);">
-        ${entries.map(([status, count]) => `
-          <div class="stat-card">
-            <div class="stat-label">License: ${status}</div>
-            <div class="stat-value">${count}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  function buildBreakdown(bd: Record<string, number>) {
+    const entries = Object.entries(bd);
+    if (!entries.length) return '';
+    return `<div class="breakdown-row">${entries.map(([s, c]) =>
+      `<span class="breakdown-chip"><span class="chip-dot ${s}"></span> <span class="chip-count">${c}</span> ${s}</span>`
+    ).join('')}</div>`;
   }
 
-  function buildTrends(trends: Array<{ date: string; signups: number; downloads: number }>) {
-    const maxVal = Math.max(1, ...trends.map(t => Math.max(t.signups, t.downloads)));
+  function buildChart(trends: Array<{ date: string; signups: number; downloads: number }>) {
+    const mx = Math.max(1, ...trends.map(t => Math.max(t.signups, t.downloads)));
     return trends.map(t => {
-      const sH = Math.max(2, (t.signups / maxVal) * 80);
-      const dH = Math.max(2, (t.downloads / maxVal) * 80);
-      const label = t.date.slice(5); // MM-DD
+      const sH = Math.max(3, (t.signups / mx) * 100);
+      const dH = Math.max(3, (t.downloads / mx) * 100);
       return `
-        <div class="trend-day">
-          <div class="trend-bars">
-            <div class="trend-bar signups" style="height:${sH}px;" title="Signups: ${t.signups}"></div>
-            <div class="trend-bar downloads" style="height:${dH}px;" title="Downloads: ${t.downloads}"></div>
+        <div class="chart-day">
+          <div class="chart-pair">
+            <div class="bar signups" style="height:${sH}px" data-tip="${t.signups} signups"></div>
+            <div class="bar downloads" style="height:${dH}px" data-tip="${t.downloads} downloads"></div>
           </div>
-          <span class="trend-label">${label}</span>
-        </div>
-      `;
+          <span class="chart-label">${t.date.slice(5)}</span>
+        </div>`;
     }).join('');
   }
 
-  // Load users
+  // ── Users ──
   async function loadUsers(cursor?: string | null) {
     const search = (document.getElementById('user-search') as HTMLInputElement)?.value || '';
     const plan = (document.getElementById('plan-filter') as HTMLSelectElement)?.value || 'all';
-    const params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (plan !== 'all') params.set('plan', plan);
-    if (cursor) params.set('cursor', cursor);
+    const p = new URLSearchParams();
+    if (search) p.set('search', search);
+    if (plan !== 'all') p.set('plan', plan);
+    if (cursor) p.set('cursor', cursor);
 
     try {
-      const res = await fetch(`/api/admin/users?${params}`);
+      const res = await fetch(`/api/admin/users?${p}`);
       const data = await res.json();
       document.getElementById('users-loading')!.style.display = 'none';
       const el = document.getElementById('users-content')!;
       el.style.display = 'block';
 
-      if (data.users.length === 0) {
-        el.innerHTML = '<div class="no-results">No users found.</div>';
+      if (!data.users.length) {
+        el.innerHTML = '<div class="no-data">No users found.</div>';
         return;
       }
 
       el.innerHTML = `
-        <div class="users-count">${data.total} users found</div>
-        <div class="users-table-wrap">
-          <table class="users-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Plan</th>
-                <th>Status</th>
-                <th>Devices</th>
-                <th>Joined</th>
-                <th>Last Login</th>
-                <th>Change Plan</th>
-              </tr>
-            </thead>
+        <div class="tbl-count">${data.total} users</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>User</th><th>Plan</th><th>Status</th><th>Devices</th><th>Joined</th><th>Last Login</th><th>Change Plan</th>
+            </tr></thead>
             <tbody>
-              ${data.users.map((u: any) => `
-                <tr>
-                  <td>
-                    <div class="user-cell">
-                      ${u.picture ? `<img src="${esc(u.picture)}" class="user-cell-avatar" referrerpolicy="no-referrer" />` : ''}
-                      <div class="user-cell-info">
-                        <span class="user-cell-name">${esc(u.name)}</span>
-                        <span class="user-cell-email">${esc(u.email)}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span class="plan-badge plan-${u.plan}">${u.plan === 'free' ? 'Free' : u.plan === 'pro' ? 'Pro' : 'Lifetime'}</span></td>
-                  <td>${u.licenseStatus ? `<span class="status-badge status-${u.licenseStatus}">${u.licenseStatus}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-                  <td style="font-family:var(--font-mono);font-size:12px;">${u.deviceCount}</td>
-                  <td style="font-size:12px;white-space:nowrap;">${formatDate(u.createdAt)}</td>
-                  <td style="font-size:12px;white-space:nowrap;">${formatDate(u.lastLogin)}</td>
-                  <td>
-                    <select class="plan-select" data-email="${esc(u.email)}" data-google-id="${esc(u.googleId)}" data-current="${u.plan}">
-                      <option value="free"${u.plan === 'free' ? ' selected' : ''}>Free</option>
-                      <option value="pro"${u.plan === 'pro' ? ' selected' : ''}>Pro</option>
-                      <option value="lifetime"${u.plan === 'lifetime' ? ' selected' : ''}>Lifetime</option>
-                    </select>
-                  </td>
-                </tr>
-              `).join('')}
+              ${data.users.map((u: any) => `<tr>
+                <td><div class="ucell">
+                  ${u.picture ? `<img src="${esc(u.picture)}" class="ucell-av" referrerpolicy="no-referrer" />` : ''}
+                  <div class="ucell-info"><span class="ucell-name">${esc(u.name)}</span><span class="ucell-email">${esc(u.email)}</span></div>
+                </div></td>
+                <td><span class="badge badge-${u.plan}">${u.plan === 'free' ? 'Free' : u.plan === 'pro' ? 'Pro' : 'Lifetime'}</span></td>
+                <td>${u.licenseStatus ? `<span class="badge badge-${u.licenseStatus}">${u.licenseStatus}</span>` : '<span style="color:var(--gray-300)">\u2014</span>'}</td>
+                <td style="font-family:var(--mono);font-size:13px;color:var(--gray-700)">${u.deviceCount}</td>
+                <td style="font-size:12px;white-space:nowrap">${fmtDate(u.createdAt)}</td>
+                <td style="font-size:12px;white-space:nowrap">${fmtDate(u.lastLogin)}</td>
+                <td><select class="plan-sel" data-email="${esc(u.email)}" data-gid="${esc(u.googleId)}" data-cur="${u.plan}">
+                  <option value="free"${u.plan==='free'?' selected':''}>Free</option>
+                  <option value="pro"${u.plan==='pro'?' selected':''}>Pro</option>
+                  <option value="lifetime"${u.plan==='lifetime'?' selected':''}>Lifetime</option>
+                </select></td>
+              </tr>`).join('')}
             </tbody>
           </table>
-          <div class="users-pagination">
-            <span>Page results: ${data.users.length} of ${data.total}</span>
-            ${data.nextCursor ? `<button class="pagination-btn" id="load-more-btn">Load More</button>` : ''}
+          <div class="tbl-footer">
+            <span>${data.users.length} of ${data.total}</span>
+            ${data.nextCursor ? `<button class="btn-load" id="load-more">Load More</button>` : ''}
           </div>
         </div>
       `;
 
-      // Plan change handlers
-      el.querySelectorAll('.plan-select').forEach(sel => {
+      // Plan change
+      el.querySelectorAll('.plan-sel').forEach(sel => {
         sel.addEventListener('change', (e) => {
-          const select = e.target as HTMLSelectElement;
-          const newPlan = select.value;
-          const current = select.dataset.current;
-          if (newPlan === current) return;
-
-          showConfirm(
-            `Change plan to ${newPlan}?`,
-            `Change ${select.dataset.email} from ${current} to ${newPlan}.`,
+          const s = e.target as HTMLSelectElement;
+          const nw = s.value, cur = s.dataset.cur;
+          if (nw === cur) return;
+          showModal(
+            `Change plan to ${nw}?`,
+            `Update ${s.dataset.email} from ${cur} to ${nw}.`,
             async () => {
-              try {
-                const res = await fetch('/api/admin/update-plan', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    email: select.dataset.email,
-                    googleId: select.dataset.googleId,
-                    plan: newPlan,
-                  }),
-                });
-                if (res.ok) {
-                  select.dataset.current = newPlan;
-                  // Refresh the users list
-                  loadUsers();
-                } else {
-                  select.value = current!;
-                  alert('Failed to update plan.');
-                }
-              } catch {
-                select.value = current!;
-                alert('Failed to update plan.');
-              }
+              const r = await fetch('/api/admin/update-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: s.dataset.email, googleId: s.dataset.gid, plan: nw }),
+              });
+              if (r.ok) { s.dataset.cur = nw; loadUsers(); }
+              else { s.value = cur!; alert('Failed to update plan.'); }
             },
-            () => { select.value = current!; }
+            () => { s.value = cur!; }
           );
         });
       });
 
-      // Load more
-      document.getElementById('load-more-btn')?.addEventListener('click', () => {
-        loadUsers(data.nextCursor);
-      });
+      document.getElementById('load-more')?.addEventListener('click', () => loadUsers(data.nextCursor));
     } catch {
       document.getElementById('users-loading')!.textContent = 'Failed to load users.';
     }
   }
 
-  // Load referrals
+  // ── Referrals ──
   async function loadReferrals() {
     try {
       const res = await fetch('/api/admin/referrals');
@@ -1049,79 +1098,42 @@ if (!isAdmin(user)) {
 
       const s = data.summary;
       el.innerHTML = `
-        <div class="referral-summary">
-          <div class="stat-card">
-            <div class="stat-label">Referrers</div>
-            <div class="stat-value">${s.totalReferrers}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Invitations</div>
-            <div class="stat-value">${s.totalInvitations}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Activations</div>
-            <div class="stat-value">${s.totalActivations}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Conversion</div>
-            <div class="stat-value">${s.conversionRate}%</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Rewards</div>
-            <div class="stat-value">${s.totalRewards}</div>
-          </div>
+        <div class="kpi-grid" style="margin-bottom:24px;">
+          <div class="kpi"><div class="kpi-label">Referrers</div><div class="kpi-value">${s.totalReferrers}</div></div>
+          <div class="kpi"><div class="kpi-label">Invitations</div><div class="kpi-value">${s.totalInvitations}</div></div>
+          <div class="kpi"><div class="kpi-label">Activations</div><div class="kpi-value">${s.totalActivations}</div></div>
+          <div class="kpi"><div class="kpi-label">Conversion</div><div class="kpi-value">${s.conversionRate}%</div></div>
         </div>
 
-        ${data.referrers.length === 0 ? '<div class="no-results">No referrals yet.</div>' : `
-          <div class="referrals-table-wrap">
-            <table class="referrals-table">
-              <thead>
+        ${!data.referrers.length ? '<div class="no-data">No referrals yet.</div>' : `
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th></th><th>Email</th><th>Invited</th><th>Activated</th><th>Conv.</th><th>Reward</th></tr></thead>
+            <tbody>
+              ${data.referrers.map((r: any, i: number) => `
                 <tr>
-                  <th></th>
-                  <th>Email</th>
-                  <th>Invited</th>
-                  <th>Activated</th>
-                  <th>Conversion</th>
-                  <th>Reward</th>
+                  <td><button class="ref-toggle" data-i="${i}">${r.referrals.length ? '&#9654;' : ''}</button></td>
+                  <td style="font-family:var(--mono);font-size:12px">${esc(r.email)}</td>
+                  <td style="font-family:var(--mono)">${r.invited}</td>
+                  <td style="font-family:var(--mono)">${r.activated}</td>
+                  <td style="font-family:var(--mono)">${r.conversionRate}%</td>
+                  <td><span class="badge badge-${r.rewardGranted?'granted':'pending'}">${r.rewardGranted?'Granted':'Pending'}</span></td>
                 </tr>
-              </thead>
-              <tbody>
-                ${data.referrers.map((r: any, i: number) => `
-                  <tr>
-                    <td><button class="referral-toggle" data-idx="${i}">${r.referrals.length > 0 ? '&#9654;' : ''}</button></td>
-                    <td style="font-family:var(--font-mono);font-size:12px;">${esc(r.email)}</td>
-                    <td style="font-family:var(--font-mono);">${r.invited}</td>
-                    <td style="font-family:var(--font-mono);">${r.activated}</td>
-                    <td style="font-family:var(--font-mono);">${r.conversionRate}%</td>
-                    <td><span class="reward-badge ${r.rewardGranted ? 'reward-granted' : 'reward-pending'}">${r.rewardGranted ? 'Granted' : 'Pending'}</span></td>
-                  </tr>
-                  <tr class="referral-details" id="ref-detail-${i}">
-                    <td colspan="6">
-                      <ul class="referral-detail-list">
-                        ${r.referrals.map((ref: any) => `
-                          <li class="referral-detail-item ${ref.activatedAt ? 'activated' : 'pending'}">
-                            ${esc(ref.email)} ${ref.activatedAt ? '&#10003;' : '&#8230;'}
-                          </li>
-                        `).join('')}
-                      </ul>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
+                <tr class="ref-detail" id="rd-${i}"><td colspan="6">
+                  <ul class="ref-chips">${r.referrals.map((x: any) =>
+                    `<li class="ref-chip ${x.activatedAt?'ok':'wait'}">${esc(x.email)} ${x.activatedAt?'&#10003;':'&#8230;'}</li>`
+                  ).join('')}</ul>
+                </td></tr>
+              `).join('')}
+            </tbody>
+          </table></div>
         `}
       `;
 
-      // Toggle referral details
-      el.querySelectorAll('.referral-toggle').forEach(btn => {
+      el.querySelectorAll('.ref-toggle').forEach(btn => {
         btn.addEventListener('click', () => {
-          const idx = (btn as HTMLElement).dataset.idx;
-          const detail = document.getElementById(`ref-detail-${idx}`);
-          if (detail) {
-            detail.classList.toggle('open');
-            (btn as HTMLElement).innerHTML = detail.classList.contains('open') ? '&#9660;' : '&#9654;';
-          }
+          const i = (btn as HTMLElement).dataset.i;
+          const d = document.getElementById(`rd-${i}`);
+          if (d) { d.classList.toggle('open'); (btn as HTMLElement).innerHTML = d.classList.contains('open') ? '&#9660;' : '&#9654;'; }
         });
       });
     } catch {
@@ -1129,7 +1141,7 @@ if (!isAdmin(user)) {
     }
   }
 
-  // Load feedback
+  // ── Feedback ──
   async function loadFeedback() {
     try {
       const res = await fetch('/api/admin/feedback');
@@ -1138,76 +1150,46 @@ if (!isAdmin(user)) {
       const el = document.getElementById('feedback-content')!;
       el.style.display = 'block';
 
-      if (data.feedback.length === 0) {
-        el.innerHTML = '<div class="feedback-empty">No feedback yet.</div>';
+      if (!data.feedback.length) {
+        el.innerHTML = '<div class="no-data">No feedback yet.</div>';
         return;
       }
 
-      el.innerHTML = `
-        <div class="feedback-list">
-          ${data.feedback.map((f: any) => `
-            <div class="feedback-card">
-              <div class="feedback-header">
-                <span class="feedback-email">${esc(f.email)}</span>
-                <span class="feedback-time">${formatDate(f.timestamp)}</span>
-              </div>
-              <div class="feedback-text">${esc(f.feedback)}</div>
-              ${f.rating !== null ? `
-                <div class="feedback-rating">
-                  <span class="stars">${'&#9733;'.repeat(f.rating)}${'&#9734;'.repeat(5 - f.rating)}</span>
-                </div>
-              ` : ''}
-            </div>
-          `).join('')}
+      el.innerHTML = `<div class="fb-list">${data.feedback.map((f: any) => `
+        <div class="fb-card">
+          <div class="fb-head">
+            <span class="fb-email">${esc(f.email)}</span>
+            <span class="fb-time">${fmtDate(f.timestamp)}</span>
+          </div>
+          <div class="fb-text">${esc(f.feedback)}</div>
+          ${f.rating != null ? `<div class="fb-rating">${'&#9733;'.repeat(f.rating)}${'&#9734;'.repeat(5-f.rating)}</div>` : ''}
         </div>
-      `;
+      `).join('')}</div>`;
     } catch {
       document.getElementById('feedback-loading')!.textContent = 'Failed to load feedback.';
     }
   }
 
-  // Confirm modal
-  function showConfirm(title: string, desc: string, onConfirm: () => void, onCancel: () => void) {
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-    overlay.innerHTML = `
-      <div class="confirm-card">
-        <div class="confirm-title">${title}</div>
-        <div class="confirm-desc">${desc}</div>
-        <div class="confirm-actions">
-          <button class="confirm-btn cancel" id="confirm-cancel">Cancel</button>
-          <button class="confirm-btn primary" id="confirm-ok">Confirm</button>
-        </div>
+  // ── Modal ──
+  function showModal(title: string, desc: string, onOk: () => void, onNo: () => void) {
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.innerHTML = `<div class="modal-card">
+      <div class="modal-title">${title}</div>
+      <div class="modal-desc">${desc}</div>
+      <div class="modal-actions">
+        <button class="modal-btn no" id="m-no">Cancel</button>
+        <button class="modal-btn ok" id="m-ok">Confirm</button>
       </div>
-    `;
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#confirm-ok')!.addEventListener('click', () => {
-      overlay.remove();
-      onConfirm();
-    });
-    overlay.querySelector('#confirm-cancel')!.addEventListener('click', () => {
-      overlay.remove();
-      onCancel();
-    });
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#m-ok')!.addEventListener('click', () => { ov.remove(); onOk(); });
+    ov.querySelector('#m-no')!.addEventListener('click', () => { ov.remove(); onNo(); });
   }
 
-  // Helpers
-  function esc(str: string) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function formatDate(iso: string) {
-    if (!iso) return '—';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch {
-      return iso;
-    }
-  }
-
-  // Auto-load overview on page load
+  // ── Boot ──
   switchTab('overview');
 </script>
+
+</body>
+</html>
