@@ -1,0 +1,1213 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { getUserFromRequest } from '../lib/auth';
+import { isAdmin } from '../lib/admin';
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  return Astro.redirect('/api/auth/google');
+}
+
+if (!isAdmin(user)) {
+  return Astro.redirect('/go');
+}
+---
+
+<BaseLayout title="Admin — PATAPIM" description="Admin dashboard">
+  <Navbar />
+
+  <main class="admin-page">
+    <div class="container">
+      <div class="admin-header">
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <span class="admin-badge">Admin</span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="users">Users</button>
+        <button class="tab-btn" data-tab="referrals">Referrals</button>
+        <button class="tab-btn" data-tab="feedback">Feedback</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="tab-overview">
+        <div class="panel-loading" id="overview-loading">Loading stats...</div>
+        <div id="overview-content" style="display:none;"></div>
+      </div>
+
+      <div class="tab-content" id="tab-users" style="display:none;">
+        <div class="users-toolbar">
+          <input type="text" class="search-input" id="user-search" placeholder="Search by email or name..." />
+          <select class="filter-select" id="plan-filter">
+            <option value="all">All Plans</option>
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="lifetime">Lifetime</option>
+          </select>
+        </div>
+        <div class="panel-loading" id="users-loading">Loading users...</div>
+        <div id="users-content" style="display:none;"></div>
+      </div>
+
+      <div class="tab-content" id="tab-referrals" style="display:none;">
+        <div class="panel-loading" id="referrals-loading">Loading referrals...</div>
+        <div id="referrals-content" style="display:none;"></div>
+      </div>
+
+      <div class="tab-content" id="tab-feedback" style="display:none;">
+        <div class="panel-loading" id="feedback-loading">Loading feedback...</div>
+        <div id="feedback-content" style="display:none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .admin-page {
+    min-height: 100vh;
+    padding-top: 96px;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-xl) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .admin-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .admin-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(212, 120, 120, 0.15);
+    color: var(--error);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .admin-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-2xl);
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: var(--space-md) var(--space-xl);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .tab-btn:hover {
+    color: var(--text-secondary);
+  }
+
+  .tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+
+  .panel-loading {
+    text-align: center;
+    padding: var(--space-4xl);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Users toolbar */
+  .users-toolbar {
+    display: flex;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .search-input {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .search-input:focus {
+    border-color: var(--accent-primary);
+  }
+
+  .filter-select {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    outline: none;
+    cursor: pointer;
+    min-width: 140px;
+  }
+
+  .filter-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 640px) {
+    .admin-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+      white-space: nowrap;
+      padding: var(--space-sm) var(--space-lg);
+      font-size: 13px;
+    }
+
+    .users-toolbar {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<!-- Dynamic content styles -->
+<style is:global>
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .stat-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    transition: border-color var(--transition-fast);
+  }
+
+  .stat-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-xs);
+  }
+
+  .stat-sub .accent {
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  /* Revenue card */
+  .stat-card.revenue {
+    border-color: rgba(212, 165, 116, 0.2);
+  }
+
+  .stat-card.revenue .stat-value {
+    color: var(--accent-primary);
+  }
+
+  /* Trends */
+  .trends-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .trends-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-lg);
+  }
+
+  .trends-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-sm);
+    height: 120px;
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .trend-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .trend-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    width: 100%;
+    justify-content: center;
+    flex: 1;
+  }
+
+  .trend-bar {
+    width: 12px;
+    min-height: 2px;
+    border-radius: 2px 2px 0 0;
+    transition: height var(--transition-normal);
+  }
+
+  .trend-bar.signups {
+    background: var(--accent-primary);
+  }
+
+  .trend-bar.downloads {
+    background: var(--info);
+  }
+
+  .trend-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .trends-legend {
+    display: flex;
+    gap: var(--space-xl);
+    margin-top: var(--space-md);
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  .legend-dot.signups { background: var(--accent-primary); }
+  .legend-dot.downloads { background: var(--info); }
+
+  /* Users Table */
+  .users-table-wrap {
+    overflow-x: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .users-table th {
+    text-align: left;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-default);
+    white-space: nowrap;
+  }
+
+  .users-table td {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    vertical-align: middle;
+  }
+
+  .users-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .users-table tr:hover td {
+    background: var(--bg-tertiary);
+  }
+
+  .user-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .user-cell-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border-default);
+  }
+
+  .user-cell-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .user-cell-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .user-cell-email {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .plan-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .plan-free {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .plan-pro {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+  }
+
+  .plan-lifetime {
+    background: rgba(224, 164, 88, 0.15);
+    color: var(--warning);
+  }
+
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .status-active { background: var(--success-subtle); color: var(--success); }
+  .status-trialing { background: rgba(120, 165, 212, 0.15); color: var(--info); }
+  .status-past_due, .status-payment_failed { background: rgba(224, 164, 88, 0.15); color: var(--warning); }
+  .status-canceled, .status-expired { background: var(--error-subtle); color: var(--error); }
+
+  .plan-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .plan-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .users-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg);
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .pagination-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: var(--space-xs) var(--space-lg);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .pagination-btn:hover {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .users-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Referrals */
+  .referral-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .referrals-table-wrap {
+    overflow-x: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .referrals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .referrals-table th {
+    text-align: left;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-default);
+    white-space: nowrap;
+  }
+
+  .referrals-table td {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    vertical-align: middle;
+  }
+
+  .referrals-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .referrals-table tr:hover td {
+    background: var(--bg-tertiary);
+  }
+
+  .reward-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+  }
+
+  .reward-granted { background: var(--success-subtle); color: var(--success); }
+  .reward-pending { background: var(--bg-tertiary); color: var(--text-muted); }
+
+  /* Expandable referral details */
+  .referral-toggle {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 12px;
+    transition: color var(--transition-fast);
+  }
+
+  .referral-toggle:hover {
+    color: var(--accent-primary);
+  }
+
+  .referral-details {
+    display: none;
+  }
+
+  .referral-details.open {
+    display: table-row;
+  }
+
+  .referral-details td {
+    padding: var(--space-sm) var(--space-lg) var(--space-lg);
+    background: var(--bg-tertiary);
+  }
+
+  .referral-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .referral-detail-item {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+  }
+
+  .referral-detail-item.activated {
+    border-color: rgba(124, 179, 130, 0.3);
+    color: var(--success);
+  }
+
+  .referral-detail-item.pending {
+    color: var(--text-muted);
+  }
+
+  /* Feedback */
+  .feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .feedback-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+  }
+
+  .feedback-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+  }
+
+  .feedback-email {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .feedback-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .feedback-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .feedback-rating {
+    margin-top: var(--space-md);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .feedback-rating .stars {
+    color: var(--warning);
+    letter-spacing: 2px;
+  }
+
+  .feedback-empty {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Confirmation modal */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(4px);
+  }
+
+  .confirm-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+  }
+
+  .confirm-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+    line-height: 1.5;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+  }
+
+  .confirm-btn {
+    padding: var(--space-sm) var(--space-xl);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border-default);
+    transition: all var(--transition-fast);
+  }
+
+  .confirm-btn.primary {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+    border-color: var(--accent-primary);
+  }
+
+  .confirm-btn.primary:hover {
+    background: var(--accent-secondary);
+  }
+
+  .confirm-btn.cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .confirm-btn.cancel:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .referral-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-value {
+      font-size: 22px;
+    }
+  }
+</style>
+
+<script>
+  // State
+  let currentTab = 'overview';
+  const loaded: Record<string, boolean> = {};
+  let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+  let currentCursor: string | null = null;
+
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = (btn as HTMLElement).dataset.tab!;
+      switchTab(tab);
+    });
+  });
+
+  function switchTab(tab: string) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(c => (c as HTMLElement).style.display = c.id === `tab-${tab}` ? 'block' : 'none');
+
+    if (!loaded[tab]) {
+      loaded[tab] = true;
+      if (tab === 'overview') loadOverview();
+      else if (tab === 'users') loadUsers();
+      else if (tab === 'referrals') loadReferrals();
+      else if (tab === 'feedback') loadFeedback();
+    }
+  }
+
+  // Search + filter
+  document.getElementById('user-search')?.addEventListener('input', () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { currentCursor = null; loadUsers(); }, 300);
+  });
+
+  document.getElementById('plan-filter')?.addEventListener('change', () => {
+    currentCursor = null;
+    loadUsers();
+  });
+
+  // Load overview
+  async function loadOverview() {
+    try {
+      const res = await fetch('/api/admin/stats');
+      const data = await res.json();
+      document.getElementById('overview-loading')!.style.display = 'none';
+      const el = document.getElementById('overview-content')!;
+      el.style.display = 'block';
+
+      const s = data;
+      el.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">${s.users.total}</div>
+            <div class="stat-sub"><span class="accent">+${s.users.newToday}</span> today · +${s.users.newThisWeek} this week · +${s.users.newThisMonth} this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Licensed Users</div>
+            <div class="stat-value">${s.licenses.total}</div>
+            <div class="stat-sub">${s.licenses.pro} Pro · ${s.licenses.lifetime} Lifetime</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Devices</div>
+            <div class="stat-value">${s.devices.total}</div>
+            <div class="stat-sub"><span class="accent">${s.devices.onlineNow}</span> online now · ${s.devices.avgPerUser} avg/user</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Downloads</div>
+            <div class="stat-value">${s.downloads.total}</div>
+            <div class="stat-sub"><span class="accent">+${s.downloads.today}</span> today · +${s.downloads.thisWeek} this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Referral Program</div>
+            <div class="stat-value">${s.referrals.totalReferrers}</div>
+            <div class="stat-sub">${s.referrals.totalInvitations} invited · ${s.referrals.totalActivations} activated · ${s.referrals.totalRewards} rewarded</div>
+          </div>
+          <div class="stat-card revenue">
+            <div class="stat-label">Est. MRR</div>
+            <div class="stat-value">$${s.revenue.mrr.toFixed(2)}</div>
+            <div class="stat-sub">Lifetime total: $${s.revenue.lifetimeRevenue.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Feedback</div>
+            <div class="stat-value">${s.feedback.total}</div>
+          </div>
+        </div>
+
+        ${buildStatusBreakdown(s.licenses.statusBreakdown)}
+
+        <div class="trends-section">
+          <div class="trends-title">Last 7 Days</div>
+          <div class="trends-chart">
+            ${buildTrends(s.trends)}
+          </div>
+          <div class="trends-legend">
+            <span class="legend-item"><span class="legend-dot signups"></span> Signups</span>
+            <span class="legend-item"><span class="legend-dot downloads"></span> Downloads</span>
+          </div>
+        </div>
+      `;
+    } catch {
+      document.getElementById('overview-loading')!.textContent = 'Failed to load stats.';
+    }
+  }
+
+  function buildStatusBreakdown(breakdown: Record<string, number>) {
+    const entries = Object.entries(breakdown);
+    if (entries.length === 0) return '';
+    return `
+      <div class="stats-grid" style="margin-bottom: var(--space-2xl);">
+        ${entries.map(([status, count]) => `
+          <div class="stat-card">
+            <div class="stat-label">License: ${status}</div>
+            <div class="stat-value">${count}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function buildTrends(trends: Array<{ date: string; signups: number; downloads: number }>) {
+    const maxVal = Math.max(1, ...trends.map(t => Math.max(t.signups, t.downloads)));
+    return trends.map(t => {
+      const sH = Math.max(2, (t.signups / maxVal) * 80);
+      const dH = Math.max(2, (t.downloads / maxVal) * 80);
+      const label = t.date.slice(5); // MM-DD
+      return `
+        <div class="trend-day">
+          <div class="trend-bars">
+            <div class="trend-bar signups" style="height:${sH}px;" title="Signups: ${t.signups}"></div>
+            <div class="trend-bar downloads" style="height:${dH}px;" title="Downloads: ${t.downloads}"></div>
+          </div>
+          <span class="trend-label">${label}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Load users
+  async function loadUsers(cursor?: string | null) {
+    const search = (document.getElementById('user-search') as HTMLInputElement)?.value || '';
+    const plan = (document.getElementById('plan-filter') as HTMLSelectElement)?.value || 'all';
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (plan !== 'all') params.set('plan', plan);
+    if (cursor) params.set('cursor', cursor);
+
+    try {
+      const res = await fetch(`/api/admin/users?${params}`);
+      const data = await res.json();
+      document.getElementById('users-loading')!.style.display = 'none';
+      const el = document.getElementById('users-content')!;
+      el.style.display = 'block';
+
+      if (data.users.length === 0) {
+        el.innerHTML = '<div class="no-results">No users found.</div>';
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="users-count">${data.total} users found</div>
+        <div class="users-table-wrap">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Devices</th>
+                <th>Joined</th>
+                <th>Last Login</th>
+                <th>Change Plan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.users.map((u: any) => `
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      ${u.picture ? `<img src="${esc(u.picture)}" class="user-cell-avatar" referrerpolicy="no-referrer" />` : ''}
+                      <div class="user-cell-info">
+                        <span class="user-cell-name">${esc(u.name)}</span>
+                        <span class="user-cell-email">${esc(u.email)}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="plan-badge plan-${u.plan}">${u.plan === 'free' ? 'Free' : u.plan === 'pro' ? 'Pro' : 'Lifetime'}</span></td>
+                  <td>${u.licenseStatus ? `<span class="status-badge status-${u.licenseStatus}">${u.licenseStatus}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                  <td style="font-family:var(--font-mono);font-size:12px;">${u.deviceCount}</td>
+                  <td style="font-size:12px;white-space:nowrap;">${formatDate(u.createdAt)}</td>
+                  <td style="font-size:12px;white-space:nowrap;">${formatDate(u.lastLogin)}</td>
+                  <td>
+                    <select class="plan-select" data-email="${esc(u.email)}" data-google-id="${esc(u.googleId)}" data-current="${u.plan}">
+                      <option value="free"${u.plan === 'free' ? ' selected' : ''}>Free</option>
+                      <option value="pro"${u.plan === 'pro' ? ' selected' : ''}>Pro</option>
+                      <option value="lifetime"${u.plan === 'lifetime' ? ' selected' : ''}>Lifetime</option>
+                    </select>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="users-pagination">
+            <span>Page results: ${data.users.length} of ${data.total}</span>
+            ${data.nextCursor ? `<button class="pagination-btn" id="load-more-btn">Load More</button>` : ''}
+          </div>
+        </div>
+      `;
+
+      // Plan change handlers
+      el.querySelectorAll('.plan-select').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+          const select = e.target as HTMLSelectElement;
+          const newPlan = select.value;
+          const current = select.dataset.current;
+          if (newPlan === current) return;
+
+          showConfirm(
+            `Change plan to ${newPlan}?`,
+            `Change ${select.dataset.email} from ${current} to ${newPlan}.`,
+            async () => {
+              try {
+                const res = await fetch('/api/admin/update-plan', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: select.dataset.email,
+                    googleId: select.dataset.googleId,
+                    plan: newPlan,
+                  }),
+                });
+                if (res.ok) {
+                  select.dataset.current = newPlan;
+                  // Refresh the users list
+                  loadUsers();
+                } else {
+                  select.value = current!;
+                  alert('Failed to update plan.');
+                }
+              } catch {
+                select.value = current!;
+                alert('Failed to update plan.');
+              }
+            },
+            () => { select.value = current!; }
+          );
+        });
+      });
+
+      // Load more
+      document.getElementById('load-more-btn')?.addEventListener('click', () => {
+        loadUsers(data.nextCursor);
+      });
+    } catch {
+      document.getElementById('users-loading')!.textContent = 'Failed to load users.';
+    }
+  }
+
+  // Load referrals
+  async function loadReferrals() {
+    try {
+      const res = await fetch('/api/admin/referrals');
+      const data = await res.json();
+      document.getElementById('referrals-loading')!.style.display = 'none';
+      const el = document.getElementById('referrals-content')!;
+      el.style.display = 'block';
+
+      const s = data.summary;
+      el.innerHTML = `
+        <div class="referral-summary">
+          <div class="stat-card">
+            <div class="stat-label">Referrers</div>
+            <div class="stat-value">${s.totalReferrers}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Invitations</div>
+            <div class="stat-value">${s.totalInvitations}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Activations</div>
+            <div class="stat-value">${s.totalActivations}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Conversion</div>
+            <div class="stat-value">${s.conversionRate}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Rewards</div>
+            <div class="stat-value">${s.totalRewards}</div>
+          </div>
+        </div>
+
+        ${data.referrers.length === 0 ? '<div class="no-results">No referrals yet.</div>' : `
+          <div class="referrals-table-wrap">
+            <table class="referrals-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Email</th>
+                  <th>Invited</th>
+                  <th>Activated</th>
+                  <th>Conversion</th>
+                  <th>Reward</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.referrers.map((r: any, i: number) => `
+                  <tr>
+                    <td><button class="referral-toggle" data-idx="${i}">${r.referrals.length > 0 ? '&#9654;' : ''}</button></td>
+                    <td style="font-family:var(--font-mono);font-size:12px;">${esc(r.email)}</td>
+                    <td style="font-family:var(--font-mono);">${r.invited}</td>
+                    <td style="font-family:var(--font-mono);">${r.activated}</td>
+                    <td style="font-family:var(--font-mono);">${r.conversionRate}%</td>
+                    <td><span class="reward-badge ${r.rewardGranted ? 'reward-granted' : 'reward-pending'}">${r.rewardGranted ? 'Granted' : 'Pending'}</span></td>
+                  </tr>
+                  <tr class="referral-details" id="ref-detail-${i}">
+                    <td colspan="6">
+                      <ul class="referral-detail-list">
+                        ${r.referrals.map((ref: any) => `
+                          <li class="referral-detail-item ${ref.activatedAt ? 'activated' : 'pending'}">
+                            ${esc(ref.email)} ${ref.activatedAt ? '&#10003;' : '&#8230;'}
+                          </li>
+                        `).join('')}
+                      </ul>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      `;
+
+      // Toggle referral details
+      el.querySelectorAll('.referral-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = (btn as HTMLElement).dataset.idx;
+          const detail = document.getElementById(`ref-detail-${idx}`);
+          if (detail) {
+            detail.classList.toggle('open');
+            (btn as HTMLElement).innerHTML = detail.classList.contains('open') ? '&#9660;' : '&#9654;';
+          }
+        });
+      });
+    } catch {
+      document.getElementById('referrals-loading')!.textContent = 'Failed to load referrals.';
+    }
+  }
+
+  // Load feedback
+  async function loadFeedback() {
+    try {
+      const res = await fetch('/api/admin/feedback');
+      const data = await res.json();
+      document.getElementById('feedback-loading')!.style.display = 'none';
+      const el = document.getElementById('feedback-content')!;
+      el.style.display = 'block';
+
+      if (data.feedback.length === 0) {
+        el.innerHTML = '<div class="feedback-empty">No feedback yet.</div>';
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="feedback-list">
+          ${data.feedback.map((f: any) => `
+            <div class="feedback-card">
+              <div class="feedback-header">
+                <span class="feedback-email">${esc(f.email)}</span>
+                <span class="feedback-time">${formatDate(f.timestamp)}</span>
+              </div>
+              <div class="feedback-text">${esc(f.feedback)}</div>
+              ${f.rating !== null ? `
+                <div class="feedback-rating">
+                  <span class="stars">${'&#9733;'.repeat(f.rating)}${'&#9734;'.repeat(5 - f.rating)}</span>
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch {
+      document.getElementById('feedback-loading')!.textContent = 'Failed to load feedback.';
+    }
+  }
+
+  // Confirm modal
+  function showConfirm(title: string, desc: string, onConfirm: () => void, onCancel: () => void) {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-card">
+        <div class="confirm-title">${title}</div>
+        <div class="confirm-desc">${desc}</div>
+        <div class="confirm-actions">
+          <button class="confirm-btn cancel" id="confirm-cancel">Cancel</button>
+          <button class="confirm-btn primary" id="confirm-ok">Confirm</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#confirm-ok')!.addEventListener('click', () => {
+      overlay.remove();
+      onConfirm();
+    });
+    overlay.querySelector('#confirm-cancel')!.addEventListener('click', () => {
+      overlay.remove();
+      onCancel();
+    });
+  }
+
+  // Helpers
+  function esc(str: string) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatDate(iso: string) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return iso;
+    }
+  }
+
+  // Auto-load overview on page load
+  switchTab('overview');
+</script>

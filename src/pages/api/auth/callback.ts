@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createSession, buildSessionCookie } from '../../../lib/auth';
-import { generateLicenseKey } from '../../../lib/license';
+import { activateReferral } from '../../../lib/referral';
 
 export const prerender = false;
 
@@ -85,6 +85,19 @@ export const GET: APIRoute = async (context) => {
   await env.LICENSES.put(`user:${profile.id}`, JSON.stringify(userData));
   await env.LICENSES.put(`user-email:${profile.email}`, profile.id);
 
+  // Track new signups (only for first-time users)
+  if (!existing) {
+    const today = new Date().toISOString().slice(0, 10);
+    context.locals.runtime.ctx.waitUntil((async () => {
+      try {
+        const raw = await env.LICENSES.get(`stats:signups:${today}`);
+        await env.LICENSES.put(`stats:signups:${today}`, String((parseInt(raw || '0', 10) || 0) + 1));
+      } catch {
+        // Best-effort counter
+      }
+    })());
+  }
+
   // Create session
   const sessionUser = {
     googleId: profile.id,
@@ -96,53 +109,58 @@ export const GET: APIRoute = async (context) => {
 
   // Referral claim: if this user was referred, activate the referral
   try {
-    const referrerEmail = await env.LICENSES.get(`referred:${profile.email.toLowerCase()}`);
-    if (referrerEmail) {
-      const referralRaw = await env.LICENSES.get(`referral:${referrerEmail}`);
-      if (referralRaw) {
-        const referralData = JSON.parse(referralRaw);
-        const referral = referralData.referrals.find((r: any) => r.email === profile.email.toLowerCase());
-        if (referral && !referral.activatedAt) {
-          referral.activatedAt = now;
-          referralData.activatedCount = (referralData.activatedCount || 0) + 1;
-
-          if (referralData.activatedCount >= 10 && !referralData.rewardGranted) {
-            const licenseKey = generateLicenseKey();
-            const license = {
-              email: referrerEmail,
-              plan: 'lifetime',
-              status: 'active',
-              stripeCustomerId: 'referral',
-              stripeSubscriptionId: null,
-              createdAt: now,
-              expiresAt: null,
-              licenseKey,
-            };
-            referralData.rewardGranted = true;
-            referralData.rewardGrantedAt = now;
-            referralData.licenseKey = licenseKey;
-
-            await Promise.all([
-              env.LICENSES.put(`referral:${referrerEmail}`, JSON.stringify(referralData)),
-              env.LICENSES.put(`license:${referrerEmail}`, JSON.stringify(license)),
-              env.LICENSES.put(`key:${licenseKey}`, referrerEmail),
-            ]);
-          } else {
-            await env.LICENSES.put(`referral:${referrerEmail}`, JSON.stringify(referralData));
-          }
-        }
-      }
-    }
+    await activateReferral(env.LICENSES, profile.email);
   } catch (e) {
     // Referral claim is best-effort, don't block auth flow
     console.error('Referral claim error:', e);
   }
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: `${siteUrl}/go`,
-      'Set-Cookie': buildSessionCookie(sessionId),
-    },
-  });
+  // Auto-pairing: if desktop app initiated this flow, create device token automatically
+  const cookies = context.request.headers.get('cookie') || '';
+  const pairMatch = cookies.match(/(?:^|;\s*)__patapim_pair=([^;]+)/);
+  const pairingSessionId = pairMatch ? pairMatch[1] : null;
+
+  const responseHeaders = new Headers();
+  responseHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
+
+  if (pairingSessionId) {
+    // Auto-create device token for the desktop app
+    const deviceToken = crypto.randomUUID();
+
+    await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify({
+      googleId: profile.id,
+      email: profile.email,
+      deviceName: 'PATAPIM Desktop',
+      machineId: 'auto-pair',
+      createdAt: now,
+      lastSeen: now,
+      tunnelUrl: null,
+      terminalCount: 0,
+    }));
+
+    // Append to user's device list
+    const devicesRaw = await env.LICENSES.get(`devices:${profile.id}`);
+    const devices: Array<{ token: string; deviceName: string; createdAt: string }> = devicesRaw ? JSON.parse(devicesRaw) : [];
+    devices.push({ token: deviceToken, deviceName: 'PATAPIM Desktop', createdAt: now });
+    await env.LICENSES.put(`devices:${profile.id}`, JSON.stringify(devices));
+
+    // Get license info
+    const licenseRaw = await env.LICENSES.get(`license:${profile.email}`);
+    const license = licenseRaw ? JSON.parse(licenseRaw) : null;
+
+    // Store result for desktop polling
+    await env.SESSIONS.put(`pair-poll:${pairingSessionId}`, JSON.stringify({
+      deviceToken,
+      email: profile.email,
+      plan: license?.plan || 'free',
+      licenseStatus: license?.status || null,
+      licenseKey: license?.licenseKey || null,
+    }), { expirationTtl: 600 });
+
+    // Clear the pairing cookie
+    responseHeaders.append('Set-Cookie', '__patapim_pair=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+  }
+
+  responseHeaders.set('Location', `${siteUrl}/go${pairingSessionId ? '?paired=1' : ''}`);
+  return new Response(null, { status: 302, headers: responseHeaders });
 };
