@@ -42,14 +42,14 @@ import Footer from '../components/Footer.astro';
           </div>
           <h3>Windows</h3>
           <p class="dl-version">Windows 10 or later</p>
-          <a href="https://github.com/g3dar/patapim/releases/latest" class="btn btn-primary" style="width: 100%; justify-content: center;" target="_blank" rel="noopener">
+          <a href="https://github.com/G3dar/patapim-releases/releases/latest" class="btn btn-primary" style="width: 100%; justify-content: center;" target="_blank" rel="noopener">
             Download Installer (.exe)
           </a>
           <div class="dl-install-cmds">
             <div class="dl-cmd-block">
               <span class="dl-cmd-label">PowerShell</span>
-              <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex">
-                <code>irm https://raw.githubusercontent.com/g3dar/patapim/main/install.ps1 | iex</code>
+              <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+                <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
                 <button class="dl-copy-btn" aria-label="Copy">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
@@ -57,8 +57,8 @@ import Footer from '../components/Footer.astro';
             </div>
             <div class="dl-cmd-block">
               <span class="dl-cmd-label">CMD</span>
-              <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
-                <code>curl -fsSL https://raw.githubusercontent.com/g3dar/patapim/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+              <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+                <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
                 <button class="dl-copy-btn" aria-label="Copy">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
@@ -121,22 +121,21 @@ import Footer from '../components/Footer.astro';
         </div>
       </div>
 
-      <!-- Install from source -->
+      <!-- Quick Install -->
       <div class="source-install">
-        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">Install from Source</h2>
+        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">Quick Install via Terminal</h2>
         <div class="source-terminal">
           <div class="st-header">
             <span class="st-dot"></span><span class="st-dot"></span><span class="st-dot"></span>
           </div>
           <div class="st-body">
-            <div class="st-line"><span class="st-comment"># Prerequisites: Node.js 18+, Git</span></div>
+            <div class="st-line"><span class="st-comment"># PowerShell (recommended)</span></div>
+            <div class="st-line"><span class="st-prompt">$</span> irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</div>
             <div class="st-line">&nbsp;</div>
-            <div class="st-line"><span class="st-prompt">$</span> git clone https://github.com/g3dar/patapim.git</div>
-            <div class="st-line"><span class="st-prompt">$</span> cd patapim</div>
-            <div class="st-line"><span class="st-prompt">$</span> npm install</div>
-            <div class="st-line"><span class="st-prompt">$</span> npm start</div>
+            <div class="st-line"><span class="st-comment"># CMD</span></div>
+            <div class="st-line"><span class="st-prompt">&gt;</span> curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</div>
             <div class="st-line">&nbsp;</div>
-            <div class="st-line st-accent">&#x276F;_ PATAPIM is ready. Open a project and start developing!</div>
+            <div class="st-line st-accent">&#x276F;_ Downloads, installs, and registers MCP server automatically.</div>
           </div>
         </div>
       </div>
