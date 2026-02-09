@@ -428,7 +428,8 @@ export const prerender = false;
     .terminal-wrap {
       flex: 1;
       position: relative;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
     }
 
     .terminal-wrap .xterm {
@@ -679,6 +680,8 @@ export const prerender = false;
     let currentTerminalId = null;
     let terminals = [];
     let isSwitching = false;
+    let switchOutputQueue = [];
+    let ptyDims = null;
     let fontSize = 14;
     let reconnectAttempts = 0;
     let reconnectTimer = null;
@@ -782,18 +785,12 @@ export const prerender = false;
         scrollBottomBtn.classList.toggle('visible', !atBottom);
       });
 
-      // Resize
+      // Resize — if we have PTY dims, keep them; otherwise fit to container
       const ro = new ResizeObserver(() => {
-        if (fitAddon) {
+        if (ptyDims) {
+          term.resize(ptyDims.cols, ptyDims.rows);
+        } else if (fitAddon) {
           fitAddon.fit();
-          if (ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
-            ws.send(JSON.stringify({
-              type: 'resize',
-              terminalId: currentTerminalId,
-              cols: term.cols,
-              rows: term.rows,
-            }));
-          }
         }
       });
       ro.observe(terminalWrap);
@@ -881,9 +878,32 @@ export const prerender = false;
           break;
 
         case 'output':
-          if (isSwitching) break;
+          if (isSwitching) {
+            switchOutputQueue.push(msg);
+            break;
+          }
           if (term && msg.terminalId === currentTerminalId) {
             term.write(msg.data);
+          }
+          break;
+
+        case 'pty_dimensions':
+          ptyDims = { cols: msg.cols, rows: msg.rows };
+          if (term && msg.cols && msg.rows) {
+            term.resize(msg.cols, msg.rows);
+          }
+          break;
+
+        case 'terminal_init':
+          if (term && msg.terminalId === currentTerminalId) {
+            if (msg.cols && msg.rows) {
+              ptyDims = { cols: msg.cols, rows: msg.rows };
+              term.resize(msg.cols, msg.rows);
+            }
+            term.clear();
+            if (msg.data) {
+              term.write(msg.data);
+            }
           }
           break;
 
@@ -902,10 +922,21 @@ export const prerender = false;
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
+            if (msg.cols && msg.rows) {
+              ptyDims = { cols: msg.cols, rows: msg.rows };
+              term.resize(msg.cols, msg.rows);
+            }
             if (msg.buffer) {
               term.write(msg.buffer);
             }
             isSwitching = false;
+            const queue = switchOutputQueue;
+            switchOutputQueue = [];
+            for (const q of queue) {
+              if (q.terminalId === currentTerminalId && q.data) {
+                term.write(q.data);
+              }
+            }
           }
           break;
 
@@ -1081,6 +1112,7 @@ export const prerender = false;
     function switchTerminal(id) {
       if (id === currentTerminalId || !ws || ws.readyState !== WebSocket.OPEN) return;
       isSwitching = true;
+      switchOutputQueue = [];
       term.clear();
       ws.send(JSON.stringify({ type: 'switch', terminalId: id }));
     }
@@ -1134,13 +1166,15 @@ export const prerender = false;
     document.getElementById('btn-font-dec').addEventListener('click', () => {
       fontSize = Math.max(8, fontSize - 1);
       term.options.fontSize = fontSize;
-      fitAddon.fit();
+      if (ptyDims) term.resize(ptyDims.cols, ptyDims.rows);
+      else fitAddon.fit();
     });
 
     document.getElementById('btn-font-inc').addEventListener('click', () => {
       fontSize = Math.min(28, fontSize + 1);
       term.options.fontSize = fontSize;
-      fitAddon.fit();
+      if (ptyDims) term.resize(ptyDims.cols, ptyDims.rows);
+      else fitAddon.fit();
     });
 
     // Disconnect
