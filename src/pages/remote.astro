@@ -768,16 +768,11 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
-    // Apply PTY dims: on desktops force PTY cols, on phones let fitAddon wrap naturally
+    // Apply PTY cols but fit rows to container height
     function applyPtyDims() {
       if (!ptyDims || !fitAddon || !term) return;
       fitAddon.fit();
-      // On notebooks/desktops: force PTY cols for correct cursor positioning
-      // On phones (<=768px): keep fitAddon's natural cols so text wraps at screen width
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (!isMobile) {
-        term.resize(ptyDims.cols, term.rows);
-      }
+      term.resize(ptyDims.cols, term.rows);
     }
 
     function initTerminal() {
