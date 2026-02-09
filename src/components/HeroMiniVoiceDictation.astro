@@ -5,30 +5,37 @@
       <span class="hm-dot hm-dot-y"></span>
       <span class="hm-dot hm-dot-g"></span>
     </div>
-    <span class="hm-title">Terminal</span>
-    <button class="hm-mic" data-hm-mic aria-label="Microphone">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <rect x="9" y="2" width="6" height="11" rx="3"/>
-        <path d="M5 10a7 7 0 0 0 14 0"/>
-        <line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-    </button>
+    <span class="hm-title">Voice Dictation</span>
   </div>
   <div class="hm-body">
-    <div class="hm-ln"><span class="hm-pr">~$</span> claude</div>
-    <div class="hm-ln hm-dim">Claude Code initialized</div>
-    <div class="hm-prompt-line">
-      <span class="hm-pr">&gt;</span>
-      <span class="hm-typed" data-hm-typed></span>
-      <span class="hm-blink" data-hm-cursor>|</span>
+    <!-- Mic + waveform centered scene -->
+    <div class="hm-mic-scene" data-hm-mic-scene>
+      <div class="hm-mic-ring" data-hm-ring>
+        <div class="hm-mic-btn" data-hm-mic>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hm-wave-row" data-hm-wave>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+        <span class="hm-bar"></span>
+      </div>
+      <div class="hm-mic-label" data-hm-mic-label>Press to dictate</div>
     </div>
-    <div class="hm-response" data-hm-response></div>
-    <div class="hm-waveform" data-hm-wave>
-      <span class="hm-bar"></span>
-      <span class="hm-bar"></span>
-      <span class="hm-bar"></span>
-      <span class="hm-bar"></span>
-      <span class="hm-bar"></span>
+    <!-- Terminal output scene -->
+    <div class="hm-output-scene" data-hm-output>
+      <div class="hm-oln"><span class="hm-pr">&gt;</span> <span class="hm-typed" data-hm-typed></span><span class="hm-cursor" data-hm-cursor>|</span></div>
+      <div class="hm-oln hm-response" data-hm-response></div>
     </div>
   </div>
 </div>
@@ -44,7 +51,7 @@
   }
   .hm-chrome {
     background: var(--bg-tertiary);
-    padding: 6px 10px;
+    padding: 5px 10px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -57,48 +64,124 @@
   .hm-dot-g { background: #28c840; }
   .hm-title {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     color: var(--text-tertiary);
-    flex: 1;
-  }
-  .hm-mic {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px solid var(--border-default);
-    background: transparent;
-    color: var(--text-muted);
-    cursor: default;
-    transition: all 0.3s ease;
-    padding: 0;
-  }
-  .hm-mic.hm-active {
-    color: #fff;
-    background: var(--warning);
-    border-color: var(--warning);
-    box-shadow: 0 0 8px rgba(224,164,88,0.5);
   }
 
   .hm-body {
-    background: var(--bg-deep);
-    padding: 10px 12px;
-    height: 146px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    line-height: 1.6;
-    color: var(--text-secondary);
+    height: 150px;
     position: relative;
     overflow: hidden;
+    font-family: var(--font-mono);
+  }
+
+  /* Mic scene — centered */
+  .hm-mic-scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: opacity 0.4s ease;
+  }
+  .hm-mic-scene.hm-hide { opacity: 0; pointer-events: none; }
+
+  .hm-mic-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-default);
+    transition: all 0.4s ease;
+  }
+  .hm-mic-ring.hm-active {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 6px rgba(224,164,88,0.15), 0 0 20px rgba(224,164,88,0.3);
+  }
+  .hm-mic-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+  }
+  .hm-mic-ring.hm-active .hm-mic-btn {
+    background: var(--warning);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(224,164,88,0.5);
+  }
+
+  .hm-wave-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .hm-wave-row.hm-show { opacity: 1; }
+
+  .hm-bar {
+    width: 3px;
+    height: 4px;
+    background: var(--warning);
+    border-radius: 2px;
+  }
+  .hm-wave-row.hm-show .hm-bar {
+    animation: hm-wave-vd 0.5s ease-in-out infinite alternate;
+  }
+  .hm-wave-row.hm-show .hm-bar:nth-child(1) { animation-delay: 0s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(2) { animation-delay: 0.08s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(3) { animation-delay: 0.16s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(4) { animation-delay: 0.24s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(5) { animation-delay: 0.12s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(6) { animation-delay: 0.2s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(7) { animation-delay: 0.06s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(8) { animation-delay: 0.18s; }
+  .hm-wave-row.hm-show .hm-bar:nth-child(9) { animation-delay: 0.1s; }
+
+  @keyframes hm-wave-vd {
+    0% { height: 4px; }
+    100% { height: 20px; }
+  }
+
+  .hm-mic-label {
+    font-size: 7px;
+    color: var(--text-muted);
+    transition: opacity 0.3s ease;
+  }
+  .hm-mic-label.hm-hide { opacity: 0; }
+
+  /* Output scene */
+  .hm-output-scene {
+    position: absolute;
+    inset: 0;
+    padding: 12px 14px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hm-output-scene.hm-show { opacity: 1; }
+
+  .hm-oln {
+    font-size: 9px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    white-space: nowrap;
   }
   .hm-pr { color: var(--accent-primary); margin-right: 4px; }
-  .hm-dim { opacity: 0.5; }
-  .hm-ln { white-space: nowrap; }
-  .hm-prompt-line { white-space: nowrap; }
   .hm-typed { color: var(--text-primary); }
-  .hm-blink {
+  .hm-cursor {
     color: var(--accent-primary);
     animation: hm-blink-vd 1s step-end infinite;
   }
@@ -106,59 +189,23 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
-
   .hm-response {
-    opacity: 0;
     color: var(--success);
-    white-space: nowrap;
+    opacity: 0;
     transition: opacity 0.4s ease;
-    margin-top: 2px;
   }
   .hm-response.hm-show { opacity: 1; }
-
-  .hm-waveform {
-    position: absolute;
-    bottom: 10px;
-    right: 12px;
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 16px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .hm-waveform.hm-show { opacity: 1; }
-
-  .hm-bar {
-    width: 2px;
-    background: var(--warning);
-    border-radius: 1px;
-    height: 4px;
-  }
-  .hm-waveform.hm-show .hm-bar {
-    animation: hm-wave 0.6s ease-in-out infinite alternate;
-  }
-  .hm-waveform.hm-show .hm-bar:nth-child(1) { animation-delay: 0s; }
-  .hm-waveform.hm-show .hm-bar:nth-child(2) { animation-delay: 0.1s; }
-  .hm-waveform.hm-show .hm-bar:nth-child(3) { animation-delay: 0.2s; }
-  .hm-waveform.hm-show .hm-bar:nth-child(4) { animation-delay: 0.3s; }
-  .hm-waveform.hm-show .hm-bar:nth-child(5) { animation-delay: 0.15s; }
-
-  @keyframes hm-wave {
-    0% { height: 3px; }
-    100% { height: 14px; }
-  }
 
   @media (max-width: 768px) {
     .hm-vd { width: 100%; max-width: 320px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hm-blink { animation: none; opacity: 1; }
-    .hm-bar { animation: none !important; }
-    .hm-waveform { opacity: 0; }
+    .hm-bar { animation: none !important; height: 10px; }
+    .hm-cursor { animation: none; opacity: 1; }
+    .hm-mic-scene { opacity: 0; }
+    .hm-output-scene { opacity: 1; }
     .hm-response { opacity: 1; }
-    .hm-mic { background: var(--warning); color: #fff; border-color: var(--warning); }
   }
 </style>
 
@@ -167,17 +214,19 @@
     const root = document.querySelector('[data-hm-vd]') as HTMLElement;
     if (!root) return;
 
-    const mic = root.querySelector('[data-hm-mic]') as HTMLElement;
+    const micScene = root.querySelector('[data-hm-mic-scene]') as HTMLElement;
+    const ring = root.querySelector('[data-hm-ring]') as HTMLElement;
+    const wave = root.querySelector('[data-hm-wave]') as HTMLElement;
+    const micLabel = root.querySelector('[data-hm-mic-label]') as HTMLElement;
+    const outputScene = root.querySelector('[data-hm-output]') as HTMLElement;
     const typed = root.querySelector('[data-hm-typed]') as HTMLElement;
     const cursor = root.querySelector('[data-hm-cursor]') as HTMLElement;
     const response = root.querySelector('[data-hm-response]') as HTMLElement;
-    const wave = root.querySelector('[data-hm-wave]') as HTMLElement;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       typed.textContent = 'fix the login bug';
       response.textContent = '✓ Fixed login validation';
       response.classList.add('hm-show');
-      mic.classList.add('hm-active');
       cursor.style.display = 'none';
       return;
     }
@@ -186,25 +235,27 @@
     let animId: ReturnType<typeof setTimeout> | null = null;
 
     function wait(ms: number): Promise<void> {
-      return new Promise(resolve => {
-        animId = setTimeout(resolve, ms);
-      });
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
     }
 
     function resetState() {
+      micScene.classList.remove('hm-hide');
+      ring.classList.remove('hm-active');
+      wave.classList.remove('hm-show');
+      micLabel.classList.remove('hm-hide');
+      outputScene.classList.remove('hm-show');
       typed.textContent = '';
       response.textContent = '';
       response.classList.remove('hm-show');
-      mic.classList.remove('hm-active');
-      wave.classList.remove('hm-show');
       cursor.style.display = '';
+      root.style.opacity = '1';
     }
 
     async function typeText(text: string) {
       for (let i = 0; i < text.length; i++) {
         if (!running) return;
         typed.textContent += text[i];
-        await wait(55 + Math.random() * 30);
+        await wait(50 + Math.random() * 25);
       }
     }
 
@@ -212,35 +263,39 @@
       while (running) {
         resetState();
 
-        // Scene 1: idle with blinking cursor (1s)
+        // Scene 1: idle mic (1s)
         await wait(1000);
         if (!running) break;
 
         // Scene 2: mic activates, waveform appears
-        mic.classList.add('hm-active');
+        ring.classList.add('hm-active');
+        micLabel.classList.add('hm-hide');
+        await wait(400);
+        if (!running) break;
         wave.classList.add('hm-show');
-        await wait(800);
+        await wait(1500);
         if (!running) break;
 
-        // Scene 3: type text
+        // Scene 3: transition to output, type text
+        wave.classList.remove('hm-show');
+        micScene.classList.add('hm-hide');
+        outputScene.classList.add('hm-show');
+        await wait(300);
+        if (!running) break;
+
         await typeText('fix the login bug');
         if (!running) break;
         await wait(300);
         if (!running) break;
 
-        // Scene 4: waveform stops, response appears
-        wave.classList.remove('hm-show');
-        mic.classList.remove('hm-active');
+        // Scene 4: response
         cursor.style.display = 'none';
-        await wait(400);
-        if (!running) break;
-
         response.textContent = '✓ Fixed login validation';
         response.classList.add('hm-show');
         await wait(2500);
         if (!running) break;
 
-        // Fade out
+        // Fade & loop
         root.style.opacity = '0';
         root.style.transition = 'opacity 0.4s ease';
         await wait(400);
@@ -258,7 +313,6 @@
           running = false;
           if (animId) { clearTimeout(animId); animId = null; }
           resetState();
-          root.style.opacity = '1';
         }
       });
     }, { threshold: 0.3 });

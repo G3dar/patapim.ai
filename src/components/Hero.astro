@@ -58,46 +58,6 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
       </div>
     </div>
 
-    <div class="hero-terminal">
-      <div class="terminal-chrome">
-        <div class="terminal-dots">
-          <span class="dot dot-red"></span>
-          <span class="dot dot-yellow"></span>
-          <span class="dot dot-green"></span>
-        </div>
-        <div class="terminal-title">PATAPIM &mdash; Terminal 1</div>
-        <div class="terminal-tabs">
-          <span class="ttab active">Terminal 1</span>
-          <span class="ttab">Terminal 2</span>
-          <span class="ttab">Terminal 3</span>
-          <span class="ttab-add">+</span>
-        </div>
-      </div>
-      <div class="terminal-body">
-        <div class="terminal-line" style="--delay: 0">
-          <span class="prompt">~/my-project $</span>
-          <span class="cmd" id="typed-cmd"></span>
-          <span class="cursor" id="cursor">|</span>
-        </div>
-        <div class="terminal-line output" style="--delay: 1" id="output-1">
-          <span class="text-accent">&#x276F;</span> Claude Code initialized in /home/user/my-project
-        </div>
-        <div class="terminal-line output" style="--delay: 2" id="output-2">
-          <span class="text-success">&#x2714;</span> Found CLAUDE.md, STRUCTURE.json, tasks.json
-        </div>
-        <div class="terminal-line output" style="--delay: 3" id="output-3">
-          <span class="text-success">&#x2714;</span> Context restored from previous session
-        </div>
-        <div class="terminal-line output" style="--delay: 4" id="output-4">
-          <span class="text-info">&#x25B6;</span> Ready. 3 pending tasks, 2 GitHub issues open.
-        </div>
-        <div class="terminal-line" style="--delay: 5" id="output-5">
-          <span class="prompt">~/my-project $</span>
-          <span class="cursor blink">|</span>
-        </div>
-      </div>
-    </div>
-
     <div class="hero-features">
       <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
@@ -194,7 +154,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
   /* Install command block */
   .hero-install {
     max-width: 680px;
-    margin: 0 auto var(--space-4xl);
+    margin: 0 auto var(--space-2xl);
   }
 
   .hero-install-tabs {
@@ -328,118 +288,6 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     text-decoration: underline;
   }
 
-  /* Terminal mock */
-  .hero-terminal {
-    max-width: 740px;
-    margin: 0 auto var(--space-4xl);
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), var(--shadow-glow);
-  }
-
-  .terminal-chrome {
-    background: var(--bg-tertiary);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-bottom: 1px solid var(--border-default);
-  }
-
-  .terminal-dots {
-    display: flex;
-    gap: 6px;
-  }
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .dot-red { background: #ff5f57; }
-  .dot-yellow { background: #febc2e; }
-  .dot-green { background: #28c840; }
-
-  .terminal-title {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-tertiary);
-  }
-
-  .terminal-tabs {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-left: auto;
-  }
-
-  .ttab {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-muted);
-    padding: 4px 12px;
-    border-radius: 4px;
-    cursor: default;
-  }
-  .ttab.active {
-    color: var(--text-primary);
-    background: var(--bg-elevated);
-  }
-  .ttab-add {
-    color: var(--text-muted);
-    font-size: 14px;
-    padding: 2px 8px;
-    cursor: default;
-  }
-
-  .terminal-body {
-    background: var(--bg-deep);
-    padding: 20px 24px;
-    min-height: 200px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    line-height: 1.8;
-  }
-
-  .terminal-line {
-    opacity: 0;
-    animation: fadeIn 0.4s ease forwards;
-    animation-delay: calc(var(--delay) * 0.6s + 0.3s);
-  }
-
-  .prompt {
-    color: var(--accent-primary);
-    margin-right: 8px;
-  }
-
-  .cmd {
-    color: var(--text-primary);
-  }
-
-  .cursor {
-    color: var(--accent-primary);
-    animation: blink-cursor 1s step-end infinite;
-  }
-  .cursor.blink {
-    animation: blink-cursor 1s step-end infinite;
-  }
-
-  @keyframes blink-cursor {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  .output { color: var(--text-secondary); }
-
-  .text-accent { color: var(--accent-primary); }
-  .text-success { color: var(--success); }
-  .text-info { color: var(--info); }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
   /* Feature mini demos */
   .hero-features {
     display: flex;
@@ -464,7 +312,6 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
 
   @media (max-width: 768px) {
     .hero { padding: 120px 0 60px; min-height: auto; }
-    .terminal-tabs { display: none; }
     .hero-features { flex-direction: column; align-items: center; gap: var(--space-xl); }
     .hero-install { max-width: 100%; }
     .hi-line { font-size: 11px; padding: 12px 14px; }
@@ -479,25 +326,6 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
 </style>
 
 <script>
-  // Typing animation for the command
-  const cmd = document.getElementById('typed-cmd');
-  const cursor = document.getElementById('cursor');
-  const text = 'claude';
-  let i = 0;
-
-  function typeChar() {
-    if (!cmd) return;
-    if (i < text.length) {
-      cmd.textContent += text.charAt(i);
-      i++;
-      setTimeout(typeChar, 80 + Math.random() * 60);
-    } else {
-      if (cursor) cursor.style.display = 'none';
-    }
-  }
-
-  setTimeout(typeChar, 800);
-
   // Install tabs
   const heroTabs = document.querySelectorAll('[data-hero-tab]');
   const heroPanels = document.querySelectorAll('[data-hero-panel]');

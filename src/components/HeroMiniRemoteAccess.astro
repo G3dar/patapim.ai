@@ -13,61 +13,45 @@
     <span class="hm-title">Remote Access</span>
   </div>
   <div class="hm-body">
+    <!-- Desktop terminal -->
     <div class="hm-desktop" data-hm-desktop>
-      <div class="hm-ln"><span class="hm-pr">~$</span> claude</div>
-      <div class="hm-ln hm-dim">Claude Code initialized</div>
-      <div class="hm-ln hm-dim">Ready. 2 tasks pending.</div>
-      <div class="hm-ln"><span class="hm-pr">~$</span> <span class="hm-blink">|</span></div>
+      <div class="hm-dln"><span class="hm-pr">~$</span> claude</div>
+      <div class="hm-dln hm-dim">Claude Code initialized</div>
+      <div class="hm-dln hm-dim">Ready. 2 tasks pending.</div>
+      <div class="hm-dln"><span class="hm-pr">~$</span> <span class="hm-blink">|</span></div>
     </div>
-    <div class="hm-qr" data-hm-qr>
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-        <rect width="40" height="40" rx="2" fill="#fff"/>
-        <rect x="4" y="4" width="10" height="10" rx="1" fill="#222"/>
-        <rect x="6" y="6" width="6" height="6" rx="0.5" fill="#fff"/>
-        <rect x="7.5" y="7.5" width="3" height="3" fill="#222"/>
-        <rect x="26" y="4" width="10" height="10" rx="1" fill="#222"/>
-        <rect x="28" y="6" width="6" height="6" rx="0.5" fill="#fff"/>
-        <rect x="29.5" y="7.5" width="3" height="3" fill="#222"/>
-        <rect x="4" y="26" width="10" height="10" rx="1" fill="#222"/>
-        <rect x="6" y="28" width="6" height="6" rx="0.5" fill="#fff"/>
-        <rect x="7.5" y="29.5" width="3" height="3" fill="#222"/>
-        <rect x="16" y="4" width="3" height="3" fill="#222"/>
-        <rect x="16" y="10" width="3" height="3" fill="#222"/>
-        <rect x="20" y="7" width="3" height="3" fill="#222"/>
-        <rect x="16" y="16" width="3" height="3" fill="#222"/>
-        <rect x="22" y="16" width="3" height="3" fill="#222"/>
-        <rect x="28" y="16" width="3" height="3" fill="#222"/>
-        <rect x="16" y="22" width="3" height="3" fill="#222"/>
-        <rect x="22" y="22" width="3" height="3" fill="#222"/>
-        <rect x="28" y="22" width="3" height="3" fill="#222"/>
-        <rect x="22" y="28" width="3" height="3" fill="#222"/>
-        <rect x="28" y="28" width="3" height="3" fill="#222"/>
-        <rect x="34" y="28" width="3" height="3" fill="#222"/>
-        <rect x="16" y="34" width="3" height="3" fill="#222"/>
-        <rect x="22" y="34" width="3" height="3" fill="#222"/>
-        <rect x="28" y="34" width="3" height="3" fill="#222"/>
-      </svg>
-      <div class="hm-qr-label">Scan to connect</div>
+    <!-- URL overlay -->
+    <div class="hm-url-overlay" data-hm-url>
+      <div class="hm-url-box">
+        <div class="hm-url-label">Open on your phone:</div>
+        <div class="hm-url-link">patapim.ai/go</div>
+        <div class="hm-url-sub">Sign in with Google</div>
+      </div>
     </div>
+    <!-- Phone -->
     <div class="hm-phone" data-hm-phone>
       <div class="hm-phone-frame">
         <div class="hm-phone-notch"></div>
-        <div class="hm-phone-screen" data-hm-screen>
+        <div class="hm-phone-screen">
           <div class="hm-phone-idle" data-hm-idle>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M5 12.5a7 7 0 0 1 14 0"/>
               <circle cx="12" cy="12.5" r="1" fill="currentColor"/>
             </svg>
           </div>
+          <div class="hm-phone-auth" data-hm-auth>
+            <span class="hm-auth-g">G</span>
+            <span class="hm-auth-text">Sign in</span>
+          </div>
           <div class="hm-phone-connected" data-hm-connected>
-            <span class="hm-phone-check">✓</span>
+            <span class="hm-phone-check">&#x2713;</span>
             <span class="hm-phone-text">Connected</span>
           </div>
           <div class="hm-phone-terminal" data-hm-terminal>
             <div class="hm-pln" data-pln="0"><span class="hm-ppr">~$</span> claude</div>
             <div class="hm-pln" data-pln="1">Initialized</div>
             <div class="hm-pln" data-pln="2"><span class="hm-ppr">&gt;</span> fix bug</div>
-            <div class="hm-pln" data-pln="3">✓ Done</div>
+            <div class="hm-pln" data-pln="3">&#x2713; Done</div>
           </div>
         </div>
       </div>
@@ -86,7 +70,7 @@
   }
   .hm-chrome {
     background: var(--bg-tertiary);
-    padding: 6px 10px;
+    padding: 5px 10px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -100,24 +84,23 @@
   .hm-chrome-icon { color: var(--text-muted); }
   .hm-title {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     color: var(--text-tertiary);
   }
 
   .hm-body {
-    background: var(--bg-deep);
-    padding: 10px 12px;
-    height: 146px;
+    height: 150px;
     font-family: var(--font-mono);
     font-size: 9px;
     line-height: 1.6;
     color: var(--text-secondary);
     position: relative;
     overflow: hidden;
+    padding: 10px 12px;
   }
   .hm-pr { color: var(--accent-primary); margin-right: 4px; }
   .hm-dim { opacity: 0.5; }
-  .hm-ln { white-space: nowrap; }
+  .hm-dln { white-space: nowrap; }
   .hm-blink {
     color: var(--accent-primary);
     animation: hm-blink-ra 1s step-end infinite;
@@ -127,32 +110,45 @@
     50% { opacity: 0; }
   }
 
-  /* QR Code */
-  .hm-qr {
+  .hm-desktop {
+    transition: opacity 0.3s ease;
+  }
+  .hm-desktop.hm-dim { opacity: 0.3; }
+
+  /* URL overlay */
+  .hm-url-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0);
+    inset: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 0.4s ease;
     z-index: 2;
   }
-  .hm-qr.hm-show {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+  .hm-url-overlay.hm-show { opacity: 1; }
+  .hm-url-box {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 10px 16px;
+    text-align: center;
   }
-  .hm-qr.hm-scanned svg {
-    outline: 2px solid var(--warning);
-    outline-offset: 2px;
-    border-radius: 3px;
-  }
-  .hm-qr-label {
+  .hm-url-label {
     font-size: 7px;
     color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .hm-url-link {
+    font-size: 11px;
+    color: var(--accent-primary);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .hm-url-sub {
+    font-size: 6px;
+    color: var(--text-muted);
+    margin-top: 3px;
   }
 
   /* Phone */
@@ -204,6 +200,25 @@
   }
   .hm-phone-idle.hm-hide { display: none; }
 
+  .hm-phone-auth {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .hm-phone-auth.hm-show { display: flex; }
+  .hm-auth-g {
+    font-size: 10px;
+    font-weight: 700;
+    color: #4285f4;
+    font-family: sans-serif;
+  }
+  .hm-auth-text {
+    font-size: 5px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
   .hm-phone-connected {
     display: none;
     flex-direction: column;
@@ -211,9 +226,7 @@
     gap: 2px;
     text-align: center;
   }
-  .hm-phone-connected.hm-show {
-    display: flex;
-  }
+  .hm-phone-connected.hm-show { display: flex; }
   .hm-phone-check {
     color: var(--success);
     font-size: 12px;
@@ -232,9 +245,7 @@
     inset: 4px;
     padding: 2px;
   }
-  .hm-phone-terminal.hm-show {
-    display: flex;
-  }
+  .hm-phone-terminal.hm-show { display: flex; }
   .hm-pln {
     font-size: 5px;
     font-family: var(--font-mono);
@@ -247,11 +258,6 @@
   .hm-pln.hm-visible { opacity: 1; }
   .hm-ppr { color: var(--accent-primary); margin-right: 2px; }
 
-  .hm-desktop {
-    transition: opacity 0.3s ease;
-  }
-  .hm-desktop.hm-dim { opacity: 0.3; }
-
   @media (max-width: 768px) {
     .hm-ra { width: 100%; max-width: 320px; }
   }
@@ -262,7 +268,6 @@
     .hm-phone-idle { display: none; }
     .hm-phone-terminal { display: flex; }
     .hm-pln { opacity: 1; }
-    .hm-qr { display: none; }
   }
 </style>
 
@@ -272,9 +277,10 @@
     if (!root) return;
 
     const desktop = root.querySelector('[data-hm-desktop]') as HTMLElement;
-    const qr = root.querySelector('[data-hm-qr]') as HTMLElement;
+    const urlOverlay = root.querySelector('[data-hm-url]') as HTMLElement;
     const phone = root.querySelector('[data-hm-phone]') as HTMLElement;
     const idle = root.querySelector('[data-hm-idle]') as HTMLElement;
+    const auth = root.querySelector('[data-hm-auth]') as HTMLElement;
     const connected = root.querySelector('[data-hm-connected]') as HTMLElement;
     const terminal = root.querySelector('[data-hm-terminal]') as HTMLElement;
     const plns = root.querySelectorAll('[data-pln]');
@@ -288,16 +294,15 @@
     let animId: ReturnType<typeof setTimeout> | null = null;
 
     function wait(ms: number): Promise<void> {
-      return new Promise(resolve => {
-        animId = setTimeout(resolve, ms);
-      });
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
     }
 
     function resetState() {
       desktop.classList.remove('hm-dim');
-      qr.classList.remove('hm-show', 'hm-scanned');
+      urlOverlay.classList.remove('hm-show');
       phone.classList.remove('hm-glow');
       idle.classList.remove('hm-hide');
+      auth.classList.remove('hm-show');
       connected.classList.remove('hm-show');
       terminal.classList.remove('hm-show');
       plns.forEach(p => p.classList.remove('hm-visible'));
@@ -308,30 +313,31 @@
       while (running) {
         resetState();
 
-        // Scene 1: desktop terminal with phone at low opacity (1.5s)
+        // Scene 1: desktop terminal idle (1.5s)
         await wait(1500);
         if (!running) break;
 
-        // Scene 2: QR code scales in, desktop dims
+        // Scene 2: URL overlay appears, desktop dims
         desktop.classList.add('hm-dim');
-        qr.classList.add('hm-show');
+        urlOverlay.classList.add('hm-show');
         await wait(1500);
         if (!running) break;
 
-        // Scene 3: phone glows, QR "scanned"
+        // Scene 3: phone glows, shows Google auth
         phone.classList.add('hm-glow');
-        qr.classList.add('hm-scanned');
-        await wait(1000);
+        idle.classList.add('hm-hide');
+        auth.classList.add('hm-show');
+        await wait(1200);
         if (!running) break;
 
-        // Scene 4: QR disappears, phone shows connected
-        qr.classList.remove('hm-show', 'hm-scanned');
-        idle.classList.add('hm-hide');
+        // Scene 4: auth complete, show connected
+        urlOverlay.classList.remove('hm-show');
+        auth.classList.remove('hm-show');
         connected.classList.add('hm-show');
         await wait(1000);
         if (!running) break;
 
-        // Scene 5: phone switches to terminal, lines appear
+        // Scene 5: phone shows terminal, lines appear
         connected.classList.remove('hm-show');
         terminal.classList.add('hm-show');
         desktop.classList.remove('hm-dim');
@@ -347,7 +353,7 @@
         await wait(2000);
         if (!running) break;
 
-        // Fade out
+        // Fade & loop
         root.style.opacity = '0';
         root.style.transition = 'opacity 0.4s ease';
         await wait(400);
