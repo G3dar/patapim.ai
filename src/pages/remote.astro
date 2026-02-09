@@ -768,11 +768,16 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
-    // Apply PTY cols but fit rows to container height
+    // Apply PTY dims: on desktops force PTY cols, on phones let fitAddon wrap naturally
     function applyPtyDims() {
       if (!ptyDims || !fitAddon || !term) return;
       fitAddon.fit();
-      term.resize(ptyDims.cols, term.rows);
+      // On notebooks/desktops: force PTY cols for correct cursor positioning
+      // On phones (<=768px): keep fitAddon's natural cols so text wraps at screen width
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if (!isMobile) {
+        term.resize(ptyDims.cols, term.rows);
+      }
     }
 
     function initTerminal() {
@@ -846,11 +851,10 @@ export const prerender = false;
         scrollBottomBtn.classList.toggle('visible', !atBottom);
       });
 
-      // Resize — use PTY cols (critical for formatting) but fit rows to container
+      // Resize — delegates to applyPtyDims which handles mobile vs desktop
       const ro = new ResizeObserver(() => {
         if (ptyDims && fitAddon) {
-          fitAddon.fit();  // Calculate rows that fit the container
-          term.resize(ptyDims.cols, term.rows);  // Override cols with PTY cols
+          applyPtyDims();
         } else if (fitAddon) {
           fitAddon.fit();
         }
@@ -1135,6 +1139,11 @@ export const prerender = false;
 
     // -- Tabs --
 
+    function extractTerminalNumber(id) {
+      const match = id && id.match(/(\d+)/);
+      return match ? match[1] : '?';
+    }
+
     function renderTabs() {
       tabsEl.innerHTML = '';
       terminals.forEach((t, i) => {
@@ -1143,7 +1152,7 @@ export const prerender = false;
         tab.dataset.terminalId = t.id;
 
         const label = document.createElement('span');
-        label.textContent = t.name || ('Terminal ' + (i + 1));
+        label.textContent = t.name || ('Terminal ' + extractTerminalNumber(t.id));
         tab.appendChild(label);
 
         tab.addEventListener('click', () => switchTerminal(t.id));
