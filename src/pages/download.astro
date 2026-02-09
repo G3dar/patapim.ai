@@ -19,19 +19,6 @@ import Footer from '../components/Footer.astro';
         </p>
       </div>
 
-      <!-- License Banner (shown after purchase) -->
-      <div class="license-banner" id="license-banner" style="display:none;">
-        <span class="license-badge">Purchase Complete</span>
-        <p class="license-text">Your license key:</p>
-        <div class="license-key-display">
-          <code id="license-key-value"></code>
-          <button class="dl-copy-btn" id="copy-license-btn" aria-label="Copy license key">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          </button>
-        </div>
-        <p class="license-note">Save this key. It's also been emailed to your Stripe billing address.</p>
-      </div>
-
       <!-- Windows - Full Width -->
       <div class="dl-card-windows">
         <div class="dl-windows-top">
@@ -50,33 +37,62 @@ import Footer from '../components/Footer.astro';
           <div class="dl-cmd-block">
             <span class="dl-cmd-label">PowerShell</span>
             <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+              <span class="dl-tooltip">Click to copy</span>
               <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
-              <button class="dl-copy-btn" aria-label="Copy">
+              <span class="dl-copy-btn" aria-label="Copy">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </button>
+              </span>
             </div>
           </div>
           <div class="dl-cmd-block">
             <span class="dl-cmd-label">CMD</span>
             <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+              <span class="dl-tooltip">Click to copy</span>
               <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
-              <button class="dl-copy-btn" aria-label="Copy">
+              <span class="dl-copy-btn" aria-label="Copy">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </button>
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- macOS - Coming Soon -->
+      <!-- macOS - Coming March 1st -->
       <div class="dl-card-macos">
         <div class="dl-icon dim">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
           </svg>
         </div>
         <h3>macOS</h3>
-        <span class="dl-coming-soon">Coming Soon</span>
+        <span class="dl-coming-soon">Coming March 1st</span>
+        <div class="dl-countdown" id="macos-countdown">
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-days">--</span>
+            <span class="dl-countdown-label">days</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-hours">--</span>
+            <span class="dl-countdown-label">hours</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-mins">--</span>
+            <span class="dl-countdown-label">min</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-secs">--</span>
+            <span class="dl-countdown-label">sec</span>
+          </div>
+        </div>
+        <a
+          class="dl-calendar-btn"
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=PATAPIM+for+macOS+Launch&dates=20260301T180000Z/20260301T190000Z&details=PATAPIM+macOS+version+is+now+available!+Download+at+https://patapim.ai/download"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Add to Calendar
+        </a>
       </div>
 
       <!-- Requirements -->
@@ -134,30 +150,74 @@ import Footer from '../components/Footer.astro';
     margin-bottom: var(--space-xs);
   }
 
-  /* macOS card - compact */
+  /* macOS card - countdown */
   .dl-card-macos {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
+    background: linear-gradient(160deg, rgba(130, 120, 255, 0.06) 0%, var(--bg-secondary) 50%, rgba(90, 200, 250, 0.06) 100%);
+    border: 1px solid rgba(130, 120, 255, 0.3);
     border-radius: var(--radius-xl);
-    padding: var(--space-xl) var(--space-2xl);
+    padding: var(--space-2xl) var(--space-3xl);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-lg);
-    max-width: 420px;
-    margin: 0 auto;
+    text-align: center;
+    gap: var(--space-sm);
+    box-shadow: 0 0 30px rgba(130, 120, 255, 0.08);
   }
   .dl-card-macos h3 {
-    font-size: 18px;
+    font-size: 22px;
     margin-bottom: 0;
   }
   .dl-coming-soon {
-    font-size: 12px;
+    font-size: 14px;
+    color: rgba(160, 150, 255, 0.9);
+    margin-bottom: var(--space-md);
+  }
+  .dl-countdown {
+    display: flex;
+    gap: 12px;
+    margin-bottom: var(--space-lg);
+  }
+  .dl-countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(130, 120, 255, 0.06);
+    border: 1px solid rgba(130, 120, 255, 0.15);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    min-width: 64px;
+  }
+  .dl-countdown-num {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .dl-countdown-label {
+    font-size: 11px;
     color: var(--text-muted);
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-default);
-    padding: 4px 12px;
-    border-radius: 100px;
-    margin-left: auto;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .dl-calendar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(180, 170, 255, 0.9);
+    background: rgba(130, 120, 255, 0.08);
+    border: 1px solid rgba(130, 120, 255, 0.25);
+    border-radius: var(--radius-md);
+    padding: 8px 20px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .dl-calendar-btn:hover {
+    color: #fff;
+    border-color: rgba(130, 120, 255, 0.5);
+    background: rgba(130, 120, 255, 0.15);
   }
 
   .dl-icon {
@@ -165,11 +225,11 @@ import Footer from '../components/Footer.astro';
     margin-bottom: var(--space-lg);
   }
   .dl-card-macos .dl-icon {
-    margin-bottom: 0;
+    margin-bottom: var(--space-xs);
     flex-shrink: 0;
   }
   .dl-icon.dim {
-    color: var(--text-muted);
+    color: rgba(160, 150, 255, 0.7);
   }
 
   .dl-version {
@@ -205,7 +265,43 @@ import Footer from '../components/Footer.astro';
     background: var(--bg-tertiary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-sm);
-    padding: 6px 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .dl-cmd-line:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .dl-cmd-line:hover .dl-copy-btn {
+    color: var(--accent-primary);
+  }
+  .dl-cmd-line.copied {
+    border-color: var(--success);
+  }
+  .dl-cmd-line .dl-tooltip {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    font-size: 11px;
+    font-family: var(--font-sans, sans-serif);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .dl-cmd-line:hover .dl-tooltip {
+    opacity: 1;
+  }
+  .dl-cmd-line.copied .dl-tooltip {
+    background: var(--success);
+    color: #fff;
   }
   .dl-cmd-line code {
     flex: 1;
@@ -223,10 +319,7 @@ import Footer from '../components/Footer.astro';
     cursor: pointer;
     color: var(--text-muted);
     padding: 2px;
-    transition: color var(--transition-fast);
-  }
-  .dl-copy-btn:hover {
-    color: var(--accent-primary);
+    transition: color 0.2s;
   }
   .dl-copy-btn.copied {
     color: var(--success);
@@ -265,119 +358,71 @@ import Footer from '../components/Footer.astro';
   }
 
 
-  /* License Banner */
-  .license-banner {
-    max-width: 600px;
-    margin: 0 auto var(--space-3xl);
-    padding: var(--space-2xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--accent-primary);
-    border-radius: var(--radius-xl);
-    text-align: center;
-    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
-  }
-  .license-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--bg-deep);
-    background: var(--accent-primary);
-    padding: 4px 14px;
-    border-radius: 100px;
-    margin-bottom: var(--space-md);
-  }
-  .license-text {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom: var(--space-sm);
-  }
-  .license-key-display {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    padding: var(--space-md) var(--space-lg);
-    margin-bottom: var(--space-md);
-  }
-  .license-key-display code {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--accent-primary);
-    background: none;
-    padding: 0;
-    letter-spacing: 1px;
-  }
-  .license-note {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
   @media (max-width: 768px) {
     .dl-card-windows { padding: var(--space-xl); }
-    .dl-card-macos { max-width: 100%; }
+    .dl-card-macos { padding: var(--space-xl); }
     .req-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 480px) {
     .req-grid { grid-template-columns: 1fr; }
+    .dl-countdown { gap: 8px; }
+    .dl-countdown-unit { min-width: 56px; padding: 10px 12px; }
+    .dl-countdown-num { font-size: 20px; }
   }
 </style>
 
 <script>
-  // Copy command buttons
-  document.querySelectorAll('[data-dl-copy] .dl-copy-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const line = btn.closest('[data-dl-copy]') as HTMLElement;
-      const text = line?.dataset.dlCopy;
-      if (text) {
-        navigator.clipboard.writeText(text).then(() => {
-          btn.classList.add('copied');
-          setTimeout(() => btn.classList.remove('copied'), 1500);
-        });
-      }
+  // Copy command - clicking anywhere on the line
+  document.querySelectorAll<HTMLElement>('[data-dl-copy]').forEach(line => {
+    line.addEventListener('click', () => {
+      const text = line.dataset.dlCopy;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const tooltip = line.querySelector('.dl-tooltip');
+        const icon = line.querySelector('.dl-copy-btn');
+        line.classList.add('copied');
+        if (tooltip) tooltip.textContent = 'Copied!';
+        if (icon) icon.classList.add('copied');
+        setTimeout(() => {
+          line.classList.remove('copied');
+          if (tooltip) tooltip.textContent = 'Click to copy';
+          if (icon) icon.classList.remove('copied');
+        }, 1500);
+      });
     });
   });
 
-  // Copy license key button
-  document.getElementById('copy-license-btn')?.addEventListener('click', () => {
-    const key = document.getElementById('license-key-value')?.textContent;
-    if (key) {
-      navigator.clipboard.writeText(key).then(() => {
-        const btn = document.getElementById('copy-license-btn')!;
-        btn.classList.add('copied');
-        setTimeout(() => btn.classList.remove('copied'), 1500);
-      });
-    }
-  });
+  // macOS countdown timer
+  const target = new Date('2026-03-01T18:00:00Z'); // 10 AM PST = 18:00 UTC
+  const elDays = document.getElementById('cd-days');
+  const elHours = document.getElementById('cd-hours');
+  const elMins = document.getElementById('cd-mins');
+  const elSecs = document.getElementById('cd-secs');
+  const countdownWrap = document.getElementById('macos-countdown');
 
-  // Detect ?session_id from Stripe checkout redirect
-  const params = new URLSearchParams(window.location.search);
-  const sessionId = params.get('session_id');
+  function updateCountdown() {
+    const now = Date.now();
+    const diff = target.getTime() - now;
 
-  if (sessionId) {
-    (async () => {
-      const delays = [1000, 2000, 4000];
-      for (let attempt = 0; attempt <= delays.length; attempt++) {
-        try {
-          const res = await fetch('/api/stripe/session-info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId }),
-          });
-          const data = await res.json();
-          if (data.found && data.licenseKey) {
-            const banner = document.getElementById('license-banner')!;
-            document.getElementById('license-key-value')!.textContent = data.licenseKey;
-            banner.style.display = 'block';
-            return;
-          }
-        } catch {}
-        if (attempt < delays.length) {
-          await new Promise(r => setTimeout(r, delays[attempt]));
-        }
+    if (diff <= 0) {
+      if (countdownWrap) {
+        countdownWrap.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600; font-size: 18px;">Available Now!</span>';
       }
-    })();
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    if (elDays) elDays.textContent = String(days).padStart(2, '0');
+    if (elHours) elHours.textContent = String(hours).padStart(2, '0');
+    if (elMins) elMins.textContent = String(mins).padStart(2, '0');
+    if (elSecs) elSecs.textContent = String(secs).padStart(2, '0');
   }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
 </script>

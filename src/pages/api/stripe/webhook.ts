@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { generateLicenseKey, type License } from '../../../lib/license';
+import { createReferralAssociation, activateReferral } from '../../../lib/referral';
 
 export const prerender = false;
 
@@ -80,6 +81,19 @@ export const POST: APIRoute = async (context) => {
       }
 
       await Promise.all(writes);
+
+      // Process referral from checkout metadata (Flow B: buyer entered referrer email)
+      const referrerEmail = session.metadata?.referrerEmail;
+      if (referrerEmail && email) {
+        try {
+          await createReferralAssociation(kv, referrerEmail, email);
+          await activateReferral(kv, email);
+        } catch (e) {
+          // Best-effort — don't fail the webhook over referral processing
+          console.error('Referral processing error:', e);
+        }
+      }
+
       break;
     }
 

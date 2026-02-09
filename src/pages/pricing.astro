@@ -9,7 +9,7 @@ const freeFeatures = [
   { name: 'Terminals', value: 'Up to 9' },
   { name: 'Active Projects', value: 'Up to 3' },
   { name: 'View Mode', value: 'Tab + Grid (all layouts)' },
-  { name: 'Voice Dictation', value: '60 min / week' },
+  { name: 'Voice Dictation', value: '60 min included' },
   { name: 'Remote Access', value: 'Local network (LAN)' },
   { name: 'Remote Sessions', value: '1 max, 30-min timeout' },
   { name: 'Remote Auth', value: 'PIN only' },
@@ -41,8 +41,8 @@ const proFeatures = [
 
 const faq = [
   {
-    q: 'What happens after the 14-day trial?',
-    a: 'You automatically switch to the Free plan. No data is lost, no features are deleted &mdash; Pro features simply become unavailable. You can upgrade anytime.'
+    q: 'What happens if I cancel Pro?',
+    a: 'Your Pro access continues until the end of the billing period. Then you switch to the Free plan. No data is lost &mdash; Pro features simply become unavailable. You can re-subscribe anytime.'
   },
   {
     q: 'What does "Unlock Forever" include?',
@@ -76,7 +76,7 @@ const faq = [
         <span class="section-label">Pricing</span>
         <h1 class="section-title">Simple, Transparent Pricing</h1>
         <p class="section-subtitle">
-          Start with a 14-day Pro trial. No credit card required.
+          Start free, upgrade when you're ready.
         </p>
       </div>
 
@@ -98,14 +98,13 @@ const faq = [
         </div>
 
         <div class="p-card featured">
-          <div class="p-badge">14-Day Free Trial</div>
           <h3>Pro</h3>
           <div class="p-price">
             <span class="p-amount">$6.99</span>
             <span class="p-period">/month</span>
           </div>
           <p class="p-desc">Full power, no limits.</p>
-          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">Start Free Trial</a>
+          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">Go Pro</a>
           <ul class="p-list">
             {proFeatures.map((f) => (
               <li>

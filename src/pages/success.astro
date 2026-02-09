@@ -1,0 +1,251 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Purchase Complete — PATAPIM" description="Your PATAPIM account has been upgraded.">
+  <Navbar />
+
+  <main class="success-page">
+    <div class="container">
+      <div class="success-card" id="success-card">
+        <!-- Loading state -->
+        <div class="success-loading" id="success-loading">
+          <div class="spinner"></div>
+          <p>Confirming your purchase...</p>
+        </div>
+
+        <!-- Success state (hidden until data loads) -->
+        <div class="success-content" id="success-content" style="display:none;">
+          <div class="success-check">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h1 class="success-title">Purchase Complete!</h1>
+          <span class="plan-badge" id="plan-badge"></span>
+          <p class="success-email" id="success-email"></p>
+          <p class="success-desc">Your account has been upgraded.<br/>You can close this page and return to PATAPIM.</p>
+          <div class="success-cta">
+            <a href="/go" class="btn btn-primary">Go to Dashboard</a>
+            <a href="/download" class="success-link">Download PATAPIM</a>
+          </div>
+        </div>
+
+        <!-- Error state -->
+        <div class="success-error" id="success-error" style="display:none;">
+          <div class="success-check error-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h1 class="success-title">Processing Payment</h1>
+          <p class="success-desc">Your payment was received but the license is still being set up.<br/>This usually takes a few seconds. Try refreshing the page.</p>
+          <div class="success-cta">
+            <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+            <a href="/go" class="success-link">Go to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .success-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 0 80px;
+  }
+
+  .success-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 480px;
+    width: 90%;
+    margin: 0 auto;
+    padding: var(--space-4xl) var(--space-3xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+  }
+
+  /* Loading */
+  .success-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xl);
+    padding: var(--space-2xl) 0;
+  }
+
+  .success-loading p {
+    font-size: 15px;
+    color: var(--text-tertiary);
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border-default);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Success content */
+  .success-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .success-check {
+    color: var(--success);
+    margin-bottom: var(--space-xl);
+  }
+
+  .error-icon {
+    color: var(--warning, #e0a458);
+  }
+
+  .success-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-lg);
+  }
+
+  .plan-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 100px;
+    margin-bottom: var(--space-lg);
+  }
+
+  .plan-badge.plan-pro {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+  }
+
+  .plan-badge.plan-lifetime {
+    background: rgba(224, 164, 88, 0.15);
+    color: var(--warning, #e0a458);
+  }
+
+  .success-email {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .success-desc {
+    font-size: 17px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .success-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .success-cta .btn {
+    min-width: 200px;
+    justify-content: center;
+  }
+
+  .success-link {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .success-link:hover {
+    color: var(--text-secondary);
+  }
+
+  .success-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (max-width: 480px) {
+    .success-card {
+      padding: var(--space-2xl) var(--space-xl);
+    }
+    .success-title {
+      font-size: 24px;
+    }
+  }
+</style>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+
+  if (sessionId) {
+    (async () => {
+      const delays = [1000, 2000, 4000];
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const res = await fetch('/api/stripe/session-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+          const data = await res.json();
+          if (data.found) {
+            // Show success
+            document.getElementById('success-loading')!.style.display = 'none';
+
+            const badge = document.getElementById('plan-badge')!;
+            if (data.plan === 'lifetime') {
+              badge.textContent = 'Lifetime';
+              badge.classList.add('plan-lifetime');
+            } else {
+              badge.textContent = 'Pro';
+              badge.classList.add('plan-pro');
+            }
+
+            document.getElementById('success-email')!.textContent = data.email;
+            document.getElementById('success-content')!.style.display = 'flex';
+            return;
+          }
+        } catch {}
+        if (attempt < delays.length) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+        }
+      }
+      // Fallback: license not found yet
+      document.getElementById('success-loading')!.style.display = 'none';
+      document.getElementById('success-error')!.style.display = 'flex';
+    })();
+  } else {
+    // No session_id — redirect to home
+    window.location.href = '/';
+  }
+</script>

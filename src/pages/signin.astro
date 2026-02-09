@@ -1,0 +1,63 @@
+---
+export const prerender = false;
+
+import { getUserFromRequest } from '../lib/auth';
+
+const env = Astro.locals.runtime.env;
+const url = new URL(Astro.request.url);
+const pairingSessionId = url.searchParams.get('s');
+
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  // Not authenticated — redirect to Google OAuth
+  // If there's a pairing session, store it in a cookie so the callback can use it
+  const headers: Record<string, string> = { Location: '/api/auth/google' };
+  if (pairingSessionId) {
+    headers['Set-Cookie'] = `__patapim_pair=${pairingSessionId}; Secure; SameSite=Lax; Path=/; Max-Age=600`;
+  }
+  return new Response(null, { status: 302, headers });
+}
+
+// Already authenticated — if pairing session, auto-create device token
+if (pairingSessionId) {
+  const deviceToken = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  // Store device record
+  await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify({
+    googleId: user.googleId,
+    email: user.email,
+    deviceName: 'PATAPIM Desktop',
+    machineId: 'auto-pair',
+    createdAt: now,
+    lastSeen: now,
+    tunnelUrl: null,
+    terminalCount: 0,
+  }));
+
+  // Append to device list
+  const devicesRaw = await env.LICENSES.get(`devices:${user.googleId}`);
+  const devices: Array<{ token: string; deviceName: string; createdAt: string }> = devicesRaw ? JSON.parse(devicesRaw) : [];
+  devices.push({ token: deviceToken, deviceName: 'PATAPIM Desktop', createdAt: now });
+  await env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(devices));
+
+  // Get license info
+  const licenseRaw = await env.LICENSES.get(`license:${user.email}`);
+  const license = licenseRaw ? JSON.parse(licenseRaw) : null;
+
+  // Store result for desktop polling
+  await env.SESSIONS.put(`pair-poll:${pairingSessionId}`, JSON.stringify({
+    deviceToken,
+    email: user.email,
+    plan: license?.plan || 'free',
+    licenseStatus: license?.status || null,
+    licenseKey: license?.licenseKey || null,
+  }), { expirationTtl: 600 });
+
+  return new Response(null, { status: 302, headers: { Location: '/go?paired=1' } });
+}
+
+// Already authenticated, no pairing — just go to dashboard
+return Astro.redirect('/go');
+---

@@ -1,0 +1,259 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Terms of Use — PATAPIM" description="PATAPIM End User License Agreement (EULA). Read the terms governing use of the PATAPIM desktop application.">
+  <Navbar />
+
+  <main class="legal-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">Legal</span>
+        <h1 class="section-title">Terms of Use (EULA)</h1>
+        <p class="section-subtitle">Last updated: February 8, 2026</p>
+      </div>
+
+      <div class="legal-content">
+        <p class="legal-intro">
+          Please read this End User License Agreement ("Agreement") carefully before using PATAPIM.
+          By installing, copying, or otherwise using the Software, you agree to be bound by the terms
+          of this Agreement. If you do not agree to the terms of this Agreement, do not install or use
+          the Software.
+        </p>
+
+        <h2>1. Definitions</h2>
+        <p><strong>"Software"</strong> means the PATAPIM desktop application, including all associated files, libraries, documentation, and updates provided by the Licensor.</p>
+        <p><strong>"Licensor"</strong> means Blip Haus, the creator and owner of PATAPIM.</p>
+        <p><strong>"User"</strong> or <strong>"You"</strong> means the individual or entity that installs or uses the Software.</p>
+        <p><strong>"Service"</strong> means the PATAPIM online services accessible at patapim.ai, including but not limited to account management, license verification, and payment processing.</p>
+
+        <h2>2. License Grant</h2>
+        <p>Subject to the terms of this Agreement and any applicable subscription plan, the Licensor grants You a limited, non-exclusive, non-transferable, revocable license to install and use the Software on devices You own or control, solely for Your personal or internal business purposes.</p>
+        <p>The scope of Your license depends on Your subscription plan:</p>
+        <ul>
+          <li><strong>Free Plan:</strong> Use of the Software with limitations including up to 9 terminals, up to 3 active projects, 60 minutes of voice dictation, and local network (LAN) remote access only.</li>
+          <li><strong>Pro Plan ($6.99/month):</strong> Use of the Software with expanded capabilities including unlimited terminals, unlimited projects, unlimited voice dictation, full remote access via Cloudflare Tunnels, and additional features as described at <a href="/pricing">patapim.ai/pricing</a>.</li>
+          <li><strong>Lifetime Plan ($29.99 one-time):</strong> All Pro Plan features granted in perpetuity, subject to the terms of this Agreement.</li>
+        </ul>
+        <p>Feature availability and plan limits may change. Current plan details are available at <a href="/pricing">patapim.ai/pricing</a>.</p>
+
+        <h2>3. Restrictions</h2>
+        <p>You shall NOT:</p>
+        <ul>
+          <li>Copy, modify, adapt, translate, or create derivative works based on the Software;</li>
+          <li>Reverse engineer, disassemble, decompile, or otherwise attempt to derive the source code of the Software;</li>
+          <li>Distribute, sublicense, lease, rent, loan, or otherwise transfer the Software or any rights therein to any third party;</li>
+          <li>Remove, alter, or obscure any proprietary notices, labels, or marks on the Software;</li>
+          <li>Use the Software to develop a competing product or service;</li>
+          <li>Circumvent or attempt to circumvent any license verification, feature restrictions, or usage limits built into the Software;</li>
+          <li>Use the Software in any manner that violates applicable laws or regulations.</li>
+        </ul>
+
+        <h2>4. Third-Party AI Services</h2>
+        <div class="legal-highlight">
+          <p><strong>PATAPIM is a terminal wrapper and IDE environment for AI coding assistants. It does NOT intercept, modify, proxy, or store AI conversation data.</strong></p>
+        </div>
+        <ul>
+          <li>PATAPIM provides a terminal/IDE interface through which You may interact with third-party AI services including, but not limited to, Anthropic Claude, OpenAI Codex, and Google Gemini. These services run as standard command-line processes within PATAPIM's terminal.</li>
+          <li>All interactions between You and any third-party AI service are governed entirely by that service's own terms of service and privacy policy. PATAPIM does not intermediate these interactions in any way.</li>
+          <li>PATAPIM does not access, read, intercept, modify, cache, or transmit the content of Your conversations with AI services. The data flows directly between You and the AI service provider, exactly as it would in any other terminal emulator.</li>
+          <li>You are solely responsible for Your compliance with the terms of service and acceptable use policies of any third-party AI service You use through PATAPIM.</li>
+          <li>The Licensor is not affiliated with, endorsed by, or responsible for any third-party AI service. PATAPIM provides the terminal environment only, in the same way a code editor provides editing capabilities without being responsible for the code written in it.</li>
+        </ul>
+
+        <h2>5. User API Keys</h2>
+        <ul>
+          <li>Certain optional features of the Software (such as OpenAI Whisper dictation) may require You to provide Your own API keys.</li>
+          <li>API keys You provide are stored locally on Your device only. They are never transmitted to PATAPIM servers.</li>
+          <li>You are solely responsible for the security and proper use of Your API keys. The Licensor is not liable for any charges, data exposure, or other consequences arising from the use or compromise of Your API keys.</li>
+        </ul>
+
+        <h2>6. Data and Privacy</h2>
+        <p>The Software collects and processes certain data as described in our <a href="/privacy">Privacy Policy</a>. By using the Software, You acknowledge that You have read and understood the Privacy Policy. The Privacy Policy is incorporated into this Agreement by reference.</p>
+
+        <h2>7. Intellectual Property</h2>
+        <ul>
+          <li>The Software is protected by copyright laws and international treaty provisions. The Licensor retains all right, title, and interest in and to the Software, including all intellectual property rights therein.</li>
+          <li>This Agreement does not grant You any rights to the Licensor's trademarks, service marks, logos, or trade names.</li>
+          <li>No ownership of the Software or any intellectual property rights therein is transferred to You under this Agreement.</li>
+        </ul>
+
+        <h2>8. Subscription and Payments</h2>
+        <ul>
+          <li>Paid plans (Pro and Lifetime) are purchased through the Service at patapim.ai. All payments are processed by Stripe. The Software itself never handles payment information.</li>
+          <li>Pro Plan subscriptions are billed monthly. You may cancel Your subscription at any time through the Stripe Customer Portal. Upon cancellation, Your Pro access continues until the end of the current billing period, after which Your account reverts to the Free Plan.</li>
+          <li>The Licensor reserves the right to change pricing with reasonable notice. Price changes will not affect active billing periods.</li>
+        </ul>
+
+        <h2>9. Refund Policy</h2>
+        <p><strong>All sales are final.</strong> No refunds will be issued for Pro Plan subscription payments or Lifetime Plan purchases. You are encouraged to use the Free Plan to evaluate the Software before purchasing.</p>
+
+        <h2>10. Updates</h2>
+        <ul>
+          <li>The Software may automatically check for updates. Updated versions of the Software are subject to this Agreement unless a new agreement is presented.</li>
+          <li>The Licensor is not obligated to provide updates, enhancements, or technical support.</li>
+        </ul>
+
+        <h2>11. Termination</h2>
+        <ul>
+          <li>This Agreement is effective until terminated. Your rights under this Agreement will terminate automatically without notice if You fail to comply with any of its terms.</li>
+          <li>Upon termination, You must cease all use of the Software and destroy all copies in Your possession.</li>
+          <li>The Licensor may terminate or suspend Your access to the Service at any time for any reason, including but not limited to breach of this Agreement.</li>
+          <li>Sections 3, 4, 7, 9, 12, 13, and 14 shall survive termination of this Agreement.</li>
+        </ul>
+
+        <h2>12. Disclaimer of Warranties</h2>
+        <p class="legal-caps">The Software is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement. The Licensor does not warrant that the Software will be uninterrupted, error-free, or free of harmful components.</p>
+        <p class="legal-caps">The Licensor makes no representations or warranties regarding the accuracy, reliability, or completeness of any output generated by third-party AI services accessed through the Software.</p>
+
+        <h2>13. Limitation of Liability</h2>
+        <p class="legal-caps">To the maximum extent permitted by applicable law:</p>
+        <ul>
+          <li>In no event shall the Licensor be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, business opportunities, or goodwill, arising out of or in connection with this Agreement or the use of the Software.</li>
+          <li>The Licensor's total aggregate liability arising out of or in connection with this Agreement shall not exceed the total amount paid by You to the Licensor in the twelve (12) months preceding the event giving rise to the claim.</li>
+          <li>The Licensor shall not be liable for any damages arising from Your use of third-party AI services, including but not limited to inaccurate AI output, data loss, or violations of third-party terms of service.</li>
+        </ul>
+
+        <h2>14. Governing Law and Dispute Resolution</h2>
+        <ul>
+          <li>This Agreement shall be governed by and construed in accordance with the laws of the Autonomous City of Buenos Aires, Argentina, without regard to its conflict of law principles.</li>
+          <li>Any dispute arising out of or in connection with this Agreement shall be submitted to the exclusive jurisdiction of the courts of the Autonomous City of Buenos Aires, Argentina.</li>
+        </ul>
+
+        <h2>15. Entire Agreement</h2>
+        <ul>
+          <li>This Agreement, together with the Privacy Policy, constitutes the entire agreement between You and the Licensor with respect to the Software and supersedes all prior or contemporaneous agreements, understandings, and communications.</li>
+          <li>If any provision of this Agreement is held to be unenforceable, the remaining provisions shall continue in full force and effect.</li>
+          <li>The Licensor's failure to enforce any provision of this Agreement shall not constitute a waiver of that provision.</li>
+          <li>The Licensor may update this Agreement from time to time. Continued use of the Software after changes constitutes acceptance of the updated terms.</li>
+        </ul>
+
+        <h2>16. Contact</h2>
+        <p>For questions or concerns regarding this Agreement, please contact us:</p>
+        <ul>
+          <li><strong>Email:</strong> <a href="mailto:info@patapim.ai">info@patapim.ai</a></li>
+          <li><strong>GitHub:</strong> <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">github.com/G3dar/patapim/issues</a></li>
+        </ul>
+
+        <p class="legal-copyright">Copyright &copy; 2026 Blip Haus. All rights reserved.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+  }
+
+  .legal-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .legal-intro {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-2xl);
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .legal-content h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .legal-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal-content ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-content ul li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    padding: var(--space-sm) 0;
+    padding-left: var(--space-lg);
+    position: relative;
+  }
+
+  .legal-content ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    opacity: 0.5;
+  }
+
+  .legal-content strong {
+    color: var(--text-primary);
+  }
+
+  .legal-content a {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+  .legal-content a:hover {
+    text-decoration: underline;
+  }
+
+  .legal-highlight {
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--accent-primary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-highlight p {
+    margin-bottom: 0;
+  }
+
+  .legal-caps {
+    font-size: 13px !important;
+  }
+
+  .legal-copyright {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .legal-content {
+      padding-left: var(--space-md);
+      padding-right: var(--space-md);
+    }
+  }
+</style>

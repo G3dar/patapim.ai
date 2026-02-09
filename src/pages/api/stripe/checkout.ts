@@ -9,7 +9,7 @@ export const POST: APIRoute = async (context) => {
     httpClient: Stripe.createFetchHttpClient(),
   });
 
-  let body: { plan?: string; email?: string };
+  let body: { plan?: string; email?: string; referrerEmail?: string };
   try {
     body = await context.request.json();
   } catch {
@@ -19,12 +19,29 @@ export const POST: APIRoute = async (context) => {
     });
   }
 
-  const { plan, email } = body;
+  const { plan, email, referrerEmail } = body;
   if (plan !== 'pro' && plan !== 'lifetime') {
     return new Response(JSON.stringify({ error: 'Invalid plan' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  // Validate referrer email if provided
+  if (referrerEmail) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(referrerEmail)) {
+      return new Response(JSON.stringify({ error: 'Invalid referrer email' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (email && referrerEmail.toLowerCase() === email.toLowerCase()) {
+      return new Response(JSON.stringify({ error: 'Cannot refer yourself' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   const siteUrl = env.SITE_URL || 'https://patapim.ai';
@@ -39,10 +56,13 @@ export const POST: APIRoute = async (context) => {
         quantity: 1,
       },
     ],
-    success_url: `${siteUrl}/download?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl}/pricing`,
+    success_url: `${siteUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${siteUrl}/upgrade`,
     allow_promotion_codes: true,
-    metadata: { plan },
+    metadata: {
+      plan,
+      ...(referrerEmail ? { referrerEmail: referrerEmail.toLowerCase() } : {}),
+    },
   };
 
   if (email) {
@@ -54,10 +74,6 @@ export const POST: APIRoute = async (context) => {
     if (googleId) {
       sessionParams.metadata!.googleId = googleId;
     }
-  }
-
-  if (isPro) {
-    sessionParams.subscription_data = { trial_period_days: 14 };
   }
 
   try {
