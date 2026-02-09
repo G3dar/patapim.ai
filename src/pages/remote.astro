@@ -458,8 +458,9 @@ export const prerender = false;
     .terminal-wrap {
       flex: 1;
       position: relative;
-      overflow-x: auto;
+      overflow-x: hidden;
       overflow-y: hidden;
+      overscroll-behavior: contain;
     }
 
     .terminal-wrap .xterm {
@@ -468,8 +469,17 @@ export const prerender = false;
     }
 
     .terminal-wrap .xterm-viewport {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      touch-action: pan-y;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
+    }
+
+    .terminal-wrap .xterm-screen {
+      touch-action: pan-y !important;
     }
     .terminal-wrap .xterm-viewport::-webkit-scrollbar {
       width: 8px;
@@ -736,6 +746,9 @@ export const prerender = false;
     let isSwitching = false;
     let switchOutputQueue = [];
     let ptyDims = null;
+    let isApplyingServerResize = false;
+    let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+    let lastFocusSync = { terminalId: null, focused: null };
     let fontSize = 14;
     let reconnectAttempts = 0;
     let reconnectTimer = null;
@@ -768,14 +781,90 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
-    // Apply PTY cols but fit rows to container height.
-    // Uses proposeDimensions() to avoid double reflow (fit→resize would reflow buffer twice).
-    function applyPtyDims() {
-      if (!ptyDims || !fitAddon || !term) return;
-      const dims = fitAddon.proposeDimensions();
-      if (dims) {
-        term.resize(ptyDims.cols, dims.rows);
+    // Apply terminal dimensions.
+    // Mobile: natural cols (text wraps at screen width) + resize PTY to match.
+    // Desktop: force PTY cols for correct cursor positioning.
+    function applyPtyDims(options = {}) {
+      if (!fitAddon || !term) return;
+      const { syncServer = true, forceRefresh = false } = options;
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+      if (isMobile) {
+        fitAddon.fit();
+
+        if (forceRefresh) {
+          term.refresh(0, term.rows - 1);
+        }
+
+        const cols = term.cols;
+        const rows = term.rows;
+        const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
+        const remoteDiffers = !hasRemoteDims || cols !== ptyDims.cols || rows !== ptyDims.rows;
+        const alreadySent = lastSentResize.terminalId === currentTerminalId &&
+          lastSentResize.cols === cols &&
+          lastSentResize.rows === rows;
+
+        if (syncServer &&
+            !isApplyingServerResize &&
+            ws &&
+            ws.readyState === WebSocket.OPEN &&
+            currentTerminalId &&
+            remoteDiffers &&
+            !alreadySent) {
+          ws.send(JSON.stringify({
+            type: 'resize',
+            terminalId: currentTerminalId,
+            cols,
+            rows,
+          }));
+          lastSentResize = { terminalId: currentTerminalId, cols, rows };
+        }
+      } else if (ptyDims) {
+        const dims = fitAddon.proposeDimensions();
+        if (dims && dims.rows > 0) {
+          term.resize(ptyDims.cols, dims.rows);
+          if (forceRefresh) {
+            term.refresh(0, term.rows - 1);
+          }
+        }
+      } else {
+        fitAddon.fit();
+        if (forceRefresh) {
+          term.refresh(0, term.rows - 1);
+        }
       }
+    }
+
+    function isClientFocused() {
+      return !document.hidden &&
+        document.visibilityState === 'visible' &&
+        (typeof document.hasFocus !== 'function' || document.hasFocus());
+    }
+
+    function sendTerminalFocus(focused, terminalId = currentTerminalId) {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !terminalId) return;
+      const normalized = !!focused;
+      if (lastFocusSync.terminalId === terminalId && lastFocusSync.focused === normalized) return;
+
+      ws.send(JSON.stringify({
+        type: 'terminal_focus',
+        terminalId,
+        focused: normalized,
+      }));
+      lastFocusSync = { terminalId, focused: normalized };
+    }
+
+    function syncTerminalFocus(terminalId = currentTerminalId) {
+      if (!terminalId) return;
+      sendTerminalFocus(isClientFocused(), terminalId);
+    }
+
+    function debounce(fn, delay) {
+      let timer = null;
+      return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
     }
 
     function initTerminal() {
@@ -842,82 +931,37 @@ export const prerender = false;
         }));
       });
 
-      // Track scroll position
-      term.onScroll(() => {
-        const buf = term.buffer.active;
-        const atBottom = buf.viewportY >= buf.baseY;
-        scrollBottomBtn.classList.toggle('visible', !atBottom);
-      });
-
-      // Mobile: enable 2D touch panning and cursor follow
-      if (window.matchMedia('(max-width: 768px)').matches) {
-        const xtermScreen = terminalWrap.querySelector('.xterm-screen');
-        if (xtermScreen) xtermScreen.style.touchAction = 'none';
-
+      const updateScrollButton = () => {
         const viewport = terminalWrap.querySelector('.xterm-viewport');
-        if (viewport) {
-          let lastX = 0, lastY = 0, lastTime = 0, vx = 0, vy = 0, mid = null, panning = false;
-          const cancel = () => { if (mid) { cancelAnimationFrame(mid); mid = null; } };
+        if (!viewport) return;
+        const distanceFromBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+        const isAtBottom = distanceFromBottom < 10;
+        const hasScrollback = viewport.scrollHeight > viewport.clientHeight + 10;
+        scrollBottomBtn.classList.toggle('visible', !isAtBottom && hasScrollback);
+      };
 
-          terminalWrap.addEventListener('touchstart', e => {
-            cancel();
-            if (e.touches.length === 1) {
-              lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-              lastTime = Date.now(); vx = 0; vy = 0; panning = false;
-            }
-          }, { passive: true });
+      // Track scroll position
+      term.onScroll(updateScrollButton);
+      term.onRender(() => setTimeout(updateScrollButton, 50));
 
-          terminalWrap.addEventListener('touchmove', e => {
-            if (e.touches.length !== 1) return;
-            const t = e.touches[0], dx = lastX - t.clientX, dy = lastY - t.clientY;
-            if (!panning && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) panning = true;
-            if (panning) {
-              const now = Date.now(), dt = now - lastTime;
-              if (dt > 0) { vx = dx / dt; vy = dy / dt; }
-              terminalWrap.scrollLeft += dx;
-              viewport.scrollTop += dy;
-              lastX = t.clientX; lastY = t.clientY; lastTime = now;
-            }
-          }, { passive: true });
-
-          terminalWrap.addEventListener('touchend', () => {
-            if (panning && (Math.abs(vx) > 0.3 || Math.abs(vy) > 0.3)) {
-              let mx = vx * 16, my = vy * 16;
-              const momentum = () => {
-                if (Math.abs(mx) < 0.5 && Math.abs(my) < 0.5) { cancel(); return; }
-                terminalWrap.scrollLeft += mx; viewport.scrollTop += my;
-                mx *= 0.95; my *= 0.95;
-                mid = requestAnimationFrame(momentum);
-              };
-              mid = requestAnimationFrame(momentum);
-            }
-            panning = false;
-          }, { passive: true });
-        }
-
-        // Auto-scroll to keep cursor visible when typing
-        let cursorFollowTimer = null;
-        term.onData(() => {
-          clearTimeout(cursorFollowTimer);
-          cursorFollowTimer = setTimeout(() => {
-            if (!xtermScreen) return;
-            const charW = xtermScreen.offsetWidth / term.cols;
-            const cursorPx = term.buffer.active.cursorX * charW;
-            const sl = terminalWrap.scrollLeft, vw = terminalWrap.clientWidth, pad = charW * 3;
-            if (cursorPx > sl + vw - pad) terminalWrap.scrollLeft = cursorPx - vw + pad;
-            else if (cursorPx < sl + pad) terminalWrap.scrollLeft = Math.max(0, cursorPx - pad);
-          }, 50);
-        });
+      const viewport = terminalWrap.querySelector('.xterm-viewport');
+      if (viewport) {
+        viewport.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
       }
 
-      // Resize — delegates to applyPtyDims
-      const ro = new ResizeObserver(() => {
-        if (ptyDims && fitAddon) {
-          applyPtyDims();
-        } else if (fitAddon) {
-          fitAddon.fit();
-        }
+      terminalWrap.addEventListener('click', () => {
+        term.focus();
+        syncTerminalFocus();
       });
+      terminalWrap.addEventListener('touchstart', () => {
+        term.focus();
+        syncTerminalFocus();
+      }, { passive: true });
+
+      // Resize delegates to applyPtyDims
+      const ro = new ResizeObserver(debounce(() => {
+        applyPtyDims({ forceRefresh: true });
+      }, 80));
       ro.observe(terminalWrap);
     }
 
@@ -940,6 +984,7 @@ export const prerender = false;
         setStatus('connecting', 'Authenticating...');
         loadingText && (loadingText.textContent = 'Authenticating...');
         reconnectAttempts = 0;
+        lastFocusSync = { terminalId: null, focused: null };
         // Auth is sent after receiving 'welcome' message to avoid double-auth
       };
 
@@ -954,6 +999,7 @@ export const prerender = false;
       ws.onclose = () => {
         setStatus('disconnected', 'Disconnected');
         enableActions(false);
+        lastFocusSync = { terminalId: null, focused: null };
         if (isAuthenticated && reconnectAttempts < 10) {
           reconnectTimer = setTimeout(() => {
             reconnectAttempts++;
@@ -994,6 +1040,7 @@ export const prerender = false;
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
 
             term.focus();
+            syncTerminalFocus();
           } else {
             showError(
               'Authentication failed: ' + (msg.error || 'Unknown error') +
@@ -1013,20 +1060,33 @@ export const prerender = false;
           break;
 
         case 'pty_dimensions':
+          if (currentTerminalId && msg.terminalId && msg.terminalId !== currentTerminalId) {
+            break;
+          }
           ptyDims = { cols: msg.cols, rows: msg.rows };
-          applyPtyDims();
+          if (msg.terminalId === currentTerminalId) {
+            lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
+          }
+          isApplyingServerResize = true;
+          applyPtyDims({ syncServer: false });
+          isApplyingServerResize = false;
           break;
 
         case 'terminal_init':
           if (term && msg.terminalId === currentTerminalId) {
+            const hasDims = !!(msg.cols && msg.rows);
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
-              applyPtyDims();
+              lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
+              isApplyingServerResize = true;
+              applyPtyDims({ syncServer: false });
+              isApplyingServerResize = false;
             }
             term.clear();
             if (msg.data) {
               term.write(msg.data);
             }
+            applyPtyDims({ syncServer: !hasDims, forceRefresh: true });
           }
           break;
 
@@ -1037,21 +1097,34 @@ export const prerender = false;
             renderTabs();
           }
           if (msg.currentTerminal || msg.terminalId) {
+            const previousTerminalId = currentTerminalId;
             const newId = msg.currentTerminal || msg.terminalId;
             if (newId !== currentTerminalId && term) {
+              ptyDims = null;
+              lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+              if (previousTerminalId) {
+                sendTerminalFocus(false, previousTerminalId);
+              }
               term.clear();
             }
             currentTerminalId = newId;
+            syncTerminalFocus(currentTerminalId);
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
+            const hasDims = !!(msg.cols && msg.rows);
+            term.clear();
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
-              applyPtyDims();
+              lastSentResize = { terminalId: currentTerminalId, cols: msg.cols, rows: msg.rows };
+              isApplyingServerResize = true;
+              applyPtyDims({ syncServer: false });
+              isApplyingServerResize = false;
             }
             if (msg.buffer) {
               term.write(msg.buffer);
             }
+            applyPtyDims({ syncServer: !hasDims, forceRefresh: true });
             isSwitching = false;
             const queue = switchOutputQueue;
             switchOutputQueue = [];
@@ -1069,7 +1142,11 @@ export const prerender = false;
 
         case 'terminal_closed':
           if (msg.terminalId === currentTerminalId) {
+            sendTerminalFocus(false, currentTerminalId);
             currentTerminalId = null;
+            ptyDims = null;
+            lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+            lastFocusSync = { terminalId: null, focused: null };
             term.clear();
           }
           ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
@@ -1185,6 +1262,7 @@ export const prerender = false;
       closeSidebar();
 
       term.focus();
+      syncTerminalFocus();
     }
 
     function updateTopbarProject() {
@@ -1280,6 +1358,7 @@ export const prerender = false;
     // Send AI command to current terminal (same as desktop startAICommand)
     function sendAICommand(command) {
       if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
+      syncTerminalFocus();
       ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: command + '\r' }));
     }
 
@@ -1305,19 +1384,18 @@ export const prerender = false;
     document.getElementById('btn-font-dec').addEventListener('click', () => {
       fontSize = Math.max(8, fontSize - 1);
       term.options.fontSize = fontSize;
-      if (ptyDims) applyPtyDims();
-      else fitAddon.fit();
+      applyPtyDims({ forceRefresh: true });
     });
 
     document.getElementById('btn-font-inc').addEventListener('click', () => {
       fontSize = Math.min(28, fontSize + 1);
       term.options.fontSize = fontSize;
-      if (ptyDims) applyPtyDims();
-      else fitAddon.fit();
+      applyPtyDims({ forceRefresh: true });
     });
 
     // Disconnect
     document.getElementById('btn-disconnect').addEventListener('click', () => {
+      sendTerminalFocus(false);
       isAuthenticated = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (ws) ws.close();
@@ -1337,6 +1415,7 @@ export const prerender = false;
         modifiers[mod] = !modifiers[mod];
         updateModifierButtons();
         term.focus();
+        syncTerminalFocus();
       });
     });
 
@@ -1361,6 +1440,7 @@ export const prerender = false;
           }));
         }
         term.focus();
+        syncTerminalFocus();
       });
     });
 
@@ -1373,6 +1453,7 @@ export const prerender = false;
           data: btn.dataset.seq,
         }));
         term.focus();
+        syncTerminalFocus();
       });
     });
 
@@ -1382,6 +1463,22 @@ export const prerender = false;
         btn.classList.toggle('active', modifiers[mod]);
       });
     }
+
+    window.addEventListener('focus', () => {
+      syncTerminalFocus();
+    });
+
+    window.addEventListener('blur', () => {
+      sendTerminalFocus(false);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || document.visibilityState !== 'visible') {
+        sendTerminalFocus(false);
+      } else {
+        syncTerminalFocus();
+      }
+    });
 
     // Keepalive ping
     setInterval(() => {
