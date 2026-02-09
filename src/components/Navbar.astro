@@ -25,6 +25,7 @@ const currentPath = Astro.url.pathname;
       <a href="/go" class="btn btn-primary btn-nav">Dashboard</a>
     </div>
 
+    <a href="/go" class="btn btn-primary btn-mobile-dash">Dashboard</a>
     <button class="mobile-toggle" aria-label="Toggle menu" id="mobile-toggle">
       <span></span>
       <span></span>
@@ -208,9 +209,18 @@ const currentPath = Astro.url.pathname;
     background: var(--accent-subtle);
   }
 
+  .btn-mobile-dash {
+    display: none;
+  }
+
   @media (max-width: 768px) {
     .navbar-links, .navbar-actions { display: none; }
     .mobile-toggle { display: flex; }
+    .btn-mobile-dash {
+      display: inline-flex;
+      padding: 6px 14px;
+      font-size: 12px;
+    }
     .mobile-menu.open { display: flex; }
 
     .section-nav-inner {
