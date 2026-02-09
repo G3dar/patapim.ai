@@ -768,11 +768,14 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
-    // Apply PTY cols but fit rows to container height
+    // Apply PTY cols but fit rows to container height.
+    // Uses proposeDimensions() to avoid double reflow (fit→resize would reflow buffer twice).
     function applyPtyDims() {
       if (!ptyDims || !fitAddon || !term) return;
-      fitAddon.fit();
-      term.resize(ptyDims.cols, term.rows);
+      const dims = fitAddon.proposeDimensions();
+      if (dims) {
+        term.resize(ptyDims.cols, dims.rows);
+      }
     }
 
     function initTerminal() {
@@ -846,7 +849,68 @@ export const prerender = false;
         scrollBottomBtn.classList.toggle('visible', !atBottom);
       });
 
-      // Resize — delegates to applyPtyDims which handles mobile vs desktop
+      // Mobile: enable 2D touch panning and cursor follow
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        const xtermScreen = terminalWrap.querySelector('.xterm-screen');
+        if (xtermScreen) xtermScreen.style.touchAction = 'none';
+
+        const viewport = terminalWrap.querySelector('.xterm-viewport');
+        if (viewport) {
+          let lastX = 0, lastY = 0, lastTime = 0, vx = 0, vy = 0, mid = null, panning = false;
+          const cancel = () => { if (mid) { cancelAnimationFrame(mid); mid = null; } };
+
+          terminalWrap.addEventListener('touchstart', e => {
+            cancel();
+            if (e.touches.length === 1) {
+              lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+              lastTime = Date.now(); vx = 0; vy = 0; panning = false;
+            }
+          }, { passive: true });
+
+          terminalWrap.addEventListener('touchmove', e => {
+            if (e.touches.length !== 1) return;
+            const t = e.touches[0], dx = lastX - t.clientX, dy = lastY - t.clientY;
+            if (!panning && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) panning = true;
+            if (panning) {
+              const now = Date.now(), dt = now - lastTime;
+              if (dt > 0) { vx = dx / dt; vy = dy / dt; }
+              terminalWrap.scrollLeft += dx;
+              viewport.scrollTop += dy;
+              lastX = t.clientX; lastY = t.clientY; lastTime = now;
+            }
+          }, { passive: true });
+
+          terminalWrap.addEventListener('touchend', () => {
+            if (panning && (Math.abs(vx) > 0.3 || Math.abs(vy) > 0.3)) {
+              let mx = vx * 16, my = vy * 16;
+              const momentum = () => {
+                if (Math.abs(mx) < 0.5 && Math.abs(my) < 0.5) { cancel(); return; }
+                terminalWrap.scrollLeft += mx; viewport.scrollTop += my;
+                mx *= 0.95; my *= 0.95;
+                mid = requestAnimationFrame(momentum);
+              };
+              mid = requestAnimationFrame(momentum);
+            }
+            panning = false;
+          }, { passive: true });
+        }
+
+        // Auto-scroll to keep cursor visible when typing
+        let cursorFollowTimer = null;
+        term.onData(() => {
+          clearTimeout(cursorFollowTimer);
+          cursorFollowTimer = setTimeout(() => {
+            if (!xtermScreen) return;
+            const charW = xtermScreen.offsetWidth / term.cols;
+            const cursorPx = term.buffer.active.cursorX * charW;
+            const sl = terminalWrap.scrollLeft, vw = terminalWrap.clientWidth, pad = charW * 3;
+            if (cursorPx > sl + vw - pad) terminalWrap.scrollLeft = cursorPx - vw + pad;
+            else if (cursorPx < sl + pad) terminalWrap.scrollLeft = Math.max(0, cursorPx - pad);
+          }, 50);
+        });
+      }
+
+      // Resize — delegates to applyPtyDims
       const ro = new ResizeObserver(() => {
         if (ptyDims && fitAddon) {
           applyPtyDims();
