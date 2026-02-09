@@ -768,6 +768,13 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
+    // Apply PTY cols but fit rows to container height
+    function applyPtyDims() {
+      if (!ptyDims || !fitAddon || !term) return;
+      fitAddon.fit();
+      term.resize(ptyDims.cols, term.rows);
+    }
+
     function initTerminal() {
       term = new Terminal({
         fontFamily: "'JetBrains Mono', monospace",
@@ -804,13 +811,6 @@ export const prerender = false;
       term.loadAddon(fitAddon);
       term.open(terminalWrap);
       fitAddon.fit();
-
-      // Apply PTY cols but fit rows to container height
-      function applyPtyDims() {
-        if (!ptyDims || !fitAddon) return;
-        fitAddon.fit();
-        term.resize(ptyDims.cols, term.rows);
-      }
 
       // Handle user input
       term.onData(data => {
