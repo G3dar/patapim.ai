@@ -751,6 +751,13 @@ export const prerender = false;
       term.open(terminalWrap);
       fitAddon.fit();
 
+      // Apply PTY cols but fit rows to container height
+      function applyPtyDims() {
+        if (!ptyDims || !fitAddon) return;
+        fitAddon.fit();
+        term.resize(ptyDims.cols, term.rows);
+      }
+
       // Handle user input
       term.onData(data => {
         if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
@@ -785,10 +792,11 @@ export const prerender = false;
         scrollBottomBtn.classList.toggle('visible', !atBottom);
       });
 
-      // Resize — if we have PTY dims, keep them; otherwise fit to container
+      // Resize — use PTY cols (critical for formatting) but fit rows to container
       const ro = new ResizeObserver(() => {
-        if (ptyDims) {
-          term.resize(ptyDims.cols, ptyDims.rows);
+        if (ptyDims && fitAddon) {
+          fitAddon.fit();  // Calculate rows that fit the container
+          term.resize(ptyDims.cols, term.rows);  // Override cols with PTY cols
         } else if (fitAddon) {
           fitAddon.fit();
         }
@@ -889,16 +897,14 @@ export const prerender = false;
 
         case 'pty_dimensions':
           ptyDims = { cols: msg.cols, rows: msg.rows };
-          if (term && msg.cols && msg.rows) {
-            term.resize(msg.cols, msg.rows);
-          }
+          applyPtyDims();
           break;
 
         case 'terminal_init':
           if (term && msg.terminalId === currentTerminalId) {
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
-              term.resize(msg.cols, msg.rows);
+              applyPtyDims();
             }
             term.clear();
             if (msg.data) {
@@ -924,7 +930,7 @@ export const prerender = false;
           if (msg.type === 'switched' && term) {
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
-              term.resize(msg.cols, msg.rows);
+              applyPtyDims();
             }
             if (msg.buffer) {
               term.write(msg.buffer);
@@ -1166,14 +1172,14 @@ export const prerender = false;
     document.getElementById('btn-font-dec').addEventListener('click', () => {
       fontSize = Math.max(8, fontSize - 1);
       term.options.fontSize = fontSize;
-      if (ptyDims) term.resize(ptyDims.cols, ptyDims.rows);
+      if (ptyDims) applyPtyDims();
       else fitAddon.fit();
     });
 
     document.getElementById('btn-font-inc').addEventListener('click', () => {
       fontSize = Math.min(28, fontSize + 1);
       term.options.fontSize = fontSize;
-      if (ptyDims) term.resize(ptyDims.cols, ptyDims.rows);
+      if (ptyDims) applyPtyDims();
       else fitAddon.fit();
     });
 
