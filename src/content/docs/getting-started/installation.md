@@ -27,14 +27,14 @@ npm install -g @anthropic-ai/claude-code
 Authenticate with your Anthropic API key:
 
 ```bash
-claude-code auth
+claude
 ```
 
 ## Installation Methods
 
 ### Method 1: Download Installer (Recommended)
 
-1. Visit the [PATAPIM releases page](https://github.com/yourusername/patapim/releases)
+1. Visit the [PATAPIM releases page](https://patapim.ai/download)
 2. Download the installer for your platform:
    - Windows: `PATAPIM-Setup-x.x.x.exe`
    - macOS: `PATAPIM-x.x.x.dmg`
@@ -47,7 +47,7 @@ claude-code auth
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/patapim.git
+git clone https://github.com/G3dar/patapim.git
 cd patapim
 npm install
 ```
@@ -57,6 +57,22 @@ Start PATAPIM:
 ```bash
 npm start
 ```
+
+### Method 3: Install Script (Quick Setup)
+
+Run a single command to download and install PATAPIM:
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex
+```
+
+**macOS/Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.sh | bash
+```
+
+The install script handles downloading, extracting, and setting up PATAPIM automatically.
 
 ## Verifying Installation
 
@@ -80,8 +96,8 @@ If you see the Claude Code response, your installation is complete.
 
 ### Claude Code not responding
 
-- Verify Claude Code CLI is installed: `claude-code --version`
-- Check authentication: `claude-code auth`
+- Verify Claude Code CLI is installed: `claude --version`
+- Check authentication: `claude`
 - Ensure you have an active internet connection
 
 ### Terminal not working

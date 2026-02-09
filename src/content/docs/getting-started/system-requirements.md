@@ -47,13 +47,15 @@ PATAPIM is designed to run efficiently on modern systems. Review the requirement
 - **Claude Code CLI**: Latest version
   - Install: `npm install -g @anthropic-ai/claude-code`
   - Must be authenticated with valid Anthropic API key
-  - Verify: `claude-code --version`
+  - Verify: `claude --version`
 
 ### Optional but Recommended
 
 - **Visual Studio Code** or other code editor for editing files
 - **Docker** (if working with containers)
 - **Python 3.8+** (if using Python-based Claude Code features)
+- **Cloudflare Tunnel (cloudflared)** — Required for remote access via public URL. [Install cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+- **HuggingFace Transformers.js** — Downloaded automatically for Local Whisper offline dictation (no manual install needed)
 
 ## Hardware Requirements
 
@@ -131,7 +133,7 @@ Modern browsers with WebSocket and Web Speech API support.
 Run this command to check your system meets the requirements:
 
 ```bash
-node --version && npm --version && git --version && claude-code --version
+node --version && npm --version && git --version && claude --version
 ```
 
 Expected output:
@@ -140,7 +142,7 @@ Expected output:
 v18.x.x
 8.x.x
 git version 2.x.x
-claude-code version x.x.x
+claude version x.x.x
 ```
 
 If all commands return version numbers, your system is ready for PATAPIM.
@@ -165,7 +167,7 @@ Install globally:
 
 ```bash
 npm install -g @anthropic-ai/claude-code
-claude-code auth
+claude auth
 ```
 
 ### Performance issues

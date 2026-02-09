@@ -240,4 +240,4 @@ You can generate a CLAUDE.md template with:
 npx create-patapim-project
 ```
 
-Or copy from the [PATAPIM repository](https://github.com/yourusername/patapim/blob/main/CLAUDE.md).
+Or copy from the [PATAPIM repository](https://github.com/G3dar/patapim/blob/main/CLAUDE.md).

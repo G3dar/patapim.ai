@@ -93,6 +93,17 @@ Authentication secret for remote access (future feature).
 export PATAPIM_AUTH_SECRET="your-secret-key"
 ```
 
+### PATAPIM_MCP_TOKEN
+
+Authentication token for the MCP browser control REST API.
+
+```bash
+# Auto-generated on startup — typically not set manually
+echo $PATAPIM_MCP_TOKEN
+```
+
+This token is generated automatically when PATAPIM starts and is injected into Claude Code and other AI CLI tools for MCP authentication. You generally don't need to set this manually.
+
 ## Runtime Settings (localStorage)
 
 PATAPIM stores user preferences in the browser's localStorage:
@@ -104,8 +115,24 @@ PATAPIM stores user preferences in the browser's localStorage:
 | `patapim.fontFamily` | string | Terminal font family |
 | `patapim.gridLayout` | boolean | Enable/disable grid layout |
 | `patapim.historyPanel` | boolean | Show/hide history panel |
+| `patapim-toolbar-hidden-buttons` | string (JSON) | Toolbar buttons hidden by the user via View > Toolbar Buttons |
+| `patapim-dictation-provider` | string | Active dictation provider (whisper, webspeech, local-whisper) |
+| `patapim-dictation-mic-device` | string | Selected microphone device ID |
+| `patapim-sidebar-width` | number | Sidebar width in pixels |
 
 These are set through the UI and persist across sessions.
+
+## Configuration Files
+
+### Account & Auth Files
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `account.json` | `~/.patapim/` | Cached account data and plan info |
+| `trusted-passkeys.json` | `~/.patapim/` | Registered PassKey credentials |
+| `remote-token.json` | `~/.patapim/` | Remote access authentication token |
+
+These files are managed automatically by PATAPIM. Manual editing is not recommended.
 
 ## Configuration Priority
 
@@ -144,3 +171,7 @@ electron .
 | `tasks.json` | `<project>/` | Task tracking |
 | `CLAUDE.md` | `<project>/` | Claude Code instructions |
 | `STRUCTURE.json` | `<project>/` | Module map |
+| `account.json` | `~/.patapim/` | Account and license data |
+| `trusted-passkeys.json` | `~/.patapim/` | PassKey credentials |
+| `remote-token.json` | `~/.patapim/` | Remote auth token |
+| `terminal-logs/` | `~/.patapim/` | Terminal session logs |

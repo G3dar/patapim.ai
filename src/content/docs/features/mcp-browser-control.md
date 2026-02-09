@@ -29,11 +29,21 @@ PATAPIM includes an MCP server that exposes browser control capabilities to Clau
 
 The browser control panel is integrated into the PATAPIM sidebar, allowing you to see what Claude is doing in real-time.
 
+## Auto-Registration
+
+PATAPIM automatically registers its MCP browser server in supported AI CLI tools:
+
+- **Claude Code**: Adds to `.claude/settings/mcp.json`
+- **Gemini CLI**: Adds to `.gemini/settings.json`
+- **Codex CLI**: Adds to Codex MCP configuration
+
+Registration happens on startup. You don't need to manually configure MCP in any of these tools — PATAPIM handles it for you.
+
 ## Setup Requirements
 
 Browser control functionality is available out of the box with PATAPIM. The system requires:
 
-- **Chromium-based browser**: PATAPIM uses Puppeteer, which controls Chrome/Chromium
+- **Electron BrowserView**: PATAPIM uses Electron BrowserView to provide an integrated browser panel directly within the application
 - **Node.js**: Already included with PATAPIM installation
 - **MCP Server**: Pre-configured and runs automatically when needed
 
@@ -86,19 +96,40 @@ You: "Test the login flow on localhost:3000"
 Claude: [Opens site, fills credentials, submits, reports results]
 ```
 
-## Available Browser Actions
+## Per-Terminal Browsers
 
-Claude can perform the following actions through MCP:
+Each terminal can have its own independent browser instance:
 
-- **navigate**: Go to a URL
-- **click**: Click elements by selector
-- **fill**: Fill input fields
-- **screenshot**: Capture the current page
-- **evaluate**: Execute JavaScript on the page
-- **content**: Get page HTML or text content
-- **info**: Get current URL and page title
-- **back/forward**: Navigate browser history
-- **refresh**: Reload the current page
+- Browser state is isolated per terminal
+- Navigate different URLs in different terminals simultaneously
+- Screenshots and page content are terminal-specific
+- The browser panel in the sidebar shows the active terminal's browser
+
+## REST API
+
+PATAPIM exposes browser control via REST endpoints at `http://localhost:31415/browser/*`:
+
+- All endpoints require MCP token authentication via the `Authorization` header
+- The MCP token is auto-generated and stored in the `PATAPIM_MCP_TOKEN` environment variable
+- Endpoints mirror the MCP tools: navigate, click, fill, screenshot, evaluate, content, info, etc.
+
+This allows external tools and scripts to control the PATAPIM browser programmatically.
+
+## Available MCP Tools
+
+Claude and other AI tools can use these MCP tools:
+
+- **browser_navigate**: Go to a URL
+- **browser_screenshot**: Capture the current page as an image
+- **browser_click**: Click elements by CSS selector
+- **browser_fill**: Fill input fields with text
+- **browser_evaluate**: Execute JavaScript on the page
+- **browser_content**: Get page HTML or text content
+- **browser_info**: Get current URL and page title
+- **browser_back**: Go back in browser history
+- **browser_forward**: Go forward in browser history
+- **browser_refresh**: Reload the current page
+- **browser_status**: Check if browser panel is available
 
 ## Browser Panel
 

@@ -63,6 +63,31 @@ Give terminals meaningful names to track what's running where.
 2. Select "Rename"
 3. Enter a new name (e.g., "Dev Server", "Tests", "Build")
 
+## Terminal State Indicators
+
+Terminal tabs display color-coded indicators to show what's happening in each terminal:
+
+- **Red pulse** (Processing): Claude Code is actively working — executing commands, reading files, or writing code
+- **Cyan glow** (Plan Mode): Claude is in plan mode, designing an implementation approach before writing code
+- **Green highlight** (Needs Attention): Claude has finished and is waiting for your input or approval
+- **Red overlay** (Recording): Voice dictation is actively recording in this terminal
+
+These indicators help you monitor multiple terminals at a glance, especially useful in grid view where you can see which terminals need your attention.
+
+## Toolbar Customization
+
+Customize which buttons appear in the terminal toolbar:
+
+1. Go to **View > Toolbar Buttons** in the menu
+2. Check or uncheck buttons to show or hide them
+3. Changes take effect immediately
+
+Hidden button preferences are saved in localStorage and persist across sessions.
+
+### Grid Layout Selector
+
+The toolbar includes a grid layout dropdown that lets you quickly switch between layouts (1x1, 2x1, 2x2, 3x1, 3x2, 3x3) without using keyboard shortcuts.
+
 ## Keyboard Shortcuts
 
 | Shortcut | Action |

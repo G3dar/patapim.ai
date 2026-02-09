@@ -145,6 +145,8 @@ The killer feature: send tasks directly to Claude Code as prompts.
 3. PATAPIM sends the task description to Claude Code in the active terminal
 4. Claude reads the task and starts working
 
+> **Note:** PATAPIM automatically detects when Claude Code is running in a terminal. The play button is only enabled when Claude is active in the target terminal.
+
 **What gets sent:**
 ```
 [Task from PATAPIM]

@@ -8,6 +8,28 @@ order: 6
 
 PATAPIM integrates with GitHub to display issues from your repositories directly in the sidebar. Track bugs, features, and tasks without leaving your workspace.
 
+## Git Panel
+
+PATAPIM includes a floating Git panel in the top-right corner of the terminal area for quick Git operations:
+
+### Branch Selector
+
+- Shows the **current branch name** at a glance
+- Click to open a **branch switching dropdown** with all local branches
+- Switch branches directly without typing Git commands
+
+### Commit & Push
+
+When Claude Code is detected running in a terminal, a **Commit & Push** button appears in the Git panel:
+
+- Click to stage all changes, commit, and push in one action
+- Useful for quickly shipping work after Claude finishes a task
+- The button is contextual — it only appears when Claude is active
+
+The Git panel complements the full GitHub Issues integration described below.
+
+---
+
 ## Requirements
 
 ### GitHub CLI (gh)

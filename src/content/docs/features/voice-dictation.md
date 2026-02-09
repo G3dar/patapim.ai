@@ -17,9 +17,9 @@ Voice dictation captures your speech, converts it to text, and inserts it into t
 - PATAPIM types: `git status`
 - Press Enter to execute
 
-## Two Dictation Modes
+## Three Speech-to-Text Providers
 
-PATAPIM offers two speech-to-text engines with different trade-offs:
+PATAPIM offers three speech-to-text engines with different trade-offs:
 
 ### 1. Whisper API (Primary)
 
@@ -64,6 +64,53 @@ PATAPIM offers two speech-to-text engines with different trade-offs:
 **Setup:**
 - Works automatically if Whisper is not configured
 - No configuration needed
+
+### 3. Local Whisper (Offline)
+
+**Offline transcription** powered by HuggingFace Transformers.js — completely free and private.
+
+**Requirements:**
+- No API key needed
+- No internet connection required
+- First use downloads the model (~75-400 MB depending on size)
+
+**Cost:**
+- Completely free
+
+**Accuracy:**
+- Good for general speech and technical terms
+- Multiple model sizes available (base, small, medium, large)
+- Larger models = better accuracy but slower processing
+
+**Setup:**
+1. Open PATAPIM Settings → Voice Dictation
+2. Select "Local Whisper" as provider
+3. Choose model size (base recommended for most users)
+4. Model downloads automatically on first use
+
+**Privacy:**
+- All processing happens locally on your machine
+- No audio data leaves your device
+- Best option for privacy-sensitive environments
+
+## Microphone Setup
+
+On first launch, PATAPIM shows a microphone setup overlay:
+
+1. **Select your microphone** from the dropdown list of available devices
+2. **Test your microphone** with the VU meter — speak and verify the level indicator moves
+3. **Try it** — record a short sample and hear it played back
+4. Click **Done** to save your settings
+
+You can re-open the mic setup at any time from the dictation menu (Alt+M).
+
+### Device Selection
+
+If you connect a new microphone or switch devices:
+- Open **Alt+M > Microphone Setup**
+- Select the new device
+- Test with the VU meter
+- Your selection is saved to localStorage
 
 ## Using Voice Dictation
 
@@ -134,12 +181,29 @@ Keep the microphone active for continuous dictation.
 - Avoid dictating sensitive information (passwords, API keys)
 - Review what you've dictated before pressing Enter
 
+## Silence Detection
+
+PATAPIM monitors audio input during dictation. If silence is detected for an extended period, a floating alert appears near the microphone button:
+
+- **"No audio detected"** — check your microphone connection
+- The alert auto-dismisses when audio resumes
+- Helps catch cases where the wrong microphone is selected or the mic is muted
+
+## Free Tier Limit
+
+Free plan users have a **30-minute total dictation limit**. This applies across all providers (Whisper API, Web Speech, and Local Whisper).
+
+- The limit resets when you upgrade to Pro
+- Time is tracked cumulatively across sessions
+- A notification appears when you're approaching the limit
+- Upgrade to Pro for unlimited dictation
+
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+Shift+V` | Start/stop dictation |
-| `Ctrl+Shift+M` | Toggle persistent mode |
+| `Ctrl+Alt+M` | Start/stop dictation |
+| `Alt+M` | Toggle persistent mode |
 
 ## Troubleshooting
 

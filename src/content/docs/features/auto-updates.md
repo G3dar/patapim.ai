@@ -27,7 +27,7 @@ Update checks are lightweight and don't interfere with your work.
 PATAPIM fetches version information from a **GitHub Gist**:
 
 ```
-https://gist.githubusercontent.com/patapim/abc123/raw/latest-version.json
+https://gist.githubusercontent.com/G3dar/c89538d59e1e66f08a143d7d25b0d6dc/raw/patapim-version.json
 ```
 
 The Gist contains:
@@ -167,6 +167,16 @@ If a version has critical security issues, set `minimumVersion` in the Gist:
 ```
 
 PATAPIM will enforce the update and prevent users from skipping it.
+
+### Force Update Overlay
+
+When a force update is required (current version is below `minimumVersion`):
+
+- A **full-screen overlay** appears blocking all interaction
+- The overlay displays the update reason and a progress bar
+- PATAPIM automatically downloads and applies the update
+- The app restarts after the update completes
+- Users cannot dismiss or skip force updates
 
 ## Disabling Auto-Updates
 

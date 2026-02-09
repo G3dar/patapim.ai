@@ -55,7 +55,7 @@ Example: "Create a Python script that reads a CSV file"
 Run Claude Code directly in any terminal:
 
 ```bash
-claude-code
+claude
 ```
 
 This starts an interactive session where you can have a conversation with Claude about your code.
@@ -92,7 +92,7 @@ This starts an interactive session where you can have a conversation with Claude
 | `Ctrl+P` | Open projects panel |
 | `Ctrl+Shift+B` | Open tasks panel |
 | `Ctrl+,` | Open settings |
-| `Ctrl+Shift+V` | Toggle voice dictation |
+| `Ctrl+Alt+M` | Toggle voice dictation |
 
 *Replace Ctrl with Cmd on macOS*
 
@@ -107,28 +107,28 @@ Here are some common workflows:
 "How do I read a JSON file in Python?"
 
 # Or in a full session
-claude-code
+claude
 > Read the config.json file and explain its structure
 ```
 
 ### Generate code
 
 ```bash
-claude-code
+claude
 > Create a React component for a login form with email and password fields
 ```
 
 ### Debug code
 
 ```bash
-claude-code
+claude
 > This script is giving me an error, can you help debug it?
 ```
 
 ### Refactor code
 
 ```bash
-claude-code
+claude
 > Refactor this function to use async/await instead of promises
 ```
 
@@ -136,9 +136,9 @@ claude-code
 
 PATAPIM includes voice dictation powered by Whisper:
 
-1. Press `Ctrl+Shift+V` to start recording
+1. Press `Ctrl+Alt+M` to start recording
 2. Speak your command or question
-3. Press `Ctrl+Shift+V` again to stop and transcribe
+3. Press `Ctrl+Alt+M` again to stop and transcribe
 4. The text appears in the active terminal or Claude Code prompt
 
 Great for hands-free coding or when you're away from the keyboard.
@@ -162,7 +162,7 @@ Now that you're familiar with the basics:
 - Explore [System Requirements](./system-requirements) to optimize performance
 - Check out the [Features Guide](../features) to learn about advanced capabilities
 - Read about [Task Management](../features/task-management) to organize your work
-- Learn about [Plugin System](../features/plugins) to extend PATAPIM
+- Learn about [Plugin System](../features/plugin-system) to extend PATAPIM
 
 ## Tips for Productivity
 

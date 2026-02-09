@@ -98,6 +98,7 @@ Click any project name in the sidebar to switch focus.
 - File explorer shows that project's files
 - New terminals open in that project's directory
 - Project is highlighted in sidebar
+- Terminal count badge shows how many terminals belong to each project
 
 ### Sidebar Organization
 
@@ -119,6 +120,10 @@ Projects are listed in the order you added them.
 - This only removes it from PATAPIM
 - Your files are NOT deleted
 - You can add it back anytime
+
+### Archive Projects
+
+Right-click a project and select **Archive** to hide it from the active project list without removing it entirely. Archived projects can be restored from the project settings.
 
 ## Keyboard Shortcuts
 

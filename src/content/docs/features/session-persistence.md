@@ -46,27 +46,42 @@ Project B:
 
 Switching from Project A to Project B automatically restores Project B's terminal state.
 
+## Session History Panel
+
+Browse and search your past terminal sessions with the Session History panel.
+
+**Open Session History:**
+- Press `Ctrl+Shift+L` to toggle the panel
+- Or go to **View > Session History**
+
+**Panel features:**
+- **Browse by date**: Sessions organized chronologically
+- **Project filtering**: Shows sessions for the active project only
+- **Open in editor**: Click a session to view its log in the built-in editor
+- **Open in explorer**: Click the folder icon to open the logs directory in your file manager
+
+The Session History panel makes it easy to review what happened in previous sessions without manually navigating log files.
+
 ## Terminal Logs
 
 All terminal output is saved to dated log files for later review.
 
 ### Log File Location
 
-Logs are stored in your system's application data directory:
+Logs are stored in your PATAPIM data directory:
 
-**Windows**:
 ```
-C:\Users\<username>\AppData\Roaming\patapim\logs\
-```
-
-**macOS**:
-```
-~/Library/Application Support/patapim/logs/
+~/.patapim/terminal-logs/
 ```
 
-**Linux**:
+On Windows, this translates to:
 ```
-~/.config/patapim/logs/
+C:\Users\<username>\.patapim\terminal-logs\
+```
+
+On macOS/Linux:
+```
+~/.patapim/terminal-logs/
 ```
 
 ### Log File Format

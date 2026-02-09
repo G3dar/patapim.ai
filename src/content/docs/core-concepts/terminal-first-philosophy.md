@@ -63,6 +63,7 @@ Think of PATAPIM as the scaffolding around your development workflow:
 - **Context files**: CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, tasks.json
 - **Auto-documentation**: Pre-commit hooks keep STRUCTURE.json updated
 - **Built-in DevTools**: Debug web apps in the integrated browser
+- **Voice dictation**: Speak commands instead of typing
 
 ### What PATAPIM Doesn't Replace
 

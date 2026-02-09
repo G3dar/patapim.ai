@@ -14,7 +14,7 @@ At its core, a PATAPIM project is any directory that contains:
 
 1. **Standard context files**: CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, tasks.json
 2. **A .patapim directory**: Stores project-specific configuration
-3. **Git repository** (recommended): For version control and auto-documentation
+3. **Git repository** (recommended but not required): For version control and auto-documentation
 
 When you open a project in PATAPIM, Claude automatically reads these files and understands:
 

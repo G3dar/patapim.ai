@@ -119,6 +119,26 @@ To remove a PassKey:
 
 Revoked PassKeys can no longer be used for authentication. You can re-register the same device later if needed.
 
+## Trusted PassKey Management
+
+Manage trusted PassKeys for remote access from the PATAPIM desktop app.
+
+### Approving New Devices
+
+When a new device attempts to connect via PassKey:
+
+1. A **pending approval notification** appears in the PATAPIM desktop app
+2. Review the device name and PassKey fingerprint
+3. Click **Approve** to trust the device or **Deny** to reject it
+4. Approved devices are saved to `~/.patapim/trusted-passkeys.json`
+
+### Managing Trusted Devices
+
+View and manage trusted devices:
+- Open **Settings > Security > Trusted Devices**
+- See all approved PassKeys with device names and last-used dates
+- Click **Remove** to revoke trust from a specific device
+
 ## Security Considerations
 
 ### Biometric Data
