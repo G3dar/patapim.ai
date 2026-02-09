@@ -309,11 +309,12 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
     padding: var(--space-xl);
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
+    cursor: pointer;
   }
 
   .device-card:hover {
-    border-color: var(--border-strong);
+    border-color: var(--accent-primary);
   }
 
   .device-card-header {
@@ -369,7 +370,6 @@ const paired = Astro.url.searchParams.get('paired') === '1';
   .device-meta {
     font-size: 13px;
     color: var(--text-tertiary);
-    margin-bottom: var(--space-lg);
     line-height: 1.7;
   }
 
@@ -381,50 +381,6 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     color: var(--text-muted);
   }
 
-  .device-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .connect-btn {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--bg-deep);
-    background: var(--accent-primary);
-    border: 1px solid var(--accent-primary);
-    border-radius: var(--radius-sm);
-    padding: 6px 18px;
-    cursor: pointer;
-    transition: opacity var(--transition-fast), background var(--transition-fast);
-  }
-
-  .connect-btn:hover {
-    opacity: 0.9;
-  }
-
-  .connect-btn:disabled {
-    opacity: 0.5;
-    cursor: wait;
-  }
-
-  .unlink-btn {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: none;
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    padding: 5px 14px;
-    cursor: pointer;
-    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
-  }
-
-  .unlink-btn:hover {
-    color: var(--error);
-    border-color: var(--error);
-    background: rgba(212, 120, 120, 0.06);
-  }
 
   /* Empty state (dynamic) */
   .dash-empty {
@@ -507,7 +463,9 @@ const paired = Astro.url.searchParams.get('paired') === '1';
       document.getElementById('devices-loading').style.display = 'none';
       container.style.display = 'block';
 
-      if (!data.devices || data.devices.length === 0) {
+      const onlineDevices = (data.devices || []).filter(d => d.online);
+
+      if (onlineDevices.length === 0) {
         container.innerHTML = `
           <div class="dash-empty">
             <div class="dash-empty-icon">
@@ -516,42 +474,35 @@ const paired = Astro.url.searchParams.get('paired') === '1';
                 <line x1="12" y1="19" x2="20" y2="19"></line>
               </svg>
             </div>
-            <h3 class="dash-empty-title">No active sessions</h3>
-            <p class="dash-empty-desc">Link your desktop app to see your sessions here.</p>
+            <h3 class="dash-empty-title">No devices online</h3>
+            <p class="dash-empty-desc">Open PATAPIM on your desktop to see it here.</p>
           </div>`;
         return;
       }
 
-      container.innerHTML = '<div class="devices-grid">' + data.devices.map(d => {
-        const lastSeen = new Date(d.lastSeen);
-        const ago = timeAgo(lastSeen);
-        return `
-          <div class="device-card">
+      container.innerHTML = '<div class="devices-grid">' + onlineDevices.map(d => `
+          <div class="device-card" data-token="${escapeHtml(d.token)}">
             <div class="device-card-header">
               <span class="device-name">${escapeHtml(d.deviceName)}</span>
-              <span class="online-badge ${d.online ? 'online' : 'offline'}">${d.online ? 'Online' : 'Offline'}</span>
+              <span class="online-badge online">Online</span>
             </div>
             <div class="device-meta">
-              <span>Last seen: ${ago}</span>
               ${d.terminalCount ? `<span>Terminals: ${d.terminalCount}</span>` : ''}
             </div>
-            <div class="device-actions">
-              ${d.online && d.tunnelUrl ? `<button class="connect-btn" data-token="${escapeHtml(d.token)}">Connect</button>` : ''}
-              <button class="unlink-btn" data-token="${escapeHtml(d.token)}">Unlink</button>
-            </div>
-          </div>`;
-      }).join('') + '</div>';
+          </div>`
+      ).join('') + '</div>';
 
-      // Connect handlers
-      container.querySelectorAll('.connect-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          btn.textContent = 'Connecting...';
+      // Click-to-connect on entire card
+      container.querySelectorAll('.device-card').forEach(card => {
+        card.addEventListener('click', async () => {
+          if (card.classList.contains('connecting')) return;
+          card.classList.add('connecting');
+          card.style.opacity = '0.6';
           try {
             const res = await fetch('/api/device/connect-token', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ deviceToken: btn.dataset.token }),
+              body: JSON.stringify({ deviceToken: card.dataset.token }),
             });
             const result = await res.json();
             if (result.connectToken && result.tunnelUrl) {
@@ -566,44 +517,13 @@ const paired = Astro.url.searchParams.get('paired') === '1';
           } catch {
             alert('Failed to connect to device');
           }
-          btn.disabled = false;
-          btn.textContent = 'Connect';
-        });
-      });
-
-      // Unlink handlers
-      container.querySelectorAll('.unlink-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('Unlink this device?')) return;
-          btn.disabled = true;
-          btn.textContent = 'Unlinking...';
-          try {
-            await fetch('/api/device/unlink', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ deviceToken: btn.dataset.token }),
-            });
-            loadDevices();
-          } catch {
-            btn.disabled = false;
-            btn.textContent = 'Unlink';
-          }
+          card.classList.remove('connecting');
+          card.style.opacity = '';
         });
       });
     } catch {
       document.getElementById('devices-loading').textContent = 'Failed to load devices.';
     }
-  }
-
-  function timeAgo(date) {
-    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return minutes + 'm ago';
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return hours + 'h ago';
-    const days = Math.floor(hours / 24);
-    return days + 'd ago';
   }
 
   function escapeHtml(str) {

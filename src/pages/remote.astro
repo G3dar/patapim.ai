@@ -12,7 +12,7 @@ export const prerender = false;
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
-  <style>
+  <style is:inline>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
@@ -785,12 +785,7 @@ export const prerender = false;
         setStatus('connecting', 'Authenticating...');
         loadingText && (loadingText.textContent = 'Authenticating...');
         reconnectAttempts = 0;
-
-        // Send connect-token auth
-        ws.send(JSON.stringify({
-          type: 'auth',
-          connectToken,
-        }));
+        // Auth is sent after receiving 'welcome' message to avoid double-auth
       };
 
       ws.onmessage = (e) => {
