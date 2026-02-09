@@ -245,6 +245,39 @@ export const prerender = false;
       font-weight: 500;
     }
 
+    .project-badges {
+      display: flex;
+      gap: 3px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .tbadge {
+      font-size: 10px;
+      font-weight: 600;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      text-align: center;
+      border-radius: 8px;
+      padding: 0 4px;
+    }
+
+    .tbadge.attention {
+      background: rgba(124, 179, 130, 0.18);
+      color: var(--success);
+    }
+
+    .tbadge.busy {
+      background: rgba(212, 120, 120, 0.18);
+      color: var(--error);
+    }
+
+    .tbadge.idle {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+    }
+
     .no-projects {
       color: var(--text-muted);
       font-size: 11px;
@@ -952,6 +985,37 @@ export const prerender = false;
         name.title = p.path;
         item.appendChild(name);
 
+        // Terminal count badges (attention=green/done, busy=red/processing, idle=grey)
+        const counts = p.terminalCounts;
+        if (counts && (counts.attention > 0 || counts.busy > 0 || counts.idle > 0)) {
+          const badges = document.createElement('div');
+          badges.className = 'project-badges';
+
+          if (counts.attention > 0) {
+            const b = document.createElement('span');
+            b.className = 'tbadge attention';
+            b.textContent = counts.attention;
+            b.title = counts.attention + ' finished';
+            badges.appendChild(b);
+          }
+          if (counts.busy > 0) {
+            const b = document.createElement('span');
+            b.className = 'tbadge busy';
+            b.textContent = counts.busy;
+            b.title = counts.busy + ' processing';
+            badges.appendChild(b);
+          }
+          if (counts.idle > 0) {
+            const b = document.createElement('span');
+            b.className = 'tbadge idle';
+            b.textContent = counts.idle;
+            b.title = counts.idle + ' idle';
+            badges.appendChild(b);
+          }
+
+          item.appendChild(badges);
+        }
+
         item.addEventListener('click', () => selectProject(p.path));
         projectsList.appendChild(item);
       });
@@ -996,7 +1060,7 @@ export const prerender = false;
         tab.dataset.terminalId = t.id;
 
         const label = document.createElement('span');
-        label.textContent = 'Terminal ' + (i + 1);
+        label.textContent = t.name || ('Terminal ' + (i + 1));
         tab.appendChild(label);
 
         tab.addEventListener('click', () => switchTerminal(t.id));
