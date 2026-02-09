@@ -437,6 +437,24 @@ export const prerender = false;
       padding: 4px 0 0 4px;
     }
 
+    .terminal-wrap .xterm-viewport {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar {
+      width: 8px;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: var(--text-dim);
+    }
+
     /* Special keys toolbar (mobile) */
     .keys-bar {
       display: none;
