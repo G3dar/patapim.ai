@@ -1,3 +1,9 @@
+---
+import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
+import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
+import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
+---
+
 <section class="hero">
   <div class="hero-bg-grid"></div>
   <div class="container hero-inner">
@@ -93,41 +99,16 @@
     </div>
 
     <div class="hero-features">
-      <div class="hero-feature-card">
-        <div class="hf-icon hf-icon-grid">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect class="grid-rect grid-rect-1" x="3" y="3" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <rect class="grid-rect grid-rect-2" x="18" y="3" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <rect class="grid-rect grid-rect-3" x="3" y="18" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <rect class="grid-rect grid-rect-4" x="18" y="18" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-        </div>
+      <div class="hero-feature-item">
+        <HeroMiniMultiTerminal />
         <span class="hf-label">Multi-Terminal</span>
       </div>
-
-      <div class="hero-feature-card">
-        <div class="hf-icon hf-icon-mic">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect class="mic-body" x="12" y="4" width="8" height="14" rx="4" stroke="currentColor" stroke-width="1.5"/>
-            <path class="mic-base" d="M8 16a8 8 0 0 0 16 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line class="mic-stand" x1="16" y1="24" x2="16" y2="28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path class="wave wave-1" d="M24 10a4 4 0 0 1 0 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path class="wave wave-2" d="M27 7a8 8 0 0 1 0 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
+      <div class="hero-feature-item">
+        <HeroMiniVoiceDictation />
         <span class="hf-label">Voice Dictation</span>
       </div>
-
-      <div class="hero-feature-card">
-        <div class="hf-icon hf-icon-remote">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect class="phone-body" x="9" y="4" width="14" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/>
-            <line class="phone-screen-top" x1="13" y1="8" x2="19" y2="8" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
-            <circle class="phone-btn" cx="16" cy="25" r="1" fill="currentColor" opacity="0.3"/>
-            <path class="signal signal-1" d="M25 10a3 3 0 0 1 0 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path class="signal signal-2" d="M28 7a7 7 0 0 1 0 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
+      <div class="hero-feature-item">
+        <HeroMiniRemoteAccess />
         <span class="hf-label">Remote Access</span>
       </div>
     </div>
@@ -459,29 +440,19 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Feature cards */
+  /* Feature mini demos */
   .hero-features {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: var(--space-2xl);
   }
 
-  .hero-feature-card {
+  .hero-feature-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    width: 120px;
-  }
-
-  .hf-icon {
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent-primary);
+    gap: 12px;
   }
 
   .hf-label {
@@ -491,87 +462,19 @@
     letter-spacing: 0.02em;
   }
 
-  /* Multi-Terminal grid animation */
-  .grid-rect {
-    opacity: 0.3;
-    transition: opacity 0.3s ease;
-  }
-  .grid-rect-1 { animation: grid-pulse 2.4s ease-in-out infinite; animation-delay: 0s; }
-  .grid-rect-2 { animation: grid-pulse 2.4s ease-in-out infinite; animation-delay: 0.6s; }
-  .grid-rect-3 { animation: grid-pulse 2.4s ease-in-out infinite; animation-delay: 1.2s; }
-  .grid-rect-4 { animation: grid-pulse 2.4s ease-in-out infinite; animation-delay: 1.8s; }
-
-  @keyframes grid-pulse {
-    0%, 100% { opacity: 0.3; }
-    25% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  /* Voice Dictation wave animation */
-  .wave {
-    opacity: 0;
-  }
-  .wave-1 {
-    animation: wave-ripple 2.5s ease-out infinite;
-    animation-delay: 0s;
-  }
-  .wave-2 {
-    animation: wave-ripple 2.5s ease-out infinite;
-    animation-delay: 0.4s;
-  }
-
-  @keyframes wave-ripple {
-    0% { opacity: 0.8; transform: translateX(-2px); }
-    50% { opacity: 0.6; transform: translateX(0px); }
-    100% { opacity: 0; transform: translateX(2px); }
-  }
-
-  /* Remote Access signal animation */
-  .signal {
-    opacity: 0;
-  }
-  .signal-1 {
-    animation: signal-pulse 2s ease-in-out infinite;
-    animation-delay: 0s;
-  }
-  .signal-2 {
-    animation: signal-pulse 2s ease-in-out infinite;
-    animation-delay: 0.5s;
-  }
-
-  @keyframes signal-pulse {
-    0%, 100% { opacity: 0.15; }
-    50% { opacity: 0.9; }
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .grid-rect,
-    .wave,
-    .signal {
-      animation: none;
-      opacity: 0.6;
-    }
-  }
-
   @media (max-width: 768px) {
     .hero { padding: 120px 0 60px; min-height: auto; }
     .terminal-tabs { display: none; }
-    .hero-features { gap: var(--space-lg); }
+    .hero-features { flex-direction: column; align-items: center; gap: var(--space-xl); }
     .hero-install { max-width: 100%; }
     .hi-line { font-size: 11px; padding: 12px 14px; }
     .hi-tab { font-size: 11px; padding: 5px 14px; }
-    .hero-feature-card { width: 100px; }
-    .hf-icon { width: 44px; height: 44px; }
-    .hf-icon svg { width: 28px; height: 28px; }
     .hf-label { font-size: 11px; }
   }
 
   @media (max-width: 480px) {
     .hi-line { font-size: 10px; padding: 10px 12px; }
     .hi-prompt { display: none; }
-    .hero-features { gap: var(--space-md); }
-    .hero-feature-card { width: 90px; }
   }
 </style>
 

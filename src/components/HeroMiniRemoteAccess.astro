@@ -1,0 +1,373 @@
+<div class="hm-ra" data-hm-ra>
+  <div class="hm-chrome">
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r"></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <svg class="hm-chrome-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M5 12.5a7 7 0 0 1 14 0"/>
+      <path d="M8.5 12.5a3.5 3.5 0 0 1 7 0"/>
+      <circle cx="12" cy="12.5" r="1" fill="currentColor"/>
+    </svg>
+    <span class="hm-title">Remote Access</span>
+  </div>
+  <div class="hm-body">
+    <div class="hm-desktop" data-hm-desktop>
+      <div class="hm-ln"><span class="hm-pr">~$</span> claude</div>
+      <div class="hm-ln hm-dim">Claude Code initialized</div>
+      <div class="hm-ln hm-dim">Ready. 2 tasks pending.</div>
+      <div class="hm-ln"><span class="hm-pr">~$</span> <span class="hm-blink">|</span></div>
+    </div>
+    <div class="hm-qr" data-hm-qr>
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="2" fill="#fff"/>
+        <rect x="4" y="4" width="10" height="10" rx="1" fill="#222"/>
+        <rect x="6" y="6" width="6" height="6" rx="0.5" fill="#fff"/>
+        <rect x="7.5" y="7.5" width="3" height="3" fill="#222"/>
+        <rect x="26" y="4" width="10" height="10" rx="1" fill="#222"/>
+        <rect x="28" y="6" width="6" height="6" rx="0.5" fill="#fff"/>
+        <rect x="29.5" y="7.5" width="3" height="3" fill="#222"/>
+        <rect x="4" y="26" width="10" height="10" rx="1" fill="#222"/>
+        <rect x="6" y="28" width="6" height="6" rx="0.5" fill="#fff"/>
+        <rect x="7.5" y="29.5" width="3" height="3" fill="#222"/>
+        <rect x="16" y="4" width="3" height="3" fill="#222"/>
+        <rect x="16" y="10" width="3" height="3" fill="#222"/>
+        <rect x="20" y="7" width="3" height="3" fill="#222"/>
+        <rect x="16" y="16" width="3" height="3" fill="#222"/>
+        <rect x="22" y="16" width="3" height="3" fill="#222"/>
+        <rect x="28" y="16" width="3" height="3" fill="#222"/>
+        <rect x="16" y="22" width="3" height="3" fill="#222"/>
+        <rect x="22" y="22" width="3" height="3" fill="#222"/>
+        <rect x="28" y="22" width="3" height="3" fill="#222"/>
+        <rect x="22" y="28" width="3" height="3" fill="#222"/>
+        <rect x="28" y="28" width="3" height="3" fill="#222"/>
+        <rect x="34" y="28" width="3" height="3" fill="#222"/>
+        <rect x="16" y="34" width="3" height="3" fill="#222"/>
+        <rect x="22" y="34" width="3" height="3" fill="#222"/>
+        <rect x="28" y="34" width="3" height="3" fill="#222"/>
+      </svg>
+      <div class="hm-qr-label">Scan to connect</div>
+    </div>
+    <div class="hm-phone" data-hm-phone>
+      <div class="hm-phone-frame">
+        <div class="hm-phone-notch"></div>
+        <div class="hm-phone-screen" data-hm-screen>
+          <div class="hm-phone-idle" data-hm-idle>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M5 12.5a7 7 0 0 1 14 0"/>
+              <circle cx="12" cy="12.5" r="1" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="hm-phone-connected" data-hm-connected>
+            <span class="hm-phone-check">✓</span>
+            <span class="hm-phone-text">Connected</span>
+          </div>
+          <div class="hm-phone-terminal" data-hm-terminal>
+            <div class="hm-pln" data-pln="0"><span class="hm-ppr">~$</span> claude</div>
+            <div class="hm-pln" data-pln="1">Initialized</div>
+            <div class="hm-pln" data-pln="2"><span class="hm-ppr">&gt;</span> fix bug</div>
+            <div class="hm-pln" data-pln="3">✓ Done</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hm-ra {
+    width: 280px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-chrome-icon { color: var(--text-muted); }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-tertiary);
+  }
+
+  .hm-body {
+    background: var(--bg-deep);
+    padding: 10px 12px;
+    height: 146px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    position: relative;
+    overflow: hidden;
+  }
+  .hm-pr { color: var(--accent-primary); margin-right: 4px; }
+  .hm-dim { opacity: 0.5; }
+  .hm-ln { white-space: nowrap; }
+  .hm-blink {
+    color: var(--accent-primary);
+    animation: hm-blink-ra 1s step-end infinite;
+  }
+  @keyframes hm-blink-ra {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* QR Code */
+  .hm-qr {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
+  }
+  .hm-qr.hm-show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  .hm-qr.hm-scanned svg {
+    outline: 2px solid var(--warning);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  .hm-qr-label {
+    font-size: 7px;
+    color: var(--text-muted);
+  }
+
+  /* Phone */
+  .hm-phone {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    opacity: 0.3;
+    transition: all 0.4s ease;
+    z-index: 3;
+  }
+  .hm-phone.hm-glow {
+    opacity: 1;
+  }
+  .hm-phone.hm-glow .hm-phone-frame {
+    box-shadow: 0 0 10px rgba(224,164,88,0.4);
+  }
+  .hm-phone-frame {
+    width: 50px;
+    height: 80px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+    position: relative;
+    transition: box-shadow 0.4s ease;
+  }
+  .hm-phone-notch {
+    width: 16px;
+    height: 3px;
+    background: var(--border-default);
+    border-radius: 2px;
+    margin: 3px auto 0;
+  }
+  .hm-phone-screen {
+    padding: 4px;
+    height: calc(100% - 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .hm-phone-idle {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hm-phone-idle.hm-hide { display: none; }
+
+  .hm-phone-connected {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .hm-phone-connected.hm-show {
+    display: flex;
+  }
+  .hm-phone-check {
+    color: var(--success);
+    font-size: 12px;
+  }
+  .hm-phone-text {
+    font-size: 5px;
+    color: var(--success);
+    font-family: var(--font-mono);
+  }
+
+  .hm-phone-terminal {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    position: absolute;
+    inset: 4px;
+    padding: 2px;
+  }
+  .hm-phone-terminal.hm-show {
+    display: flex;
+  }
+  .hm-pln {
+    font-size: 5px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    line-height: 1.5;
+  }
+  .hm-pln.hm-visible { opacity: 1; }
+  .hm-ppr { color: var(--accent-primary); margin-right: 2px; }
+
+  .hm-desktop {
+    transition: opacity 0.3s ease;
+  }
+  .hm-desktop.hm-dim { opacity: 0.3; }
+
+  @media (max-width: 768px) {
+    .hm-ra { width: 100%; max-width: 320px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-blink { animation: none; opacity: 1; }
+    .hm-phone { opacity: 1; }
+    .hm-phone-idle { display: none; }
+    .hm-phone-terminal { display: flex; }
+    .hm-pln { opacity: 1; }
+    .hm-qr { display: none; }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-ra]') as HTMLElement;
+    if (!root) return;
+
+    const desktop = root.querySelector('[data-hm-desktop]') as HTMLElement;
+    const qr = root.querySelector('[data-hm-qr]') as HTMLElement;
+    const phone = root.querySelector('[data-hm-phone]') as HTMLElement;
+    const idle = root.querySelector('[data-hm-idle]') as HTMLElement;
+    const connected = root.querySelector('[data-hm-connected]') as HTMLElement;
+    const terminal = root.querySelector('[data-hm-terminal]') as HTMLElement;
+    const plns = root.querySelectorAll('[data-pln]');
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      phone.classList.add('hm-glow');
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => {
+        animId = setTimeout(resolve, ms);
+      });
+    }
+
+    function resetState() {
+      desktop.classList.remove('hm-dim');
+      qr.classList.remove('hm-show', 'hm-scanned');
+      phone.classList.remove('hm-glow');
+      idle.classList.remove('hm-hide');
+      connected.classList.remove('hm-show');
+      terminal.classList.remove('hm-show');
+      plns.forEach(p => p.classList.remove('hm-visible'));
+      root.style.opacity = '1';
+    }
+
+    async function startLoop() {
+      while (running) {
+        resetState();
+
+        // Scene 1: desktop terminal with phone at low opacity (1.5s)
+        await wait(1500);
+        if (!running) break;
+
+        // Scene 2: QR code scales in, desktop dims
+        desktop.classList.add('hm-dim');
+        qr.classList.add('hm-show');
+        await wait(1500);
+        if (!running) break;
+
+        // Scene 3: phone glows, QR "scanned"
+        phone.classList.add('hm-glow');
+        qr.classList.add('hm-scanned');
+        await wait(1000);
+        if (!running) break;
+
+        // Scene 4: QR disappears, phone shows connected
+        qr.classList.remove('hm-show', 'hm-scanned');
+        idle.classList.add('hm-hide');
+        connected.classList.add('hm-show');
+        await wait(1000);
+        if (!running) break;
+
+        // Scene 5: phone switches to terminal, lines appear
+        connected.classList.remove('hm-show');
+        terminal.classList.add('hm-show');
+        desktop.classList.remove('hm-dim');
+
+        for (let i = 0; i < plns.length; i++) {
+          plns[i].classList.add('hm-visible');
+          await wait(400);
+          if (!running) break;
+        }
+        if (!running) break;
+
+        // Hold
+        await wait(2000);
+        if (!running) break;
+
+        // Fade out
+        root.style.opacity = '0';
+        root.style.transition = 'opacity 0.4s ease';
+        await wait(400);
+        if (!running) break;
+        root.style.opacity = '1';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>

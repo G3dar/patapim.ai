@@ -867,20 +867,10 @@ export const prerender = false;
             cleanUrl.searchParams.delete('t');
             history.replaceState(null, '', cleanUrl.toString());
 
-            if (msg.terminals) {
-              terminals = msg.terminals;
-              renderTabs();
-            }
-            if (msg.currentTerminal) {
-              currentTerminalId = msg.currentTerminal;
-              highlightTab(currentTerminalId);
-            }
-
-            // Request terminal list and sidebar data
-            ws.send(JSON.stringify({ type: 'get_terminals' }));
+            // Don't render tabs from auth_result — wait for sidebar_data + get_terminals
+            // Request sidebar data first, which will trigger get_terminals with correct project
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
 
-            // Focus terminal
             term.focus();
           } else {
             showError(
@@ -904,7 +894,11 @@ export const prerender = false;
             renderTabs();
           }
           if (msg.currentTerminal || msg.terminalId) {
-            currentTerminalId = msg.currentTerminal || msg.terminalId;
+            const newId = msg.currentTerminal || msg.terminalId;
+            if (newId !== currentTerminalId && term) {
+              term.clear();
+            }
+            currentTerminalId = newId;
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
@@ -916,7 +910,7 @@ export const prerender = false;
           break;
 
         case 'terminal_created':
-          ws.send(JSON.stringify({ type: 'get_terminals' }));
+          ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
           break;
 
         case 'terminal_closed':
@@ -924,7 +918,7 @@ export const prerender = false;
             currentTerminalId = null;
             term.clear();
           }
-          ws.send(JSON.stringify({ type: 'get_terminals' }));
+          ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
           break;
 
         case 'sidebar_data':
@@ -932,12 +926,14 @@ export const prerender = false;
           sidebarData.currentProject = msg.currentProject || null;
           renderProjects();
           updateTopbarProject();
+          // Fetch terminals with explicit project filter
+          ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
           break;
 
         case 'command_response':
           if (msg.success) {
             // Re-fetch terminals after successful command
-            ws.send(JSON.stringify({ type: 'get_terminals' }));
+            ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
           }
           break;
@@ -1029,11 +1025,7 @@ export const prerender = false;
       updateTopbarProject();
 
       ws.send(JSON.stringify({ type: 'select_project', path }));
-
-      // Re-fetch terminals for the new project
-      setTimeout(() => {
-        ws.send(JSON.stringify({ type: 'get_terminals' }));
-      }, 200);
+      ws.send(JSON.stringify({ type: 'get_terminals', projectPath: path }));
 
       // Close sidebar on mobile
       closeSidebar();
