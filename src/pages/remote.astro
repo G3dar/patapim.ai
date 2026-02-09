@@ -328,6 +328,36 @@ export const prerender = false;
       border-color: var(--success);
     }
 
+    .sidebar-btn-row {
+      display: flex;
+      gap: 4px;
+    }
+    .sidebar-btn-row .sidebar-btn {
+      flex: 1;
+      font-size: 11px;
+      padding: 5px 6px;
+    }
+
+    .btn-gemini {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+    }
+    .btn-gemini:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+    }
+
+    .btn-codex {
+      background: rgba(96, 165, 250, 0.08);
+      border-color: rgba(96, 165, 250, 0.25);
+      color: #60a5fa;
+    }
+    .btn-codex:hover:not(:disabled) {
+      background: rgba(96, 165, 250, 0.15);
+      border-color: #60a5fa;
+    }
+
     .btn-new-term {
       background: var(--bg-elevated);
       border-color: var(--border);
@@ -626,6 +656,10 @@ export const prerender = false;
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             Start Claude Code
           </button>
+          <div class="sidebar-btn-row">
+            <button class="sidebar-btn btn-gemini" id="btn-start-gemini" disabled>Start Gemini</button>
+            <button class="sidebar-btn btn-codex" id="btn-start-codex" disabled>Start Codex</button>
+          </div>
           <button class="sidebar-btn btn-new-term" id="btn-new-terminal" disabled>
             + New Terminal
           </button>
@@ -689,6 +723,8 @@ export const prerender = false;
     const projectsList = document.getElementById('projects-list');
     const topbarProject = document.getElementById('topbar-project');
     const btnStartClaude = document.getElementById('btn-start-claude');
+    const btnStartGemini = document.getElementById('btn-start-gemini');
+    const btnStartCodex = document.getElementById('btn-start-codex');
     const btnNewTerminal = document.getElementById('btn-new-terminal');
 
     // State
@@ -1168,16 +1204,27 @@ export const prerender = false;
 
     function enableActions(enabled) {
       btnStartClaude.disabled = !enabled;
+      btnStartGemini.disabled = !enabled;
+      btnStartCodex.disabled = !enabled;
       btnNewTerminal.disabled = !enabled;
     }
 
+    // Send AI command to current terminal (same as desktop startAICommand)
+    function sendAICommand(command) {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: command + '\r' }));
+    }
+
     btnStartClaude.addEventListener('click', () => {
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ type: 'start_claude' }));
-      btnStartClaude.disabled = true;
-      setTimeout(() => {
-        if (isAuthenticated) btnStartClaude.disabled = false;
-      }, 3000);
+      sendAICommand('claude --dangerously-skip-permissions');
+    });
+
+    btnStartGemini.addEventListener('click', () => {
+      sendAICommand('gemini --yolo');
+    });
+
+    btnStartCodex.addEventListener('click', () => {
+      sendAICommand('codex --dangerously-bypass-approvals-and-sandbox');
     });
 
     btnNewTerminal.addEventListener('click', () => {
