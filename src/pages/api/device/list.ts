@@ -3,7 +3,7 @@ import { getUserFromRequest } from '../../../lib/auth';
 
 export const prerender = false;
 
-const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+const ONLINE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes (1.5x the 10-min heartbeat interval)
 
 export const GET: APIRoute = async (context) => {
   const env = context.locals.runtime.env;

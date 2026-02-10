@@ -29,7 +29,8 @@ export const POST: APIRoute = async (context) => {
 
   const device = JSON.parse(raw);
 
-  // Only write to KV if actual data changed (not just lastSeen) to stay within free tier limits
+  // Only write to KV when tunnelUrl or terminalCount actually changes.
+  // Online status is detected client-side by pinging the device's tunnel URL directly.
   const dataChanged =
     (body.tunnelUrl !== undefined && body.tunnelUrl !== device.tunnelUrl) ||
     (body.terminalCount !== undefined && body.terminalCount !== device.terminalCount);

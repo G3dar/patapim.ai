@@ -58,9 +58,9 @@ export const GET: APIRoute = async (context) => {
 
   // Device stats
   let onlineNow = 0;
-  const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  const fifteenMinAgo = new Date(now.getTime() - 15 * 60 * 1000);
   for (const [, d] of devices) {
-    if (d.lastSeen && new Date(d.lastSeen) >= fiveMinAgo) onlineNow++;
+    if (d.lastSeen && new Date(d.lastSeen) >= fifteenMinAgo) onlineNow++;
   }
 
   // Referral stats
