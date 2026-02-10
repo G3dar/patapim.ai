@@ -1,0 +1,489 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getUserFromRequest } from '../../lib/auth';
+import { createReferralAssociation } from '../../lib/referral';
+
+const { code } = Astro.params;
+const env = Astro.locals.runtime.env;
+
+let validReferral = false;
+let referrerEmail: string | null = null;
+
+if (code) {
+  try {
+    referrerEmail = await env.LICENSES.get(`refcode:${code}`);
+    if (referrerEmail) {
+      validReferral = true;
+    }
+  } catch {
+    // KV lookup failed — treat as invalid
+  }
+}
+
+// Set referral cookie if valid
+if (validReferral && referrerEmail) {
+  Astro.cookies.set('__patapim_ref', referrerEmail, {
+    path: '/',
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  });
+
+  // If visitor is already logged in, create association immediately (helps cross-browser scenario)
+  try {
+    const visitor = await getUserFromRequest(env.SESSIONS, Astro.request);
+    if (visitor) {
+      await createReferralAssociation(env.LICENSES, referrerEmail, visitor.email);
+    }
+  } catch {
+    // Best-effort — cookie is the primary mechanism
+  }
+}
+---
+
+<BaseLayout title="Download PATAPIM" description="Download PATAPIM for Windows. Terminal-first IDE framework for AI development.">
+  <Navbar />
+
+  <main class="download-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">Download</span>
+        <h1 class="section-title">Get PATAPIM</h1>
+        {validReferral ? (
+          <div class="referral-banner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            You've been invited to try PATAPIM!
+          </div>
+        ) : (
+          <p class="section-subtitle">
+            Terminal-first development, supercharged with AI.
+          </p>
+        )}
+      </div>
+
+      <!-- Windows - Full Width -->
+      <div class="dl-card-windows">
+        <div class="dl-windows-top">
+          <div class="dl-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+            </svg>
+          </div>
+          <h3>Windows</h3>
+          <p class="dl-version">Windows 10 or later</p>
+          <a href="/api/download/latest" class="btn btn-primary" style="justify-content: center; max-width: 320px; width: 100%;">
+            Download Installer (.exe)
+          </a>
+        </div>
+        <div class="dl-install-cmds">
+          <div class="dl-cmd-block">
+            <span class="dl-cmd-label">PowerShell</span>
+            <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+              <span class="dl-tooltip">Click to copy</span>
+              <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
+              <span class="dl-copy-btn" aria-label="Copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="dl-cmd-block">
+            <span class="dl-cmd-label">CMD</span>
+            <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+              <span class="dl-tooltip">Click to copy</span>
+              <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+              <span class="dl-copy-btn" aria-label="Copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- macOS - Coming March 1st -->
+      <div class="dl-card-macos">
+        <div class="dl-icon dim">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+        </div>
+        <h3>macOS</h3>
+        <span class="dl-coming-soon">Coming March 1st</span>
+        <div class="dl-countdown" id="macos-countdown">
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-days">--</span>
+            <span class="dl-countdown-label">days</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-hours">--</span>
+            <span class="dl-countdown-label">hours</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-mins">--</span>
+            <span class="dl-countdown-label">min</span>
+          </div>
+          <div class="dl-countdown-unit">
+            <span class="dl-countdown-num" id="cd-secs">--</span>
+            <span class="dl-countdown-label">sec</span>
+          </div>
+        </div>
+        <a
+          class="dl-calendar-btn"
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=PATAPIM+for+macOS+Launch&dates=20260301T180000Z/20260301T190000Z&details=PATAPIM+macOS+version+is+now+available!+Download+at+https://patapim.ai/download"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Add to Calendar
+        </a>
+      </div>
+
+      <!-- Requirements -->
+      <div class="requirements section">
+        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">System Requirements</h2>
+        <div class="req-grid">
+          <div class="req-item">
+            <h4>Operating System</h4>
+            <p>Windows 10 or later (64-bit)</p>
+          </div>
+          <div class="req-item">
+            <h4>Runtime</h4>
+            <p>Node.js 18+ and Git</p>
+          </div>
+          <div class="req-item">
+            <h4>Disk Space</h4>
+            <p>~200 MB (with dependencies)</p>
+          </div>
+          <div class="req-item">
+            <h4>AI CLI</h4>
+            <p>Claude Code, Codex, or Gemini CLI installed</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .download-page {
+    min-height: 100vh;
+  }
+
+  .referral-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.15), rgba(212, 165, 116, 0.05));
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    color: var(--accent-primary);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: var(--radius-lg);
+    margin-top: var(--space-md);
+  }
+
+  /* Windows card - full width */
+  .dl-card-windows {
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl) var(--space-3xl);
+    text-align: center;
+    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
+    margin-bottom: var(--space-xl);
+  }
+  .dl-windows-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-xl);
+  }
+  .dl-card-windows h3 {
+    font-size: 24px;
+    margin-bottom: var(--space-xs);
+  }
+
+  /* macOS card - countdown */
+  .dl-card-macos {
+    background: linear-gradient(160deg, rgba(130, 120, 255, 0.06) 0%, var(--bg-secondary) 50%, rgba(90, 200, 250, 0.06) 100%);
+    border: 1px solid rgba(130, 120, 255, 0.3);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl) var(--space-3xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-sm);
+    box-shadow: 0 0 30px rgba(130, 120, 255, 0.08);
+  }
+  .dl-card-macos h3 {
+    font-size: 22px;
+    margin-bottom: 0;
+  }
+  .dl-coming-soon {
+    font-size: 14px;
+    color: rgba(160, 150, 255, 0.9);
+    margin-bottom: var(--space-md);
+  }
+  .dl-countdown {
+    display: flex;
+    gap: 12px;
+    margin-bottom: var(--space-lg);
+  }
+  .dl-countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(130, 120, 255, 0.06);
+    border: 1px solid rgba(130, 120, 255, 0.15);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    min-width: 64px;
+  }
+  .dl-countdown-num {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .dl-countdown-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .dl-calendar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(180, 170, 255, 0.9);
+    background: rgba(130, 120, 255, 0.08);
+    border: 1px solid rgba(130, 120, 255, 0.25);
+    border-radius: var(--radius-md);
+    padding: 8px 20px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .dl-calendar-btn:hover {
+    color: #fff;
+    border-color: rgba(130, 120, 255, 0.5);
+    background: rgba(130, 120, 255, 0.15);
+  }
+
+  .dl-icon {
+    color: var(--text-primary);
+    margin-bottom: var(--space-lg);
+  }
+  .dl-card-macos .dl-icon {
+    margin-bottom: var(--space-xs);
+    flex-shrink: 0;
+  }
+  .dl-icon.dim {
+    color: rgba(160, 150, 255, 0.7);
+  }
+
+  .dl-version {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  /* Install commands */
+  .dl-install-cmds {
+    margin-top: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    text-align: left;
+  }
+  .dl-cmd-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .dl-cmd-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dl-cmd-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .dl-cmd-line:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .dl-cmd-line:hover .dl-copy-btn {
+    color: var(--accent-primary);
+  }
+  .dl-cmd-line.copied {
+    border-color: var(--success);
+  }
+  .dl-cmd-line .dl-tooltip {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    font-size: 11px;
+    font-family: var(--font-sans, sans-serif);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .dl-cmd-line:hover .dl-tooltip {
+    opacity: 1;
+  }
+  .dl-cmd-line.copied .dl-tooltip {
+    background: var(--success);
+    color: #fff;
+  }
+  .dl-cmd-line code {
+    flex: 1;
+    font-size: 12px;
+    background: none;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.85);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .dl-copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    transition: color 0.2s;
+  }
+  .dl-copy-btn.copied {
+    color: var(--success);
+  }
+
+  .dl-note {
+    margin-top: var(--space-lg);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* Requirements */
+  .req-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .req-item {
+    text-align: center;
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+  .req-item h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    color: var(--accent-primary);
+  }
+  .req-item p {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+
+  @media (max-width: 768px) {
+    .dl-card-windows { padding: var(--space-xl); }
+    .dl-card-macos { padding: var(--space-xl); }
+    .req-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .req-grid { grid-template-columns: 1fr; }
+    .dl-countdown { gap: 8px; }
+    .dl-countdown-unit { min-width: 56px; padding: 10px 12px; }
+    .dl-countdown-num { font-size: 20px; }
+  }
+</style>
+
+<script>
+  // Copy command - clicking anywhere on the line
+  document.querySelectorAll<HTMLElement>('[data-dl-copy]').forEach(line => {
+    line.addEventListener('click', () => {
+      const text = line.dataset.dlCopy;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const tooltip = line.querySelector('.dl-tooltip');
+        const icon = line.querySelector('.dl-copy-btn');
+        line.classList.add('copied');
+        if (tooltip) tooltip.textContent = 'Copied!';
+        if (icon) icon.classList.add('copied');
+        setTimeout(() => {
+          line.classList.remove('copied');
+          if (tooltip) tooltip.textContent = 'Click to copy';
+          if (icon) icon.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  });
+
+  // macOS countdown timer
+  const target = new Date('2026-03-01T18:00:00Z'); // 10 AM PST = 18:00 UTC
+  const elDays = document.getElementById('cd-days');
+  const elHours = document.getElementById('cd-hours');
+  const elMins = document.getElementById('cd-mins');
+  const elSecs = document.getElementById('cd-secs');
+  const countdownWrap = document.getElementById('macos-countdown');
+
+  function updateCountdown() {
+    const now = Date.now();
+    const diff = target.getTime() - now;
+
+    if (diff <= 0) {
+      if (countdownWrap) {
+        countdownWrap.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600; font-size: 18px;">Available Now!</span>';
+      }
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    if (elDays) elDays.textContent = String(days).padStart(2, '0');
+    if (elHours) elHours.textContent = String(hours).padStart(2, '0');
+    if (elMins) elMins.textContent = String(mins).padStart(2, '0');
+    if (elSecs) elSecs.textContent = String(secs).padStart(2, '0');
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>

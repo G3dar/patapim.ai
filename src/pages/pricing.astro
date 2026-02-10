@@ -8,35 +8,27 @@ import Footer from '../components/Footer.astro';
 const freeFeatures = [
   { name: 'Terminals', value: 'Up to 9' },
   { name: 'Active Projects', value: 'Up to 3' },
-  { name: 'View Mode', value: 'Tab + Grid (all layouts)' },
-  { name: 'Voice Dictation', value: '60 min included' },
-  { name: 'Remote Access', value: 'Local network (LAN)' },
-  { name: 'Remote Sessions', value: '1 max, 30-min timeout' },
-  { name: 'Remote Auth', value: 'PIN only' },
-  { name: 'Task Panel', value: 'No' },
-  { name: 'GitHub Panel', value: 'No' },
-  { name: 'Plugin Marketplace', value: 'No' },
+  { name: 'Voice Dictation', value: '30 min included' },
+  { name: 'Remote Access', value: 'Yes' },
+  { name: 'Task Management', value: 'Yes' },
+  { name: 'GitHub Integration', value: 'Yes' },
+  { name: 'Plugin System', value: 'Yes' },
   { name: 'File Editor', value: 'Yes' },
   { name: 'Context Preservation', value: 'Yes' },
   { name: 'Session Persistence', value: 'Yes' },
-  { name: 'Auto-Updates', value: 'Yes' },
 ];
 
 const proFeatures = [
-  { name: 'Terminals', value: 'Unlimited' },
-  { name: 'Active Projects', value: 'Unlimited' },
-  { name: 'View Mode', value: 'Tab + Grid (all layouts)' },
-  { name: 'Voice Dictation', value: 'Unlimited (Whisper + Web Speech)' },
-  { name: 'Remote Access', value: 'URL from anywhere (Cloudflare Tunnels)' },
-  { name: 'Remote Sessions', value: 'Unlimited, no timeout' },
-  { name: 'Remote Auth', value: 'PassKey / Biometric' },
-  { name: 'Task Panel', value: 'Yes' },
-  { name: 'GitHub Panel', value: 'Yes' },
-  { name: 'Plugin Marketplace', value: 'Yes' },
+  { name: 'Terminals', value: 'Unlimited', upgraded: true },
+  { name: 'Active Projects', value: 'Unlimited', upgraded: true },
+  { name: 'Voice Dictation', value: 'Unlimited', upgraded: true },
+  { name: 'Remote Access', value: 'Yes' },
+  { name: 'Task Management', value: 'Yes' },
+  { name: 'GitHub Integration', value: 'Yes' },
+  { name: 'Plugin System', value: 'Yes' },
   { name: 'File Editor', value: 'Yes' },
   { name: 'Context Preservation', value: 'Yes' },
   { name: 'Session Persistence', value: 'Yes' },
-  { name: 'Auto-Updates', value: 'Yes' },
 ];
 
 const faq = [
@@ -50,7 +42,7 @@ const faq = [
   },
   {
     q: 'Can I use PATAPIM commercially for free?',
-    a: 'Yes. The Free plan is free for commercial use. Pro features like unlimited dictation, full remote access, and task management require a Pro subscription or lifetime unlock.'
+    a: 'Yes. The Free plan is free for commercial use. Pro removes the limits on terminals, projects, and voice dictation.'
   },
   {
     q: 'What payment methods are accepted?',
@@ -76,7 +68,7 @@ const faq = [
         <span class="section-label">Pricing</span>
         <h1 class="section-title">Simple, Transparent Pricing</h1>
         <p class="section-subtitle">
-          Start free, upgrade when you're ready.
+          All features included. Pro removes the limits.
         </p>
       </div>
 
@@ -109,7 +101,7 @@ const faq = [
             {proFeatures.map((f) => (
               <li>
                 <span class="p-label">{f.name}</span>
-                <span class="p-value highlight">{f.value}</span>
+                <span class={`p-value ${f.upgraded ? 'highlight' : ''}`}>{f.value}</span>
               </li>
             ))}
           </ul>

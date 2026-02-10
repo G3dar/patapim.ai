@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "deploychecked": "node scripts/deploychecked.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

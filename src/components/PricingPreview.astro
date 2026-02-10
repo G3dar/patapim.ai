@@ -2,24 +2,19 @@
 const free = [
   'Up to 9 terminals',
   'Up to 3 projects',
-  '60 min dictation included',
-  'Remote access from LAN',
+  '30 min dictation included',
+  'Remote access',
+  'Task management',
   'File editor',
   'Context preservation',
   'Session persistence',
-  'Auto-updates',
 ];
 
 const pro = [
   'Unlimited terminals',
   'Unlimited projects',
   'Unlimited dictation',
-  'Remote access from anywhere (URL)',
-  'Cloudflare Tunnels',
-  'PassKey authentication',
-  'Task management panel',
-  'GitHub issues panel',
-  'Plugin marketplace',
+  'Everything in Free',
   'Priority support',
 ];
 ---
@@ -30,7 +25,7 @@ const pro = [
       <span class="section-label">Pricing</span>
       <h2 class="section-title">Start Free. Upgrade When You're Ready.</h2>
       <p class="section-subtitle">
-        14-day Pro trial &mdash; no credit card required.
+        All features included. Pro removes the limits.
       </p>
     </div>
 
@@ -69,8 +64,8 @@ const pro = [
             <li><span class="check">&#x2714;</span> {f}</li>
           ))}
         </ul>
-        <a href="/pricing" class="btn btn-primary" style="width: 100%; justify-content: center;">
-          Start 14-Day Free Trial
+        <a href="#" class="btn btn-primary" id="hp-checkout-pro" style="width: 100%; justify-content: center;">
+          Go Pro
         </a>
       </div>
     </div>
@@ -86,7 +81,7 @@ const pro = [
           <span class="unlock-price">$29.99</span>
           <span class="unlock-once">one-time</span>
         </div>
-        <a href="/pricing" class="btn btn-primary">Get Lifetime Access</a>
+        <a href="#" class="btn btn-primary" id="hp-checkout-lifetime">Get Lifetime Access</a>
       </div>
     </div>
   </div>
@@ -263,3 +258,47 @@ const pro = [
     }
   }
 </style>
+
+<script>
+  async function hpCheckout(plan: 'pro' | 'lifetime') {
+    const btnId = plan === 'pro' ? 'hp-checkout-pro' : 'hp-checkout-lifetime';
+    const btn = document.getElementById(btnId);
+    if (btn) btn.setAttribute('disabled', '');
+    try {
+      let email: string | undefined;
+      try {
+        const sessionRes = await fetch('/api/auth/session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData.authenticated) email = sessionData.user.email;
+        }
+      } catch {}
+
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, email }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Checkout error:', data.error);
+        if (btn) btn.removeAttribute('disabled');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      if (btn) btn.removeAttribute('disabled');
+    }
+  }
+
+  document.getElementById('hp-checkout-pro')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    hpCheckout('pro');
+  });
+
+  document.getElementById('hp-checkout-lifetime')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    hpCheckout('lifetime');
+  });
+</script>

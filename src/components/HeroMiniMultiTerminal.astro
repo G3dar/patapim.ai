@@ -15,23 +15,40 @@
         <div class="hm-sb-item hm-sb-active" data-proj="0">
           <span class="hm-sb-dot" style="background:#7cb382"></span>
           <span class="hm-sb-name">my-app</span>
+          <span class="hm-notif-dot" data-notif="0"></span>
           <span class="hm-sb-badge">3</span>
         </div>
         <div class="hm-sb-item" data-proj="1">
           <span class="hm-sb-dot" style="background:#6ba4d4"></span>
           <span class="hm-sb-name">api-server</span>
+          <span class="hm-notif-dot" data-notif="1"></span>
           <span class="hm-sb-badge">2</span>
         </div>
         <div class="hm-sb-item" data-proj="2">
           <span class="hm-sb-dot" style="background:#e0a458"></span>
           <span class="hm-sb-name">docs</span>
+          <span class="hm-notif-dot" data-notif="2"></span>
           <span class="hm-sb-badge">1</span>
         </div>
       </div>
       <div class="hm-sb-section">
         <div class="hm-sb-header">TASKS</div>
-        <div class="hm-sb-task"><span class="hm-task-check">&#x25CB;</span> Fix auth flow</div>
-        <div class="hm-sb-task"><span class="hm-task-check">&#x25CB;</span> Add tests</div>
+        <div class="hm-sb-task" data-task="fix-auth">
+          <span class="hm-task-icon" data-task-icon="fix-auth">
+            <span class="hm-task-circle">&#x25CB;</span>
+            <span class="hm-task-checkmark">&#x2713;</span>
+          </span>
+          <span class="hm-task-running-dot" data-task-dot="fix-auth"></span>
+          Fix auth flow
+        </div>
+        <div class="hm-sb-task" data-task="add-tests">
+          <span class="hm-task-icon" data-task-icon="add-tests">
+            <span class="hm-task-circle">&#x25CB;</span>
+            <span class="hm-task-checkmark">&#x2713;</span>
+          </span>
+          <span class="hm-task-running-dot" data-task-dot="add-tests"></span>
+          Add tests
+        </div>
         <div class="hm-sb-task hm-task-done"><span class="hm-task-check hm-done">&#x2713;</span> Setup CI</div>
       </div>
     </div>
@@ -55,7 +72,7 @@
 
 <style>
   .hm-mt {
-    width: 280px;
+    width: 340px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-strong);
@@ -84,12 +101,12 @@
 
   .hm-layout {
     display: flex;
-    height: 150px;
+    height: 180px;
   }
 
   /* Sidebar */
   .hm-sidebar {
-    width: 80px;
+    width: 95px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-default);
     background: rgba(255,255,255,0.015);
@@ -102,7 +119,7 @@
   .hm-sb-section { }
   .hm-sb-header {
     font-family: var(--font-mono);
-    font-size: 6px;
+    font-size: 6.5px;
     color: var(--text-muted);
     letter-spacing: 0.08em;
     padding: 0 6px 2px;
@@ -111,12 +128,13 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    padding: 2px 6px;
+    padding: 2.5px 6px;
     font-family: var(--font-mono);
-    font-size: 7px;
+    font-size: 7.5px;
     color: var(--text-muted);
     cursor: default;
     transition: all 0.2s ease;
+    position: relative;
   }
   .hm-sb-item.hm-sb-active {
     background: rgba(212,165,116,0.1);
@@ -134,8 +152,25 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* Notification dot on project items */
+  .hm-notif-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e87040;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+  }
+  .hm-notif-dot.hm-notif-show {
+    opacity: 1;
+    transform: scale(1);
+  }
+
   .hm-sb-badge {
-    font-size: 6px;
+    font-size: 6.5px;
     background: rgba(255,255,255,0.08);
     color: var(--text-muted);
     padding: 0 3px;
@@ -143,17 +178,83 @@
     min-width: 10px;
     text-align: center;
   }
+
+  /* Task items */
   .hm-sb-task {
     display: flex;
     align-items: center;
     gap: 3px;
-    padding: 1px 6px;
+    padding: 1.5px 6px;
     font-family: var(--font-mono);
-    font-size: 6px;
+    font-size: 6.5px;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
   }
+  .hm-task-icon {
+    flex-shrink: 0;
+    position: relative;
+    width: 8px;
+    height: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hm-task-circle {
+    font-size: 7px;
+    transition: all 0.3s ease;
+  }
+  .hm-task-checkmark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    color: var(--success);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+  }
+
+  /* Task completed state */
+  .hm-sb-task.hm-task-completed .hm-task-circle {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  .hm-sb-task.hm-task-completed .hm-task-checkmark {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .hm-sb-task.hm-task-completed {
+    color: var(--success);
+  }
+
+  /* Task completion flash */
+  .hm-sb-task.hm-task-flash {
+    background: rgba(40, 200, 64, 0.1);
+    transition: background 0.5s ease;
+  }
+
+  /* Running dot (pulsing orange) */
+  .hm-task-running-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #e0a458;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .hm-task-running-dot.hm-dot-show {
+    opacity: 1;
+    animation: hm-dot-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes hm-dot-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
   .hm-task-check {
     font-size: 7px;
     flex-shrink: 0;
@@ -181,7 +282,7 @@
   }
   .hm-tab {
     font-family: var(--font-mono);
-    font-size: 7px;
+    font-size: 7.5px;
     color: var(--text-muted);
     padding: 4px 6px;
     cursor: default;
@@ -203,7 +304,7 @@
     flex: 1;
     padding: 6px 8px;
     font-family: var(--font-mono);
-    font-size: 7px;
+    font-size: 7.5px;
     line-height: 1.5;
     color: var(--text-secondary);
     overflow: hidden;
@@ -212,16 +313,17 @@
     white-space: nowrap;
     opacity: 0;
     transition: opacity 0.3s ease;
-    min-height: 11px;
+    min-height: 12px;
   }
   .hm-tln.hm-vis { opacity: 1; }
 
   @media (max-width: 768px) {
-    .hm-mt { width: 100%; max-width: 320px; }
+    .hm-mt { width: 100%; max-width: 340px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .hm-tln { opacity: 1; }
+    .hm-task-running-dot { animation: none !important; }
   }
 </style>
 
@@ -233,6 +335,13 @@
     const projects = root.querySelectorAll('[data-proj]');
     const tabs = root.querySelectorAll('[data-tab]');
     const lines = root.querySelectorAll('[data-tln]');
+
+    // Task elements
+    const taskFixAuth = root.querySelector('[data-task="fix-auth"]') as HTMLElement;
+    const taskAddTests = root.querySelector('[data-task="add-tests"]') as HTMLElement;
+    const dotFixAuth = root.querySelector('[data-task-dot="fix-auth"]') as HTMLElement;
+    const dotAddTests = root.querySelector('[data-task-dot="add-tests"]') as HTMLElement;
+    const notifDots = root.querySelectorAll('[data-notif]');
 
     const projectData: Record<string, { tabs: string[]; activeTab: number; lines: string[][] }> = {
       '0': {
@@ -264,6 +373,10 @@
     function setProject(idx: string) {
       projects.forEach(p => p.classList.remove('hm-sb-active'));
       root.querySelector(`[data-proj="${idx}"]`)?.classList.add('hm-sb-active');
+
+      // Clear notification dot for this project when switching to it
+      const notif = root.querySelector(`[data-notif="${idx}"]`);
+      if (notif) notif.classList.remove('hm-notif-show');
 
       const data = projectData[idx];
       const tabContainer = root.querySelector('[data-hm-tabs]') as HTMLElement;
@@ -305,6 +418,14 @@
       });
     }
 
+    function resetTaskStates() {
+      taskFixAuth?.classList.remove('hm-task-completed', 'hm-task-flash');
+      taskAddTests?.classList.remove('hm-task-completed', 'hm-task-flash');
+      dotFixAuth?.classList.remove('hm-dot-show');
+      dotAddTests?.classList.remove('hm-dot-show');
+      notifDots.forEach(d => d.classList.remove('hm-notif-show'));
+    }
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setProject('0');
       showLines();
@@ -321,35 +442,37 @@
     function resetState() {
       setProject('0');
       lines.forEach(ln => ln.classList.remove('hm-vis'));
+      resetTaskStates();
     }
 
     async function startLoop() {
       while (running) {
-        // Show project 0, tab 0 (Claude)
-        setProject('0');
+        // 0-2s: Project "my-app" active, Claude tab, "Fix auth flow" running
+        resetState();
+        dotFixAuth?.classList.add('hm-dot-show');
         showLines();
         await wait(2000);
         if (!running) break;
 
-        // Switch to tab 1 (Dev)
+        // 2-3.5s: Task "Fix auth flow" completes (circle → checkmark, green flash)
+        dotFixAuth?.classList.remove('hm-dot-show');
+        taskFixAuth?.classList.add('hm-task-completed', 'hm-task-flash');
+        await wait(1500);
+        if (!running) break;
+        taskFixAuth?.classList.remove('hm-task-flash');
+
+        // 3.5-5s: Switch to Dev tab, notification dot on api-server
         setTab('0', 1);
         lines.forEach(ln => ln.classList.remove('hm-vis'));
         await wait(100);
         if (!running) break;
         showLines();
+        const apiNotif = root.querySelector('[data-notif="1"]');
+        apiNotif?.classList.add('hm-notif-show');
         await wait(1500);
         if (!running) break;
 
-        // Switch to tab 2 (Tests)
-        setTab('0', 2);
-        lines.forEach(ln => ln.classList.remove('hm-vis'));
-        await wait(100);
-        if (!running) break;
-        showLines();
-        await wait(1500);
-        if (!running) break;
-
-        // Switch to project 1
+        // 5-7s: Switch to project "api-server" (notification clears)
         setProject('1');
         lines.forEach(ln => ln.classList.remove('hm-vis'));
         await wait(100);
@@ -358,11 +481,23 @@
         await wait(2000);
         if (!running) break;
 
-        // Switch to project 2
+        // 7-9s: Switch to project "docs"
         setProject('2');
         lines.forEach(ln => ln.classList.remove('hm-vis'));
         await wait(100);
         if (!running) break;
+        showLines();
+        await wait(2000);
+        if (!running) break;
+
+        // 9-10s: Switch back to "my-app", "Add tests" now running
+        setProject('0');
+        // Re-apply fix-auth completed state
+        taskFixAuth?.classList.add('hm-task-completed');
+        lines.forEach(ln => ln.classList.remove('hm-vis'));
+        await wait(100);
+        if (!running) break;
+        dotAddTests?.classList.add('hm-dot-show');
         showLines();
         await wait(2000);
         if (!running) break;

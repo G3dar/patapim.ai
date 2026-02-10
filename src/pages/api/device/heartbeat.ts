@@ -28,11 +28,18 @@ export const POST: APIRoute = async (context) => {
   } catch {}
 
   const device = JSON.parse(raw);
-  device.lastSeen = new Date().toISOString();
-  if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
-  if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
 
-  await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
+  // Only write to KV if actual data changed (not just lastSeen) to stay within free tier limits
+  const dataChanged =
+    (body.tunnelUrl !== undefined && body.tunnelUrl !== device.tunnelUrl) ||
+    (body.terminalCount !== undefined && body.terminalCount !== device.terminalCount);
+
+  if (dataChanged) {
+    device.lastSeen = new Date().toISOString();
+    if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
+    if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
+    await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
+  }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 };

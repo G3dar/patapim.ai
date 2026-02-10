@@ -175,6 +175,7 @@ body {
 }
 .btn-primary:hover {
   background: var(--accent-secondary);
+  color: var(--bg-deep);
   box-shadow: 0 0 24px rgba(212, 165, 116, 0.3);
 }
 

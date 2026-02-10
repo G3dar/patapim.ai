@@ -1,5 +1,8 @@
 ---
 export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
@@ -508,7 +511,8 @@ const paired = Astro.url.searchParams.get('paired') === '1';
             if (result.connectToken && result.tunnelUrl) {
               window.location.href =
                 '/remote?t=' + encodeURIComponent(result.connectToken) +
-                '&url=' + encodeURIComponent(result.tunnelUrl);
+                '&url=' + encodeURIComponent(result.tunnelUrl) +
+                '&v=' + Date.now();
             } else {
               alert(result.error || 'Failed to connect');
             }

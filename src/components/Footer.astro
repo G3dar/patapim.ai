@@ -8,7 +8,7 @@ const year = new Date().getFullYear();
       <div class="footer-brand">
         <div class="footer-logo">
           <span class="brand-icon">&#x276F;_</span>
-          <span>PATAPIM</span>
+          <span class="brand-text">patapim</span>
         </div>
         <p class="footer-tagline">Terminal-first IDE framework for Claude Code development.</p>
         <a href="mailto:info@patapim.ai" class="footer-email">info@patapim.ai</a>
@@ -46,7 +46,7 @@ const year = new Date().getFullYear();
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; {year} PATAPIM. All rights reserved.</p>
+      <p>&copy; {year} <span class="brand-text">patapim</span>. All rights reserved.</p>
       <div class="footer-legal-links">
         <a href="/terms">Terms</a>
         <span class="footer-dot">&middot;</span>
@@ -87,6 +87,11 @@ const year = new Date().getFullYear();
     background: var(--accent-subtle);
     padding: 4px 8px;
     border-radius: var(--radius-sm);
+  }
+
+  .brand-text {
+    font-variant: small-caps;
+    letter-spacing: 0.5px;
   }
 
   .footer-tagline {

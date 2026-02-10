@@ -1,5 +1,8 @@
 ---
 export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -755,6 +758,19 @@ export const prerender = false;
     let isAuthenticated = false;
     const modifiers = { ctrl: false, alt: false };
 
+    function detectMobileClient() {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+        return navigator.userAgentData.mobile;
+      }
+      const userAgent = navigator.userAgent || '';
+      const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent);
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const narrowViewport = window.matchMedia('(max-width: 1024px)').matches;
+      return uaMobile || (coarsePointer && narrowViewport);
+    }
+
+    const isMobileClient = detectMobileClient();
+
     // Sidebar state
     let sidebarData = { projects: [], currentProject: null };
 
@@ -781,16 +797,47 @@ export const prerender = false;
       statusEl.className = 'topbar-status ' + state;
     }
 
+    function isMobileResizeMode() {
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const narrowViewport = window.matchMedia('(max-width: 1024px)').matches;
+      const hasTouch = typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 0;
+      return isMobileClient || (coarsePointer && narrowViewport) || (hasTouch && narrowViewport);
+    }
+
+    function getVisualViewportWidthRatio() {
+      const vp = window.visualViewport;
+      if (!vp) return 1;
+
+      const visualWidth = Math.round(Number(vp.width) || 0);
+      const layoutWidth = Math.round(Number(window.innerWidth || document.documentElement.clientWidth) || 0);
+      if (!visualWidth || !layoutWidth || visualWidth >= layoutWidth) {
+        return 1;
+      }
+
+      const ratio = visualWidth / layoutWidth;
+      return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+    }
+
     // Apply terminal dimensions.
     // Mobile: natural cols (text wraps at screen width) + resize PTY to match.
     // Desktop: force PTY cols for correct cursor positioning.
     function applyPtyDims(options = {}) {
       if (!fitAddon || !term) return;
       const { syncServer = true, forceRefresh = false } = options;
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      const isMobile = isMobileResizeMode();
 
       if (isMobile) {
         fitAddon.fit();
+
+        // Some phone browsers report a desktop layout viewport.
+        // Use visual viewport width ratio so cols match the actual visible area.
+        const viewportRatio = getVisualViewportWidthRatio();
+        if (viewportRatio < 0.99) {
+          const adjustedCols = Math.max(2, Math.floor(term.cols * viewportRatio));
+          if (adjustedCols > 0 && adjustedCols !== term.cols) {
+            term.resize(adjustedCols, term.rows);
+          }
+        }
 
         if (forceRefresh) {
           term.refresh(0, term.rows - 1);
@@ -816,6 +863,7 @@ export const prerender = false;
             terminalId: currentTerminalId,
             cols,
             rows,
+            mobile: isMobileResizeMode(),
           }));
           lastSentResize = { terminalId: currentTerminalId, cols, rows };
         }
@@ -836,9 +884,7 @@ export const prerender = false;
     }
 
     function isClientFocused() {
-      return !document.hidden &&
-        document.visibilityState === 'visible' &&
-        (typeof document.hasFocus !== 'function' || document.hasFocus());
+      return !document.hidden && document.visibilityState === 'visible';
     }
 
     function sendTerminalFocus(focused, terminalId = currentTerminalId) {
@@ -850,6 +896,7 @@ export const prerender = false;
         type: 'terminal_focus',
         terminalId,
         focused: normalized,
+        mobile: isMobileResizeMode(),
       }));
       lastFocusSync = { terminalId, focused: normalized };
     }
@@ -963,6 +1010,18 @@ export const prerender = false;
         applyPtyDims({ forceRefresh: true });
       }, 80));
       ro.observe(terminalWrap);
+
+      const viewportResize = debounce(() => {
+        applyPtyDims({ forceRefresh: true });
+      }, 80);
+      window.addEventListener('resize', viewportResize);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => applyPtyDims({ forceRefresh: true }), 120);
+      });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', viewportResize);
+        window.visualViewport.addEventListener('scroll', viewportResize);
+      }
     }
 
     function connect() {
@@ -1074,7 +1133,6 @@ export const prerender = false;
 
         case 'terminal_init':
           if (term && msg.terminalId === currentTerminalId) {
-            const hasDims = !!(msg.cols && msg.rows);
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
               lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
@@ -1086,7 +1144,7 @@ export const prerender = false;
             if (msg.data) {
               term.write(msg.data);
             }
-            applyPtyDims({ syncServer: !hasDims, forceRefresh: true });
+            applyPtyDims({ syncServer: true, forceRefresh: true });
           }
           break;
 
@@ -1112,7 +1170,6 @@ export const prerender = false;
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
-            const hasDims = !!(msg.cols && msg.rows);
             term.clear();
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
@@ -1124,7 +1181,7 @@ export const prerender = false;
             if (msg.buffer) {
               term.write(msg.buffer);
             }
-            applyPtyDims({ syncServer: !hasDims, forceRefresh: true });
+            applyPtyDims({ syncServer: true, forceRefresh: true });
             isSwitching = false;
             const queue = switchOutputQueue;
             switchOutputQueue = [];
@@ -1468,9 +1525,8 @@ export const prerender = false;
       syncTerminalFocus();
     });
 
-    window.addEventListener('blur', () => {
-      sendTerminalFocus(false);
-    });
+    // Mobile browsers can emit transient blur events while still visible/active.
+    // We only release focus on visibilitychange (hidden) to avoid losing control.
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden || document.visibilityState !== 'visible') {

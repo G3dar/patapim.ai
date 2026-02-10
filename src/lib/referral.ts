@@ -7,12 +7,24 @@ import { generateLicenseKey } from './license';
 
 export interface ReferralData {
   email: string;
+  refCode: string | null;
   referrals: Array<{ email: string; invitedAt: string; activatedAt: string | null }>;
   activatedCount: number;
   rewardGranted: boolean;
   rewardGrantedAt: string | null;
   licenseKey: string | null;
   createdAt: string;
+}
+
+const REF_CODE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
+
+/**
+ * Generate a 7-char referral code using unambiguous characters.
+ */
+export function generateRefCode(): string {
+  const arr = new Uint8Array(7);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => REF_CODE_CHARS[b % REF_CODE_CHARS.length]).join('');
 }
 
 interface AssociationResult {
@@ -60,6 +72,7 @@ export async function createReferralAssociation(
   } else {
     referralData = {
       email: referrerLower,
+      refCode: null,
       referrals: [],
       activatedCount: 0,
       rewardGranted: false,

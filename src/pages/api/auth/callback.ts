@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createSession, buildSessionCookie } from '../../../lib/auth';
-import { activateReferral } from '../../../lib/referral';
+import { activateReferral, createReferralAssociation } from '../../../lib/referral';
 
 export const prerender = false;
 
@@ -107,21 +107,27 @@ export const GET: APIRoute = async (context) => {
   };
   const sessionId = await createSession(env.SESSIONS, sessionUser);
 
-  // Referral claim: if this user was referred, activate the referral
-  try {
-    await activateReferral(env.LICENSES, profile.email);
-  } catch (e) {
-    // Referral claim is best-effort, don't block auth flow
-    console.error('Referral claim error:', e);
-  }
-
   // Auto-pairing: if desktop app initiated this flow, create device token automatically
   const cookies = context.request.headers.get('cookie') || '';
+
+  // Referral: read cookie-based referral and create association, then activate
+  try {
+    const refCookieMatch = cookies.match(/(?:^|;\s*)__patapim_ref=([^;]+)/);
+    if (refCookieMatch) {
+      const referrerEmail = decodeURIComponent(refCookieMatch[1]);
+      await createReferralAssociation(env.LICENSES, referrerEmail, profile.email);
+    }
+    await activateReferral(env.LICENSES, profile.email);
+  } catch (e) {
+    console.error('Referral claim error:', e);
+  }
   const pairMatch = cookies.match(/(?:^|;\s*)__patapim_pair=([^;]+)/);
   const pairingSessionId = pairMatch ? pairMatch[1] : null;
 
   const responseHeaders = new Headers();
   responseHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
+  // Clear referral cookie after processing
+  responseHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
 
   if (pairingSessionId) {
     // Auto-create device token for the desktop app

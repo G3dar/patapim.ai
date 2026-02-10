@@ -43,6 +43,8 @@ export const POST: APIRoute = async (context) => {
       totalInvited: 0,
       rewardGranted: false,
       licenseKey: null,
+      refCode: null,
+      referralUrl: null,
     }), { status: 200, headers });
   }
 
@@ -60,5 +62,7 @@ export const POST: APIRoute = async (context) => {
     rewardGranted: data.rewardGranted,
     rewardGrantedAt: data.rewardGrantedAt || null,
     licenseKey: data.rewardGranted ? data.licenseKey : null,
+    refCode: data.refCode || null,
+    referralUrl: data.refCode ? `https://patapim.ai/r/${data.refCode}` : null,
   }), { status: 200, headers });
 };

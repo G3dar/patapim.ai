@@ -57,6 +57,7 @@ if (!isAdmin(user)) {
         <button class="tab" data-tab="users">Users</button>
         <button class="tab" data-tab="referrals">Referrals</button>
         <button class="tab" data-tab="feedback">Feedback</button>
+        <button class="tab" data-tab="bugs">Bug Reports</button>
       </nav>
 
       <!-- Overview -->
@@ -90,6 +91,12 @@ if (!isAdmin(user)) {
       <section class="pane" id="tab-feedback" style="display:none;">
         <div class="loader" id="feedback-loading">Loading...</div>
         <div id="feedback-content" style="display:none;"></div>
+      </section>
+
+      <!-- Bug Reports -->
+      <section class="pane" id="tab-bugs" style="display:none;">
+        <div class="loader" id="bugs-loading">Loading...</div>
+        <div id="bugs-content" style="display:none;"></div>
       </section>
 
     </div>
@@ -759,6 +766,18 @@ if (!isAdmin(user)) {
     color: var(--amber-500);
   }
 
+  /* ── Bug Badge ───────────────────────────── */
+  .bug-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--gray-100);
+    color: var(--gray-500);
+    border: 1px solid var(--gray-200);
+  }
+
   /* ── Confirm Modal ─────────────────────── */
   .modal-overlay {
     position: fixed;
@@ -889,6 +908,7 @@ if (!isAdmin(user)) {
       else if (tab === 'users') loadUsers();
       else if (tab === 'referrals') loadReferrals();
       else if (tab === 'feedback') loadFeedback();
+      else if (tab === 'bugs') loadBugs();
     }
   }
 
@@ -1167,6 +1187,38 @@ if (!isAdmin(user)) {
       `).join('')}</div>`;
     } catch {
       document.getElementById('feedback-loading')!.textContent = 'Failed to load feedback.';
+    }
+  }
+
+  // ── Bug Reports ──
+  async function loadBugs() {
+    try {
+      const res = await fetch('/api/admin/bugs');
+      const data = await res.json();
+      document.getElementById('bugs-loading')!.style.display = 'none';
+      const el = document.getElementById('bugs-content')!;
+      el.style.display = 'block';
+
+      if (!data.bugs.length) {
+        el.innerHTML = '<div class="no-data">No bug reports yet.</div>';
+        return;
+      }
+
+      el.innerHTML = `<div class="fb-list">${data.bugs.map((b: any) => `
+        <div class="fb-card">
+          <div class="fb-head">
+            <span class="fb-email">${esc(b.email) || '<em style="color:var(--gray-400)">No email</em>'}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${b.platform ? `<span class="bug-badge">${esc(b.platform)}</span>` : ''}
+              ${b.appVersion ? `<span class="bug-badge">v${esc(b.appVersion)}</span>` : ''}
+              <span class="fb-time">${fmtDate(b.timestamp)}</span>
+            </div>
+          </div>
+          <div class="fb-text">${esc(b.description)}</div>
+        </div>
+      `).join('')}</div>`;
+    } catch {
+      document.getElementById('bugs-loading')!.textContent = 'Failed to load bug reports.';
     }
   }
 

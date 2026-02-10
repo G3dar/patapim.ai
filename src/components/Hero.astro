@@ -61,15 +61,24 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     <div class="hero-features">
       <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
-        <span class="hf-label">Multi-Terminal</span>
+        <div class="hf-text">
+          <span class="hf-label">Multi-Project Workspace</span>
+          <p class="hf-desc">Organize terminals by project. Named tasks with status tracking and completion notifications.</p>
+        </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniVoiceDictation />
-        <span class="hf-label">Voice Dictation</span>
+        <div class="hf-text">
+          <span class="hf-label">Voice Dictation</span>
+          <p class="hf-desc">Lightning fast, 100% local. Your voice never leaves your machine.</p>
+        </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniRemoteAccess />
-        <span class="hf-label">Remote Access</span>
+        <div class="hf-text">
+          <span class="hf-label">Remote Control</span>
+          <p class="hf-desc">Control your local workstation from any phone or laptop.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -293,14 +302,22 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: var(--space-2xl);
+    gap: var(--space-3xl);
   }
 
   .hero-feature-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    max-width: 340px;
+  }
+
+  .hf-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 
   .hf-label {
@@ -308,7 +325,16 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     font-size: 15px;
     color: var(--text-secondary);
     letter-spacing: 0.02em;
-    font-weight: 500;
+    font-weight: 600;
+  }
+
+  .hf-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    text-align: center;
+    max-width: 300px;
+    margin: 0;
   }
 
   @media (max-width: 768px) {
@@ -318,6 +344,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     .hi-line { font-size: 11px; padding: 12px 14px; }
     .hi-tab { font-size: 11px; padding: 5px 14px; }
     .hf-label { font-size: 13px; }
+    .hf-desc { font-size: 12px; max-width: 280px; }
   }
 
   @media (max-width: 480px) {

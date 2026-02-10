@@ -10,7 +10,7 @@
       <path d="M8.5 12.5a3.5 3.5 0 0 1 7 0"/>
       <circle cx="12" cy="12.5" r="1" fill="currentColor"/>
     </svg>
-    <span class="hm-title">Remote Access</span>
+    <span class="hm-title">Remote Control</span>
   </div>
   <div class="hm-body">
     <!-- Desktop terminal -->
@@ -28,7 +28,7 @@
         <div class="hm-url-sub">Sign in with Google</div>
       </div>
     </div>
-    <!-- Phone -->
+    <!-- Small phone (corner, for auth flow) -->
     <div class="hm-phone" data-hm-phone>
       <div class="hm-phone-frame">
         <div class="hm-phone-notch"></div>
@@ -47,12 +47,20 @@
             <span class="hm-phone-check">&#x2713;</span>
             <span class="hm-phone-text">Connected</span>
           </div>
-          <div class="hm-phone-terminal" data-hm-terminal>
-            <div class="hm-pln" data-pln="0"><span class="hm-ppr">~$</span> claude</div>
-            <div class="hm-pln" data-pln="1">Initialized</div>
-            <div class="hm-pln" data-pln="2"><span class="hm-ppr">&gt;</span> fix bug</div>
-            <div class="hm-pln" data-pln="3">&#x2713; Done</div>
-          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Large phone (centered, for the zoom reveal) -->
+    <div class="hm-big" data-hm-big>
+      <div class="hm-big-frame">
+        <div class="hm-big-notch"></div>
+        <div class="hm-big-screen">
+          <div class="hm-bln" data-bln="0"><span class="hm-bpr">~$</span> claude</div>
+          <div class="hm-bln" data-bln="1">Claude Code initialized</div>
+          <div class="hm-bln" data-bln="2">Ready. 2 tasks pending.</div>
+          <div class="hm-bln hm-bln-gap" data-bln="3"><span class="hm-bpr">&gt;</span> fix the login bug</div>
+          <div class="hm-bln" data-bln="4"><span class="hm-bok">&#x2713;</span> Fixed login validation</div>
+          <div class="hm-bln" data-bln="5"><span class="hm-bpr">&gt;</span> <span class="hm-blink">|</span></div>
         </div>
       </div>
     </div>
@@ -61,7 +69,7 @@
 
 <style>
   .hm-ra {
-    width: 280px;
+    width: 340px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-strong);
@@ -89,14 +97,14 @@
   }
 
   .hm-body {
-    height: 150px;
+    height: 180px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     line-height: 1.6;
     color: var(--text-secondary);
     position: relative;
     overflow: hidden;
-    padding: 10px 12px;
+    padding: 10px 14px;
   }
   .hm-pr { color: var(--accent-primary); margin-right: 4px; }
   .hm-dim { opacity: 0.5; }
@@ -114,6 +122,7 @@
     transition: opacity 0.3s ease;
   }
   .hm-desktop.hm-dim { opacity: 0.3; }
+  .hm-desktop.hm-hide { opacity: 0; }
 
   /* URL overlay */
   .hm-url-overlay {
@@ -151,13 +160,13 @@
     margin-top: 3px;
   }
 
-  /* Phone */
+  /* Small phone (corner) */
   .hm-phone {
     position: absolute;
     bottom: 8px;
     right: 8px;
     opacity: 0.3;
-    transition: all 0.4s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 3;
   }
   .hm-phone.hm-glow {
@@ -166,9 +175,14 @@
   .hm-phone.hm-glow .hm-phone-frame {
     box-shadow: 0 0 10px rgba(224,164,88,0.4);
   }
+  .hm-phone.hm-fade-out {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
   .hm-phone-frame {
-    width: 50px;
-    height: 80px;
+    width: 55px;
+    height: 88px;
     border: 1.5px solid var(--border-strong);
     border-radius: 8px;
     background: var(--bg-tertiary);
@@ -237,37 +251,74 @@
     font-family: var(--font-mono);
   }
 
-  .hm-phone-terminal {
-    display: none;
-    flex-direction: column;
-    width: 100%;
+  /* ===== Large phone (centered zoom reveal) ===== */
+  .hm-big {
     position: absolute;
-    inset: 4px;
-    padding: 2px;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
   }
-  .hm-phone-terminal.hm-show { display: flex; }
-  .hm-pln {
-    font-size: 5px;
+  .hm-big.hm-show {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .hm-big-frame {
+    width: 110px;
+    height: 165px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 24px rgba(224,164,88,0.35),
+      0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  .hm-big-notch {
+    width: 28px;
+    height: 4px;
+    background: var(--border-default);
+    border-radius: 3px;
+    margin: 6px auto 0;
+  }
+
+  .hm-big-screen {
+    padding: 10px 8px 8px;
+  }
+
+  .hm-bln {
+    font-size: 8px;
     font-family: var(--font-mono);
-    color: var(--text-muted);
+    color: var(--text-secondary);
     white-space: nowrap;
     opacity: 0;
     transition: opacity 0.3s ease;
-    line-height: 1.5;
+    line-height: 1.7;
   }
-  .hm-pln.hm-visible { opacity: 1; }
-  .hm-ppr { color: var(--accent-primary); margin-right: 2px; }
+  .hm-bln.hm-visible { opacity: 1; }
+  .hm-bln-gap { margin-top: 6px; }
+  .hm-bpr { color: var(--accent-primary); margin-right: 3px; }
+  .hm-bok { color: var(--success); margin-right: 3px; }
 
   @media (max-width: 768px) {
-    .hm-ra { width: 100%; max-width: 320px; }
+    .hm-ra { width: 100%; max-width: 340px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .hm-blink { animation: none; opacity: 1; }
-    .hm-phone { opacity: 1; }
-    .hm-phone-idle { display: none; }
-    .hm-phone-terminal { display: flex; }
-    .hm-pln { opacity: 1; }
+    .hm-phone { display: none; }
+    .hm-desktop { display: none; }
+    .hm-big { opacity: 1; transform: scale(1); }
+    .hm-bln { opacity: 1; }
   }
 </style>
 
@@ -282,13 +333,10 @@
     const idle = root.querySelector('[data-hm-idle]') as HTMLElement;
     const auth = root.querySelector('[data-hm-auth]') as HTMLElement;
     const connected = root.querySelector('[data-hm-connected]') as HTMLElement;
-    const terminal = root.querySelector('[data-hm-terminal]') as HTMLElement;
-    const plns = root.querySelectorAll('[data-pln]');
+    const bigPhone = root.querySelector('[data-hm-big]') as HTMLElement;
+    const blns = root.querySelectorAll('[data-bln]');
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      phone.classList.add('hm-glow');
-      return;
-    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let running = false;
     let animId: ReturnType<typeof setTimeout> | null = null;
@@ -298,22 +346,23 @@
     }
 
     function resetState() {
-      desktop.classList.remove('hm-dim');
+      desktop.classList.remove('hm-dim', 'hm-hide');
       urlOverlay.classList.remove('hm-show');
-      phone.classList.remove('hm-glow');
+      phone.classList.remove('hm-glow', 'hm-fade-out');
       idle.classList.remove('hm-hide');
       auth.classList.remove('hm-show');
       connected.classList.remove('hm-show');
-      terminal.classList.remove('hm-show');
-      plns.forEach(p => p.classList.remove('hm-visible'));
+      bigPhone.classList.remove('hm-show');
+      blns.forEach(b => b.classList.remove('hm-visible'));
       root.style.opacity = '1';
+      root.style.transition = '';
     }
 
     async function startLoop() {
       while (running) {
         resetState();
 
-        // Scene 1: desktop terminal idle (1.5s)
+        // Scene 1: desktop terminal idle
         await wait(1500);
         if (!running) break;
 
@@ -337,28 +386,31 @@
         await wait(1000);
         if (!running) break;
 
-        // Scene 5: phone shows terminal, lines appear
-        connected.classList.remove('hm-show');
-        terminal.classList.add('hm-show');
-        desktop.classList.remove('hm-dim');
+        // Scene 5: fade out small phone + desktop, reveal large phone
+        desktop.classList.add('hm-hide');
+        phone.classList.add('hm-fade-out');
+        bigPhone.classList.add('hm-show');
 
-        for (let i = 0; i < plns.length; i++) {
-          plns[i].classList.add('hm-visible');
-          await wait(400);
+        // Stagger terminal lines on the big phone
+        await wait(400);
+        if (!running) break;
+
+        for (let i = 0; i < blns.length; i++) {
+          blns[i].classList.add('hm-visible');
+          await wait(250);
           if (!running) break;
         }
         if (!running) break;
 
-        // Hold
-        await wait(2000);
+        // Hold so the user can read the terminal
+        await wait(3000);
         if (!running) break;
 
-        // Fade & loop
-        root.style.opacity = '0';
+        // Fade out & loop
         root.style.transition = 'opacity 0.4s ease';
-        await wait(400);
+        root.style.opacity = '0';
+        await wait(500);
         if (!running) break;
-        root.style.opacity = '1';
       }
     }
 

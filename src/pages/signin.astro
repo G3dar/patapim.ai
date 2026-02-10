@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import { getUserFromRequest } from '../lib/auth';
+import { createReferralAssociation, activateReferral } from '../lib/referral';
 
 const env = Astro.locals.runtime.env;
 const url = new URL(Astro.request.url);
@@ -17,6 +18,19 @@ if (!user) {
     headers['Set-Cookie'] = `__patapim_pair=${pairingSessionId}; Secure; SameSite=Lax; Path=/; Max-Age=600`;
   }
   return new Response(null, { status: 302, headers });
+}
+
+// Already authenticated — process referral cookie if present
+const cookies = Astro.request.headers.get('cookie') || '';
+const refCookieMatch = cookies.match(/(?:^|;\s*)__patapim_ref=([^;]+)/);
+if (refCookieMatch) {
+  try {
+    const referrerEmail = decodeURIComponent(refCookieMatch[1]);
+    await createReferralAssociation(env.LICENSES, referrerEmail, user.email);
+    await activateReferral(env.LICENSES, user.email);
+  } catch (e) {
+    console.error('Referral activation error (signin fast path):', e);
+  }
 }
 
 // Already authenticated — if pairing session, auto-create device token
@@ -55,9 +69,22 @@ if (pairingSessionId) {
     licenseKey: license?.licenseKey || null,
   }), { expirationTtl: 600 });
 
-  return new Response(null, { status: 302, headers: { Location: '/go?paired=1' } });
+  const pairHeaders: Record<string, string> = { Location: '/go?paired=1' };
+  if (refCookieMatch) {
+    pairHeaders['Set-Cookie'] = '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0';
+  }
+  return new Response(null, { status: 302, headers: pairHeaders });
 }
 
 // Already authenticated, no pairing — just go to dashboard
+if (refCookieMatch) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: '/go',
+      'Set-Cookie': '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0',
+    },
+  });
+}
 return Astro.redirect('/go');
 ---
