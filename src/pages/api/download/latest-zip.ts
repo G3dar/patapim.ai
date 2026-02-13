@@ -34,17 +34,27 @@ export async function GET(ctx: APIContext) {
 
   // Increment download counters without slowing the response
   const today = new Date().toISOString().slice(0, 10);
+  const cf = (ctx.request as any).cf;
+  const country = cf?.country as string | undefined;
   ctx.locals.runtime.ctx.waitUntil((async () => {
     try {
       const kv = env.LICENSES as KVNamespace;
-      const [totalRaw, dailyRaw] = await Promise.all([
+      const reads: Promise<string | null>[] = [
         kv.get('stats:downloads:total'),
         kv.get(`stats:downloads:${today}`),
-      ]);
-      await Promise.all([
+      ];
+      if (country && country.length === 2) {
+        reads.push(kv.get(`stats:downloads:geo:${country}`));
+      }
+      const [totalRaw, dailyRaw, geoRaw] = await Promise.all(reads);
+      const puts: Promise<void>[] = [
         kv.put('stats:downloads:total', String((parseInt(totalRaw || '0', 10) || 0) + 1)),
         kv.put(`stats:downloads:${today}`, String((parseInt(dailyRaw || '0', 10) || 0) + 1)),
-      ]);
+      ];
+      if (country && country.length === 2) {
+        puts.push(kv.put(`stats:downloads:geo:${country}`, String((parseInt(geoRaw || '0', 10) || 0) + 1)));
+      }
+      await Promise.all(puts);
     } catch {
       // Best-effort counter, don't fail the download
     }

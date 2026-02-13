@@ -849,10 +849,140 @@ if (!isAdmin(user)) {
     border-color: var(--gray-400);
   }
 
+  /* ── Geo Map ──────────────────────────── */
+  .map-section {
+    margin-bottom: 28px;
+  }
+
+  .map-container {
+    position: relative;
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+  }
+
+  .map-container svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .map-container svg path {
+    fill: var(--gray-200);
+    stroke: var(--white);
+    stroke-width: 0.5;
+    transition: fill 150ms, opacity 150ms;
+    cursor: default;
+  }
+
+  .map-container svg path:hover {
+    opacity: 0.8;
+    stroke: var(--gray-400);
+    stroke-width: 1;
+  }
+
+  .map-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--gray-800);
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: none;
+  }
+
+  .map-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 0 4px;
+  }
+
+  .map-legend-gradient {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #dbeafe, #3b82f6, #1d4ed8);
+  }
+
+  .map-legend-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-400);
+    min-width: 24px;
+  }
+
+  .map-top-countries {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    margin-top: 16px;
+  }
+
+  .top-country {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .top-country-rank {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-400);
+    min-width: 18px;
+    text-align: right;
+  }
+
+  .top-country-flag {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .top-country-code {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--gray-700);
+    min-width: 24px;
+  }
+
+  .top-country-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--gray-100);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .top-country-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--blue-500);
+    transition: width 300ms ease;
+  }
+
+  .top-country-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-500);
+    min-width: 28px;
+    text-align: right;
+  }
+
   /* ── Responsive ────────────────────────── */
   @media (max-width: 900px) {
     .kpi-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .map-top-countries {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -881,6 +1011,8 @@ if (!isAdmin(user)) {
     }
 
     .chart-bars { height: 100px; }
+
+    .map-container { max-height: 260px; }
   }
 </style>
 
@@ -984,6 +1116,17 @@ if (!isAdmin(user)) {
 
         ${buildBreakdown(s.licenses.statusBreakdown)}
 
+        ${s.downloads.geo && Object.keys(s.downloads.geo).length > 0 ? `
+        <div class="map-section">
+          <div class="section-heading">Downloads by Country</div>
+          <div class="chart-wrap">
+            <div class="map-container" id="geo-map"></div>
+            <div id="map-legend"></div>
+            <div class="map-top-countries" id="map-top-countries"></div>
+          </div>
+        </div>
+        ` : ''}
+
         <div class="trends-section">
           <div class="section-heading">Last 7 Days</div>
           <div class="chart-wrap">
@@ -995,9 +1138,135 @@ if (!isAdmin(user)) {
           </div>
         </div>
       `;
+
+      // Build geo map if data available
+      if (s.downloads.geo && Object.keys(s.downloads.geo).length > 0) {
+        buildGeoMap(s.downloads.geo);
+        buildTopCountries(s.downloads.geo);
+        buildMapLegend(s.downloads.geo);
+      }
     } catch {
       document.getElementById('overview-loading')!.textContent = 'Failed to load stats.';
     }
+  }
+
+  // ── Geo Map ──
+  function countryFlag(code: string) {
+    return String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+  }
+
+  function interpolateColor(t: number): string {
+    // From #dbeafe (blue-100) to #1d4ed8 (blue-700) via #3b82f6 (blue-500)
+    const r0 = 219, g0 = 234, b0 = 254; // blue-100
+    const r1 = 59, g1 = 130, b1 = 246;  // blue-500
+    const r2 = 29, g2 = 78, b2 = 216;   // blue-700
+
+    let r, g, b;
+    if (t < 0.5) {
+      const p = t * 2;
+      r = Math.round(r0 + (r1 - r0) * p);
+      g = Math.round(g0 + (g1 - g0) * p);
+      b = Math.round(b0 + (b1 - b0) * p);
+    } else {
+      const p = (t - 0.5) * 2;
+      r = Math.round(r1 + (r2 - r1) * p);
+      g = Math.round(g1 + (g2 - g1) * p);
+      b = Math.round(b1 + (b2 - b1) * p);
+    }
+    return `rgb(${r},${g},${b})`;
+  }
+
+  async function buildGeoMap(geo: Record<string, number>) {
+    const container = document.getElementById('geo-map');
+    if (!container) return;
+
+    try {
+      const res = await fetch('/admin/world.svg');
+      const svgText = await res.text();
+      container.innerHTML = svgText;
+
+      const svg = container.querySelector('svg');
+      if (!svg) return;
+
+      // Remove title/desc to keep clean
+      svg.querySelector('title')?.remove();
+      svg.querySelector('desc')?.remove();
+
+      const max = Math.max(1, ...Object.values(geo));
+      const logMax = Math.log(max + 1);
+
+      // Color each country path
+      for (const [code, count] of Object.entries(geo)) {
+        const el = svg.getElementById(code.toLowerCase());
+        if (el) {
+          const t = Math.log(count + 1) / logMax;
+          (el as SVGElement).style.fill = interpolateColor(t);
+        }
+      }
+
+      // Tooltip
+      let tooltip = document.querySelector('.map-tooltip') as HTMLElement;
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'map-tooltip';
+        document.body.appendChild(tooltip);
+      }
+
+      svg.addEventListener('mousemove', (e: MouseEvent) => {
+        const target = (e.target as Element).closest('path');
+        if (!target) { tooltip.style.display = 'none'; return; }
+
+        const id = target.id;
+        if (!id || id.startsWith('_')) { tooltip.style.display = 'none'; return; }
+
+        const code = id.toUpperCase();
+        const count = geo[code] || 0;
+        tooltip.textContent = `${countryFlag(code)} ${code}: ${count} download${count !== 1 ? 's' : ''}`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+      });
+
+      svg.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+      });
+    } catch {
+      container.textContent = 'Failed to load map.';
+    }
+  }
+
+  function buildTopCountries(geo: Record<string, number>) {
+    const el = document.getElementById('map-top-countries');
+    if (!el) return;
+
+    const sorted = Object.entries(geo).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const max = sorted.length ? sorted[0][1] : 1;
+
+    el.innerHTML = sorted.map(([code, count], i) => `
+      <div class="top-country">
+        <span class="top-country-rank">${i + 1}.</span>
+        <span class="top-country-flag">${countryFlag(code)}</span>
+        <span class="top-country-code">${esc(code)}</span>
+        <div class="top-country-bar-wrap">
+          <div class="top-country-bar" style="width:${Math.round((count / max) * 100)}%"></div>
+        </div>
+        <span class="top-country-count">${count}</span>
+      </div>
+    `).join('');
+  }
+
+  function buildMapLegend(geo: Record<string, number>) {
+    const el = document.getElementById('map-legend');
+    if (!el) return;
+
+    const max = Math.max(1, ...Object.values(geo));
+    el.innerHTML = `
+      <div class="map-legend-bar">
+        <span class="map-legend-label">0</span>
+        <div class="map-legend-gradient"></div>
+        <span class="map-legend-label">${max}</span>
+      </div>
+    `;
   }
 
   function buildBreakdown(bd: Record<string, number>) {

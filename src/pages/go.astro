@@ -392,6 +392,11 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     color: var(--text-muted);
   }
 
+  .device-location {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
 
   /* Empty state (dynamic) */
   .dash-empty {
@@ -500,6 +505,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
             </div>
             <div class="device-meta">
               <span id="meta-${escapeHtml(d.token)}">${d.terminalCount ? 'Terminals: ' + d.terminalCount : ''}</span>
+              ${d.city || d.ip ? '<span class="device-location">' + [d.city, d.country].filter(Boolean).join(', ') + (d.ip ? ((d.city || d.country) ? ' \u00b7 ' : '') + escapeHtml(d.ip) : '') + '</span>' : ''}
             </div>
           </div>`
       ).join('') + '</div>';

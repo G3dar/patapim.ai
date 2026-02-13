@@ -79,11 +79,14 @@ export const GET: APIRoute = async (context) => {
   let downloadsToday = 0;
   let downloadsThisWeek = 0;
   const dailyDownloads: Record<string, number> = {};
+  const geoDownloads: Record<string, number> = {};
 
   for (const [key, val] of downloadValues) {
     const count = parseInt(String(val), 10) || 0;
     if (key === 'stats:downloads:total') {
       totalDownloads = count;
+    } else if (key.startsWith('stats:downloads:geo:')) {
+      geoDownloads[key.replace('stats:downloads:geo:', '')] = count;
     } else {
       const dateStr = key.replace('stats:downloads:', '');
       dailyDownloads[dateStr] = count;
@@ -147,6 +150,7 @@ export const GET: APIRoute = async (context) => {
       total: totalDownloads,
       today: downloadsToday,
       thisWeek: downloadsThisWeek,
+      geo: geoDownloads,
     },
     feedback: {
       total: feedbackKeys.length,

@@ -34,6 +34,9 @@ export const GET: APIRoute = async (context) => {
         lastSeen: d.lastSeen,
         tunnelUrl: d.tunnelUrl,
         terminalCount: d.terminalCount,
+        ip: d.ip,
+        city: d.city,
+        country: d.country,
       };
     })
   );
