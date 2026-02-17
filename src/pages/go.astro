@@ -370,11 +370,12 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     background: var(--text-muted);
   }
 
-  .device-card[style*="opacity: 0.5"] {
+  .device-card.device-offline {
+    opacity: 0.5;
     cursor: default;
   }
 
-  .device-card[style*="opacity: 0.5"]:hover {
+  .device-card.device-offline:hover {
     border-color: var(--border-default);
   }
 
@@ -470,7 +471,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     window.location.href = '/';
   });
 
-  // Load devices and ping each one client-side to detect online status
+  // Load devices (server pings tunnel URLs to determine online status)
   async function loadDevices() {
     try {
       const res = await fetch('/api/device/list');
@@ -496,54 +497,24 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         return;
       }
 
-      // Render all devices with "checking" status
+      // Render devices with server-determined online status (no client-side pinging needed)
       container.innerHTML = '<div class="devices-grid">' + devices.map(d => `
-          <div class="device-card" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
+          <div class="device-card${d.online ? '' : ' device-offline'}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
             <div class="device-card-header">
               <span class="device-name">${escapeHtml(d.deviceName)}</span>
-              <span class="online-badge offline" id="badge-${escapeHtml(d.token)}">Checking...</span>
+              <span class="online-badge ${d.online ? 'online' : 'offline'}">${d.online ? 'Online' : 'Offline'}</span>
             </div>
             <div class="device-meta">
-              <span id="meta-${escapeHtml(d.token)}">${d.terminalCount ? 'Terminals: ' + d.terminalCount : ''}</span>
+              <span>${d.terminalCount ? 'Terminals: ' + d.terminalCount : ''}</span>
               ${d.city || d.ip ? '<span class="device-location">' + [d.city, d.country].filter(Boolean).join(', ') + (d.ip ? ((d.city || d.country) ? ' \u00b7 ' : '') + escapeHtml(d.ip) : '') + '</span>' : ''}
             </div>
           </div>`
       ).join('') + '</div>';
 
-      // Ping each device's tunnel URL client-side to detect real online status
-      await Promise.all(devices.map(async (d) => {
-        const badge = document.getElementById('badge-' + d.token);
-        const meta = document.getElementById('meta-' + d.token);
-        const card = container.querySelector('[data-token="' + d.token + '"]');
-        if (!d.tunnelUrl) {
-          if (badge) { badge.textContent = 'Offline'; badge.className = 'online-badge offline'; }
-          if (card) card.style.opacity = '0.5';
-          return;
-        }
-        try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 5000);
-          const pingRes = await fetch(d.tunnelUrl + '/ping', { signal: ctrl.signal });
-          clearTimeout(timer);
-          const pingData = await pingRes.json();
-          if (pingData.ok) {
-            if (badge) { badge.textContent = 'Online'; badge.className = 'online-badge online'; }
-            if (meta && pingData.terminalCount) meta.textContent = 'Terminals: ' + pingData.terminalCount;
-          } else {
-            if (badge) { badge.textContent = 'Offline'; badge.className = 'online-badge offline'; }
-            if (card) card.style.opacity = '0.5';
-          }
-        } catch {
-          if (badge) { badge.textContent = 'Offline'; badge.className = 'online-badge offline'; }
-          if (card) card.style.opacity = '0.5';
-        }
-      }));
-
       // Click-to-connect on online device cards
       container.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', async () => {
-          const badge = card.querySelector('.online-badge');
-          if (badge && badge.classList.contains('offline')) return;
+          if (card.classList.contains('device-offline')) return;
           if (card.classList.contains('connecting')) return;
           card.classList.add('connecting');
           card.style.opacity = '0.6';

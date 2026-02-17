@@ -565,6 +565,120 @@ Astro.response.headers.set('Expires', '0');
 
     .scroll-bottom.visible { display: flex; }
 
+    /* Floating action button (mobile) */
+    .fab-actions {
+      display: none;
+      position: absolute;
+      bottom: 60px;
+      right: 16px;
+      z-index: 11;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .fab-trigger {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: var(--bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .fab-trigger:active { transform: scale(0.92); }
+    .fab-trigger.open { background: var(--text-dim); }
+
+    .fab-menu {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      min-width: 160px;
+    }
+
+    .fab-menu.visible { display: flex; }
+
+    .fab-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+
+    .fab-menu-item:active,
+    .fab-menu-item:hover {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .fab-menu-item svg { flex-shrink: 0; opacity: 0.7; }
+
+    /* Selection overlay */
+    .selection-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      background: rgba(10, 10, 11, 0.92);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre;
+      overflow: auto;
+      padding: 4px 0 0 4px;
+      -webkit-user-select: text;
+      user-select: text;
+      cursor: text;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Toast notification */
+    .fab-toast {
+      position: absolute;
+      bottom: 110px;
+      right: 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      z-index: 15;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+
+    .fab-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .fab-actions { display: flex; }
+    }
+
     /* Loading screen */
     .loading-screen {
       position: absolute;
@@ -692,6 +806,36 @@ Astro.response.headers.set('Expires', '0');
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
+
+          <!-- Floating action button group -->
+          <div class="fab-actions" id="fab-actions">
+            <div class="fab-menu" id="fab-menu">
+              <button class="fab-menu-item" id="fab-paste">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+                Paste from clipboard
+              </button>
+              <button class="fab-menu-item" id="fab-image">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Insert image file
+              </button>
+            </div>
+            <button class="fab-trigger" id="fab-trigger" title="Actions">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="fab-toast" id="fab-toast"></div>
+          <input type="file" id="image-picker" accept="image/*" style="display:none" />
         </div>
 
         <div class="keys-bar" id="keys-bar">
@@ -708,6 +852,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-seq="\x04">^D</button>
           <button class="key-btn" data-seq="\x0c">^L</button>
           <button class="key-btn" data-seq="\x1a">^Z</button>
+          <button class="key-btn" id="key-select" style="margin-left:auto; border-color:var(--accent); color:var(--accent);">Select</button>
         </div>
       </div>
     </div>
@@ -739,6 +884,13 @@ Astro.response.headers.set('Expires', '0');
     const btnStartGemini = document.getElementById('btn-start-gemini');
     const btnStartCodex = document.getElementById('btn-start-codex');
     const btnNewTerminal = document.getElementById('btn-new-terminal');
+    const fabTrigger = document.getElementById('fab-trigger');
+    const fabMenu = document.getElementById('fab-menu');
+    const fabPaste = document.getElementById('fab-paste');
+    const fabImage = document.getElementById('fab-image');
+    const fabToast = document.getElementById('fab-toast');
+    const imagePicker = document.getElementById('image-picker');
+    const keySelect = document.getElementById('key-select');
 
     // State
     let ws = null;
@@ -752,11 +904,15 @@ Astro.response.headers.set('Expires', '0');
     let isApplyingServerResize = false;
     let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
     let lastFocusSync = { terminalId: null, focused: null };
+    let lastVisualViewportHeight = 0;
     let fontSize = 14;
     let reconnectAttempts = 0;
     let reconnectTimer = null;
     let isAuthenticated = false;
     const modifiers = { ctrl: false, alt: false };
+    let fabOpen = false;
+    let selectMode = false;
+    let selectionOverlay = null;
 
     function detectMobileClient() {
       if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
@@ -880,6 +1036,15 @@ Astro.response.headers.set('Expires', '0');
         if (forceRefresh) {
           term.refresh(0, term.rows - 1);
         }
+      }
+    }
+
+    function scrollToBottomIfKeyboard(heightDelta) {
+      if (!isMobileResizeMode() || !term) return;
+      if (heightDelta > 150) {
+        requestAnimationFrame(() => {
+          term.scrollToBottom();
+        });
       }
     }
 
@@ -1019,8 +1184,20 @@ Astro.response.headers.set('Expires', '0');
         setTimeout(() => applyPtyDims({ forceRefresh: true }), 120);
       });
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', viewportResize);
-        window.visualViewport.addEventListener('scroll', viewportResize);
+        lastVisualViewportHeight = window.visualViewport.height;
+
+        window.visualViewport.addEventListener('resize', debounce(() => {
+          const newHeight = window.visualViewport.height;
+          const heightDelta = lastVisualViewportHeight - newHeight;
+          lastVisualViewportHeight = newHeight;
+
+          applyPtyDims({ forceRefresh: true });
+          scrollToBottomIfKeyboard(heightDelta);
+        }, 80));
+
+        window.visualViewport.addEventListener('scroll', debounce(() => {
+          applyPtyDims({ forceRefresh: true });
+        }, 80));
       }
     }
 
@@ -1535,6 +1712,136 @@ Astro.response.headers.set('Expires', '0');
         syncTerminalFocus();
       }
     });
+
+    // ── FAB: toggle menu ────────────────────────────────────────────
+    function closeFab() {
+      fabOpen = false;
+      fabMenu.classList.remove('visible');
+      fabTrigger.classList.remove('open');
+    }
+
+    fabTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fabOpen = !fabOpen;
+      fabMenu.classList.toggle('visible', fabOpen);
+      fabTrigger.classList.toggle('open', fabOpen);
+    });
+
+    document.addEventListener('click', () => { if (fabOpen) closeFab(); });
+    fabMenu.addEventListener('click', (e) => e.stopPropagation());
+
+    // ── Toast helper ──────────────────────────────────────────────
+    let toastTimer = null;
+    function showToast(message, duration = 2000) {
+      clearTimeout(toastTimer);
+      fabToast.textContent = message;
+      fabToast.classList.add('visible');
+      toastTimer = setTimeout(() => fabToast.classList.remove('visible'), duration);
+    }
+
+    // ── FAB: Paste from clipboard ─────────────────────────────────
+    fabPaste.addEventListener('click', async () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) { showToast('Clipboard is empty'); return; }
+        // Bracketed paste mode prevents auto-execution of multi-line pastes
+        const data = '\x1b[200~' + text + '\x1b[201~';
+        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data }));
+        showToast('Pasted ' + text.length + ' chars');
+      } catch (err) {
+        showToast('Clipboard access denied');
+        console.warn('[FAB] Clipboard read failed:', err);
+      }
+      term.focus();
+      syncTerminalFocus();
+    });
+
+    // ── FAB: Insert image ─────────────────────────────────────────
+    fabImage.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      imagePicker.click();
+    });
+
+    imagePicker.addEventListener('change', () => {
+      const file = imagePicker.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('Image too large (max 10 MB)');
+        imagePicker.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        ws.send(JSON.stringify({
+          type: 'file_upload',
+          terminalId: currentTerminalId,
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          data: base64,
+        }));
+        showToast('Sent: ' + file.name);
+        term.focus();
+        syncTerminalFocus();
+      };
+      reader.onerror = () => showToast('Failed to read file');
+      reader.readAsDataURL(file);
+      imagePicker.value = '';
+    });
+
+    // ── Text selection mode ───────────────────────────────────────
+    keySelect.addEventListener('click', () => {
+      selectMode = !selectMode;
+      keySelect.classList.toggle('active', selectMode);
+      if (selectMode) enterSelectionMode();
+      else exitSelectionMode();
+    });
+
+    function enterSelectionMode() {
+      if (selectionOverlay) return;
+      const buffer = term.buffer.active;
+      let text = '';
+      for (let i = 0; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        if (line) text += line.translateToString(true) + '\n';
+      }
+      selectionOverlay = document.createElement('div');
+      selectionOverlay.className = 'selection-overlay';
+      selectionOverlay.textContent = text;
+      selectionOverlay.style.fontSize = fontSize + 'px';
+      terminalWrap.appendChild(selectionOverlay);
+      // Scroll to bottom to match terminal viewport
+      selectionOverlay.scrollTop = selectionOverlay.scrollHeight;
+      keySelect.textContent = 'Done';
+    }
+
+    function exitSelectionMode() {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        navigator.clipboard.writeText(selection.toString()).then(() => {
+          showToast('Copied to clipboard');
+        }).catch(() => {});
+      }
+      if (selectionOverlay) {
+        selectionOverlay.remove();
+        selectionOverlay = null;
+      }
+      keySelect.textContent = 'Select';
+      keySelect.classList.remove('active');
+      selectMode = false;
+      term.focus();
+      syncTerminalFocus();
+    }
 
     // Keepalive ping
     setInterval(() => {

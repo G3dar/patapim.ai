@@ -27,13 +27,34 @@ export const GET: APIRoute = async (context) => {
       const raw = await env.LICENSES.get(`device:${entry.token}`);
       if (!raw) return null;
       const d = JSON.parse(raw);
+      const heartbeatOnline = now - new Date(d.lastSeen).getTime() < ONLINE_THRESHOLD_MS;
+
+      // Server-side ping to tunnel URL for real-time status (avoids client-side CORS issues on mobile)
+      let online = false;
+      let terminalCount = d.terminalCount;
+      if (heartbeatOnline && d.tunnelUrl) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 4000);
+          const pingRes = await fetch(d.tunnelUrl + '/ping', { signal: ctrl.signal });
+          clearTimeout(timer);
+          const pingData = await pingRes.json() as { ok?: boolean; terminalCount?: number };
+          if (pingData.ok) {
+            online = true;
+            if (pingData.terminalCount) terminalCount = pingData.terminalCount;
+          }
+        } catch {
+          // Tunnel unreachable — device is offline
+        }
+      }
+
       return {
         token: entry.token,
         deviceName: d.deviceName,
-        online: now - new Date(d.lastSeen).getTime() < ONLINE_THRESHOLD_MS,
+        online,
         lastSeen: d.lastSeen,
         tunnelUrl: d.tunnelUrl,
-        terminalCount: d.terminalCount,
+        terminalCount,
         ip: d.ip,
         city: d.city,
         country: d.country,
