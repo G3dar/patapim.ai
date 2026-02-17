@@ -331,6 +331,30 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .device-name:hover {
+    border-color: var(--border-default);
+    background: var(--bg-tertiary);
+  }
+
+  .device-name-input {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+    width: 100%;
+    max-width: 200px;
+    font-family: inherit;
   }
 
   .online-badge {
@@ -501,7 +525,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
       container.innerHTML = '<div class="devices-grid">' + devices.map(d => `
           <div class="device-card${d.online ? '' : ' device-offline'}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
             <div class="device-card-header">
-              <span class="device-name">${escapeHtml(d.deviceName)}</span>
+              <span class="device-name" data-token="${escapeHtml(d.token)}" title="Click to rename">${escapeHtml(d.deviceName)}</span>
               <span class="online-badge ${d.online ? 'online' : 'offline'}">${d.online ? 'Online' : 'Offline'}</span>
             </div>
             <div class="device-meta">
@@ -511,9 +535,62 @@ const paired = Astro.url.searchParams.get('paired') === '1';
           </div>`
       ).join('') + '</div>';
 
+      // Inline rename: click device-name to edit
+      container.addEventListener('click', (e) => {
+        const nameEl = e.target.closest('.device-name');
+        if (!nameEl || nameEl.querySelector('input')) return;
+        e.stopPropagation();
+
+        const token = nameEl.dataset.token;
+        const currentName = nameEl.textContent.trim();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'device-name-input';
+        input.value = currentName;
+        input.maxLength = 50;
+        nameEl.textContent = '';
+        nameEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        async function save() {
+          const newName = input.value.trim();
+          if (!newName || newName === currentName) {
+            nameEl.textContent = currentName;
+            return;
+          }
+          nameEl.textContent = newName;
+          try {
+            const res = await fetch('/api/device/rename', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceToken: token, deviceName: newName }),
+            });
+            const result = await res.json();
+            if (!result.ok) {
+              nameEl.textContent = currentName;
+            } else {
+              nameEl.textContent = result.deviceName;
+            }
+          } catch {
+            nameEl.textContent = currentName;
+          }
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { input.blur(); }
+          if (ev.key === 'Escape') {
+            input.removeEventListener('blur', save);
+            nameEl.textContent = currentName;
+          }
+        });
+      });
+
       // Click-to-connect on online device cards
       container.querySelectorAll('.device-card').forEach(card => {
-        card.addEventListener('click', async () => {
+        card.addEventListener('click', async (e) => {
+          if (e.target.closest('.device-name')) return;
           if (card.classList.contains('device-offline')) return;
           if (card.classList.contains('connecting')) return;
           card.classList.add('connecting');
