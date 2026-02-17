@@ -1126,6 +1126,15 @@ Astro.response.headers.set('Expires', '0');
       fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
       term.open(terminalWrap);
+
+      // On mobile, prevent the keyboard from appearing on every touch.
+      // We mark the xterm textarea readonly so taps don't auto-open the keyboard;
+      // our touchend handler will briefly remove readonly + focus to show it on quick taps only.
+      const xtermTextarea = terminalWrap.querySelector('.xterm-helper-textarea');
+      if (isMobileClient && xtermTextarea) {
+        xtermTextarea.setAttribute('readonly', 'readonly');
+      }
+
       fitAddon.fit();
 
       // Handle user input
@@ -1177,10 +1186,39 @@ Astro.response.headers.set('Expires', '0');
         term.focus();
         syncTerminalFocus();
       });
-      terminalWrap.addEventListener('touchstart', () => {
-        term.focus();
-        syncTerminalFocus();
-      }, { passive: true });
+      // Mobile: only show keyboard on quick tap, not on hold/drag (which should scroll)
+      if (isMobileClient) {
+        let touchInfo = null;
+        terminalWrap.addEventListener('touchstart', (e) => {
+          const t = e.touches[0];
+          touchInfo = { x: t.clientX, y: t.clientY, time: Date.now() };
+        }, { passive: true });
+        terminalWrap.addEventListener('touchend', () => {
+          if (!touchInfo) return;
+          const elapsed = Date.now() - touchInfo.time;
+          if (elapsed < 300) {
+            // Quick tap — briefly remove readonly so the keyboard opens
+            if (xtermTextarea) xtermTextarea.removeAttribute('readonly');
+            term.focus();
+            syncTerminalFocus();
+            // Re-apply readonly after focus so the next touch doesn't auto-open keyboard
+            if (xtermTextarea) requestAnimationFrame(() => xtermTextarea.setAttribute('readonly', 'readonly'));
+          }
+          touchInfo = null;
+        });
+        terminalWrap.addEventListener('touchmove', (e) => {
+          if (!touchInfo) return;
+          const t = e.touches[0];
+          const dx = Math.abs(t.clientX - touchInfo.x);
+          const dy = Math.abs(t.clientY - touchInfo.y);
+          if (dx > 10 || dy > 10) touchInfo = null; // dragged — cancel tap
+        }, { passive: true });
+      } else {
+        terminalWrap.addEventListener('touchstart', () => {
+          term.focus();
+          syncTerminalFocus();
+        }, { passive: true });
+      }
 
       // Resize delegates to applyPtyDims
       const ro = new ResizeObserver(debounce(() => {
