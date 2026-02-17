@@ -578,22 +578,22 @@ Astro.response.headers.set('Expires', '0');
     }
 
     .fab-trigger {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      color: var(--bg);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-      transition: transform 0.15s, background 0.15s;
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s, color 0.15s, border-color 0.15s;
     }
 
-    .fab-trigger:active { transform: scale(0.92); }
-    .fab-trigger.open { background: var(--text-dim); }
+    .fab-trigger:active { transform: scale(0.92); color: var(--text); }
+    .fab-trigger.open { border-color: var(--text-dim); color: var(--text); }
 
     .fab-menu {
       display: none;
@@ -1041,9 +1041,21 @@ Astro.response.headers.set('Expires', '0');
 
     function scrollToBottomIfKeyboard(heightDelta) {
       if (!isMobileResizeMode() || !term) return;
+      const appEl = document.querySelector('.app');
       if (heightDelta > 150) {
+        // Keyboard appeared — iOS dvh may lag behind, so pin to visual viewport
+        const vp = window.visualViewport;
+        if (vp) appEl.style.height = vp.height + 'px';
+        window.scrollTo(0, 0);
         requestAnimationFrame(() => {
+          fitAddon.fit();
           term.scrollToBottom();
+        });
+      } else if (heightDelta < -150) {
+        // Keyboard dismissed — restore dynamic viewport height
+        appEl.style.height = '';
+        requestAnimationFrame(() => {
+          fitAddon.fit();
         });
       }
     }
@@ -1196,6 +1208,10 @@ Astro.response.headers.set('Expires', '0');
         }, 80));
 
         window.visualViewport.addEventListener('scroll', debounce(() => {
+          // iOS pushes the page up when the keyboard opens — pin it back
+          if (isMobileResizeMode() && window.visualViewport.offsetTop > 0) {
+            window.scrollTo(0, 0);
+          }
           applyPtyDims({ forceRefresh: true });
         }, 80));
       }
