@@ -1201,8 +1201,9 @@ Astro.response.headers.set('Expires', '0');
             if (xtermTextarea) xtermTextarea.removeAttribute('readonly');
             term.focus();
             syncTerminalFocus();
-            // Re-apply readonly after focus so the next touch doesn't auto-open keyboard
-            if (xtermTextarea) requestAnimationFrame(() => xtermTextarea.setAttribute('readonly', 'readonly'));
+            // Re-apply readonly after iOS has had time to process focus and open the keyboard.
+            // requestAnimationFrame (~16ms) is too fast — iOS needs ~300-400ms to open the keyboard.
+            if (xtermTextarea) setTimeout(() => xtermTextarea.setAttribute('readonly', 'readonly'), 500);
           }
           touchInfo = null;
         });
