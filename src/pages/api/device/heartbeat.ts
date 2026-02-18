@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; deviceName?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -46,14 +46,31 @@ export const POST: APIRoute = async (context) => {
     (city !== undefined && city !== device.city) ||
     (country !== undefined && country !== device.country);
 
-  if (dataChanged || geoChanged) {
+  // Check if device name changed
+  const nameChanged = body.deviceName && body.deviceName !== device.deviceName;
+
+  if (dataChanged || geoChanged || nameChanged) {
     device.lastSeen = new Date().toISOString();
     if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
     if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
     if (ip !== undefined) device.ip = ip;
     if (city !== undefined) device.city = city;
     if (country !== undefined) device.country = country;
+    if (nameChanged) device.deviceName = body.deviceName;
     await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
+
+    // Also update the device name in the user's device list (same pattern as rename.ts)
+    if (nameChanged && device.googleId) {
+      const devicesRaw = await env.LICENSES.get(`devices:${device.googleId}`);
+      if (devicesRaw) {
+        const devices = JSON.parse(devicesRaw);
+        const entry = devices.find((d: any) => d.token === deviceToken);
+        if (entry) {
+          entry.deviceName = body.deviceName;
+          await env.LICENSES.put(`devices:${device.googleId}`, JSON.stringify(devices));
+        }
+      }
+    }
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });

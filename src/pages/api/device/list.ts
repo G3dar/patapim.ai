@@ -62,7 +62,13 @@ export const GET: APIRoute = async (context) => {
     })
   );
 
+  // Filter: always show online devices; only show offline devices if they have a custom name
+  const filtered = devices.filter(Boolean).filter((d: any) => {
+    if (d.online) return true;
+    return d.deviceName && d.deviceName !== 'PATAPIM Desktop';
+  });
+
   return new Response(JSON.stringify({
-    devices: devices.filter(Boolean),
+    devices: filtered,
   }), { status: 200, headers });
 };
