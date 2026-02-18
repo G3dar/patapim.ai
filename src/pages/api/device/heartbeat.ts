@@ -35,40 +35,33 @@ export const POST: APIRoute = async (context) => {
   const city = cf?.city || undefined;
   const country = cf?.country || undefined;
 
-  // Check if tunnel/terminal data changed
-  const dataChanged =
-    (body.tunnelUrl !== undefined && body.tunnelUrl !== device.tunnelUrl) ||
-    (body.terminalCount !== undefined && body.terminalCount !== device.terminalCount);
+  // Check if device name changed.
+  // Don't let a default-fallback name ("PATAPIM Desktop") overwrite a custom name set via dashboard rename.
+  const incomingName = body.deviceName;
+  const currentName = device.deviceName;
+  const nameChanged = incomingName &&
+    incomingName !== currentName &&
+    !(incomingName === 'PATAPIM Desktop' && currentName && currentName !== 'PATAPIM Desktop');
 
-  // Check if geo data changed
-  const geoChanged =
-    (ip !== undefined && ip !== device.ip) ||
-    (city !== undefined && city !== device.city) ||
-    (country !== undefined && country !== device.country);
+  // Always update lastSeen so stable (unchanged) devices don't fall offline
+  device.lastSeen = new Date().toISOString();
+  if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
+  if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
+  if (ip !== undefined) device.ip = ip;
+  if (city !== undefined) device.city = city;
+  if (country !== undefined) device.country = country;
+  if (nameChanged) device.deviceName = incomingName;
+  await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
 
-  // Check if device name changed
-  const nameChanged = body.deviceName && body.deviceName !== device.deviceName;
-
-  if (dataChanged || geoChanged || nameChanged) {
-    device.lastSeen = new Date().toISOString();
-    if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
-    if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
-    if (ip !== undefined) device.ip = ip;
-    if (city !== undefined) device.city = city;
-    if (country !== undefined) device.country = country;
-    if (nameChanged) device.deviceName = body.deviceName;
-    await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
-
-    // Also update the device name in the user's device list (same pattern as rename.ts)
-    if (nameChanged && device.googleId) {
-      const devicesRaw = await env.LICENSES.get(`devices:${device.googleId}`);
-      if (devicesRaw) {
-        const devices = JSON.parse(devicesRaw);
-        const entry = devices.find((d: any) => d.token === deviceToken);
-        if (entry) {
-          entry.deviceName = body.deviceName;
-          await env.LICENSES.put(`devices:${device.googleId}`, JSON.stringify(devices));
-        }
+  // Also update the device name in the user's device list (same pattern as rename.ts)
+  if (nameChanged && device.googleId) {
+    const devicesRaw = await env.LICENSES.get(`devices:${device.googleId}`);
+    if (devicesRaw) {
+      const devices = JSON.parse(devicesRaw);
+      const entry = devices.find((d: any) => d.token === deviceToken);
+      if (entry) {
+        entry.deviceName = incomingName;
+        await env.LICENSES.put(`devices:${device.googleId}`, JSON.stringify(devices));
       }
     }
   }
