@@ -810,6 +810,20 @@ Astro.response.headers.set('Expires', '0');
           <!-- Floating action button group -->
           <div class="fab-actions" id="fab-actions">
             <div class="fab-menu" id="fab-menu">
+              <button class="fab-menu-item" id="fab-plan-mode">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Toggle Plan Mode
+              </button>
+              <button class="fab-menu-item" id="fab-skip-perms">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Start Claude (skip perms)
+              </button>
               <button class="fab-menu-item" id="fab-paste">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -842,6 +856,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-modifier="ctrl">Ctrl</button>
           <button class="key-btn" data-modifier="alt">Alt</button>
           <button class="key-btn" data-key="Tab">Tab</button>
+          <button class="key-btn" data-seq="\x1b[Z">⇧Tab</button>
           <button class="key-btn" data-key="Escape">Esc</button>
           <button class="key-btn" data-key="ArrowUp">&uarr;</button>
           <button class="key-btn" data-key="ArrowDown">&darr;</button>
@@ -886,6 +901,8 @@ Astro.response.headers.set('Expires', '0');
     const btnNewTerminal = document.getElementById('btn-new-terminal');
     const fabTrigger = document.getElementById('fab-trigger');
     const fabMenu = document.getElementById('fab-menu');
+    const fabPlanMode = document.getElementById('fab-plan-mode');
+    const fabSkipPerms = document.getElementById('fab-skip-perms');
     const fabPaste = document.getElementById('fab-paste');
     const fabImage = document.getElementById('fab-image');
     const fabToast = document.getElementById('fab-toast');
@@ -913,6 +930,7 @@ Astro.response.headers.set('Expires', '0');
     let fabOpen = false;
     let selectMode = false;
     let selectionOverlay = null;
+    let mobileKeyboardOpen = false;
 
     function detectMobileClient() {
       if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
@@ -1052,8 +1070,13 @@ Astro.response.headers.set('Expires', '0');
           term.scrollToBottom();
         });
       } else if (heightDelta < -150) {
-        // Keyboard dismissed — restore dynamic viewport height
+        // Keyboard dismissed — restore dynamic viewport height and re-lock textarea
         appEl.style.height = '';
+        if (isMobileClient && mobileKeyboardOpen) {
+          mobileKeyboardOpen = false;
+          const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
+          if (ta) ta.setAttribute('readonly', 'readonly');
+        }
         requestAnimationFrame(() => {
           fitAddon.fit();
         });
@@ -1129,7 +1152,8 @@ Astro.response.headers.set('Expires', '0');
 
       // On mobile, prevent the keyboard from appearing on every touch.
       // We mark the xterm textarea readonly so taps don't auto-open the keyboard;
-      // our touchend handler will briefly remove readonly + focus to show it on quick taps only.
+      // our touchend handler removes readonly on quick taps to show the keyboard,
+      // and we re-apply it only when the keyboard is dismissed (detected via visualViewport).
       const xtermTextarea = terminalWrap.querySelector('.xterm-helper-textarea');
       if (isMobileClient && xtermTextarea) {
         xtermTextarea.setAttribute('readonly', 'readonly');
@@ -1197,13 +1221,12 @@ Astro.response.headers.set('Expires', '0');
           if (!touchInfo) return;
           const elapsed = Date.now() - touchInfo.time;
           if (elapsed < 300) {
-            // Quick tap — briefly remove readonly so the keyboard opens
+            // Quick tap — remove readonly so the keyboard opens.
+            // readonly is re-applied when the keyboard is dismissed (visualViewport resize).
             if (xtermTextarea) xtermTextarea.removeAttribute('readonly');
+            mobileKeyboardOpen = true;
             term.focus();
             syncTerminalFocus();
-            // Re-apply readonly after iOS has had time to process focus and open the keyboard.
-            // requestAnimationFrame (~16ms) is too fast — iOS needs ~300-400ms to open the keyboard.
-            if (xtermTextarea) setTimeout(() => xtermTextarea.setAttribute('readonly', 'readonly'), 500);
           }
           touchInfo = null;
         });
@@ -1793,6 +1816,29 @@ Astro.response.headers.set('Expires', '0');
       fabToast.classList.add('visible');
       toastTimer = setTimeout(() => fabToast.classList.remove('visible'), duration);
     }
+
+    // ── FAB: Toggle Plan Mode (Shift+Tab) ────────────────────────
+    fabPlanMode.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
+      showToast('Plan Mode toggled');
+      term.focus();
+      syncTerminalFocus();
+    });
+
+    // ── FAB: Start Claude (dangerously skip permissions) ──────────
+    fabSkipPerms.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      sendAICommand('claude --dangerously-skip-permissions');
+    });
 
     // ── FAB: Paste from clipboard ─────────────────────────────────
     fabPaste.addEventListener('click', async () => {
