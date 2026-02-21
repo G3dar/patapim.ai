@@ -1010,6 +1010,14 @@ Astro.response.headers.set('Expires', '0');
           <input type="file" id="image-picker" accept="image/*" style="display:none" />
         </div>
 
+        <!-- Voice dictation preview -->
+        <div class="voice-preview" id="voice-preview">
+          <textarea class="voice-text" id="voice-text" rows="3" placeholder="Habla ahora..."></textarea>
+          <div class="voice-actions">
+            <button class="voice-btn voice-cancel" id="voice-cancel">✕ Cancelar</button>
+            <button class="voice-btn voice-send" id="voice-send">↵ Enviar</button>
+          </div>
+        </div>
         <div class="keys-bar" id="keys-bar">
           <button class="key-btn" data-modifier="ctrl">Ctrl</button>
           <button class="key-btn" data-modifier="alt">Alt</button>
@@ -1025,6 +1033,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-seq="\x04">^D</button>
           <button class="key-btn" data-seq="\x0c">^L</button>
           <button class="key-btn" data-seq="\x1a">^Z</button>
+          <button class="key-btn" id="key-mic" title="Dictado por voz">🎤</button>
           <button class="key-btn" id="key-select" style="margin-left:auto; border-color:var(--accent); color:var(--accent);">Select</button>
         </div>
       </div>
