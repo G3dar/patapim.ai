@@ -907,6 +907,10 @@ Astro.response.headers.set('Expires', '0');
       /* Hide font size buttons on mobile to save space */
       #btn-font-dec, #btn-font-inc { display: none; }
     }
+
+    @media (min-width: 769px) {
+      .voice-preview { display: none !important; }
+    }
   </style>
 </head>
 <body>
