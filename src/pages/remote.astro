@@ -1080,6 +1080,11 @@ Astro.response.headers.set('Expires', '0');
     const imagePicker = document.getElementById('image-picker');
     const keySelect = document.getElementById('key-select');
     const keyShiftTab = document.getElementById('key-shift-tab');
+    const keyMic = document.getElementById('key-mic');
+    const voicePreview = document.getElementById('voice-preview');
+    const voiceText = document.getElementById('voice-text');
+    const voiceSend = document.getElementById('voice-send');
+    const voiceCancel = document.getElementById('voice-cancel');
 
     // State
     let ws = null;
@@ -1102,6 +1107,9 @@ Astro.response.headers.set('Expires', '0');
     let fabOpen = false;
     let isPlanMode = false;
     let selectMode = false;
+    let recognition = null;
+    let isRecording = false;
+    let voiceFinalText = '';
     let selectionOverlay = null;
     let mobileKeyboardOpen = false;
 
