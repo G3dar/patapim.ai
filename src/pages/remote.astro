@@ -469,6 +469,7 @@ Astro.response.headers.set('Expires', '0');
     .terminal-wrap .xterm {
       height: 100%;
       padding: 4px 0 0 4px;
+      touch-action: pan-y !important;
     }
 
     .terminal-wrap .xterm-viewport {
@@ -476,7 +477,7 @@ Astro.response.headers.set('Expires', '0');
       overflow-x: hidden !important;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
-      touch-action: pan-y;
+      touch-action: pan-y !important;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
@@ -856,7 +857,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-modifier="ctrl">Ctrl</button>
           <button class="key-btn" data-modifier="alt">Alt</button>
           <button class="key-btn" data-key="Tab">Tab</button>
-          <button class="key-btn" data-seq="\x1b[Z">⇧Tab</button>
+          <button class="key-btn" id="key-shift-tab">⇧Tab</button>
           <button class="key-btn" data-key="Escape">Esc</button>
           <button class="key-btn" data-key="ArrowUp">&uarr;</button>
           <button class="key-btn" data-key="ArrowDown">&darr;</button>
@@ -1767,6 +1768,14 @@ Astro.response.headers.set('Expires', '0');
         term.focus();
         syncTerminalFocus();
       });
+    });
+
+    // ⇧Tab — sends actual Shift+Tab escape sequence (data-seq can't store \x1b in HTML attrs)
+    document.getElementById('key-shift-tab').addEventListener('click', () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
+      term.focus();
+      syncTerminalFocus();
     });
 
     function updateModifierButtons() {
