@@ -2272,6 +2272,115 @@ Astro.response.headers.set('Expires', '0');
       imagePicker.value = '';
     });
 
+    // ── Voice dictation (Web Speech API) ─────────────────
+
+    function initSpeechRecognition() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+
+      const r = new SR();
+      r.lang = navigator.language || 'es-ES';
+      r.interimResults = true;
+      r.continuous = false;
+      r.maxAlternatives = 1;
+
+      r.onresult = (e) => {
+        let interim = '';
+        let final = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) final += t;
+          else interim += t;
+        }
+        voiceFinalText = final || interim;
+        voiceText.value = voiceFinalText;
+      };
+
+      r.onend = () => {
+        stopRecording();
+        if (voiceFinalText.trim()) {
+          showVoicePreview();
+        } else {
+          showToast('No se detectó audio');
+        }
+      };
+
+      r.onerror = (e) => {
+        stopRecording();
+        if (e.error === 'not-allowed') showToast('Permiso de micrófono denegado');
+        else if (e.error === 'no-speech') showToast('No se detectó audio');
+        else showToast('Error de voz: ' + e.error);
+      };
+
+      return r;
+    }
+
+    function startRecording() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        showToast('Tu navegador no soporta dictado por voz');
+        return;
+      }
+      voiceFinalText = '';
+      voiceText.value = '';
+      recognition = initSpeechRecognition();
+      if (!recognition) return;
+      try {
+        recognition.start();
+        isRecording = true;
+        keyMic.classList.add('recording');
+      } catch (e) {
+        showToast('Error al iniciar el micrófono');
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      keyMic.classList.remove('recording');
+      if (recognition) {
+        try { recognition.stop(); } catch (_) {}
+        recognition = null;
+      }
+    }
+
+    function showVoicePreview() {
+      voicePreview.classList.add('visible');
+      voiceText.focus();
+    }
+
+    function hideVoicePreview() {
+      voicePreview.classList.remove('visible');
+      voiceFinalText = '';
+      voiceText.value = '';
+    }
+
+    // Mic button: toggle recording
+    keyMic.addEventListener('click', () => {
+      if (!isAuthenticated) return;
+      if (isRecording) {
+        if (recognition) recognition.stop();
+      } else {
+        startRecording();
+      }
+    });
+
+    // Send: write transcribed text to terminal (no  — user decides Enter)
+    voiceSend.addEventListener('click', () => {
+      const text = voiceText.value.trim();
+      if (text && ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
+        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: text }));
+      }
+      hideVoicePreview();
+      term.focus();
+      syncTerminalFocus();
+    });
+
+    // Cancel: discard
+    voiceCancel.addEventListener('click', () => {
+      if (isRecording) stopRecording();
+      hideVoicePreview();
+    });
+
     // ── Text selection mode ───────────────────────────────────────
     keySelect.addEventListener('click', () => {
       selectMode = !selectMode;
