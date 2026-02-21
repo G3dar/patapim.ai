@@ -609,6 +609,18 @@ Astro.response.headers.set('Expires', '0');
       background: var(--accent-dim);
     }
 
+    .key-btn.recording {
+      color: var(--error);
+      border-color: var(--error);
+      background: rgba(212, 120, 120, 0.12);
+      animation: mic-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes mic-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     /* Scroll to bottom */
     .scroll-bottom {
       display: none;
@@ -748,6 +760,77 @@ Astro.response.headers.set('Expires', '0');
     .fab-toast.visible {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    /* Voice dictation preview */
+    .voice-preview {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .voice-preview.visible {
+      display: flex;
+    }
+
+    .voice-text {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px;
+      border-radius: var(--radius);
+      resize: none;
+      line-height: 1.4;
+    }
+
+    .voice-text:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .voice-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .voice-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.15s;
+    }
+
+    .voice-cancel {
+      background: none;
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+
+    .voice-cancel:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
+
+    .voice-send {
+      background: rgba(124, 179, 130, 0.12);
+      border-color: rgba(124, 179, 130, 0.4);
+      color: var(--success);
+    }
+
+    .voice-send:hover {
+      background: rgba(124, 179, 130, 0.2);
+      border-color: var(--success);
     }
 
     @media (max-width: 768px) {
@@ -954,8 +1037,12 @@ Astro.response.headers.set('Expires', '0');
 
     // Parse URL params
     const params = new URLSearchParams(location.search);
-    const connectToken = params.get('t');
-    const tunnelUrl = params.get('url');
+    const deviceToken = params.get('d');
+
+    // Active connection variables (mutable — refreshed on reconnect)
+    let activeConnectToken = params.get('t');
+    let activeTunnelUrl = params.get('url');
+    let activeDeviceToken = deviceToken;
 
     // DOM
     const statusEl = document.getElementById('status');
@@ -1025,10 +1112,54 @@ Astro.response.headers.set('Expires', '0');
     // Sidebar state
     let sidebarData = { projects: [], currentProject: null };
 
-    // Validate params
-    if (!connectToken || !tunnelUrl) {
-      showError('Missing connection parameters. <a href="/go">Go back to dashboard</a>');
+    // Helper to fetch a fresh connectToken from the server
+    async function fetchConnectToken(devToken) {
+      const res = await fetch('/api/device/connect-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ deviceToken: devToken }),
+      });
+      if (res.status === 401) return { error: 'session_expired' };
+      if (!res.ok) return { error: 'fetch_failed' };
+      return res.json();
+    }
+
+    // Init: connect from URL params or auto-reconnect from localStorage
+    if (activeConnectToken && activeTunnelUrl) {
+      // Normal flow from dashboard — store deviceToken for future reconnects
+      if (activeDeviceToken) {
+        localStorage.setItem('patapim_device', JSON.stringify({
+          deviceToken: activeDeviceToken, ts: Date.now()
+        }));
+      }
+      initTerminal();
+      connect();
     } else {
+      // Try auto-reconnect from localStorage
+      tryAutoReconnect();
+    }
+
+    async function tryAutoReconnect() {
+      const stored = JSON.parse(localStorage.getItem('patapim_device') || 'null');
+      if (!stored?.deviceToken) {
+        showError('Missing connection parameters. <a href="/go">Go back to dashboard</a>');
+        return;
+      }
+      loadingText && (loadingText.textContent = 'Reconnecting...');
+      const result = await fetchConnectToken(stored.deviceToken);
+      if (result.error === 'session_expired') {
+        localStorage.removeItem('patapim_device');
+        window.location.href = '/go';
+        return;
+      }
+      if (!result.connectToken || !result.tunnelUrl) {
+        showError((result.error || 'Device offline') + '. <a href="/go">Go back to dashboard</a>');
+        return;
+      }
+      activeConnectToken = result.connectToken;
+      activeTunnelUrl = result.tunnelUrl;
+      activeDeviceToken = stored.deviceToken;
       initTerminal();
       connect();
     }
@@ -1181,6 +1312,12 @@ Astro.response.headers.set('Expires', '0');
     function syncTerminalFocus(terminalId = currentTerminalId) {
       if (!terminalId) return;
       sendTerminalFocus(isClientFocused(), terminalId);
+    }
+
+    function resetTerminalView() {
+      if (!term) return;
+      term.clear();
+      term.write('\x1b[2J\x1b[3J\x1b[H');
     }
 
     function debounce(fn, delay) {
@@ -1442,10 +1579,10 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function connect() {
-      if (!tunnelUrl) return;
+      if (!activeTunnelUrl) return;
 
       // Build WebSocket URL from tunnel URL
-      const wsUrl = tunnelUrl.replace(/^https?:/, 'wss:');
+      const wsUrl = activeTunnelUrl.replace(/^https?:/, 'wss:');
       setStatus('connecting', 'Connecting...');
       loadingText && (loadingText.textContent = 'Connecting to device...');
 
@@ -1476,10 +1613,19 @@ Astro.response.headers.set('Expires', '0');
         setStatus('disconnected', 'Disconnected');
         enableActions(false);
         lastFocusSync = { terminalId: null, focused: null };
-        if (isAuthenticated && reconnectAttempts < 10) {
-          reconnectTimer = setTimeout(() => {
+        // Reset switch state so output isn't queued forever on reconnect
+        isSwitching = false;
+        switchOutputQueue = [];
+        if (isAuthenticated && reconnectAttempts < 10 && activeDeviceToken) {
+          reconnectTimer = setTimeout(async () => {
             reconnectAttempts++;
-            connect();
+            setStatus('connecting', 'Reconnecting...');
+            const result = await fetchConnectToken(activeDeviceToken);
+            if (result.connectToken && result.tunnelUrl) {
+              activeConnectToken = result.connectToken;
+              activeTunnelUrl = result.tunnelUrl;
+              connect();
+            }
           }, 2000);
         }
       };
@@ -1495,7 +1641,7 @@ Astro.response.headers.set('Expires', '0');
           // Server sent welcome, now authenticate with connect token
           ws.send(JSON.stringify({
             type: 'auth',
-            connectToken,
+            connectToken: activeConnectToken,
           }));
           break;
 
@@ -1506,10 +1652,8 @@ Astro.response.headers.set('Expires', '0');
             loadingEl.classList.add('hidden');
             enableActions(true);
 
-            // Clear URL params to prevent token reuse on refresh
-            const cleanUrl = new URL(location.href);
-            cleanUrl.searchParams.delete('t');
-            history.replaceState(null, '', cleanUrl.toString());
+            // Clear all URL params to prevent token reuse on refresh
+            history.replaceState(null, '', '/remote');
 
             // Don't render tabs from auth_result — wait for sidebar_data + get_terminals
             // Request sidebar data first, which will trigger get_terminals with correct project
@@ -1558,12 +1702,23 @@ Astro.response.headers.set('Expires', '0');
               applyPtyDims({ syncServer: false });
               isApplyingServerResize = false;
             }
-            term.clear();
+            resetTerminalView();
             if (msg.data) {
               term.write(msg.data);
             }
             applyPtyDims({ syncServer: true, forceRefresh: true });
             updatePlanModeButtons();
+            // Drain any output queued during a project switch
+            if (isSwitching) {
+              const queue = switchOutputQueue;
+              switchOutputQueue = [];
+              isSwitching = false;
+              for (const q of queue) {
+                if (q.terminalId === currentTerminalId && q.data) {
+                  term.write(q.data);
+                }
+              }
+            }
           }
           break;
 
@@ -1582,14 +1737,14 @@ Astro.response.headers.set('Expires', '0');
               if (previousTerminalId) {
                 sendTerminalFocus(false, previousTerminalId);
               }
-              term.clear();
+              resetTerminalView();
             }
             currentTerminalId = newId;
             syncTerminalFocus(currentTerminalId);
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
-            term.clear();
+            resetTerminalView();
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
               lastSentResize = { terminalId: currentTerminalId, cols: msg.cols, rows: msg.rows };
@@ -1630,7 +1785,7 @@ Astro.response.headers.set('Expires', '0');
             ptyDims = null;
             lastSentResize = { terminalId: null, cols: 0, rows: 0 };
             lastFocusSync = { terminalId: null, focused: null };
-            term.clear();
+            resetTerminalView();
           }
           ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
           break;
@@ -1738,6 +1893,12 @@ Astro.response.headers.set('Expires', '0');
       renderProjects();
       updateTopbarProject();
 
+      // Queue output during the switch to prevent old terminal's output from
+      // bleeding into the new project's terminal view (same pattern as switchTerminal)
+      isSwitching = true;
+      switchOutputQueue = [];
+      resetTerminalView();
+
       ws.send(JSON.stringify({ type: 'select_project', path }));
       ws.send(JSON.stringify({ type: 'get_terminals', projectPath: path }));
 
@@ -1822,7 +1983,7 @@ Astro.response.headers.set('Expires', '0');
       if (id === currentTerminalId || !ws || ws.readyState !== WebSocket.OPEN) return;
       isSwitching = true;
       switchOutputQueue = [];
-      term.clear();
+      resetTerminalView();
       ws.send(JSON.stringify({ type: 'switch', terminalId: id }));
     }
 
