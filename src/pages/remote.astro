@@ -1004,6 +1004,7 @@ Astro.response.headers.set('Expires', '0');
     let isAuthenticated = false;
     const modifiers = { ctrl: false, alt: false };
     let fabOpen = false;
+    let isPlanMode = false;
     let selectMode = false;
     let selectionOverlay = null;
     let mobileKeyboardOpen = false;
@@ -1205,37 +1206,30 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function updatePlanModeButtons() {
-      const inPlan = detectPlanMode();
-      fabPlanMode.classList.toggle('plan-active', inPlan);
+      isPlanMode = detectPlanMode();
+      fabPlanMode.classList.toggle('plan-active', isPlanMode);
       const fabLabel = fabPlanMode.querySelector('span');
-      if (fabLabel) fabLabel.textContent = inPlan ? 'Exit Plan Mode' : 'Toggle Plan Mode';
-      keyShiftTab.classList.toggle('active', inPlan);
+      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', isPlanMode);
     }
 
     const debouncedUpdatePlanMode = debounce(updatePlanModeButtons, 500);
 
-    async function togglePlanMode() {
+    function togglePlanMode() {
       if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
 
-      const sendShiftTab = () =>
-        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
+      // Send exactly one Shift+Tab — it's a toggle at the Claude Code level
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
 
-      if (detectPlanMode()) {
-        sendShiftTab();
-        setTimeout(updatePlanModeButtons, 400);
-      } else {
-        let attempts = 0;
-        const tryEnter = () => {
-          if (attempts >= 4) return;
-          sendShiftTab();
-          attempts++;
-          setTimeout(() => {
-            updatePlanModeButtons();
-            if (!detectPlanMode() && attempts < 4) tryEnter();
-          }, 350);
-        };
-        tryEnter();
-      }
+      // Optimistically flip local state so the button responds immediately
+      isPlanMode = !isPlanMode;
+      fabPlanMode.classList.toggle('plan-active', isPlanMode);
+      const fabLabel = fabPlanMode.querySelector('span');
+      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', isPlanMode);
+
+      // Reconcile with actual terminal state after output arrives
+      setTimeout(updatePlanModeButtons, 700);
 
       term.focus();
       syncTerminalFocus();
@@ -1341,13 +1335,32 @@ Astro.response.headers.set('Expires', '0');
       if (isMobileClient) {
         let touchInfo = null;
         let scrollLastY = null;
+        let longPressTimer = null;
         const getXtermViewport = () => terminalWrap.querySelector('.xterm-viewport');
+
+        const cancelLongPress = () => {
+          if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+        };
+
         terminalWrap.addEventListener('touchstart', (e) => {
           const t = e.touches[0];
           touchInfo = { x: t.clientX, y: t.clientY, time: Date.now() };
           scrollLastY = t.clientY;
+          // Long-press: hold ~500ms without moving → enter selection mode
+          longPressTimer = setTimeout(() => {
+            longPressTimer = null;
+            touchInfo = null; // prevent tap-to-keyboard on touchend
+            if (navigator.vibrate) navigator.vibrate(40);
+            if (!selectMode) {
+              selectMode = true;
+              keySelect.classList.add('active');
+              enterSelectionMode();
+            }
+          }, 500);
         }, { passive: true });
+
         terminalWrap.addEventListener('touchend', () => {
+          cancelLongPress();
           scrollLastY = null;
           if (!touchInfo) return;
           const elapsed = Date.now() - touchInfo.time;
@@ -1362,16 +1375,20 @@ Astro.response.headers.set('Expires', '0');
           touchInfo = null;
         });
         terminalWrap.addEventListener('touchcancel', () => {
+          cancelLongPress();
           touchInfo = null;
           scrollLastY = null;
         }, { passive: true });
         terminalWrap.addEventListener('touchmove', (e) => {
           const t = e.touches[0];
-          // Cancel tap if dragged
+          // Cancel tap/long-press if dragged
           if (touchInfo) {
             const dx = Math.abs(t.clientX - touchInfo.x);
             const dy = Math.abs(t.clientY - touchInfo.y);
-            if (dx > 10 || dy > 10) touchInfo = null;
+            if (dx > 10 || dy > 10) {
+              touchInfo = null;
+              cancelLongPress();
+            }
           }
           // Manually scroll xterm-viewport — needed because xterm-screen is a sibling of
           // xterm-viewport (not a descendant), so touch-action pan-y can't reach it natively.
@@ -1585,6 +1602,11 @@ Astro.response.headers.set('Expires', '0');
             }
             applyPtyDims({ syncServer: true, forceRefresh: true });
             isSwitching = false;
+            // Reset keyboard state for new terminal
+            if (isMobileClient && xtermTextarea) {
+              mobileKeyboardOpen = false;
+              xtermTextarea.setAttribute('readonly', 'readonly');
+            }
             const queue = switchOutputQueue;
             switchOutputQueue = [];
             for (const q of queue) {
@@ -1593,6 +1615,7 @@ Astro.response.headers.set('Expires', '0');
               }
             }
             updatePlanModeButtons();
+            updateScrollButton();
           }
           break;
 
