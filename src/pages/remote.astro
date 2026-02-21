@@ -434,6 +434,75 @@ Astro.response.headers.set('Expires', '0');
       border-color: rgba(201, 162, 39, 0.25);
     }
 
+    /* Tab state indicator dot */
+    .tab-state {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .tab.state-attention .tab-state {
+      display: block;
+      background: var(--success);
+    }
+
+    .tab.state-busy .tab-state {
+      display: block;
+      background: var(--error);
+      animation: tab-pulse 1.2s ease-in-out infinite;
+    }
+
+    .tab.state-plan .tab-state {
+      display: block;
+      background: #11a8cd;
+    }
+
+    @keyframes tab-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Tab text color when state active */
+    .tab.state-attention:not(.active) { color: var(--success); }
+    .tab.state-busy:not(.active) { color: var(--error); }
+    .tab.state-plan:not(.active) { color: #11a8cd; }
+
+    .tab-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      font-size: 13px;
+      line-height: 1;
+      border-radius: 3px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.1s, background 0.1s, color 0.1s;
+    }
+
+    .tab:hover .tab-close,
+    .tab.active .tab-close {
+      opacity: 1;
+    }
+
+    .tab-close:hover {
+      background: rgba(212, 120, 120, 0.2);
+      color: var(--error);
+    }
+
+    @media (pointer: coarse) {
+      .tab-close { opacity: 1; }
+    }
+
     .tab-add {
       display: flex;
       align-items: center;
@@ -635,6 +704,11 @@ Astro.response.headers.set('Expires', '0');
 
     .fab-menu-item svg { flex-shrink: 0; opacity: 0.7; }
 
+    .fab-menu-item.plan-active {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
     /* Selection overlay */
     .selection-overlay {
       position: absolute;
@@ -817,7 +891,7 @@ Astro.response.headers.set('Expires', '0');
                   <path d="M2 17l10 5 10-5"/>
                   <path d="M2 12l10 5 10-5"/>
                 </svg>
-                Toggle Plan Mode
+                <span>Toggle Plan Mode</span>
               </button>
               <button class="fab-menu-item" id="fab-skip-perms">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -909,6 +983,7 @@ Astro.response.headers.set('Expires', '0');
     const fabToast = document.getElementById('fab-toast');
     const imagePicker = document.getElementById('image-picker');
     const keySelect = document.getElementById('key-select');
+    const keyShiftTab = document.getElementById('key-shift-tab');
 
     // State
     let ws = null;
@@ -1115,6 +1190,57 @@ Astro.response.headers.set('Expires', '0');
       };
     }
 
+    // ── Plan Mode detection & toggle ──────────────────────────────
+
+    function detectPlanMode() {
+      if (!term) return false;
+      const buffer = term.buffer.active;
+      const start = Math.max(0, buffer.length - 15);
+      let text = '';
+      for (let i = start; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        if (line) text += line.translateToString(false) + '\n';
+      }
+      return /plan\s*mode/i.test(text);
+    }
+
+    function updatePlanModeButtons() {
+      const inPlan = detectPlanMode();
+      fabPlanMode.classList.toggle('plan-active', inPlan);
+      const fabLabel = fabPlanMode.querySelector('span');
+      if (fabLabel) fabLabel.textContent = inPlan ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', inPlan);
+    }
+
+    const debouncedUpdatePlanMode = debounce(updatePlanModeButtons, 500);
+
+    async function togglePlanMode() {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
+
+      const sendShiftTab = () =>
+        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
+
+      if (detectPlanMode()) {
+        sendShiftTab();
+        setTimeout(updatePlanModeButtons, 400);
+      } else {
+        let attempts = 0;
+        const tryEnter = () => {
+          if (attempts >= 4) return;
+          sendShiftTab();
+          attempts++;
+          setTimeout(() => {
+            updatePlanModeButtons();
+            if (!detectPlanMode() && attempts < 4) tryEnter();
+          }, 350);
+        };
+        tryEnter();
+      }
+
+      term.focus();
+      syncTerminalFocus();
+    }
+
     function initTerminal() {
       term = new Terminal({
         fontFamily: "'JetBrains Mono', monospace",
@@ -1214,11 +1340,15 @@ Astro.response.headers.set('Expires', '0');
       // Mobile: only show keyboard on quick tap, not on hold/drag (which should scroll)
       if (isMobileClient) {
         let touchInfo = null;
+        let scrollLastY = null;
+        const getXtermViewport = () => terminalWrap.querySelector('.xterm-viewport');
         terminalWrap.addEventListener('touchstart', (e) => {
           const t = e.touches[0];
           touchInfo = { x: t.clientX, y: t.clientY, time: Date.now() };
+          scrollLastY = t.clientY;
         }, { passive: true });
         terminalWrap.addEventListener('touchend', () => {
+          scrollLastY = null;
           if (!touchInfo) return;
           const elapsed = Date.now() - touchInfo.time;
           if (elapsed < 300) {
@@ -1231,12 +1361,26 @@ Astro.response.headers.set('Expires', '0');
           }
           touchInfo = null;
         });
+        terminalWrap.addEventListener('touchcancel', () => {
+          touchInfo = null;
+          scrollLastY = null;
+        }, { passive: true });
         terminalWrap.addEventListener('touchmove', (e) => {
-          if (!touchInfo) return;
           const t = e.touches[0];
-          const dx = Math.abs(t.clientX - touchInfo.x);
-          const dy = Math.abs(t.clientY - touchInfo.y);
-          if (dx > 10 || dy > 10) touchInfo = null; // dragged — cancel tap
+          // Cancel tap if dragged
+          if (touchInfo) {
+            const dx = Math.abs(t.clientX - touchInfo.x);
+            const dy = Math.abs(t.clientY - touchInfo.y);
+            if (dx > 10 || dy > 10) touchInfo = null;
+          }
+          // Manually scroll xterm-viewport — needed because xterm-screen is a sibling of
+          // xterm-viewport (not a descendant), so touch-action pan-y can't reach it natively.
+          if (scrollLastY !== null) {
+            const deltaY = scrollLastY - t.clientY;
+            const vp = getXtermViewport();
+            if (vp) vp.scrollTop += deltaY;
+            scrollLastY = t.clientY;
+          }
         }, { passive: true });
       } else {
         terminalWrap.addEventListener('touchstart', () => {
@@ -1371,6 +1515,7 @@ Astro.response.headers.set('Expires', '0');
           }
           if (term && msg.terminalId === currentTerminalId) {
             term.write(msg.data);
+            debouncedUpdatePlanMode();
           }
           break;
 
@@ -1401,6 +1546,7 @@ Astro.response.headers.set('Expires', '0');
               term.write(msg.data);
             }
             applyPtyDims({ syncServer: true, forceRefresh: true });
+            updatePlanModeButtons();
           }
           break;
 
@@ -1446,6 +1592,7 @@ Astro.response.headers.set('Expires', '0');
                 term.write(q.data);
               }
             }
+            updatePlanModeButtons();
           }
           break;
 
@@ -1598,12 +1745,32 @@ Astro.response.headers.set('Expires', '0');
       tabsEl.innerHTML = '';
       terminals.forEach((t, i) => {
         const tab = document.createElement('div');
-        tab.className = 'tab' + (t.id === currentTerminalId ? ' active' : '');
+        const stateClass = t.needsAttention ? ' state-attention'
+          : t.isProcessing ? ' state-busy'
+          : t.isPlanMode ? ' state-plan'
+          : '';
+        tab.className = 'tab' + (t.id === currentTerminalId ? ' active' : '') + stateClass;
         tab.dataset.terminalId = t.id;
+
+        const dot = document.createElement('span');
+        dot.className = 'tab-state';
+        tab.appendChild(dot);
 
         const label = document.createElement('span');
         label.textContent = t.name || ('Terminal ' + extractTerminalNumber(t.id));
         tab.appendChild(label);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'tab-close';
+        closeBtn.title = 'Close terminal';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'close_terminal', terminalId: t.id }));
+          }
+        });
+        tab.appendChild(closeBtn);
 
         tab.addEventListener('click', () => switchTerminal(t.id));
         tabsEl.appendChild(tab);
@@ -1770,12 +1937,10 @@ Astro.response.headers.set('Expires', '0');
       });
     });
 
-    // ⇧Tab — sends actual Shift+Tab escape sequence (data-seq can't store \x1b in HTML attrs)
-    document.getElementById('key-shift-tab').addEventListener('click', () => {
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
-      term.focus();
-      syncTerminalFocus();
+    // ⇧Tab — smart Plan Mode toggle with state detection
+    keyShiftTab.addEventListener('click', () => {
+      if (!isAuthenticated) return;
+      togglePlanMode();
     });
 
     function updateModifierButtons() {
@@ -1826,17 +1991,14 @@ Astro.response.headers.set('Expires', '0');
       toastTimer = setTimeout(() => fabToast.classList.remove('visible'), duration);
     }
 
-    // ── FAB: Toggle Plan Mode (Shift+Tab) ────────────────────────
+    // ── FAB: Toggle Plan Mode (Shift+Tab with state detection) ───
     fabPlanMode.addEventListener('click', () => {
       closeFab();
       if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
         showToast('Not connected');
         return;
       }
-      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
-      showToast('Plan Mode toggled');
-      term.focus();
-      syncTerminalFocus();
+      togglePlanMode();
     });
 
     // ── FAB: Start Claude (dangerously skip permissions) ──────────
