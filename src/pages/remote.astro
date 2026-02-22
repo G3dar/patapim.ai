@@ -1607,6 +1607,7 @@ Astro.response.headers.set('Expires', '0');
       // Build WebSocket URL from tunnel URL
       const wsUrl = activeTunnelUrl.replace(/^https?:/, 'wss:');
       setStatus('connecting', 'Connecting...');
+      loadingEl.classList.remove('hidden');
       loadingText && (loadingText.textContent = 'Connecting to device...');
 
       try {
@@ -2169,6 +2170,14 @@ Astro.response.headers.set('Expires', '0');
         sendTerminalFocus(false);
       } else {
         syncTerminalFocus();
+        // Force xterm to repaint — mobile browsers invalidate the canvas
+        // while backgrounded, leaving a stale ghost layer on top.
+        if (term) {
+          requestAnimationFrame(() => {
+            fitAddon.fit();
+            term.refresh(0, term.rows - 1);
+          });
+        }
       }
     });
 
