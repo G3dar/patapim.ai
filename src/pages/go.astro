@@ -606,6 +606,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
               window.location.href =
                 '/remote?t=' + encodeURIComponent(result.connectToken) +
                 '&url=' + encodeURIComponent(result.tunnelUrl) +
+                '&d=' + encodeURIComponent(card.dataset.token) +
                 '&v=' + Date.now();
             } else {
               alert(result.error || 'Failed to connect');

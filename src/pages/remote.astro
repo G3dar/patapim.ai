@@ -959,7 +959,7 @@ Astro.response.headers.set('Expires', '0');
         <div class="tabs-bar" id="tabs"></div>
 
         <div class="terminal-wrap" id="terminal-wrap">
-          <div class="loading-screen" id="loading">
+          <div class="loading-screen hidden" id="loading">
             <div class="loading-spinner"></div>
             <div class="loading-text" id="loading-text">Connecting to device...</div>
           </div>
@@ -1186,6 +1186,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function showError(html) {
+      loadingEl.classList.remove('hidden');
       loadingText.remove();
       const spinner = loadingEl.querySelector('.loading-spinner');
       if (spinner) spinner.remove();
@@ -1256,6 +1257,7 @@ Astro.response.headers.set('Expires', '0');
 
         if (syncServer &&
             !isApplyingServerResize &&
+            !hasRemoteDims &&
             ws &&
             ws.readyState === WebSocket.OPEN &&
             currentTerminalId &&
