@@ -927,7 +927,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r7</span></a>
+        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r8</span></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
       </div>
@@ -1240,46 +1240,68 @@ Astro.response.headers.set('Expires', '0');
       const isMobile = isMobileResizeMode();
 
       if (isMobile) {
-        fitAddon.fit();
-
-        // Some phone browsers report a desktop layout viewport.
-        // Use visual viewport width ratio so cols match the actual visible area.
-        const viewportRatio = getVisualViewportWidthRatio();
-        if (viewportRatio < 0.99) {
-          const adjustedCols = Math.max(2, Math.floor(term.cols * viewportRatio));
-          if (adjustedCols > 0 && adjustedCols !== term.cols) {
-            term.resize(adjustedCols, term.rows);
-          }
-        }
-
-        if (forceRefresh) {
-          term.refresh(0, term.rows - 1);
-        }
-
-        const cols = term.cols;
-        const rows = term.rows;
         const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
-        const remoteDiffers = !hasRemoteDims || cols !== ptyDims.cols || rows !== ptyDims.rows;
-        const alreadySent = lastSentResize.terminalId === currentTerminalId &&
-          lastSentResize.cols === cols &&
-          lastSentResize.rows === rows;
 
-        if (syncServer &&
-            !isApplyingServerResize &&
-            !hasRemoteDims &&
-            ws &&
-            ws.readyState === WebSocket.OPEN &&
-            currentTerminalId &&
-            remoteDiffers &&
-            !alreadySent) {
-          ws.send(JSON.stringify({
-            type: 'resize',
-            terminalId: currentTerminalId,
-            cols,
-            rows,
-            mobile: isMobileResizeMode(),
-          }));
-          lastSentResize = { terminalId: currentTerminalId, cols, rows };
+        if (hasRemoteDims) {
+          // Mirror the desktop PTY row count so the full terminal TUI is visible without
+          // garbling ANSI row-positioning sequences. Scale font down to fit all rows.
+          const dims0 = fitAddon.proposeDimensions();
+          if (dims0 && dims0.rows < ptyDims.rows) {
+            const autoFont = Math.max(8, Math.floor(term.options.fontSize * dims0.rows / ptyDims.rows));
+            if (term.options.fontSize !== autoFont) {
+              term.options.fontSize = autoFont;
+            }
+          }
+          const dims = fitAddon.proposeDimensions();
+          if (dims && dims.cols > 0) {
+            term.resize(dims.cols, ptyDims.rows);
+          }
+          if (forceRefresh) {
+            term.refresh(0, term.rows - 1);
+          }
+          // Do not send resize — PTY stays at desktop dimensions
+        } else {
+          // No existing PTY: restore base font and fit naturally to screen width.
+          if (term.options.fontSize !== fontSize) {
+            term.options.fontSize = fontSize;
+          }
+          fitAddon.fit();
+
+          // Some phone browsers report a desktop layout viewport.
+          // Use visual viewport width ratio so cols match the actual visible area.
+          const viewportRatio = getVisualViewportWidthRatio();
+          if (viewportRatio < 0.99) {
+            const adjustedCols = Math.max(2, Math.floor(term.cols * viewportRatio));
+            if (adjustedCols > 0 && adjustedCols !== term.cols) {
+              term.resize(adjustedCols, term.rows);
+            }
+          }
+
+          if (forceRefresh) {
+            term.refresh(0, term.rows - 1);
+          }
+
+          const cols = term.cols;
+          const rows = term.rows;
+          const alreadySent = lastSentResize.terminalId === currentTerminalId &&
+            lastSentResize.cols === cols &&
+            lastSentResize.rows === rows;
+
+          if (syncServer &&
+              !isApplyingServerResize &&
+              ws &&
+              ws.readyState === WebSocket.OPEN &&
+              currentTerminalId &&
+              !alreadySent) {
+            ws.send(JSON.stringify({
+              type: 'resize',
+              terminalId: currentTerminalId,
+              cols,
+              rows,
+              mobile: true,
+            }));
+            lastSentResize = { terminalId: currentTerminalId, cols, rows };
+          }
         }
       } else if (ptyDims) {
         const dims = fitAddon.proposeDimensions();
@@ -1729,7 +1751,7 @@ Astro.response.headers.set('Expires', '0');
             }
             resetTerminalView();
             if (msg.data) {
-              term.write(msg.data);
+              term.write(msg.data, () => { term.scrollToBottom(); });
             }
             applyPtyDims({ syncServer: true, forceRefresh: true });
             updatePlanModeButtons();
@@ -1778,7 +1800,7 @@ Astro.response.headers.set('Expires', '0');
               isApplyingServerResize = false;
             }
             if (msg.buffer) {
-              term.write(msg.buffer);
+              term.write(msg.buffer, () => { term.scrollToBottom(); });
             }
             applyPtyDims({ syncServer: true, forceRefresh: true });
             isSwitching = false;
