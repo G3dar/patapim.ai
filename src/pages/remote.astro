@@ -541,6 +541,13 @@ Astro.response.headers.set('Expires', '0');
       touch-action: pan-y !important;
     }
 
+    /* Mobile: let touches fall through the canvas to xterm-viewport so
+       iOS handles the pan natively. The viewport scrolls on the browser's
+       own compositor path — no JS scrollTop mutation, no layer desync. */
+    @media (pointer: coarse) {
+      .terminal-wrap .xterm-screen { pointer-events: none; }
+    }
+
     .terminal-wrap .xterm-viewport {
       overflow-y: auto !important;
       overflow-x: hidden !important;
@@ -918,7 +925,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM</a>
+        <a href="/go" class="topbar-logo">PATAPIM<sup style="font-size:7px;opacity:0.35;margin-left:2px">r6</sup></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
       </div>
@@ -1498,10 +1505,7 @@ Astro.response.headers.set('Expires', '0');
       // Mobile: only show keyboard on quick tap, not on hold/drag (which should scroll)
       if (isMobileClient) {
         let touchInfo = null;
-        let scrollLastY = null;
-        let scrollAccum = 0;
         let longPressTimer = null;
-        const getXtermViewport = () => terminalWrap.querySelector('.xterm-viewport');
 
         const cancelLongPress = () => {
           if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
@@ -1510,7 +1514,6 @@ Astro.response.headers.set('Expires', '0');
         terminalWrap.addEventListener('touchstart', (e) => {
           const t = e.touches[0];
           touchInfo = { x: t.clientX, y: t.clientY, time: Date.now() };
-          scrollLastY = t.clientY;
           // Long-press: hold ~500ms without moving → enter selection mode
           longPressTimer = setTimeout(() => {
             longPressTimer = null;
@@ -1526,8 +1529,6 @@ Astro.response.headers.set('Expires', '0');
 
         terminalWrap.addEventListener('touchend', () => {
           cancelLongPress();
-          scrollLastY = null;
-          scrollAccum = 0;
           if (!touchInfo) return;
           const elapsed = Date.now() - touchInfo.time;
           if (elapsed < 300) {
@@ -1543,8 +1544,6 @@ Astro.response.headers.set('Expires', '0');
         terminalWrap.addEventListener('touchcancel', () => {
           cancelLongPress();
           touchInfo = null;
-          scrollLastY = null;
-          scrollAccum = 0;
         }, { passive: true });
         terminalWrap.addEventListener('touchmove', (e) => {
           const t = e.touches[0];
@@ -1556,23 +1555,6 @@ Astro.response.headers.set('Expires', '0');
               touchInfo = null;
               cancelLongPress();
             }
-          }
-          // Scroll via xterm API so canvas and viewport update atomically.
-          // Direct vp.scrollTop mutation causes iOS to composite the scrolled
-          // viewport layer before xterm's rAF canvas redraw, producing a ghost.
-          if (scrollLastY !== null) {
-            const deltaY = scrollLastY - t.clientY;
-            const vp = getXtermViewport();
-            if (vp && term) {
-              const cellHeight = Math.max(1, vp.clientHeight / term.rows);
-              scrollAccum += deltaY / cellHeight;
-              const lines = Math.trunc(scrollAccum);
-              if (lines !== 0) {
-                term.scrollLines(lines);
-                scrollAccum -= lines;
-              }
-            }
-            scrollLastY = t.clientY;
           }
         }, { passive: true });
       } else {
