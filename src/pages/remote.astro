@@ -2368,7 +2368,7 @@ Astro.response.headers.set('Expires', '0');
       }
     });
 
-    // Send: write transcribed text to terminal (no  — user decides Enter)
+    // Send: write transcribed text to terminal — user decides Enter
     voiceSend.addEventListener('click', () => {
       const text = voiceText.value.trim();
       if (text && ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
