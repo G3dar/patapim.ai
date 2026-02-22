@@ -1499,6 +1499,7 @@ Astro.response.headers.set('Expires', '0');
       if (isMobileClient) {
         let touchInfo = null;
         let scrollLastY = null;
+        let scrollAccum = 0;
         let longPressTimer = null;
         const getXtermViewport = () => terminalWrap.querySelector('.xterm-viewport');
 
@@ -1526,6 +1527,7 @@ Astro.response.headers.set('Expires', '0');
         terminalWrap.addEventListener('touchend', () => {
           cancelLongPress();
           scrollLastY = null;
+          scrollAccum = 0;
           if (!touchInfo) return;
           const elapsed = Date.now() - touchInfo.time;
           if (elapsed < 300) {
@@ -1542,6 +1544,7 @@ Astro.response.headers.set('Expires', '0');
           cancelLongPress();
           touchInfo = null;
           scrollLastY = null;
+          scrollAccum = 0;
         }, { passive: true });
         terminalWrap.addEventListener('touchmove', (e) => {
           const t = e.touches[0];
@@ -1554,12 +1557,21 @@ Astro.response.headers.set('Expires', '0');
               cancelLongPress();
             }
           }
-          // Manually scroll xterm-viewport — needed because xterm-screen is a sibling of
-          // xterm-viewport (not a descendant), so touch-action pan-y can't reach it natively.
+          // Scroll via xterm API so canvas and viewport update atomically.
+          // Direct vp.scrollTop mutation causes iOS to composite the scrolled
+          // viewport layer before xterm's rAF canvas redraw, producing a ghost.
           if (scrollLastY !== null) {
             const deltaY = scrollLastY - t.clientY;
             const vp = getXtermViewport();
-            if (vp) vp.scrollTop += deltaY;
+            if (vp && term) {
+              const cellHeight = Math.max(1, vp.clientHeight / term.rows);
+              scrollAccum += deltaY / cellHeight;
+              const lines = Math.trunc(scrollAccum);
+              if (lines !== 0) {
+                term.scrollLines(lines);
+                scrollAccum -= lines;
+              }
+            }
             scrollLastY = t.clientY;
           }
         }, { passive: true });
