@@ -1396,6 +1396,10 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function initTerminal() {
+      if (term) {
+        term.dispose();
+        term = null;
+      }
       term = new Terminal({
         fontFamily: "'JetBrains Mono', monospace",
         fontSize,
@@ -1635,6 +1639,7 @@ Astro.response.headers.set('Expires', '0');
 
       ws.onclose = () => {
         setStatus('disconnected', 'Disconnected');
+        loadingEl.classList.remove('hidden');
         enableActions(false);
         lastFocusSync = { terminalId: null, focused: null };
         // Reset switch state so output isn't queued forever on reconnect
@@ -2178,6 +2183,14 @@ Astro.response.headers.set('Expires', '0');
             term.refresh(0, term.rows - 1);
           });
         }
+      }
+    });
+
+    // iOS bfcache: page restored from freeze — show loading overlay immediately
+    // so the stale canvas is hidden until the WS reconnect completes.
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) {
+        loadingEl.classList.remove('hidden');
       }
     });
 
