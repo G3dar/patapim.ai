@@ -532,7 +532,7 @@ Astro.response.headers.set('Expires', '0');
     .terminal-wrap {
       flex: 1;
       position: relative;
-      overflow-x: hidden;
+      overflow-x: auto;
       overflow-y: hidden;
       overscroll-behavior: contain;
     }
@@ -540,7 +540,7 @@ Astro.response.headers.set('Expires', '0');
     .terminal-wrap .xterm {
       height: 100%;
       padding: 4px 0 0 4px;
-      touch-action: pan-y !important;
+      touch-action: pan-x pan-y !important;
     }
 
     /* Mobile: let touches fall through the canvas to xterm-viewport so
@@ -553,9 +553,10 @@ Astro.response.headers.set('Expires', '0');
     .terminal-wrap .xterm-viewport {
       overflow-y: auto !important;
       overflow-x: hidden !important;
-      -webkit-overflow-scrolling: touch;
+      /* NO -webkit-overflow-scrolling: touch — that causes iOS GPU-compositor scroll
+         to move the DOM without xterm's canvas catching up → ghost/shadow terminal */
       overscroll-behavior-y: contain;
-      touch-action: pan-y !important;
+      touch-action: pan-x pan-y !important;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
@@ -927,7 +928,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r8</span></a>
+        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r14</span></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
       </div>
@@ -1053,6 +1054,20 @@ Astro.response.headers.set('Expires', '0');
     </div>
   </div>
 
+  <!-- Debug overlay: activate with ?debug=1 in URL -->
+  <div id="dbg-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.92);color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:45vh;overflow-y:auto;border-top:2px solid #0f0;touch-action:pan-y;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <strong style="color:#d4a574;">PATAPIM debug</strong>
+      <span>
+        <button id="dbg-copy" style="font-family:monospace;font-size:10px;background:#1a1918;color:#0f0;border:1px solid #0f0;padding:2px 8px;cursor:pointer;margin-right:4px;">COPY</button>
+        <button id="dbg-clear" style="font-family:monospace;font-size:10px;background:#1a1918;color:#888;border:1px solid #444;padding:2px 8px;cursor:pointer;margin-right:4px;">CLEAR</button>
+        <button id="dbg-close" style="font-family:monospace;font-size:10px;background:#1a1918;color:#e05252;border:1px solid #e05252;padding:2px 8px;cursor:pointer;">X</button>
+      </span>
+    </div>
+    <div id="dbg-state" style="color:#adf;margin-bottom:6px;line-height:1.6;"></div>
+    <div id="dbg-log" style="line-height:1.5;"></div>
+  </div>
+
   <script is:inline type="module">
     import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
     import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
@@ -1108,6 +1123,7 @@ Astro.response.headers.set('Expires', '0');
     let isSwitching = false;
     let switchOutputQueue = [];
     let ptyDims = null;
+    let isWritingBuffer = false;
     let isApplyingServerResize = false;
     let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
     let lastFocusSync = { terminalId: null, focused: null };
@@ -1120,6 +1136,49 @@ Astro.response.headers.set('Expires', '0');
     let fabOpen = false;
     let isPlanMode = false;
     let selectMode = false;
+
+    // ---- DEBUG OVERLAY ----
+    const dbgPanel = document.getElementById('dbg-panel');
+    const dbgState = document.getElementById('dbg-state');
+    const dbgLogEl = document.getElementById('dbg-log');
+    const dbgEvents = [];
+    const isDebugMode = new URLSearchParams(location.search).has('debug');
+    if (isDebugMode && dbgPanel) {
+      dbgPanel.style.display = 'block';
+      document.getElementById('dbg-close')?.addEventListener('click', () => dbgPanel.style.display = 'none');
+      document.getElementById('dbg-clear')?.addEventListener('click', () => { dbgEvents.length = 0; if(dbgLogEl) dbgLogEl.innerHTML=''; });
+      document.getElementById('dbg-copy')?.addEventListener('click', () => {
+        const state = dbgState ? dbgState.textContent : '';
+        const log = dbgEvents.join('\n');
+        navigator.clipboard?.writeText(state + '\n---\n' + log).then(() => alert('Copiado!')).catch(() => alert('Error al copiar'));
+      });
+    }
+    function dbgLog(msg) {
+      if (!isDebugMode) return;
+      const t = new Date().toISOString().slice(11,23);
+      dbgEvents.push(t + ' ' + msg);
+      if (dbgEvents.length > 40) dbgEvents.shift();
+      if (dbgLogEl) dbgLogEl.innerHTML = dbgEvents.map(e => '<div>' + e + '</div>').join('');
+    }
+    function dbgUpdate() {
+      if (!isDebugMode || !dbgState) return;
+      const wrap = terminalWrap;
+      const screen = wrap ? wrap.querySelector('.xterm-screen') : null;
+      const viewport = wrap ? wrap.querySelector('.xterm-viewport') : null;
+      const xtermEls = document.querySelectorAll('.xterm').length;
+      const canvases = document.querySelectorAll('.xterm canvas').length;
+      dbgState.innerHTML = [
+        'build=r14  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
+        'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
+        'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
+        'vp.scrollTop=' + (viewport ? Math.round(viewport.scrollTop) : '?') + ' vp.scrollH=' + (viewport ? viewport.scrollHeight : '?'),
+        'xterm elements=' + xtermEls + '  canvases=' + canvases,
+        'ws.state=' + (ws ? ['CONNECTING','OPEN','CLOSING','CLOSED'][ws.readyState] : 'null'),
+      ].join('<br>');
+    }
+    if (isDebugMode) setInterval(dbgUpdate, 500);
+    // ---- END DEBUG OVERLAY ----
     let recognition = null;
     let isRecording = false;
     let voiceFinalText = '';
@@ -1236,29 +1295,46 @@ Astro.response.headers.set('Expires', '0');
     // Desktop: force PTY cols for correct cursor positioning.
     function applyPtyDims(options = {}) {
       if (!fitAddon || !term) return;
+      if (isWritingBuffer) return;
       const { syncServer = true, forceRefresh = false } = options;
       const isMobile = isMobileResizeMode();
+      dbgLog('applyPtyDims isMobile=' + isMobile + ' ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null') + ' syncServer=' + syncServer);
 
       if (isMobile) {
         const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
 
         if (hasRemoteDims) {
-          // Mirror the desktop PTY row count so the full terminal TUI is visible without
-          // garbling ANSI row-positioning sequences. Scale font down to fit all rows.
-          const dims0 = fitAddon.proposeDimensions();
-          if (dims0 && dims0.rows < ptyDims.rows) {
-            const autoFont = Math.max(8, Math.floor(term.options.fontSize * dims0.rows / ptyDims.rows));
-            if (term.options.fontSize !== autoFont) {
-              term.options.fontSize = autoFont;
+          // Mobile viewer: scale font to a comfortable readable size and let fitAddon
+          // determine the row count naturally. Do NOT force term.rows = ptyDims.rows:
+          // if ptyDims.rows > visible rows, xterm clamps ydisp=0 so term.scrollToBottom()
+          // puts us at the TOP of the screen (rows 1-N), not the BOTTOM — cursor invisible.
+          // By using fitRows (whatever fits the container), the cursor stays within the
+          // visible range and scrollToBottom() works correctly.
+          const containerH = terminalWrap.clientHeight;
+          if (containerH > 0 && ptyDims.rows > 0) {
+            // Aim for a comfortable reading font; don't go smaller than 11px.
+            // floor(containerH / ptyDims.rows) is the minimum to fit all rows,
+            // but we cap at a readable minimum so text isn't microscopic.
+            const idealFont = Math.floor(containerH / ptyDims.rows);
+            const targetFont = Math.max(11, idealFont);
+            if (term.options.fontSize !== targetFont) {
+              term.options.fontSize = targetFont;
             }
           }
-          const dims = fitAddon.proposeDimensions();
-          if (dims && dims.cols > 0) {
-            term.resize(dims.cols, ptyDims.rows);
+          fitAddon.fit();
+          // Force cols to match the PTY — prevents ANSI cursor-positioning sequences
+          // (e.g. \e[10;120H) from wrapping at the narrow mobile column count.
+          // Keeps fitAddon's row count so the cursor stays within the visible viewport.
+          // The canvas becomes wider than the mobile screen; overflow-x:auto on
+          // .terminal-wrap lets the user pan horizontally to see right-side content.
+          if (ptyDims.cols > 0 && term.cols !== ptyDims.cols) {
+            term.resize(ptyDims.cols, term.rows);
           }
           if (forceRefresh) {
             term.refresh(0, term.rows - 1);
           }
+          // Scroll to show the cursor (bottom of current content) after every layout change.
+          requestAnimationFrame(() => term.scrollToBottom());
           // Do not send resize — PTY stays at desktop dimensions
         } else {
           // No existing PTY: restore base font and fit naturally to screen width.
@@ -1588,6 +1664,14 @@ Astro.response.headers.set('Expires', '0');
         }, { passive: true });
       }
 
+      // Log xterm-viewport scroll events for debugging ghost issue
+      const xtermVP = terminalWrap.querySelector('.xterm-viewport');
+      if (xtermVP) {
+        xtermVP.addEventListener('scroll', () => {
+          dbgLog('vp.scroll scrollTop=' + Math.round(xtermVP.scrollTop) + ' scrollH=' + xtermVP.scrollHeight + ' clientH=' + xtermVP.clientHeight);
+        }, { passive: true });
+      }
+
       // Resize delegates to applyPtyDims
       const ro = new ResizeObserver(debounce(() => {
         applyPtyDims({ forceRefresh: true });
@@ -1751,18 +1835,36 @@ Astro.response.headers.set('Expires', '0');
             }
             resetTerminalView();
             if (msg.data) {
-              term.write(msg.data, () => { term.scrollToBottom(); });
-            }
-            applyPtyDims({ syncServer: true, forceRefresh: true });
-            updatePlanModeButtons();
-            // Drain any output queued during a project switch
-            if (isSwitching) {
-              const queue = switchOutputQueue;
-              switchOutputQueue = [];
-              isSwitching = false;
-              for (const q of queue) {
-                if (q.terminalId === currentTerminalId && q.data) {
-                  term.write(q.data);
+              isWritingBuffer = true;
+              term.write(msg.data, () => {
+                isWritingBuffer = false;
+                applyPtyDims({ syncServer: true, forceRefresh: true });
+                requestAnimationFrame(() => term.scrollToBottom());
+                updatePlanModeButtons();
+                // Drain any output queued during a project switch
+                if (isSwitching) {
+                  const queue = switchOutputQueue;
+                  switchOutputQueue = [];
+                  isSwitching = false;
+                  for (const q of queue) {
+                    if (q.terminalId === currentTerminalId && q.data) {
+                      term.write(q.data);
+                    }
+                  }
+                }
+              });
+            } else {
+              applyPtyDims({ syncServer: true, forceRefresh: true });
+              requestAnimationFrame(() => term.scrollToBottom());
+              updatePlanModeButtons();
+              if (isSwitching) {
+                const queue = switchOutputQueue;
+                switchOutputQueue = [];
+                isSwitching = false;
+                for (const q of queue) {
+                  if (q.terminalId === currentTerminalId && q.data) {
+                    term.write(q.data);
+                  }
                 }
               }
             }
@@ -1800,24 +1902,45 @@ Astro.response.headers.set('Expires', '0');
               isApplyingServerResize = false;
             }
             if (msg.buffer) {
-              term.write(msg.buffer, () => { term.scrollToBottom(); });
-            }
-            applyPtyDims({ syncServer: true, forceRefresh: true });
-            isSwitching = false;
-            // Reset keyboard state for new terminal
-            if (isMobileClient && xtermTextarea) {
-              mobileKeyboardOpen = false;
-              xtermTextarea.setAttribute('readonly', 'readonly');
-            }
-            const queue = switchOutputQueue;
-            switchOutputQueue = [];
-            for (const q of queue) {
-              if (q.terminalId === currentTerminalId && q.data) {
-                term.write(q.data);
+              isWritingBuffer = true;
+              term.write(msg.buffer, () => {
+                isWritingBuffer = false;
+                applyPtyDims({ syncServer: true, forceRefresh: true });
+                requestAnimationFrame(() => term.scrollToBottom());
+                isSwitching = false;
+                // Reset keyboard state for new terminal
+                if (isMobileClient && xtermTextarea) {
+                  mobileKeyboardOpen = false;
+                  xtermTextarea.setAttribute('readonly', 'readonly');
+                }
+                const queue = switchOutputQueue;
+                switchOutputQueue = [];
+                for (const q of queue) {
+                  if (q.terminalId === currentTerminalId && q.data) {
+                    term.write(q.data);
+                  }
+                }
+                updatePlanModeButtons();
+                updateScrollButton();
+              });
+            } else {
+              applyPtyDims({ syncServer: true, forceRefresh: true });
+              requestAnimationFrame(() => term.scrollToBottom());
+              isSwitching = false;
+              if (isMobileClient && xtermTextarea) {
+                mobileKeyboardOpen = false;
+                xtermTextarea.setAttribute('readonly', 'readonly');
               }
+              const queue = switchOutputQueue;
+              switchOutputQueue = [];
+              for (const q of queue) {
+                if (q.terminalId === currentTerminalId && q.data) {
+                  term.write(q.data);
+                }
+              }
+              updatePlanModeButtons();
+              updateScrollButton();
             }
-            updatePlanModeButtons();
-            updateScrollButton();
           }
           break;
 
