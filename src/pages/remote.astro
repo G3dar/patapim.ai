@@ -928,7 +928,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r14</span></a>
+        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r20</span></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
       </div>
@@ -1124,6 +1124,7 @@ Astro.response.headers.set('Expires', '0');
     let switchOutputQueue = [];
     let ptyDims = null;
     let isWritingBuffer = false;
+    let lastBufferSeq = 0;
     let isApplyingServerResize = false;
     let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
     let lastFocusSync = { terminalId: null, focused: null };
@@ -1168,7 +1169,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r14  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r20  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -1304,31 +1305,28 @@ Astro.response.headers.set('Expires', '0');
         const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
 
         if (hasRemoteDims) {
-          // Mobile viewer: scale font to a comfortable readable size and let fitAddon
-          // determine the row count naturally. Do NOT force term.rows = ptyDims.rows:
-          // if ptyDims.rows > visible rows, xterm clamps ydisp=0 so term.scrollToBottom()
-          // puts us at the TOP of the screen (rows 1-N), not the BOTTOM — cursor invisible.
-          // By using fitRows (whatever fits the container), the cursor stays within the
-          // visible range and scrollToBottom() works correctly.
+          // Mobile viewer: scale font to a comfortable readable size.
+          // CRITICAL: we must NOT call fitAddon.fit() here because fit() resizes
+          // the terminal to narrow mobile cols (e.g. 45) BEFORE we can force
+          // ptyDims.cols. That intermediate resize causes xterm.js to reflow the
+          // entire scrollback buffer at the wrong width, corrupting TUI content.
+          // Instead, use proposeDimensions() to calculate row count without
+          // resizing, then do a single resize to (ptyDims.cols, fitRows).
           const containerH = terminalWrap.clientHeight;
           if (containerH > 0 && ptyDims.rows > 0) {
-            // Aim for a comfortable reading font; don't go smaller than 11px.
-            // floor(containerH / ptyDims.rows) is the minimum to fit all rows,
-            // but we cap at a readable minimum so text isn't microscopic.
             const idealFont = Math.floor(containerH / ptyDims.rows);
             const targetFont = Math.max(11, idealFont);
             if (term.options.fontSize !== targetFont) {
               term.options.fontSize = targetFont;
             }
           }
-          fitAddon.fit();
-          // Force cols to match the PTY — prevents ANSI cursor-positioning sequences
-          // (e.g. \e[10;120H) from wrapping at the narrow mobile column count.
-          // Keeps fitAddon's row count so the cursor stays within the visible viewport.
-          // The canvas becomes wider than the mobile screen; overflow-x:auto on
-          // .terminal-wrap lets the user pan horizontally to see right-side content.
-          if (ptyDims.cols > 0 && term.cols !== ptyDims.cols) {
-            term.resize(ptyDims.cols, term.rows);
+          // proposeDimensions() reads the container and cell size to compute
+          // how many cols/rows fit — without actually resizing the terminal.
+          const dims = fitAddon.proposeDimensions();
+          const fitRows = (dims && dims.rows > 0) ? dims.rows : term.rows;
+          // Single resize: PTY cols + fitted rows. No intermediate narrow-col reflow.
+          if (term.cols !== ptyDims.cols || term.rows !== fitRows) {
+            term.resize(ptyDims.cols, fitRows);
           }
           if (forceRefresh) {
             term.refresh(0, term.rows - 1);
@@ -1337,46 +1335,17 @@ Astro.response.headers.set('Expires', '0');
           requestAnimationFrame(() => term.scrollToBottom());
           // Do not send resize — PTY stays at desktop dimensions
         } else {
-          // No existing PTY: restore base font and fit naturally to screen width.
+          // No ptyDims yet (waiting for terminal_init). On mobile, do NOT send
+          // resize to the server — that would shrink the desktop PTY to narrow
+          // mobile cols and corrupt the desktop terminal's buffer.
+          // Just fit locally and wait for terminal_init to arrive with the real dims.
           if (term.options.fontSize !== fontSize) {
             term.options.fontSize = fontSize;
           }
           fitAddon.fit();
 
-          // Some phone browsers report a desktop layout viewport.
-          // Use visual viewport width ratio so cols match the actual visible area.
-          const viewportRatio = getVisualViewportWidthRatio();
-          if (viewportRatio < 0.99) {
-            const adjustedCols = Math.max(2, Math.floor(term.cols * viewportRatio));
-            if (adjustedCols > 0 && adjustedCols !== term.cols) {
-              term.resize(adjustedCols, term.rows);
-            }
-          }
-
           if (forceRefresh) {
             term.refresh(0, term.rows - 1);
-          }
-
-          const cols = term.cols;
-          const rows = term.rows;
-          const alreadySent = lastSentResize.terminalId === currentTerminalId &&
-            lastSentResize.cols === cols &&
-            lastSentResize.rows === rows;
-
-          if (syncServer &&
-              !isApplyingServerResize &&
-              ws &&
-              ws.readyState === WebSocket.OPEN &&
-              currentTerminalId &&
-              !alreadySent) {
-            ws.send(JSON.stringify({
-              type: 'resize',
-              terminalId: currentTerminalId,
-              cols,
-              rows,
-              mobile: true,
-            }));
-            lastSentResize = { terminalId: currentTerminalId, cols, rows };
           }
         }
       } else if (ptyDims) {
@@ -1404,7 +1373,7 @@ Astro.response.headers.set('Expires', '0');
         if (vp) appEl.style.height = vp.height + 'px';
         window.scrollTo(0, 0);
         requestAnimationFrame(() => {
-          fitAddon.fit();
+          applyPtyDims();
           term.scrollToBottom();
         });
       } else if (heightDelta < -150) {
@@ -1416,7 +1385,7 @@ Astro.response.headers.set('Expires', '0');
           if (ta) ta.setAttribute('readonly', 'readonly');
         }
         requestAnimationFrame(() => {
-          fitAddon.fit();
+          applyPtyDims();
         });
       }
     }
@@ -1792,6 +1761,10 @@ Astro.response.headers.set('Expires', '0');
 
             term.focus();
             syncTerminalFocus();
+            // Re-apply dims after reconnect so terminal cols match PTY
+            if (term && ptyDims) {
+              applyPtyDims({ forceRefresh: true });
+            }
           } else {
             showError(
               'Authentication failed: ' + (msg.error || 'Unknown error') +
@@ -1800,8 +1773,30 @@ Astro.response.headers.set('Expires', '0');
           }
           break;
 
+        case 'snapshot':
+          // Server sends periodic serialized viewport state instead of raw PTY chunks.
+          // This guarantees correct rendering regardless of dimension differences.
+          if (isSwitching) break;
+          if (term && msg.terminalId === currentTerminalId) {
+            if (msg.seq) lastBufferSeq = msg.seq;
+            // Replace visible viewport: clear screen, home cursor, write snapshot.
+            // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
+            term.write('\x1b[?25l\x1b[2J\x1b[H' + msg.data + '\x1b[?25h');
+          }
+          break;
+
         case 'output':
           if (isSwitching) {
+            switchOutputQueue.push(msg);
+            break;
+          }
+          // Skip output already covered by a snapshot
+          if (msg.seq && msg.seq <= lastBufferSeq) break;
+          // Queue output while the terminal_init buffer is being written.
+          // term.write() is async — writes queue internally. If we write live
+          // output while the buffer is still being processed, ANSI cursor
+          // positions interleave and corrupt the display.
+          if (isWritingBuffer) {
             switchOutputQueue.push(msg);
             break;
           }
@@ -1841,8 +1836,8 @@ Astro.response.headers.set('Expires', '0');
                 applyPtyDims({ syncServer: true, forceRefresh: true });
                 requestAnimationFrame(() => term.scrollToBottom());
                 updatePlanModeButtons();
-                // Drain any output queued during a project switch
-                if (isSwitching) {
+                // Drain any output queued during buffer write or project switch
+                if (switchOutputQueue.length > 0) {
                   const queue = switchOutputQueue;
                   switchOutputQueue = [];
                   isSwitching = false;
@@ -2342,12 +2337,12 @@ Astro.response.headers.set('Expires', '0');
         sendTerminalFocus(false);
       } else {
         syncTerminalFocus();
-        // Force xterm to repaint — mobile browsers invalidate the canvas
-        // while backgrounded, leaving a stale ghost layer on top.
+        // Re-apply PTY dims so mobile gets correct cols (not a raw fitAddon.fit
+        // which would reset to narrow mobile cols while PTY uses desktop cols).
+        // forceRefresh repaints the canvas to clear stale ghost layers.
         if (term) {
           requestAnimationFrame(() => {
-            fitAddon.fit();
-            term.refresh(0, term.rows - 1);
+            applyPtyDims({ forceRefresh: true });
           });
         }
       }
@@ -2358,6 +2353,10 @@ Astro.response.headers.set('Expires', '0');
     window.addEventListener('pageshow', (e) => {
       if (e.persisted) {
         loadingEl.classList.remove('hidden');
+        // Re-apply PTY dims so terminal is correct when overlay clears
+        if (term) {
+          applyPtyDims({ forceRefresh: true });
+        }
       }
     });
 
