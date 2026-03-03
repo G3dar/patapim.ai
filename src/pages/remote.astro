@@ -532,8 +532,7 @@ Astro.response.headers.set('Expires', '0');
     .terminal-wrap {
       flex: 1;
       position: relative;
-      overflow-x: auto;
-      overflow-y: hidden;
+      overflow: hidden;
       overscroll-behavior: contain;
     }
 
@@ -928,9 +927,10 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r20</span></a>
+        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r29</span></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
+        <span id="dbg-state" style="font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
       </div>
       <div class="topbar-right">
         <button class="topbar-btn" id="btn-font-dec" title="Decrease font">A-</button>
@@ -1124,6 +1124,8 @@ Astro.response.headers.set('Expires', '0');
     let switchOutputQueue = [];
     let ptyDims = null;
     let isWritingBuffer = false;
+    let drainTimerId = null;   // current checkDrain setTimeout id
+    let drainDeadline = 0;     // hard fallback: fire initDone/switchDone after this timestamp
     let lastBufferSeq = 0;
     let isApplyingServerResize = false;
     let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
@@ -1169,7 +1171,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r20  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r29  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -1185,16 +1187,19 @@ Astro.response.headers.set('Expires', '0');
     let voiceFinalText = '';
     let selectionOverlay = null;
     let mobileKeyboardOpen = false;
+    let keyboardOpenTime = 0; // timestamp of last keyboard-open tap (grace period for snapshots)
 
     function detectMobileClient() {
+      const userAgent = navigator.userAgent || '';
+      const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent);
+      // Check UA string first — userAgentData.mobile can be wrong under device emulation
+      if (uaMobile) return true;
       if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
         return navigator.userAgentData.mobile;
       }
-      const userAgent = navigator.userAgent || '';
-      const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent);
       const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const narrowViewport = window.matchMedia('(max-width: 1024px)').matches;
-      return uaMobile || (coarsePointer && narrowViewport);
+      return coarsePointer && narrowViewport;
     }
 
     const isMobileClient = detectMobileClient();
@@ -1476,6 +1481,21 @@ Astro.response.headers.set('Expires', '0');
         term.dispose();
         term = null;
       }
+      // Debug: expose key variables for live inspection
+      window._d = () => ({ term, ws, currentTerminalId, isSwitching, isWritingBuffer, ptyDims, lastBufferSeq, switchOutputQueue, mobileKeyboardOpen, keyboardOpenTime });
+      window._switchLog = [];
+      // Debug state indicator — shows live flags in the topbar
+      let _dbgSnapCount = 0;
+      let _dbgOutCount = 0;
+      window._dbgSnap = () => _dbgSnapCount++;
+      window._dbgOut = () => _dbgOutCount++;
+      const _dbgEl = document.getElementById('dbg-state');
+      if (_dbgEl) {
+        setInterval(() => {
+          const grace = keyboardOpenTime ? Math.max(0, 600 - (Date.now() - keyboardOpenTime)) : 0;
+          _dbgEl.textContent = (isSwitching ? 'SW ' : '') + (isWritingBuffer ? 'WB ' : '') + (mobileKeyboardOpen ? 'KB ' : '') + (grace > 0 ? 'G' + grace + ' ' : '') + 'S' + _dbgSnapCount + ' O' + _dbgOutCount;
+        }, 200);
+      }
       term = new Terminal({
         fontFamily: "'JetBrains Mono', monospace",
         fontSize,
@@ -1598,15 +1618,35 @@ Astro.response.headers.set('Expires', '0');
 
         terminalWrap.addEventListener('touchend', () => {
           cancelLongPress();
-          if (!touchInfo) return;
+          if (!touchInfo) {
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'touchend-no-info' });
+            return;
+          }
           const elapsed = Date.now() - touchInfo.time;
           if (elapsed < 300) {
             // Quick tap — remove readonly so the keyboard opens.
             // readonly is re-applied when the keyboard is dismissed (visualViewport resize).
-            if (xtermTextarea) xtermTextarea.removeAttribute('readonly');
+            // Blur first: if the textarea already has focus (e.g. from selectProject),
+            // iOS treats focus() as a no-op and won't show the keyboard. Blurring
+            // first ensures a fresh focus event that iOS honors.
+            if (xtermTextarea) {
+              xtermTextarea.blur();
+              xtermTextarea.removeAttribute('readonly');
+              // Force synchronous reflow so the attribute removal is committed
+              // to the DOM before we re-focus. Without this, the browser may
+              // still see the element as readonly when processing focus().
+              void xtermTextarea.offsetHeight;
+            }
             mobileKeyboardOpen = true;
+            keyboardOpenTime = Date.now();
             term.focus();
             syncTerminalFocus();
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'tap-focus', elapsed, hadFocus: document.activeElement === xtermTextarea, readonly: xtermTextarea?.hasAttribute('readonly') });
+          } else {
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'tap-too-slow', elapsed });
           }
           touchInfo = null;
         });
@@ -1776,12 +1816,34 @@ Astro.response.headers.set('Expires', '0');
         case 'snapshot':
           // Server sends periodic serialized viewport state instead of raw PTY chunks.
           // This guarantees correct rendering regardless of dimension differences.
-          if (isSwitching) break;
+          if (isSwitching || isWritingBuffer) {
+            // Safety: auto-reset stuck flags after 8 seconds
+            if (!window._switchStuckSince) window._switchStuckSince = Date.now();
+            if (Date.now() - window._switchStuckSince > 8000) {
+              console.warn('[patapim] force-resetting stuck flags', { isSwitching, isWritingBuffer });
+              isSwitching = false;
+              isWritingBuffer = false;
+              switchOutputQueue = [];
+              window._switchStuckSince = 0;
+            } else {
+              window._switchLog.push({ t: Date.now(), ev: 'snapshot-BLOCKED', tid: msg.terminalId, dataLen: (msg.data||'').length, isSwitching, isWritingBuffer });
+              break;
+            }
+          } else {
+            window._switchStuckSince = 0;
+          }
+          // Grace period after keyboard-open tap: snapshot DOM churn can prevent
+          // mobile browsers from showing the keyboard. Skip snapshots briefly.
+          if (isMobileClient && keyboardOpenTime && (Date.now() - keyboardOpenTime < 600)) {
+            break;
+          }
           if (term && msg.terminalId === currentTerminalId) {
             if (msg.seq) lastBufferSeq = msg.seq;
+            window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
             // Replace visible viewport: clear screen, home cursor, write snapshot.
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             term.write('\x1b[?25l\x1b[2J\x1b[H' + msg.data + '\x1b[?25h');
+            if (window._dbgSnap) window._dbgSnap();
           }
           break;
 
@@ -1802,6 +1864,7 @@ Astro.response.headers.set('Expires', '0');
           }
           if (term && msg.terminalId === currentTerminalId) {
             term.write(msg.data);
+            if (window._dbgOut) window._dbgOut();
             debouncedUpdatePlanMode();
           }
           break;
@@ -1821,47 +1884,60 @@ Astro.response.headers.set('Expires', '0');
 
         case 'terminal_init':
           if (term && msg.terminalId === currentTerminalId) {
+            // Cancel any previous drain poll (e.g. from a duplicate terminal_init)
+            if (drainTimerId) { clearTimeout(drainTimerId); drainTimerId = null; }
+            if (msg.bufferSeq) lastBufferSeq = msg.bufferSeq;
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
               lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
-              isApplyingServerResize = true;
-              applyPtyDims({ syncServer: false });
-              isApplyingServerResize = false;
             }
-            resetTerminalView();
-            if (msg.data) {
-              isWritingBuffer = true;
-              term.write(msg.data, () => {
-                isWritingBuffer = false;
-                applyPtyDims({ syncServer: true, forceRefresh: true });
-                requestAnimationFrame(() => term.scrollToBottom());
-                updatePlanModeButtons();
-                // Drain any output queued during buffer write or project switch
-                if (switchOutputQueue.length > 0) {
-                  const queue = switchOutputQueue;
-                  switchOutputQueue = [];
-                  isSwitching = false;
-                  for (const q of queue) {
-                    if (q.terminalId === currentTerminalId && q.data) {
-                      term.write(q.data);
-                    }
-                  }
-                }
-              });
-            } else {
+            // Write buffer with clear. Do NOT use term.write(data, callback) —
+            // xterm.js silently drops the callback for large writes.
+            // Do NOT call resetTerminalView() or applyPtyDims() before the write —
+            // they queue writes/resizes that corrupt xterm's write processor.
+            isWritingBuffer = true;
+            term.write('\x1b[2J\x1b[3J\x1b[H' + (msg.data || ''));
+            const initDone = () => {
+              if (!isWritingBuffer) return; // guard against double-fire
+              drainTimerId = null;
+              isWritingBuffer = false;
               applyPtyDims({ syncServer: true, forceRefresh: true });
               requestAnimationFrame(() => term.scrollToBottom());
               updatePlanModeButtons();
-              if (isSwitching) {
-                const queue = switchOutputQueue;
-                switchOutputQueue = [];
-                isSwitching = false;
-                for (const q of queue) {
-                  if (q.terminalId === currentTerminalId && q.data) {
-                    term.write(q.data);
-                  }
+              // Re-lock textarea on mobile so the next tap gets a clean
+              // blur → removeAttribute → focus cycle (same as switchDone).
+              if (isMobileClient && xtermTextarea) {
+                mobileKeyboardOpen = false;
+                xtermTextarea.setAttribute('readonly', 'readonly');
+              }
+              // Drain any output queued during buffer write or project switch
+              const queue = switchOutputQueue;
+              switchOutputQueue = [];
+              isSwitching = false;
+              for (const q of queue) {
+                if (q.terminalId === currentTerminalId && q.data) {
+                  term.write(q.data);
                 }
               }
+            };
+            if (msg.data) {
+              // Hard deadline: if drain isn't detected within 2s, proceed anyway.
+              // Better to show the terminal slightly early than stay stuck forever.
+              drainDeadline = Date.now() + 2000;
+              // Poll xterm's internal write buffer until drained.
+              // Use setTimeout (not rAF) — rAF doesn't fire when tab/panel is hidden.
+              const checkDrain = () => {
+                const wb = term._core && term._core._writeBuffer;
+                const drained = wb && wb._pendingData === 0 && wb._writeBuffer.length === 0;
+                if (drained || Date.now() >= drainDeadline) {
+                  initDone();
+                } else {
+                  drainTimerId = setTimeout(checkDrain, 50);
+                }
+              };
+              drainTimerId = setTimeout(checkDrain, 50);
+            } else {
+              initDone();
             }
           }
           break;
@@ -1881,45 +1957,33 @@ Astro.response.headers.set('Expires', '0');
               if (previousTerminalId) {
                 sendTerminalFocus(false, previousTerminalId);
               }
-              resetTerminalView();
+              // Don't resetTerminalView here — the 'switched' block below
+              // will clear and write. Calling reset here queues a write, and
+              // the subsequent resize() in applyPtyDims kills xterm's write
+              // processor, causing the buffer write to never complete.
             }
             currentTerminalId = newId;
             syncTerminalFocus(currentTerminalId);
             highlightTab(currentTerminalId);
           }
           if (msg.type === 'switched' && term) {
-            resetTerminalView();
+            // Cancel any previous drain poll (from terminal_init or prior switch)
+            if (drainTimerId) { clearTimeout(drainTimerId); drainTimerId = null; }
+            // Update seq watermark so stale snapshots are dropped
+            if (msg.bufferSeq) lastBufferSeq = msg.bufferSeq;
             if (msg.cols && msg.rows) {
               ptyDims = { cols: msg.cols, rows: msg.rows };
               lastSentResize = { terminalId: currentTerminalId, cols: msg.cols, rows: msg.rows };
-              isApplyingServerResize = true;
-              applyPtyDims({ syncServer: false });
-              isApplyingServerResize = false;
             }
-            if (msg.buffer) {
-              isWritingBuffer = true;
-              term.write(msg.buffer, () => {
-                isWritingBuffer = false;
-                applyPtyDims({ syncServer: true, forceRefresh: true });
-                requestAnimationFrame(() => term.scrollToBottom());
-                isSwitching = false;
-                // Reset keyboard state for new terminal
-                if (isMobileClient && xtermTextarea) {
-                  mobileKeyboardOpen = false;
-                  xtermTextarea.setAttribute('readonly', 'readonly');
-                }
-                const queue = switchOutputQueue;
-                switchOutputQueue = [];
-                for (const q of queue) {
-                  if (q.terminalId === currentTerminalId && q.data) {
-                    term.write(q.data);
-                  }
-                }
-                updatePlanModeButtons();
-                updateScrollButton();
-              });
-            } else {
-              applyPtyDims({ syncServer: true, forceRefresh: true });
+            // Write buffer + cleanup. Do NOT use term.write(data, callback) —
+            // xterm.js silently drops the callback for large writes.
+            isWritingBuffer = true;
+            term.write('\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || ''));
+            const switchDone = () => {
+              if (!isWritingBuffer) return; // guard against double-fire
+              drainTimerId = null;
+              isWritingBuffer = false;
+              applyPtyDims({ syncServer: false, forceRefresh: true });
               requestAnimationFrame(() => term.scrollToBottom());
               isSwitching = false;
               if (isMobileClient && xtermTextarea) {
@@ -1935,7 +1999,21 @@ Astro.response.headers.set('Expires', '0');
               }
               updatePlanModeButtons();
               updateScrollButton();
-            }
+            };
+            // Hard deadline: if drain isn't detected within 2s, proceed anyway.
+            drainDeadline = Date.now() + 2000;
+            // Poll xterm's internal write buffer until drained.
+            // Use setTimeout (not rAF) — rAF doesn't fire when tab/panel is hidden.
+            const checkDrain = () => {
+              const wb = term._core && term._core._writeBuffer;
+              const drained = wb && wb._pendingData === 0 && wb._writeBuffer.length === 0;
+              if (drained || Date.now() >= drainDeadline) {
+                switchDone();
+              } else {
+                drainTimerId = setTimeout(checkDrain, 50);
+              }
+            };
+            drainTimerId = setTimeout(checkDrain, 50);
           }
           break;
 
@@ -2070,7 +2148,11 @@ Astro.response.headers.set('Expires', '0');
       // Close sidebar on mobile
       closeSidebar();
 
-      term.focus();
+      // On mobile, don't auto-focus — focusing a readonly textarea prevents
+      // the next tap from showing the keyboard (iOS treats re-focus as no-op).
+      if (!isMobileClient) {
+        term.focus();
+      }
       syncTerminalFocus();
     }
 
