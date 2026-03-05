@@ -1,0 +1,241 @@
+<section class="section value-prop" id="why-patapim">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Why Patapim</span>
+      <h2 class="section-title">Everything You Do Is in the Browser.<br/>Now AI Can Do It Too.</h2>
+      <p class="section-subtitle">
+        99% of your daily work happens in a browser. Patapim gives AI agents
+        direct access to yours &mdash; securely, from your machine, with your accounts.
+      </p>
+    </div>
+
+    <div class="vp-grid">
+      <!-- Card 1: No API Costs -->
+      <div class="vp-card vp-card-highlight glow-card">
+        <div class="vp-card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <h3 class="vp-title">Zero API Costs</h3>
+        <p class="vp-desc">
+          Use your existing Claude, Codex, or Gemini subscriptions.
+          Patapim connects to them directly &mdash; no middleman, no extra charges, no per-token billing.
+        </p>
+        <div class="vp-comparison">
+          <div class="vp-comp-item vp-comp-bad">
+            <span class="vp-comp-label">Others</span>
+            <span class="vp-comp-value">~$200/mo in API</span>
+          </div>
+          <div class="vp-comp-item vp-comp-good">
+            <span class="vp-comp-label">Patapim</span>
+            <span class="vp-comp-value">$0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- How it works strip -->
+    <div class="vp-how">
+      <div class="vp-how-step">
+        <span class="vp-step-num">1</span>
+        <span class="vp-step-text">Install Patapim on your PC</span>
+      </div>
+      <div class="vp-how-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="vp-how-step">
+        <span class="vp-step-num">2</span>
+        <span class="vp-step-text">Connect your AI accounts (Claude, Codex, Gemini)</span>
+      </div>
+      <div class="vp-how-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="vp-how-step">
+        <span class="vp-step-num">3</span>
+        <span class="vp-step-text">Automate everything &mdash; browser, terminal, tasks</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .value-prop {
+    background: var(--bg-deep);
+    scroll-margin-top: 120px;
+  }
+
+  .section-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: var(--space-md) auto 0;
+    line-height: 1.7;
+  }
+
+  .vp-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .vp-card {
+    padding: var(--space-2xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .vp-card-highlight {
+    grid-column: 1 / -1;
+    text-align: center;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+  }
+
+  .vp-card-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+  }
+
+  .vp-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .vp-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 560px;
+  }
+
+  /* Cost comparison */
+  .vp-comparison {
+    display: flex;
+    gap: var(--space-lg);
+    margin-top: var(--space-md);
+    justify-content: center;
+  }
+
+  .vp-comp-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    min-width: 140px;
+  }
+
+  .vp-comp-bad {
+    background: rgba(239, 83, 80, 0.06);
+    border-color: rgba(239, 83, 80, 0.2);
+  }
+
+  .vp-comp-good {
+    background: rgba(76, 175, 80, 0.06);
+    border-color: rgba(76, 175, 80, 0.2);
+  }
+
+  .vp-comp-label {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .vp-comp-bad .vp-comp-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--error);
+    text-decoration: line-through;
+    text-decoration-color: rgba(239, 83, 80, 0.5);
+  }
+
+  .vp-comp-good .vp-comp-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--success);
+  }
+
+  /* How it works */
+  .vp-how {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    margin-top: var(--space-3xl);
+    padding: var(--space-xl) var(--space-2xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+  }
+
+  .vp-how-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .vp-step-num {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-subtle);
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(212, 165, 116, 0.2);
+  }
+
+  .vp-step-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .vp-how-arrow {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .vp-grid {
+      grid-template-columns: 1fr;
+    }
+    .vp-card-highlight {
+      grid-column: 1;
+    }
+    .vp-how {
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .vp-how-arrow {
+      transform: rotate(90deg);
+    }
+    .vp-comparison {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>
