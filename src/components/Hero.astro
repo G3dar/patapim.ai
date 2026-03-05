@@ -44,6 +44,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
       <div class="hero-install-tabs">
         <button class="hi-tab active" data-hero-tab="cmd">CMD</button>
         <button class="hi-tab" data-hero-tab="ps">PowerShell</button>
+        <button class="hi-tab" data-hero-tab="mac">macOS</button>
       </div>
       <div class="hero-install-panels">
         <div class="hi-panel active" data-hero-panel="cmd">
@@ -66,11 +67,21 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
             </button>
           </div>
         </div>
+        <div class="hi-panel" data-hero-panel="mac">
+          <div class="hi-line" data-hero-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
+            <span class="hi-prompt">$</span>
+            <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
+            <button class="hi-copy-btn" aria-label="Copy to clipboard">
+              <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="hero-install-meta">
         <span>Windows 10+</span>
         <span class="meta-dot">&#x2022;</span>
-        <span>macOS coming soon</span>
+        <span>macOS 12+</span>
         <span class="meta-dot">&#x2022;</span>
         <a href="/download" class="meta-link">Download page</a>
       </div>
@@ -397,15 +408,27 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
   // Install tabs
   const heroTabs = document.querySelectorAll('[data-hero-tab]');
   const heroPanels = document.querySelectorAll('[data-hero-panel]');
+
+  function activateHeroTab(tabId: string) {
+    heroTabs.forEach(t => t.classList.remove('active'));
+    heroPanels.forEach(p => p.classList.remove('active'));
+    const tab = document.querySelector(`[data-hero-tab="${tabId}"]`);
+    const panel = document.querySelector(`[data-hero-panel="${tabId}"]`);
+    tab?.classList.add('active');
+    panel?.classList.add('active');
+  }
+
   heroTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const target = (tab as HTMLElement).dataset.heroTab;
-      heroTabs.forEach(t => t.classList.remove('active'));
-      heroPanels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.querySelector(`[data-hero-panel="${target}"]`)?.classList.add('active');
+      if (target) activateHeroTab(target);
     });
   });
+
+  // Auto-detect platform: show macOS tab for Mac users
+  if (/Mac|iPhone|iPad/.test(navigator.userAgent)) {
+    activateHeroTab('mac');
+  }
 
   // Copy to clipboard
   function heroCopyText(text: string): Promise<void> {
