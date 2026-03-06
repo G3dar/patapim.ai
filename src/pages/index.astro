@@ -1,5 +1,5 @@
 ---
-export const prerender = true;
+export const prerender = false;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
@@ -9,6 +9,14 @@ import SecondaryFeatures from '../components/SecondaryFeatures.astro';
 import MoreFeatures from '../components/MoreFeatures.astro';
 import PricingPreview from '../components/PricingPreview.astro';
 import Footer from '../components/Footer.astro';
+import { getUserFromRequest } from '../lib/auth';
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (user) {
+  return Astro.redirect('/go');
+}
 ---
 
 <BaseLayout>
