@@ -71,11 +71,13 @@ import Footer from '../components/Footer.astro';
             <h3>macOS</h3>
             <p class="dl-version">macOS 12+ &mdash; Intel &amp; Apple Silicon</p>
             <div class="dl-mac-buttons">
-              <span class="btn btn-primary dl-btn dl-btn-disabled">
-                Coming Soon
-              </span>
+              <a href="/api/download/latest-mac-arm64" class="btn btn-primary dl-btn">
+                Download for Apple Silicon
+              </a>
+              <a href="/api/download/latest-mac-x64" class="btn btn-secondary dl-btn dl-btn-alt">
+                Download for Intel
+              </a>
             </div>
-            <p class="dl-arch-hint">macOS builds are in development. Stay tuned!</p>
           </div>
           <div class="dl-install-cmds">
             <div class="dl-cmd-block">
@@ -198,18 +200,6 @@ import Footer from '../components/Footer.astro';
   .dl-btn-alt {
     font-size: 13px;
     padding: 8px 20px;
-  }
-
-  .dl-btn-disabled {
-    opacity: 0.5;
-    cursor: default;
-    pointer-events: none;
-  }
-
-  .dl-arch-hint {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: var(--space-sm);
   }
 
   /* Install commands */
