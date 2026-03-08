@@ -536,6 +536,18 @@ Astro.response.headers.set('Expires', '0');
       overscroll-behavior: contain;
     }
 
+    @media (pointer: coarse) {
+      .terminal-wrap {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: auto;
+      }
+      .terminal-wrap .xterm {
+        width: max-content;
+        min-width: 100%;
+      }
+    }
+
     .terminal-wrap .xterm {
       height: 100%;
       padding: 4px 0 0 4px;
