@@ -551,7 +551,7 @@ Astro.response.headers.set('Expires', '0');
 
     .terminal-wrap .xterm-viewport {
       overflow-y: auto !important;
-      overflow-x: hidden !important;
+      overflow-x: auto !important;
       /* NO -webkit-overflow-scrolling: touch — that causes iOS GPU-compositor scroll
          to move the DOM without xterm's canvas catching up → ghost/shadow terminal */
       overscroll-behavior-y: contain;
@@ -561,7 +561,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     .terminal-wrap .xterm-screen {
-      touch-action: pan-y !important;
+      touch-action: pan-x pan-y !important;
     }
     .terminal-wrap .xterm-viewport::-webkit-scrollbar {
       width: 8px;
