@@ -394,12 +394,36 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     background: var(--text-muted);
   }
 
+  .online-badge.heartbeat {
+    background: rgba(224, 164, 88, 0.12);
+    color: var(--warning);
+  }
+
+  .online-badge.heartbeat::before {
+    background: var(--warning);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
   .device-card.device-offline {
     opacity: 0.5;
     cursor: default;
   }
 
   .device-card.device-offline:hover {
+    border-color: var(--border-default);
+  }
+
+  .device-card.device-heartbeat {
+    opacity: 0.75;
+    cursor: default;
+  }
+
+  .device-card.device-heartbeat:hover {
     border-color: var(--border-default);
   }
 
@@ -521,15 +545,38 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         return;
       }
 
-      // Render devices with server-determined online status (no client-side pinging needed)
+      // Render devices with server-determined status
+      function badgeClass(d) {
+        if (d.status === 'online') return 'online';
+        if (d.status === 'heartbeat') return 'heartbeat';
+        return 'offline';
+      }
+      function badgeLabel(d) {
+        if (d.status === 'online') return 'Online';
+        if (d.status === 'heartbeat') return 'Connecting\u2026';
+        return 'Offline';
+      }
+      function cardClass(d) {
+        if (d.status === 'online') return 'device-card';
+        if (d.status === 'heartbeat') return 'device-card device-heartbeat';
+        return 'device-card device-offline';
+      }
+      function lastSeenText(d) {
+        if (d.status === 'online' || !d.lastSeen) return '';
+        const ago = Date.now() - new Date(d.lastSeen).getTime();
+        if (ago < 60000) return 'Last seen just now';
+        if (ago < 3600000) return 'Last seen ' + Math.floor(ago / 60000) + 'm ago';
+        if (ago < 86400000) return 'Last seen ' + Math.floor(ago / 3600000) + 'h ago';
+        return 'Last seen ' + Math.floor(ago / 86400000) + 'd ago';
+      }
       container.innerHTML = '<div class="devices-grid">' + devices.map(d => `
-          <div class="device-card${d.online ? '' : ' device-offline'}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
+          <div class="${cardClass(d)}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
             <div class="device-card-header">
               <span class="device-name" data-token="${escapeHtml(d.token)}" title="Click to rename">${escapeHtml(d.deviceName)}</span>
-              <span class="online-badge ${d.online ? 'online' : 'offline'}">${d.online ? 'Online' : 'Offline'}</span>
+              <span class="online-badge ${badgeClass(d)}">${badgeLabel(d)}</span>
             </div>
             <div class="device-meta">
-              <span>${d.terminalCount ? 'Terminals: ' + d.terminalCount : ''}</span>
+              <span>${d.status === 'online' && d.terminalCount ? 'Terminals: ' + d.terminalCount : lastSeenText(d)}</span>
               ${d.city || d.ip ? '<span class="device-location">' + [d.city, d.country].filter(Boolean).join(', ') + (d.ip ? ((d.city || d.country) ? ' \u00b7 ' : '') + escapeHtml(d.ip) : '') + '</span>' : ''}
             </div>
           </div>`
@@ -591,7 +638,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
       container.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', async (e) => {
           if (e.target.closest('.device-name')) return;
-          if (card.classList.contains('device-offline')) return;
+          if (card.classList.contains('device-offline') || card.classList.contains('device-heartbeat')) return;
           if (card.classList.contains('connecting')) return;
           card.classList.add('connecting');
           card.style.opacity = '0.6';

@@ -29,22 +29,20 @@ export const GET: APIRoute = async (context) => {
       const raw = await env.LICENSES.get(`device:${entry.token}`);
       if (!raw) return null;
       const d = JSON.parse(raw);
-      const heartbeatOnline = now - new Date(d.lastSeen).getTime() < ONLINE_THRESHOLD_MS;
+      const heartbeatAge = now - new Date(d.lastSeen).getTime();
+      const heartbeatOnline = heartbeatAge < ONLINE_THRESHOLD_MS;
 
-      if (!heartbeatOnline) {
-        // Auto-delete devices offline for more than 7 days
-        if (now - new Date(d.lastSeen).getTime() > STALE_DELETE_MS) {
-          await env.LICENSES.delete(`device:${entry.token}`);
-          stalledTokens.add(entry.token);
-        }
-        // Either way, don't include offline devices in the response
+      // Auto-delete devices offline for more than 7 days
+      if (heartbeatAge > STALE_DELETE_MS) {
+        await env.LICENSES.delete(`device:${entry.token}`);
+        stalledTokens.add(entry.token);
         return null;
       }
 
-      // Server-side ping to tunnel URL for real-time status (avoids client-side CORS issues on mobile)
+      // Server-side ping to tunnel URL for real-time status
       let online = false;
       let terminalCount = d.terminalCount;
-      if (d.tunnelUrl) {
+      if (d.tunnelUrl && heartbeatOnline) {
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 4000);
@@ -56,16 +54,18 @@ export const GET: APIRoute = async (context) => {
             if (pingData.terminalCount) terminalCount = pingData.terminalCount;
           }
         } catch {
-          // Tunnel unreachable — device is offline
+          // Tunnel unreachable — device may still be running
         }
       }
 
-      if (!online) return null;
+      // Determine status: online (ping OK), heartbeat (recent but ping failed), offline (stale)
+      const status = online ? 'online' : heartbeatOnline ? 'heartbeat' : 'offline';
 
       return {
         token: entry.token,
         deviceName: d.deviceName,
         online,
+        status,
         lastSeen: d.lastSeen,
         tunnelUrl: d.tunnelUrl,
         terminalCount,
@@ -82,9 +82,7 @@ export const GET: APIRoute = async (context) => {
     await env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(updated));
   }
 
-  const onlineDevices = devices.filter(Boolean);
-
   return new Response(JSON.stringify({
-    devices: onlineDevices,
+    devices: devices.filter(Boolean),
   }), { status: 200, headers });
 };
