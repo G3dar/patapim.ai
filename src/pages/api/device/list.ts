@@ -4,7 +4,8 @@ import { getUserFromRequest } from '../../../lib/auth';
 export const prerender = false;
 
 const ONLINE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes (1.5x the 10-min heartbeat interval)
-const STALE_DELETE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const HIDE_OFFLINE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days — hide from list
+const STALE_DELETE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days — auto-delete from KV
 
 export const GET: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
