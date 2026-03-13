@@ -8,85 +8,23 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
   <div class="hero-bg-grid"></div>
   <div class="container hero-inner">
 
+    <!-- New main headline -->
     <h1 class="hero-title">
-      <span class="hero-accent">Open Claw,</span> but Free.<br/>
-      <span class="hero-secure">
-        <svg class="hero-lock" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        AND SECURE.
-      </span>
+      Vibe Coding <span class="hero-title-mid">without the</span><br/>
+      <span class="hero-brainrot-accent">Brain Rot</span>
     </h1>
 
     <p class="hero-subtitle">
-      Same power. Your accounts. Your machine. Zero API costs.<br/>
-      Browser automation + Claude Code + remote access &mdash; without paying a cent more.
+      Run 10 projects at the same time. Stay focused. Stay organized.<br/>
+      This is how you'll code in the future.
     </p>
 
-    <div class="hero-killers">
-      <div class="hero-killer">
-        <span class="hk-x">&#x2717;</span>
-        <span>No per-token billing</span>
-      </div>
-      <div class="hero-killer">
-        <span class="hk-x">&#x2717;</span>
-        <span>No cloud middleman</span>
-      </div>
-      <div class="hero-killer">
-        <span class="hk-x">&#x2717;</span>
-        <span>No extra subscriptions</span>
-      </div>
-      <div class="hero-killer hk-yes">
-        <span class="hk-check">&#x2714;</span>
-        <span>Your existing AI accounts. That's it.</span>
-      </div>
+    <!-- Brain Rot Demo Video -->
+    <div class="hero-video-wrapper">
+      <video class="hero-video" muted loop playsinline autoplay preload="metadata" src="/hero-brainrot.mp4"></video>
     </div>
 
-    <div class="hero-install">
-      <div class="hero-install-tabs">
-        <button class="hi-tab active" data-hero-tab="cmd">CMD</button>
-        <button class="hi-tab" data-hero-tab="ps">PowerShell</button>
-        <button class="hi-tab" data-hero-tab="mac">macOS</button>
-      </div>
-      <div class="hero-install-panels">
-        <div class="hi-panel active" data-hero-panel="cmd">
-          <div class="hi-line" data-hero-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
-            <span class="hi-prompt">C:\&gt;</span>
-            <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
-            <button class="hi-copy-btn" aria-label="Copy to clipboard">
-              <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="hi-panel" data-hero-panel="ps">
-          <div class="hi-line" data-hero-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
-            <span class="hi-prompt">PS&gt;</span>
-            <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
-            <button class="hi-copy-btn" aria-label="Copy to clipboard">
-              <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="hi-panel" data-hero-panel="mac">
-          <div class="hi-line" data-hero-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
-            <span class="hi-prompt">$</span>
-            <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
-            <button class="hi-copy-btn" aria-label="Copy to clipboard">
-              <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="hero-install-meta">
-        <span>Windows 10+</span>
-        <span class="meta-dot">&#x2022;</span>
-        <span>macOS 12+</span>
-        <span class="meta-dot">&#x2022;</span>
-        <a href="/download" class="meta-link">Download page</a>
-      </div>
-    </div>
-
+    <!-- Three mini-demo animations -->
     <div class="hero-features">
       <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
@@ -110,6 +48,89 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
         </div>
       </div>
     </div>
+
+    <!-- Original "Open Claw" section (secondary) -->
+    <div class="hero-openclaw-section">
+      <h2 class="hero-title-secondary">
+        <span class="hero-accent">Open Claw,</span> but Free.<br/>
+        <span class="hero-secure">
+          <svg class="hero-lock" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          AND SECURE.
+        </span>
+      </h2>
+
+      <p class="hero-subtitle-secondary">
+        Same power. Your accounts. Your machine. Zero API costs.<br/>
+        Browser automation + Claude Code + remote access &mdash; without paying a cent more.
+      </p>
+
+      <div class="hero-killers">
+        <div class="hero-killer">
+          <span class="hk-x">&#x2717;</span>
+          <span>No per-token billing</span>
+        </div>
+        <div class="hero-killer">
+          <span class="hk-x">&#x2717;</span>
+          <span>No cloud middleman</span>
+        </div>
+        <div class="hero-killer">
+          <span class="hk-x">&#x2717;</span>
+          <span>No extra subscriptions</span>
+        </div>
+        <div class="hero-killer hk-yes">
+          <span class="hk-check">&#x2714;</span>
+          <span>Your existing AI accounts. That's it.</span>
+        </div>
+      </div>
+
+      <div class="hero-install">
+        <div class="hero-install-tabs">
+          <button class="hi-tab active" data-hero-tab="cmd">CMD</button>
+          <button class="hi-tab" data-hero-tab="ps">PowerShell</button>
+          <button class="hi-tab" data-hero-tab="mac">macOS</button>
+        </div>
+        <div class="hero-install-panels">
+          <div class="hi-panel active" data-hero-panel="cmd">
+            <div class="hi-line" data-hero-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+              <span class="hi-prompt">C:\&gt;</span>
+              <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+                <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="hi-panel" data-hero-panel="ps">
+            <div class="hi-line" data-hero-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+              <span class="hi-prompt">PS&gt;</span>
+              <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
+              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+                <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="hi-panel" data-hero-panel="mac">
+            <div class="hi-line" data-hero-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
+              <span class="hi-prompt">$</span>
+              <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
+              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+                <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="hero-install-meta">
+          <span>Windows 10+</span>
+          <span class="meta-dot">&#x2022;</span>
+          <span>macOS 12+</span>
+          <span class="meta-dot">&#x2022;</span>
+          <a href="/download" class="meta-link">Download page</a>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -147,6 +168,71 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     letter-spacing: -2px;
   }
 
+  .hero-title-mid {
+    font-size: clamp(18px, 3vw, 34px);
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: var(--text-tertiary);
+  }
+
+  .hero-brainrot-accent {
+    font-size: clamp(52px, 9vw, 110px);
+    background: linear-gradient(135deg, #d4a574, #8bb04a, #d4a574);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 100%;
+    animation: brainrot-shimmer 3s ease-in-out infinite;
+    letter-spacing: -3px;
+    font-weight: 800;
+  }
+
+  @keyframes brainrot-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .hero-subtitle {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin: 0 auto var(--space-2xl);
+    line-height: 1.7;
+  }
+
+  /* Brain rot demo video */
+  .hero-video-wrapper {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto var(--space-3xl);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+  }
+
+  .hero-video {
+    display: block;
+    width: 100%;
+    border-radius: 16px;
+  }
+
+
+  /* Secondary "Open Claw" section */
+  .hero-openclaw-section {
+    margin-top: var(--space-4xl);
+    padding-top: var(--space-3xl);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .hero-title-secondary {
+    font-size: clamp(30px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: var(--space-xl);
+    letter-spacing: -1.5px;
+  }
+
   .hero-accent {
     background: linear-gradient(135deg, var(--accent-primary), #e8c29e);
     -webkit-background-clip: text;
@@ -162,7 +248,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-size: clamp(24px, 4vw, 46px);
+    font-size: clamp(18px, 3vw, 34px);
     letter-spacing: 0.05em;
     font-weight: 900;
     -webkit-text-stroke: 1.5px #ff4444;
@@ -181,8 +267,8 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     50% { filter: drop-shadow(0 0 24px rgba(255, 68, 68, 0.8)); }
   }
 
-  .hero-subtitle {
-    font-size: clamp(16px, 2vw, 20px);
+  .hero-subtitle-secondary {
+    font-size: clamp(15px, 1.8vw, 18px);
     color: var(--text-secondary);
     max-width: 620px;
     margin: 0 auto var(--space-2xl);
@@ -396,11 +482,16 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     .hero-features { flex-direction: column; align-items: center; gap: var(--space-xl); }
     .hf-label { font-size: 13px; }
     .hf-desc { font-size: 12px; max-width: 280px; }
+    .hero-video-wrapper { max-width: 100%; }
+    .hero-openclaw-section { margin-top: var(--space-3xl); padding-top: var(--space-2xl); }
   }
 
   @media (max-width: 480px) {
     .hi-line { font-size: 10px; padding: 10px 12px; }
     .hi-prompt { display: none; }
+    .hero-video-wrapper { border-radius: 12px; }
+    .hero-video { border-radius: 12px; }
+    .hero-video-overlay { border-radius: 12px; }
   }
 </style>
 
