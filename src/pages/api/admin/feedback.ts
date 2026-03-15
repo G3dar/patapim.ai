@@ -24,12 +24,21 @@ export const GET: APIRoute = async (context) => {
   }> = [];
 
   for (const [key, val] of values) {
+    // extend-trial stores feedback as nested object with submittedAt
+    const fb = val.feedback;
+    const feedbackText = typeof fb === 'object' && fb !== null
+      ? [fb.improvements, fb.missingFeatures].filter(Boolean).join(' | ')
+      : fb || val.text || val.message || '';
+    const rating = typeof fb === 'object' && fb !== null
+      ? (fb.recommendScore ?? null)
+      : (val.rating ?? null);
+
     entries.push({
       key,
       email: val.email || '',
-      feedback: val.feedback || val.text || val.message || '',
-      rating: val.rating ?? null,
-      timestamp: val.timestamp || val.createdAt || '',
+      feedback: feedbackText,
+      rating,
+      timestamp: val.timestamp || val.submittedAt || val.createdAt || '',
     });
   }
 

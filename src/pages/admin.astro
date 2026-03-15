@@ -1432,30 +1432,34 @@ if (!isAdmin(user)) {
 
   // ── Feedback ──
   async function loadFeedback() {
+    const loadingEl = document.getElementById('feedback-loading')!;
+    const contentEl = document.getElementById('feedback-content')!;
     try {
       const res = await fetch('/api/admin/feedback');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      document.getElementById('feedback-loading')!.style.display = 'none';
-      const el = document.getElementById('feedback-content')!;
-      el.style.display = 'block';
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
 
-      if (!data.feedback.length) {
-        el.innerHTML = '<div class="no-data">No feedback yet.</div>';
+      if (!data.feedback?.length) {
+        contentEl.innerHTML = '<div class="no-data">No feedback yet.</div>';
         return;
       }
 
-      el.innerHTML = `<div class="fb-list">${data.feedback.map((f: any) => `
+      contentEl.innerHTML = `<div class="fb-list">${data.feedback.map((f: any) => `
         <div class="fb-card">
           <div class="fb-head">
             <span class="fb-email">${esc(f.email)}</span>
             <span class="fb-time">${fmtDate(f.timestamp)}</span>
           </div>
-          <div class="fb-text">${esc(f.feedback)}</div>
-          ${f.rating != null ? `<div class="fb-rating">${'&#9733;'.repeat(f.rating)}${'&#9734;'.repeat(5-f.rating)}</div>` : ''}
+          <div class="fb-text">${esc(String(f.feedback || ''))}</div>
+          ${f.rating != null ? `<div class="fb-rating">${'&#9733;'.repeat(Math.min(f.rating, 10))}${'&#9734;'.repeat(Math.max(0, 10-f.rating))}</div>` : ''}
         </div>
       `).join('')}</div>`;
-    } catch {
-      document.getElementById('feedback-loading')!.textContent = 'Failed to load feedback.';
+    } catch (e) {
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = 'Failed to load feedback.';
+      contentEl.style.display = 'none';
     }
   }
 
