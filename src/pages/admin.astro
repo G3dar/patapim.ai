@@ -56,6 +56,7 @@ if (!isAdmin(user)) {
         <button class="tab active" data-tab="overview">Overview</button>
         <button class="tab" data-tab="users">Users</button>
         <button class="tab" data-tab="referrals">Referrals</button>
+        <button class="tab" data-tab="beta">Beta Invites</button>
         <button class="tab" data-tab="feedback">Feedback</button>
         <button class="tab" data-tab="bugs">Bug Reports</button>
       </nav>
@@ -85,6 +86,17 @@ if (!isAdmin(user)) {
       <section class="pane" id="tab-referrals" style="display:none;">
         <div class="loader" id="referrals-loading">Loading...</div>
         <div id="referrals-content" style="display:none;"></div>
+      </section>
+
+      <!-- Beta Invites -->
+      <section class="pane" id="tab-beta" style="display:none;">
+        <div class="beta-gen-form">
+          <input type="text" class="toolbar-search" id="beta-note" placeholder="Reddit username / note..." style="max-width:320px;" />
+          <button class="btn-gen" id="beta-gen-btn">Generate Invite</button>
+        </div>
+        <div id="beta-result" style="display:none;" class="beta-result"></div>
+        <div class="loader" id="beta-loading">Loading...</div>
+        <div id="beta-content" style="display:none;"></div>
       </section>
 
       <!-- Feedback -->
@@ -975,6 +987,69 @@ if (!isAdmin(user)) {
     text-align: right;
   }
 
+  /* ── Beta Invites ─────────────────────── */
+  .beta-gen-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .btn-gen {
+    background: var(--blue-600);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 9px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 150ms;
+  }
+
+  .btn-gen:hover { background: var(--blue-700); }
+  .btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .beta-result {
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: var(--green-50);
+    border: 1px solid var(--green-500);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .beta-result-url {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--gray-800);
+    flex: 1;
+    word-break: break-all;
+  }
+
+  .beta-copy-btn {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 150ms;
+  }
+
+  .beta-copy-btn:hover { border-color: var(--blue-500); color: var(--blue-600); }
+  .beta-copy-btn.copied { border-color: var(--green-500); color: var(--green-600); }
+
+  .badge-expired { background: var(--red-100); color: var(--red-600); }
+  .badge-claimed { background: var(--green-100); color: var(--green-700); }
+
   /* ── Responsive ────────────────────────── */
   @media (max-width: 900px) {
     .kpi-grid {
@@ -1039,6 +1114,7 @@ if (!isAdmin(user)) {
       if (tab === 'overview') loadOverview();
       else if (tab === 'users') loadUsers();
       else if (tab === 'referrals') loadReferrals();
+      else if (tab === 'beta') loadBeta();
       else if (tab === 'feedback') loadFeedback();
       else if (tab === 'bugs') loadBugs();
     }
@@ -1492,6 +1568,107 @@ if (!isAdmin(user)) {
       `).join('')}</div>`;
     } catch {
       document.getElementById('bugs-loading')!.textContent = 'Failed to load bug reports.';
+    }
+  }
+
+  // ── Beta Invites ──
+  document.getElementById('beta-gen-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('beta-gen-btn') as HTMLButtonElement;
+    const noteInput = document.getElementById('beta-note') as HTMLInputElement;
+    const resultEl = document.getElementById('beta-result')!;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/beta-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: noteInput.value.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        resultEl.style.display = 'flex';
+        resultEl.style.background = 'var(--red-50)';
+        resultEl.style.borderColor = 'var(--red-500)';
+        resultEl.innerHTML = `<span style="color:var(--red-600)">${esc(data.error || 'Failed to generate invite')}</span>`;
+        btn.disabled = false;
+        return;
+      }
+
+      resultEl.style.display = 'flex';
+      resultEl.style.background = 'var(--green-50)';
+      resultEl.style.borderColor = 'var(--green-500)';
+      resultEl.innerHTML = `
+        <span class="beta-result-url">${esc(data.url)}</span>
+        <button class="beta-copy-btn" id="beta-copy">Copy URL</button>
+      `;
+
+      document.getElementById('beta-copy')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(data.url).then(() => {
+          const copyBtn = document.getElementById('beta-copy')!;
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => { copyBtn.textContent = 'Copy URL'; copyBtn.classList.remove('copied'); }, 1500);
+        });
+      });
+
+      noteInput.value = '';
+      // Reload the list
+      loaded['beta'] = false;
+      loadBeta();
+    } catch {
+      resultEl.style.display = 'flex';
+      resultEl.style.background = 'var(--red-50)';
+      resultEl.style.borderColor = 'var(--red-500)';
+      resultEl.innerHTML = '<span style="color:var(--red-600)">Network error</span>';
+    }
+    btn.disabled = false;
+  });
+
+  async function loadBeta() {
+    try {
+      const res = await fetch('/api/admin/beta-invites');
+      const data = await res.json();
+      document.getElementById('beta-loading')!.style.display = 'none';
+      const el = document.getElementById('beta-content')!;
+      el.style.display = 'block';
+
+      const now = Date.now();
+
+      function inviteStatus(inv: any): { label: string; cls: string } {
+        if (inv.claimedBy) return { label: 'Claimed', cls: 'claimed' };
+        if (new Date(inv.expiresAt).getTime() < now) return { label: 'Expired', cls: 'expired' };
+        return { label: 'Pending', cls: 'pending' };
+      }
+
+      el.innerHTML = `
+        <div class="kpi-grid" style="margin-bottom:24px;">
+          <div class="kpi"><div class="kpi-label">Generated</div><div class="kpi-value">${data.generated}</div><div class="kpi-sub">of ${data.max} max</div></div>
+          <div class="kpi"><div class="kpi-label">Claimed</div><div class="kpi-value">${data.claimed}</div></div>
+          <div class="kpi"><div class="kpi-label">Remaining</div><div class="kpi-value">${data.max - data.generated}</div></div>
+        </div>
+
+        ${!data.invites.length ? '<div class="no-data">No beta invites yet.</div>' : `
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>Code</th><th>Note</th><th>Created</th><th>Expires</th><th>Status</th><th>Claimed By</th></tr></thead>
+            <tbody>
+              ${data.invites.slice().reverse().map((inv: any) => {
+                const s = inviteStatus(inv);
+                return `<tr>
+                  <td style="font-family:var(--mono);font-size:12px">${esc(inv.code)}</td>
+                  <td style="font-size:13px;color:var(--gray-600)">${esc(inv.note || inv.ref || '')}</td>
+                  <td style="font-size:12px;white-space:nowrap">${fmtDate(inv.createdAt)}</td>
+                  <td style="font-size:12px;white-space:nowrap">${fmtDate(inv.expiresAt)}</td>
+                  <td><span class="badge badge-${s.cls}">${s.label}</span></td>
+                  <td style="font-family:var(--mono);font-size:12px">${inv.claimedBy ? esc(inv.claimedBy) : '<span style="color:var(--gray-300)">\u2014</span>'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table></div>
+        `}
+      `;
+    } catch {
+      document.getElementById('beta-loading')!.textContent = 'Failed to load beta invites.';
     }
   }
 

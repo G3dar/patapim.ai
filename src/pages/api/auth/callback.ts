@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createSession, buildSessionCookie } from '../../../lib/auth';
 import { activateReferral, createReferralAssociation } from '../../../lib/referral';
+import { generateLicenseKey } from '../../../lib/license';
 
 export const prerender = false;
 
@@ -31,6 +32,17 @@ export const GET: APIRoute = async (context) => {
     return new Response('Invalid or expired state', { status: 400 });
   }
   await env.SESSIONS.delete(`oauth_state:${state}`);
+
+  // Extract beta code from OAuth state if present
+  let betaCodeFromState = '';
+  if (storedState !== 'true') {
+    try {
+      const stateData = JSON.parse(storedState);
+      betaCodeFromState = stateData.beta || '';
+    } catch {
+      // Not JSON — ignore
+    }
+  }
 
   // Exchange code for tokens
   const redirectUri = `${siteUrl}/api/auth/callback`;
@@ -121,6 +133,88 @@ export const GET: APIRoute = async (context) => {
   } catch (e) {
     console.error('Referral claim error:', e);
   }
+  // Beta invite: check state or cookie for beta code
+  const betaCookieMatch = cookies.match(/(?:^|;\s*)__patapim_beta=([^;]+)/);
+  const betaCode = betaCodeFromState || (betaCookieMatch ? betaCookieMatch[1] : '');
+
+  if (betaCode) {
+    try {
+      const inviteRaw = await env.LICENSES.get(`beta-invite:${betaCode}`);
+      if (inviteRaw) {
+        const invite = JSON.parse(inviteRaw);
+        const isValid = !invite.claimedBy && new Date(invite.expiresAt) > new Date();
+
+        if (isValid) {
+          // Check user doesn't already have an active license
+          const existingLicenseRaw = await env.LICENSES.get(`license:${profile.email}`);
+          const existingLicense = existingLicenseRaw ? JSON.parse(existingLicenseRaw) : null;
+
+          if (!existingLicense || existingLicense.status !== 'active') {
+            // Generate license (same pattern as Stripe webhook / referral reward)
+            const licenseKey = generateLicenseKey();
+            const license = {
+              email: profile.email,
+              plan: 'lifetime',
+              status: 'active',
+              stripeCustomerId: 'beta-invite',
+              stripeSubscriptionId: null,
+              createdAt: now,
+              expiresAt: null,
+              licenseKey,
+            };
+
+            // Mark invite as claimed
+            invite.claimedBy = profile.email;
+            invite.claimedAt = now;
+
+            // Save all records in parallel
+            await Promise.all([
+              env.LICENSES.put(`license:${profile.email}`, JSON.stringify(license)),
+              env.LICENSES.put(`key:${licenseKey}`, profile.email),
+              env.LICENSES.put(`beta-invite:${betaCode}`, JSON.stringify(invite)),
+              env.LICENSES.put(`beta-grant:${profile.email}`, JSON.stringify({
+                code: betaCode,
+                ref: invite.ref || '',
+                grantedAt: now,
+                licenseKey,
+              })),
+            ]);
+
+            // Increment claimed counter
+            const claimedRaw = await env.LICENSES.get('beta:claimed');
+            await env.LICENSES.put('beta:claimed', String((parseInt(claimedRaw || '0', 10) || 0) + 1));
+
+            // Update invites list with claimed status
+            try {
+              const listRaw = await env.LICENSES.get('beta:invites-list');
+              if (listRaw) {
+                const list = JSON.parse(listRaw);
+                const entry = list.find((e: any) => e.code === betaCode);
+                if (entry) {
+                  entry.claimedBy = profile.email;
+                  entry.claimedAt = now;
+                  await env.LICENSES.put('beta:invites-list', JSON.stringify(list));
+                }
+              }
+            } catch {
+              // Best-effort list update
+            }
+
+            // Build response: redirect to beta success page
+            const betaHeaders = new Headers();
+            betaHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
+            betaHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+            betaHeaders.append('Set-Cookie', '__patapim_beta=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+            betaHeaders.set('Location', `${siteUrl}/beta/success`);
+            return new Response(null, { status: 302, headers: betaHeaders });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Beta invite claim error:', e);
+    }
+  }
+
   const pairMatch = cookies.match(/(?:^|;\s*)__patapim_pair=([^;]+)/);
   const pairingSessionId = pairMatch ? pairMatch[1] : null;
 
@@ -128,6 +222,8 @@ export const GET: APIRoute = async (context) => {
   responseHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
   // Clear referral cookie after processing
   responseHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+  // Clear beta cookie after processing
+  responseHeaders.append('Set-Cookie', '__patapim_beta=; Secure; SameSite=Lax; Path=/; Max-Age=0');
 
   if (pairingSessionId) {
     // Auto-create device token for the desktop app

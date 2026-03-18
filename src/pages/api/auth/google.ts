@@ -5,9 +5,13 @@ export const prerender = false;
 
 export const GET: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
+  const url = new URL(context.request.url);
   const state = crypto.randomUUID();
 
-  await env.SESSIONS.put(`oauth_state:${state}`, 'true', { expirationTtl: STATE_TTL });
+  // Store state value — include beta code if present so it survives OAuth round-trip
+  const betaCode = url.searchParams.get('beta') || '';
+  const stateValue = betaCode ? JSON.stringify({ beta: betaCode }) : 'true';
+  await env.SESSIONS.put(`oauth_state:${state}`, stateValue, { expirationTtl: STATE_TTL });
 
   const siteUrl = env.SITE_URL || 'https://patapim.ai';
   const redirectUri = `${siteUrl}/api/auth/callback`;
