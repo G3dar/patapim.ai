@@ -666,6 +666,10 @@ Astro.response.headers.set('Expires', '0');
       border-color: var(--text-dim);
     }
 
+    .scroll-bottom svg {
+      transition: transform 0.15s;
+    }
+
     .scroll-bottom.visible { display: flex; }
 
     /* Floating action button (mobile) */
@@ -1194,9 +1198,11 @@ Astro.response.headers.set('Expires', '0');
     }
     if (isDebugMode) setInterval(dbgUpdate, 500);
     // ---- END DEBUG OVERLAY ----
-    let recognition = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingTimeout = null;
+    let transcriptionTimeout = null;
     let isRecording = false;
-    let voiceFinalText = '';
     let selectionOverlay = null;
     let mobileKeyboardOpen = false;
     let keyboardOpenTime = 0; // timestamp of last keyboard-open tap (grace period for snapshots)
@@ -1587,7 +1593,20 @@ Astro.response.headers.set('Expires', '0');
         const distanceFromBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
         const isAtBottom = distanceFromBottom < 10;
         const hasScrollback = viewport.scrollHeight > viewport.clientHeight + 10;
-        scrollBottomBtn.classList.toggle('visible', !isAtBottom && hasScrollback);
+        const isScrolledUp = !isAtBottom && hasScrollback;
+        const isScrolledRight = terminalWrap.scrollLeft > 10;
+        scrollBottomBtn.classList.toggle('visible', isScrolledUp || isScrolledRight);
+
+        const svg = scrollBottomBtn.querySelector('svg');
+        if (svg) {
+          if (isScrolledUp && isScrolledRight) {
+            svg.style.transform = 'rotate(45deg)';
+          } else if (isScrolledRight) {
+            svg.style.transform = 'rotate(90deg)';
+          } else {
+            svg.style.transform = 'rotate(0deg)';
+          }
+        }
       };
 
       // Track scroll position
@@ -1598,6 +1617,7 @@ Astro.response.headers.set('Expires', '0');
       if (viewport) {
         viewport.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
       }
+      terminalWrap.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
 
       terminalWrap.addEventListener('click', () => {
         term.focus();
@@ -2062,6 +2082,21 @@ Astro.response.headers.set('Expires', '0');
           }
           break;
 
+        case 'voice_transcription':
+          if (transcriptionTimeout) { clearTimeout(transcriptionTimeout); transcriptionTimeout = null; }
+          if (msg.success && msg.text) {
+            voiceText.value = msg.text;
+            voiceText.placeholder = 'Habla ahora...';
+            showVoicePreview();
+            voiceText.select();
+          } else if (msg.status === 'initializing') {
+            voiceText.placeholder = msg.message || 'Inicializando modelo...';
+          } else {
+            hideVoicePreview();
+            showToast(msg.error || 'Error en la transcripción');
+          }
+          break;
+
         case 'pong':
           break;
       }
@@ -2351,9 +2386,10 @@ Astro.response.headers.set('Expires', '0');
       location.href = '/go';
     });
 
-    // Scroll to bottom
+    // Scroll to bottom + left
     scrollBottomBtn.addEventListener('click', () => {
       term.scrollToBottom();
+      terminalWrap.scrollLeft = 0;
       scrollBottomBtn.classList.remove('visible');
     });
 
@@ -2560,75 +2596,100 @@ Astro.response.headers.set('Expires', '0');
       imagePicker.value = '';
     });
 
-    // ── Voice dictation (Web Speech API) ─────────────────
+    // ── Voice dictation (MediaRecorder → local transcription) ─────────────────
 
-    function initSpeechRecognition() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return null;
-
-      const r = new SR();
-      r.lang = navigator.language || 'es-ES';
-      r.interimResults = true;
-      r.continuous = false;
-      r.maxAlternatives = 1;
-
-      r.onresult = (e) => {
-        let interim = '';
-        let final = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) final += t;
-          else interim += t;
-        }
-        voiceFinalText = final || interim;
-        voiceText.value = voiceFinalText;
-      };
-
-      r.onend = () => {
-        stopRecording();
-        if (voiceFinalText.trim()) {
-          showVoicePreview();
-        } else {
-          showToast('No se detectó audio');
-        }
-      };
-
-      r.onerror = (e) => {
-        stopRecording();
-        if (e.error === 'not-allowed') showToast('Permiso de micrófono denegado');
-        else if (e.error === 'no-speech') showToast('No se detectó audio');
-        else showToast('Error de voz: ' + e.error);
-      };
-
-      return r;
+    function pickMimeType() {
+      const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+      ];
+      for (const t of types) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) return t;
+      }
+      return ''; // let browser pick default
     }
 
-    function startRecording() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        showToast('Tu navegador no soporta dictado por voz');
+    async function startRecording() {
+      if (typeof MediaRecorder === 'undefined') {
+        showToast('Tu navegador no soporta grabación de audio');
         return;
       }
-      voiceFinalText = '';
-      voiceText.value = '';
-      recognition = initSpeechRecognition();
-      if (!recognition) return;
       try {
-        recognition.start();
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = pickMimeType();
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        const recorderMimeType = mediaRecorder.mimeType || mimeType || 'audio/webm';
+        mediaRecorder.onstop = () => {
+          // Release mic
+          stream.getTracks().forEach(t => t.stop());
+          if (audioChunks.length === 0) {
+            showToast('No se grabó audio');
+            return;
+          }
+          const blob = new Blob(audioChunks, { type: recorderMimeType });
+          if (blob.size > 5 * 1024 * 1024) {
+            showToast('Grabación demasiado larga (máx 5 MB)');
+            return;
+          }
+          // Base64-encode and send via WebSocket
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            if (ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
+              ws.send(JSON.stringify({
+                type: 'voice_audio',
+                terminalId: currentTerminalId,
+                mimeType: blob.type,
+                data: base64,
+                size: blob.size,
+              }));
+              // Show preview with placeholder
+              voiceText.value = '';
+              voiceText.placeholder = 'Transcribiendo...';
+              showVoicePreview();
+              // Timeout for transcription (45s)
+              if (transcriptionTimeout) clearTimeout(transcriptionTimeout);
+              transcriptionTimeout = setTimeout(() => {
+                if (voiceText.placeholder === 'Transcribiendo...') {
+                  voiceText.placeholder = 'Habla ahora...';
+                  hideVoicePreview();
+                  showToast('Transcripción tardó demasiado');
+                }
+              }, 45000);
+            } else {
+              showToast('No hay conexión activa');
+            }
+          };
+          reader.readAsDataURL(blob);
+        };
+        mediaRecorder.start();
         isRecording = true;
         keyMic.classList.add('recording');
+        // Auto-stop after 60s
+        recordingTimeout = setTimeout(() => {
+          if (isRecording) stopRecording();
+        }, 60000);
       } catch (e) {
-        showToast('Error al iniciar el micrófono');
+        if (e.name === 'NotAllowedError') showToast('Permiso de micrófono denegado');
+        else showToast('Error al iniciar el micrófono');
       }
     }
 
     function stopRecording() {
       isRecording = false;
       keyMic.classList.remove('recording');
-      if (recognition) {
-        try { recognition.stop(); } catch (_) {}
-        recognition = null;
+      if (recordingTimeout) { clearTimeout(recordingTimeout); recordingTimeout = null; }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch (_) {}
       }
+      mediaRecorder = null;
     }
 
     function showVoicePreview() {
@@ -2638,15 +2699,15 @@ Astro.response.headers.set('Expires', '0');
 
     function hideVoicePreview() {
       voicePreview.classList.remove('visible');
-      voiceFinalText = '';
       voiceText.value = '';
+      voiceText.placeholder = 'Habla ahora...';
     }
 
     // Mic button: toggle recording
     keyMic.addEventListener('click', () => {
       if (!isAuthenticated) return;
       if (isRecording) {
-        if (recognition) recognition.stop();
+        stopRecording();
       } else {
         startRecording();
       }
