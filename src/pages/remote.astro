@@ -1728,6 +1728,13 @@ Astro.response.headers.set('Expires', '0');
           cancelLongPress();
           touchInfo = null;
         }, { passive: true });
+        // Track last touch X for manual horizontal scroll
+        // (xterm-viewport captures vertical scroll, blocking terminal-wrap's horizontal scroll)
+        let lastTouchX = 0;
+        terminalWrap.addEventListener('touchstart', (e2) => {
+          lastTouchX = e2.touches[0].clientX;
+        }, { passive: true, capture: true });
+
         terminalWrap.addEventListener('touchmove', (e) => {
           const t = e.touches[0];
           // Cancel tap/long-press if dragged
@@ -1739,6 +1746,12 @@ Astro.response.headers.set('Expires', '0');
               cancelLongPress();
             }
           }
+          // Manually apply horizontal scroll so it works even during vertical scroll
+          const hDelta = lastTouchX - t.clientX;
+          if (Math.abs(hDelta) > 1) {
+            terminalWrap.scrollLeft += hDelta;
+          }
+          lastTouchX = t.clientX;
         }, { passive: true });
       } else {
         terminalWrap.addEventListener('touchstart', () => {
