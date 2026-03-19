@@ -750,7 +750,7 @@ Astro.response.headers.set('Expires', '0');
     .fab-mic {
       position: absolute;
       bottom: 12px;
-      right: 56px;
+      right: 12px;
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -781,7 +781,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     @media (max-width: 768px) {
-      .fab-mic { bottom: 48px; right: 12px; }
+      .fab-mic { bottom: 12px; right: 56px; }
     }
 
     /* Selection overlay */
@@ -1076,10 +1076,10 @@ Astro.response.headers.set('Expires', '0');
 
           <div class="fab-toast" id="fab-toast"></div>
           <input type="file" id="image-picker" accept="image/*" style="display:none" />
-        </div>
 
-        <!-- Floating mic button (visible on all screen sizes) -->
-        <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+          <!-- Floating mic button (visible on all screen sizes) -->
+          <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+        </div>
 
         <!-- Voice dictation preview -->
         <div class="voice-preview" id="voice-preview">
