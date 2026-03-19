@@ -746,6 +746,44 @@ Astro.response.headers.set('Expires', '0');
       background: var(--accent-dim);
     }
 
+    /* Floating mic button (all screens) */
+    .fab-mic {
+      position: absolute;
+      bottom: 12px;
+      right: 56px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-dim);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 20;
+      transition: border-color 0.15s, transform 0.1s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .fab-mic:active { transform: scale(0.92); }
+
+    .fab-mic.recording {
+      border-color: #e74c3c;
+      animation: mic-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes mic-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+    }
+
+    @media (max-width: 768px) {
+      .fab-mic { bottom: 48px; right: 12px; }
+    }
+
     /* Selection overlay */
     .selection-overlay {
       position: absolute;
@@ -1040,6 +1078,9 @@ Astro.response.headers.set('Expires', '0');
           <input type="file" id="image-picker" accept="image/*" style="display:none" />
         </div>
 
+        <!-- Floating mic button (visible on all screen sizes) -->
+        <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+
         <!-- Voice dictation preview -->
         <div class="voice-preview" id="voice-preview">
           <textarea class="voice-text" id="voice-text" rows="3" placeholder="Habla ahora..."></textarea>
@@ -1121,6 +1162,7 @@ Astro.response.headers.set('Expires', '0');
     const fabPaste = document.getElementById('fab-paste');
     const fabImage = document.getElementById('fab-image');
     const fabToast = document.getElementById('fab-toast');
+    const fabMic = document.getElementById('fab-mic');
     const imagePicker = document.getElementById('image-picker');
     const keySelect = document.getElementById('key-select');
     const keyShiftTab = document.getElementById('key-shift-tab');
@@ -2672,6 +2714,7 @@ Astro.response.headers.set('Expires', '0');
         mediaRecorder.start();
         isRecording = true;
         keyMic.classList.add('recording');
+        fabMic.classList.add('recording');
         // Auto-stop after 60s
         recordingTimeout = setTimeout(() => {
           if (isRecording) stopRecording();
@@ -2685,6 +2728,7 @@ Astro.response.headers.set('Expires', '0');
     function stopRecording() {
       isRecording = false;
       keyMic.classList.remove('recording');
+      fabMic.classList.remove('recording');
       if (recordingTimeout) { clearTimeout(recordingTimeout); recordingTimeout = null; }
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         try { mediaRecorder.stop(); } catch (_) {}
@@ -2703,15 +2747,14 @@ Astro.response.headers.set('Expires', '0');
       voiceText.placeholder = 'Habla ahora...';
     }
 
-    // Mic button: toggle recording
-    keyMic.addEventListener('click', () => {
+    // Mic button: toggle recording (both keys-bar and floating)
+    function toggleRecording() {
       if (!isAuthenticated) return;
-      if (isRecording) {
-        stopRecording();
-      } else {
-        startRecording();
-      }
-    });
+      if (isRecording) stopRecording();
+      else startRecording();
+    }
+    keyMic.addEventListener('click', toggleRecording);
+    fabMic.addEventListener('click', toggleRecording);
 
     // Send: write transcribed text to terminal — user decides Enter
     voiceSend.addEventListener('click', () => {
