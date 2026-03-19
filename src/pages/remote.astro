@@ -981,7 +981,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r30</span></a>
+        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r31</span></a>
         <span id="topbar-project"></span>
         <span class="topbar-status connecting" id="status">Connecting...</span>
         <span id="dbg-state" style="font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
@@ -1229,7 +1229,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r30  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r31  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
