@@ -1083,10 +1083,10 @@ Astro.response.headers.set('Expires', '0');
 
         <!-- Voice dictation preview -->
         <div class="voice-preview" id="voice-preview">
-          <textarea class="voice-text" id="voice-text" rows="3" placeholder="Habla ahora..."></textarea>
+          <textarea class="voice-text" id="voice-text" rows="3" placeholder="Speak now..."></textarea>
           <div class="voice-actions">
-            <button class="voice-btn voice-cancel" id="voice-cancel">✕ Cancelar</button>
-            <button class="voice-btn voice-send" id="voice-send">↵ Enviar</button>
+            <button class="voice-btn voice-cancel" id="voice-cancel">✕ Cancel</button>
+            <button class="voice-btn voice-send" id="voice-send">↵ Send</button>
           </div>
         </div>
         <div class="keys-bar" id="keys-bar">
@@ -2128,14 +2128,14 @@ Astro.response.headers.set('Expires', '0');
           if (transcriptionTimeout) { clearTimeout(transcriptionTimeout); transcriptionTimeout = null; }
           if (msg.success && msg.text) {
             voiceText.value = msg.text;
-            voiceText.placeholder = 'Habla ahora...';
+            voiceText.placeholder = 'Speak now...';
             showVoicePreview();
             voiceText.select();
           } else if (msg.status === 'initializing') {
-            voiceText.placeholder = msg.message || 'Inicializando modelo...';
+            voiceText.placeholder = msg.message || 'Initializing model...';
           } else {
             hideVoicePreview();
-            showToast(msg.error || 'Error en la transcripción');
+            showToast(msg.error || 'Transcription error');
           }
           break;
 
@@ -2656,7 +2656,7 @@ Astro.response.headers.set('Expires', '0');
 
     async function startRecording() {
       if (typeof MediaRecorder === 'undefined') {
-        showToast('Tu navegador no soporta grabación de audio');
+        showToast('Your browser does not support audio recording');
         return;
       }
       try {
@@ -2672,12 +2672,12 @@ Astro.response.headers.set('Expires', '0');
           // Release mic
           stream.getTracks().forEach(t => t.stop());
           if (audioChunks.length === 0) {
-            showToast('No se grabó audio');
+            showToast('No audio recorded');
             return;
           }
           const blob = new Blob(audioChunks, { type: recorderMimeType });
           if (blob.size > 5 * 1024 * 1024) {
-            showToast('Grabación demasiado larga (máx 5 MB)');
+            showToast('Recording too long (max 5 MB)');
             return;
           }
           // Base64-encode and send via WebSocket
@@ -2694,19 +2694,19 @@ Astro.response.headers.set('Expires', '0');
               }));
               // Show preview with placeholder
               voiceText.value = '';
-              voiceText.placeholder = 'Transcribiendo...';
+              voiceText.placeholder = 'Transcribing...';
               showVoicePreview();
               // Timeout for transcription (45s)
               if (transcriptionTimeout) clearTimeout(transcriptionTimeout);
               transcriptionTimeout = setTimeout(() => {
-                if (voiceText.placeholder === 'Transcribiendo...') {
-                  voiceText.placeholder = 'Habla ahora...';
+                if (voiceText.placeholder === 'Transcribing...') {
+                  voiceText.placeholder = 'Speak now...';
                   hideVoicePreview();
-                  showToast('Transcripción tardó demasiado');
+                  showToast('Transcription timed out');
                 }
               }, 45000);
             } else {
-              showToast('No hay conexión activa');
+              showToast('No active connection');
             }
           };
           reader.readAsDataURL(blob);
@@ -2720,8 +2720,8 @@ Astro.response.headers.set('Expires', '0');
           if (isRecording) stopRecording();
         }, 60000);
       } catch (e) {
-        if (e.name === 'NotAllowedError') showToast('Permiso de micrófono denegado');
-        else showToast('Error al iniciar el micrófono');
+        if (e.name === 'NotAllowedError') showToast('Microphone permission denied');
+        else showToast('Failed to start microphone');
       }
     }
 
@@ -2744,7 +2744,7 @@ Astro.response.headers.set('Expires', '0');
     function hideVoicePreview() {
       voicePreview.classList.remove('visible');
       voiceText.value = '';
-      voiceText.placeholder = 'Habla ahora...';
+      voiceText.placeholder = 'Speak now...';
     }
 
     // Mic button: toggle recording (both keys-bar and floating)
