@@ -289,6 +289,41 @@ Astro.response.headers.set('Expires', '0');
       font-style: italic;
     }
 
+    .later-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 10px 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      gap: 4px;
+      user-select: none;
+    }
+
+    .later-header:hover { color: var(--text-dim); }
+
+    .later-header .later-arrow {
+      font-size: 8px;
+      transition: transform 0.15s;
+    }
+
+    .later-header.expanded .later-arrow {
+      transform: rotate(90deg);
+    }
+
+    .later-header .later-count {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .later-projects { display: none; }
+    .later-projects.open { display: block; }
+
     /* Sidebar actions */
     .sidebar-actions {
       flex-shrink: 0;
@@ -546,6 +581,12 @@ Astro.response.headers.set('Expires', '0');
         width: max-content;
         min-width: 100%;
       }
+      /* Prevent the browser from auto-scrolling to the textarea when it's focused */
+      .terminal-wrap .xterm-helper-textarea {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+      }
     }
 
     .terminal-wrap .xterm {
@@ -780,8 +821,33 @@ Astro.response.headers.set('Expires', '0');
       50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
     }
 
+    .fab-kbd {
+      position: absolute;
+      bottom: 12px;
+      right: 56px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-dim);
+      font-size: 16px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 20;
+      transition: border-color 0.15s, transform 0.1s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .fab-kbd:active { transform: scale(0.92); }
+
     @media (max-width: 768px) {
       .fab-mic { bottom: 60px; right: 60px; }
+      .fab-kbd { display: flex; bottom: 60px; right: 108px; }
+      .fab-kbd.hidden { display: none; }
     }
 
     /* Selection overlay */
@@ -1079,6 +1145,8 @@ Astro.response.headers.set('Expires', '0');
 
           <!-- Floating mic button (visible on all screen sizes) -->
           <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+          <!-- Floating keyboard button (mobile only, hidden when keyboard is open) -->
+          <button class="fab-kbd" id="fab-kbd" title="Show keyboard">⌨</button>
         </div>
 
         <!-- Voice dictation preview -->
@@ -1099,6 +1167,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-key="ArrowDown">&darr;</button>
           <button class="key-btn" data-key="ArrowLeft">&larr;</button>
           <button class="key-btn" data-key="ArrowRight">&rarr;</button>
+          <button class="key-btn" data-key="Enter">↵</button>
           <button class="key-btn" data-seq="\x01">^A</button>
           <button class="key-btn" data-seq="\x03">^C</button>
           <button class="key-btn" data-seq="\x04">^D</button>
@@ -1163,6 +1232,7 @@ Astro.response.headers.set('Expires', '0');
     const fabImage = document.getElementById('fab-image');
     const fabToast = document.getElementById('fab-toast');
     const fabMic = document.getElementById('fab-mic');
+    const fabKbd = document.getElementById('fab-kbd');
     const imagePicker = document.getElementById('image-picker');
     const keySelect = document.getElementById('key-select');
     const keyShiftTab = document.getElementById('key-shift-tab');
@@ -1266,6 +1336,7 @@ Astro.response.headers.set('Expires', '0');
 
     // Sidebar state
     let sidebarData = { projects: [], currentProject: null };
+    let laterExpanded = false;
 
     // Helper to fetch a fresh connectToken from the server
     async function fetchConnectToken(devToken) {
@@ -1448,6 +1519,7 @@ Astro.response.headers.set('Expires', '0');
           mobileKeyboardOpen = false;
           const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
           if (ta) ta.setAttribute('readonly', 'readonly');
+          fabKbd.classList.remove('hidden');
         }
         requestAnimationFrame(() => {
           applyPtyDims();
@@ -1714,6 +1786,7 @@ Astro.response.headers.set('Expires', '0');
             }
             mobileKeyboardOpen = true;
             keyboardOpenTime = Date.now();
+            fabKbd.classList.add('hidden');
             term.focus();
             syncTerminalFocus();
             window._kbLog = window._kbLog || [];
@@ -2162,16 +2235,17 @@ Astro.response.headers.set('Expires', '0');
     function renderProjects() {
       projectsList.innerHTML = '';
 
-      // Filter out archived, sort by lastOpenedAt
-      const projects = (sidebarData.projects || [])
-        .filter(p => !p.archived)
-        .sort((a, b) => {
-          const ta = a.lastOpenedAt || a.addedAt || '';
-          const tb = b.lastOpenedAt || b.addedAt || '';
-          return tb.localeCompare(ta);
-        });
+      const allProjects = sidebarData.projects || [];
+      const sortByTime = (a, b) => {
+        const ta = a.lastOpenedAt || a.addedAt || '';
+        const tb = b.lastOpenedAt || b.addedAt || '';
+        return tb.localeCompare(ta);
+      };
 
-      if (projects.length === 0) {
+      const active = allProjects.filter(p => !p.archived).sort(sortByTime);
+      const archived = allProjects.filter(p => p.archived).sort(sortByTime);
+
+      if (active.length === 0 && archived.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'no-projects';
         empty.textContent = 'No projects found';
@@ -2179,56 +2253,89 @@ Astro.response.headers.set('Expires', '0');
         return;
       }
 
-      projects.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'project-item' + (p.path === sidebarData.currentProject ? ' active' : '');
-        item.dataset.path = p.path;
+      active.forEach(p => projectsList.appendChild(createProjectItem(p)));
 
-        const icon = document.createElement('span');
-        icon.className = 'project-icon';
-        icon.textContent = '\uD83D\uDCC1';
-        item.appendChild(icon);
+      if (archived.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'later-header' + (laterExpanded ? ' expanded' : '');
 
-        const name = document.createElement('span');
-        name.className = 'project-name';
-        name.textContent = p.path.split(/[/\\]/).filter(Boolean).pop() || p.path;
-        name.title = p.path;
-        item.appendChild(name);
+        const arrow = document.createElement('span');
+        arrow.className = 'later-arrow';
+        arrow.textContent = '\u25B8';
+        header.appendChild(arrow);
 
-        // Terminal count badges (attention=green/done, busy=red/processing, idle=grey)
-        const counts = p.terminalCounts;
-        if (counts && (counts.attention > 0 || counts.busy > 0 || counts.idle > 0)) {
-          const badges = document.createElement('div');
-          badges.className = 'project-badges';
+        const label = document.createElement('span');
+        label.textContent = 'Later';
+        header.appendChild(label);
 
-          if (counts.attention > 0) {
-            const b = document.createElement('span');
-            b.className = 'tbadge attention';
-            b.textContent = counts.attention;
-            b.title = counts.attention + ' finished';
-            badges.appendChild(b);
-          }
-          if (counts.busy > 0) {
-            const b = document.createElement('span');
-            b.className = 'tbadge busy';
-            b.textContent = counts.busy;
-            b.title = counts.busy + ' processing';
-            badges.appendChild(b);
-          }
-          if (counts.idle > 0) {
-            const b = document.createElement('span');
-            b.className = 'tbadge idle';
-            b.textContent = counts.idle;
-            b.title = counts.idle + ' idle';
-            badges.appendChild(b);
-          }
+        const count = document.createElement('span');
+        count.className = 'later-count';
+        count.textContent = archived.length;
+        header.appendChild(count);
 
-          item.appendChild(badges);
+        const container = document.createElement('div');
+        container.className = 'later-projects' + (laterExpanded ? ' open' : '');
+        archived.forEach(p => container.appendChild(createProjectItem(p)));
+
+        header.addEventListener('click', () => {
+          laterExpanded = !laterExpanded;
+          header.classList.toggle('expanded', laterExpanded);
+          container.classList.toggle('open', laterExpanded);
+        });
+
+        projectsList.appendChild(header);
+        projectsList.appendChild(container);
+      }
+    }
+
+    function createProjectItem(p) {
+      const item = document.createElement('div');
+      item.className = 'project-item' + (p.path === sidebarData.currentProject ? ' active' : '');
+      item.dataset.path = p.path;
+
+      const icon = document.createElement('span');
+      icon.className = 'project-icon';
+      icon.textContent = '\uD83D\uDCC1';
+      item.appendChild(icon);
+
+      const name = document.createElement('span');
+      name.className = 'project-name';
+      name.textContent = p.path.split(/[/\\]/).filter(Boolean).pop() || p.path;
+      name.title = p.path;
+      item.appendChild(name);
+
+      const counts = p.terminalCounts;
+      if (counts && (counts.attention > 0 || counts.busy > 0 || counts.idle > 0)) {
+        const badges = document.createElement('div');
+        badges.className = 'project-badges';
+
+        if (counts.attention > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge attention';
+          b.textContent = counts.attention;
+          b.title = counts.attention + ' finished';
+          badges.appendChild(b);
+        }
+        if (counts.busy > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge busy';
+          b.textContent = counts.busy;
+          b.title = counts.busy + ' processing';
+          badges.appendChild(b);
+        }
+        if (counts.idle > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge idle';
+          b.textContent = counts.idle;
+          b.title = counts.idle + ' idle';
+          badges.appendChild(b);
         }
 
-        item.addEventListener('click', () => selectProject(p.path));
-        projectsList.appendChild(item);
-      });
+        item.appendChild(badges);
+      }
+
+      item.addEventListener('click', () => selectProject(p.path));
+      return item;
     }
 
     function selectProject(path) {
@@ -2470,6 +2577,7 @@ Astro.response.headers.set('Expires', '0');
           ArrowDown: '\x1b[B',
           ArrowRight: '\x1b[C',
           ArrowLeft: '\x1b[D',
+          Enter: '\r',
         };
         const data = keyMap[key] || '';
         if (data) {
@@ -2768,6 +2876,21 @@ Astro.response.headers.set('Expires', '0');
     }
     keyMic.addEventListener('click', toggleRecording);
     fabMic.addEventListener('click', toggleRecording);
+
+    // Floating keyboard button: open native keyboard on mobile
+    fabKbd.addEventListener('click', () => {
+      if (!isMobileClient) return;
+      if (xtermTextarea) {
+        xtermTextarea.blur();
+        xtermTextarea.removeAttribute('readonly');
+        void xtermTextarea.offsetHeight;
+      }
+      mobileKeyboardOpen = true;
+      keyboardOpenTime = Date.now();
+      fabKbd.classList.add('hidden');
+      term.focus();
+      syncTerminalFocus();
+    });
 
     // Send: write transcribed text to terminal — user decides Enter
     voiceSend.addEventListener('click', () => {
