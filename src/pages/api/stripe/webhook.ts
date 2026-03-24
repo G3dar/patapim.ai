@@ -115,6 +115,12 @@ export const POST: APIRoute = async (context) => {
         unpaid: 'past_due',
       };
       license.status = statusMap[subscription.status] || 'active';
+
+      // Detect pending cancellation (cancel at end of period)
+      if (subscription.cancel_at_period_end && license.status === 'active') {
+        license.status = 'canceled';
+      }
+
       license.expiresAt = subscription.current_period_end
         ? new Date(subscription.current_period_end * 1000).toISOString()
         : null;

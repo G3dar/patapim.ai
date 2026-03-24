@@ -55,7 +55,11 @@ export const POST: APIRoute = async (context) => {
   const license = JSON.parse(raw);
   const validStatuses = ['active', 'trialing'];
 
-  if (!validStatuses.includes(license.status)) {
+  // Canceled subscriptions remain valid until the period ends
+  const isCanceledButActive = license.status === 'canceled'
+    && license.expiresAt && new Date(license.expiresAt) > new Date();
+
+  if (!validStatuses.includes(license.status) && !isCanceledButActive) {
     return new Response(JSON.stringify({
       valid: false,
       reason: `License status: ${license.status}`,

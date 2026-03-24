@@ -68,7 +68,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
           </div>
         </div>
         <div class="dash-actions">
-          {stripeCustomerId && stripeCustomerId !== 'referral' && (
+          {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
             <button class="btn-link" id="manage-billing-btn">Manage Billing</button>
           )}
           {plan === 'free' && (
@@ -502,9 +502,17 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         body: JSON.stringify({ customerId: stripeCustomerId }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else { btn.disabled = false; btn.textContent = 'Manage Billing'; }
-    } catch {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Portal error:', data.error);
+        alert(data.error || 'Failed to open billing portal');
+        btn.disabled = false;
+        btn.textContent = 'Manage Billing';
+      }
+    } catch (e) {
+      console.error('Portal fetch error:', e);
+      alert('Failed to open billing portal');
       btn.disabled = false;
       btn.textContent = 'Manage Billing';
     }

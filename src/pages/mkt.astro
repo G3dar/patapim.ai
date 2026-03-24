@@ -1,0 +1,1539 @@
+---
+export const prerender = false;
+
+import { getUserFromRequest } from '../lib/auth';
+import { isAdmin } from '../lib/admin';
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  return Astro.redirect('/api/auth/google');
+}
+
+if (!isAdmin(user)) {
+  return Astro.redirect('/go');
+}
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing — PATAPIM</title>
+  <style is:inline>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1a1918;
+      --bg-card: #252321;
+      --bg-hover: #2d2b28;
+      --bg-deep: #141312;
+      --text: #e8e0d4;
+      --text-dim: #8a8279;
+      --text-muted: #5a554f;
+      --accent: #c9a227;
+      --accent-dim: #8a7019;
+      --green: #4ade80;
+      --red: #f87171;
+      --orange: #fb923c;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --border: #3a3735;
+      --reddit: #ff4500;
+      --facebook: #1877f2;
+      --twitter: #1da1f2;
+      --influencer: #c9a227;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.4;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .header-meta span {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .header-meta .day-count {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .refresh-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .refresh-dot.stale { background: var(--orange); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .last-updated {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Main container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+    }
+
+    /* Section titles */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 28px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    /* Overview metrics */
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--accent);
+      transition: width 0.5s ease;
+    }
+
+    .progress-fill.green { background: var(--green); }
+    .progress-fill.blue { background: var(--blue); }
+    .progress-fill.orange { background: var(--orange); }
+    .progress-fill.red { background: var(--red); }
+
+    /* Platform cards */
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 12px;
+    }
+
+    .platform-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      border-top: 3px solid var(--border);
+    }
+
+    .platform-card.reddit { border-top-color: var(--reddit); }
+    .platform-card.facebook { border-top-color: var(--facebook); }
+    .platform-card.twitter { border-top-color: var(--twitter); }
+    .platform-card.influencer { border-top-color: var(--influencer); }
+
+    .platform-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .platform-name {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .platform-card.reddit .platform-name { color: var(--reddit); }
+    .platform-card.facebook .platform-name { color: var(--facebook); }
+    .platform-card.twitter .platform-name { color: var(--twitter); }
+    .platform-card.influencer .platform-name { color: var(--influencer); }
+
+    .platform-count {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .platform-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .stat-label { color: var(--text-dim); }
+    .stat-value { color: var(--text); font-weight: 600; }
+
+    /* Horizontal bar chart */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .bar-label {
+      min-width: 100px;
+      max-width: 140px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: right;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 14px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+      min-width: 2px;
+    }
+
+    .bar-count {
+      min-width: 24px;
+      text-align: right;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    /* Stacked bar */
+    .stacked-bar {
+      display: flex;
+      height: 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .stacked-segment {
+      height: 100%;
+      transition: width 0.4s ease;
+    }
+
+    .stacked-legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 11px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-dim);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    /* Timeline */
+    .timeline {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .timeline-item:last-child { border-bottom: none; }
+
+    .timeline-date {
+      color: var(--text-dim);
+      min-width: 70px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+      min-width: 70px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .timeline-badge.reddit { background: rgba(255,69,0,0.15); color: var(--reddit); }
+    .timeline-badge.facebook { background: rgba(24,119,242,0.15); color: var(--facebook); }
+    .timeline-badge.twitter { background: rgba(29,161,242,0.15); color: var(--twitter); }
+    .timeline-badge.influencer { background: rgba(201,162,39,0.15); color: var(--influencer); }
+
+    .timeline-type {
+      color: var(--text-dim);
+      min-width: 50px;
+      font-size: 11px;
+    }
+
+    .timeline-desc {
+      color: var(--text);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Deep dive sections */
+    .deep-dive {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .deep-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .deep-panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* Weekly limits */
+    .limit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .limit-name {
+      min-width: 120px;
+      max-width: 160px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .limit-track {
+      flex: 1;
+      height: 10px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .limit-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green);
+      transition: width 0.3s;
+    }
+
+    .limit-fill.warning { background: var(--orange); }
+    .limit-fill.full { background: var(--red); }
+
+    .limit-count {
+      min-width: 24px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* Influencer pipeline */
+    .pipeline {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .pipeline-stage {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      background: var(--bg);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pipeline-stage .stage-count {
+      font-size: 20px;
+      font-weight: 800;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .pipeline-stage.active { background: rgba(201,162,39,0.15); color: var(--accent); }
+    .pipeline-stage.empty { color: var(--text-muted); }
+
+    /* Influencer list */
+    .influencer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--bg);
+      font-size: 12px;
+    }
+
+    .influencer-row:last-child { border-bottom: none; }
+
+    .influencer-name { font-weight: 600; min-width: 120px; }
+
+    .tier-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(201,162,39,0.15);
+      color: var(--accent);
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .status-badge.researching { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .status-badge.engaging { background: rgba(201,162,39,0.15); color: var(--accent); }
+    .status-badge.contacted { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .status-badge.responded { background: rgba(74,222,128,0.15); color: var(--green); }
+
+    .influencer-next {
+      flex: 1;
+      color: var(--text-dim);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Kanban */
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .kanban-col {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 80px;
+    }
+
+    .kanban-col-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kanban-col-title.not-started { color: var(--text-dim); }
+    .kanban-col-title.in-progress { color: var(--orange); }
+    .kanban-col-title.done { color: var(--green); }
+
+    .kanban-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .kanban-card:last-child { margin-bottom: 0; }
+
+    .kanban-card-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .kanban-card-action {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .priority-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+
+    .priority-badge.HIGH { background: rgba(248,113,113,0.2); color: var(--red); }
+    .priority-badge.MEDIUM { background: rgba(251,146,60,0.2); color: var(--orange); }
+
+    /* Beta tester section */
+    .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .pool-card {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .pool-name {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .pool-numbers {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .pool-numbers .distributed { color: var(--accent); }
+    .pool-numbers .remaining { color: var(--text-dim); }
+
+    /* Sessions list */
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--bg);
+      font-size: 12px;
+    }
+
+    .session-item:last-child { border-bottom: none; }
+    .session-date { color: var(--text-dim); min-width: 80px; }
+    .session-desc { flex: 1; color: var(--text); margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .session-count { font-weight: 700; color: var(--accent); min-width: 30px; text-align: right; }
+
+    /* Gauge */
+    .gauge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .gauge-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      min-width: 70px;
+    }
+
+    .gauge-track {
+      flex: 1;
+      height: 16px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--green);
+      transition: width 0.3s;
+    }
+
+    .gauge-text {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .overview { grid-template-columns: 1fr 1fr; }
+      .platform-grid { grid-template-columns: 1fr; }
+      .deep-dive { grid-template-columns: 1fr; }
+      .kanban { grid-template-columns: 1fr; }
+      .container { padding: 12px 16px 40px; }
+    }
+
+    /* Full-width panel */
+    .full-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    /* Action Items sections */
+    .action-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .action-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-section-title.pending { color: var(--orange); }
+    .action-section-title.next { color: var(--blue); }
+
+    .action-section-title .action-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .action-section-title.pending .action-count { background: rgba(251,146,60,0.15); color: var(--orange); }
+    .action-section-title.next .action-count { background: rgba(96,165,250,0.15); color: var(--blue); }
+
+    .action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      transition: background 0.15s;
+    }
+
+    .action-item:hover { background: var(--bg-hover); }
+
+    .action-item:last-child { margin-bottom: 0; }
+
+    .action-platform-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+      min-width: 70px;
+      text-align: center;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .action-platform-badge.reddit { background: rgba(255,69,0,0.15); color: var(--reddit); }
+    .action-platform-badge.facebook { background: rgba(24,119,242,0.15); color: var(--facebook); }
+    .action-platform-badge.twitter { background: rgba(29,161,242,0.15); color: var(--twitter); }
+    .action-platform-badge.influencer { background: rgba(201,162,39,0.15); color: var(--influencer); }
+    .action-platform-badge.directory { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .action-platform-badge.beta { background: rgba(74,222,128,0.15); color: var(--green); }
+    .action-platform-badge.campaign { background: rgba(201,162,39,0.15); color: var(--accent); }
+
+    .action-text {
+      flex: 1;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .action-text .action-detail {
+      color: var(--text-dim);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .action-priority {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .action-priority.high { background: rgba(248,113,113,0.2); color: var(--red); }
+    .action-priority.medium { background: rgba(251,146,60,0.2); color: var(--orange); }
+    .action-priority.low { background: rgba(96,165,250,0.15); color: var(--blue); }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .actions-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>PATAPIM Marketing Command Center</h1>
+      <div class="header-meta">
+        <span>Day <span class="day-count" id="campaign-day">--</span> of campaign</span>
+        <span id="today-date">--</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="refresh-dot" id="refresh-dot"></div>
+      <span class="last-updated" id="last-updated">Loading...</span>
+    </div>
+  </div>
+
+  <div class="container" id="app">
+    <div class="loading" id="loading">Loading dashboard data...</div>
+  </div>
+
+  <script>
+    let data = null;
+    let evtSource = null;
+
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/mkt/data');
+        data = await res.json();
+        render();
+        document.getElementById('refresh-dot').className = 'refresh-dot';
+        document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error('Fetch failed:', err);
+        document.getElementById('refresh-dot').className = 'refresh-dot stale';
+      }
+    }
+
+    function connectSSE() {
+      // SSE disabled in remote mode — poll instead
+    }
+
+    function render() {
+      if (!data) return;
+      const app = document.getElementById('app');
+      document.getElementById('campaign-day').textContent = data.campaignDay;
+      document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+      app.innerHTML = `
+        ${renderActionsSections()}
+        ${renderOverview()}
+        <div class="section-title">Platforms</div>
+        ${renderPlatformCards()}
+        <div class="section-title">Activity Timeline</div>
+        ${renderTimeline()}
+        <div class="section-title">Reddit Deep Dive</div>
+        ${renderRedditDeep()}
+        <div class="section-title">Facebook Deep Dive</div>
+        ${renderFacebookDeep()}
+        <div class="section-title">Twitter Status</div>
+        ${renderTwitterDeep()}
+        <div class="section-title">Influencer Pipeline</div>
+        ${renderInfluencerDeep()}
+        <div class="section-title">Directory Listings</div>
+        ${renderDirectories()}
+        <div class="section-title">Beta Tester Campaign</div>
+        ${renderBetaTesters()}
+      `;
+    }
+
+    // ---- Pending & Next Actions ----
+    function renderActionsSections() {
+      const pending = buildPendingItems();
+      const next = buildNextActions();
+
+      return `<div class="actions-grid">
+        <div class="action-section">
+          <div class="action-section-title pending">
+            PENDING ACTION ITEMS <span class="action-count">${pending.length}</span>
+          </div>
+          ${pending.length ? pending.map(renderActionItem).join('') : '<div style="color:var(--text-dim);font-size:12px;padding:8px">No pending items</div>'}
+        </div>
+        <div class="action-section">
+          <div class="action-section-title next">
+            NEXT ACTIONS TO DO <span class="action-count">${next.length}</span>
+          </div>
+          ${next.length ? next.map(renderActionItem).join('') : '<div style="color:var(--text-dim);font-size:12px;padding:8px">All caught up!</div>'}
+        </div>
+      </div>`;
+    }
+
+    function renderActionItem(item) {
+      return `<div class="action-item">
+        <span class="action-platform-badge ${item.platform}">${item.platform}</span>
+        <div class="action-text">
+          ${esc(item.text)}
+          ${item.detail ? `<div class="action-detail">${esc(item.detail)}</div>` : ''}
+        </div>
+        <span class="action-priority ${item.priority}">${item.priority}</span>
+      </div>`;
+    }
+
+    function buildPendingItems() {
+      const items = [];
+      const d = data.directories;
+      const f = data.facebook;
+      const b = data.betaTesters;
+      const i = data.influencer;
+      const t = data.twitter;
+
+      // Directory listings that are in-progress or not started
+      if (d?.directories) {
+        d.directories.forEach(dir => {
+          if (dir.status === 'in-progress') {
+            items.push({
+              platform: 'directory',
+              text: `${dir.name}: continue submission`,
+              detail: dir.actionNeeded,
+              priority: dir.priority === 'HIGH' ? 'high' : 'medium',
+            });
+          }
+          if (dir.status === 'not-started') {
+            items.push({
+              platform: 'directory',
+              text: `${dir.name}: needs manual submission`,
+              detail: dir.actionNeeded,
+              priority: dir.priority === 'HIGH' ? 'high' : 'medium',
+            });
+          }
+          if (dir.status === 'done' && dir.actionNeeded && dir.actionNeeded !== 'Wait for approval/review') {
+            items.push({
+              platform: 'directory',
+              text: `${dir.name}: submitted, follow-up needed`,
+              detail: dir.actionNeeded,
+              priority: 'low',
+            });
+          }
+        });
+      }
+
+      // Facebook pending approvals — check sessions for "pending" mentions
+      if (f?.sessions) {
+        f.sessions.forEach(s => {
+          if (s.description && s.description.toLowerCase().includes('pending')) {
+            items.push({
+              platform: 'facebook',
+              text: `Posts pending admin approval`,
+              detail: `Session ${s.date}: ${s.description.substring(0, 80)}`,
+              priority: 'medium',
+            });
+          }
+        });
+      }
+
+      // Beta campaign — Week 1 review due if we're past day 7
+      if (b) {
+        const daysSinceStart = Math.floor((Date.now() - new Date('2026-03-16').getTime()) / 86400000);
+        if (daysSinceStart >= 7 && b.totalDistributed > 0) {
+          items.push({
+            platform: 'beta',
+            text: 'Week 1 review due — fill in metrics',
+            detail: `Day ${daysSinceStart}: ${b.totalDistributed}/${b.totalBudget} licenses distributed`,
+            priority: 'high',
+          });
+        }
+      }
+
+      // Reddit pool overallocated
+      if (b?.pools) {
+        const redditPool = b.pools.find(p => p.pool.toLowerCase().includes('reddit'));
+        if (redditPool && redditPool.remaining < 0) {
+          items.push({
+            platform: 'beta',
+            text: `Reddit license pool overallocated (${redditPool.distributed}/${redditPool.budget})`,
+            detail: 'Reallocate from other pools or increase budget',
+            priority: 'medium',
+          });
+        }
+      }
+
+      // Twitter — engagement list not started
+      if (t && (!t.totalTweets || t.totalTweets < 5)) {
+        items.push({
+          platform: 'twitter',
+          text: 'Twitter barely started — only ' + (t.totalTweets || 0) + ' total actions',
+          detail: 'Engagement list, pinned tweet, and regular posting needed',
+          priority: 'high',
+        });
+      }
+
+      // Influencer — licenses not sent
+      if (i && i.licenses && i.licenses.sent === 0 && (i.byStatus?.engaging > 0)) {
+        items.push({
+          platform: 'influencer',
+          text: 'No influencer licenses sent yet',
+          detail: `${i.byStatus.engaging || 0} influencers in "engaging" stage, 0/${i.licenses.budget} licenses used`,
+          priority: 'medium',
+        });
+      }
+
+      return items;
+    }
+
+    function buildNextActions() {
+      const items = [];
+      const r = data.reddit;
+      const f = data.facebook;
+      const t = data.twitter;
+      const i = data.influencer;
+      const b = data.betaTesters;
+
+      // Twitter: set pinned tweet
+      if (t?.account && !t.account.pinnedTweet) {
+        items.push({
+          platform: 'twitter',
+          text: 'Set a pinned tweet on @germanheller',
+          detail: 'Pin a tweet about PATAPIM or a build-in-public update',
+          priority: 'high',
+        });
+      }
+
+      // Twitter: build engagement list
+      if (t?.account?.engagementList === 'Not started') {
+        items.push({
+          platform: 'twitter',
+          text: 'Build engagement list (target: 50 accounts)',
+          detail: 'Find and follow relevant dev/AI accounts to engage with daily',
+          priority: 'high',
+        });
+      }
+
+      // Twitter: increase activity
+      if (t && (!t.totalTweets || t.totalTweets < 10)) {
+        items.push({
+          platform: 'twitter',
+          text: 'Increase Twitter activity — post daily value tweets',
+          detail: '80% value content, 20% product. Target 5-10 tweets/replies per day',
+          priority: 'high',
+        });
+      }
+
+      // Influencer: ready for DM
+      if (i?.influencers) {
+        i.influencers.forEach(inf => {
+          if (inf.nextAction && inf.nextAction.toLowerCase().includes('ready for dm')) {
+            items.push({
+              platform: 'influencer',
+              text: `Send DM/pitch to ${inf.name}`,
+              detail: inf.nextAction,
+              priority: 'high',
+            });
+          }
+          if (inf.nextAction && inf.nextAction.toLowerCase().includes('leave') && inf.nextAction.toLowerCase().includes('more comment')) {
+            items.push({
+              platform: 'influencer',
+              text: `Continue engaging ${inf.name}`,
+              detail: inf.nextAction,
+              priority: 'medium',
+            });
+          }
+        });
+      }
+
+      // Facebook: groups at 0/3 for the week
+      if (f?.weeklyLimits) {
+        const unusedGroups = f.weeklyLimits.filter(l => l.current === 0);
+        if (unusedGroups.length > 3) {
+          items.push({
+            platform: 'facebook',
+            text: `${unusedGroups.length} groups at 0/3 this week — engage more`,
+            detail: unusedGroups.slice(0, 3).map(g => g.group).join(', ') + '...',
+            priority: 'medium',
+          });
+        }
+      }
+
+      // Beta: distribute on other platforms
+      if (b?.pools) {
+        const emptyPools = b.pools.filter(p => p.distributed === 0 && p.budget > 0);
+        if (emptyPools.length > 0) {
+          items.push({
+            platform: 'beta',
+            text: `Distribute licenses on: ${emptyPools.map(p => p.pool).join(', ')}`,
+            detail: `${emptyPools.reduce((s, p) => s + p.budget, 0)} licenses allocated but unused`,
+            priority: 'medium',
+          });
+        }
+      }
+
+      // Reddit: check for new inbox replies
+      if (r?.sessions?.length > 0) {
+        const lastSession = r.sessions[0];
+        const lastDate = lastSession.date;
+        const today = new Date().toISOString().slice(0, 10);
+        if (lastDate !== today) {
+          items.push({
+            platform: 'reddit',
+            text: 'Check Reddit inbox for new replies',
+            detail: `Last session: ${lastDate}. Engage with any new conversations`,
+            priority: 'low',
+          });
+        }
+      }
+
+      // Facebook: Monday weekly reset reminder
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon
+      if (dayOfWeek === 1 || dayOfWeek === 0) {
+        items.push({
+          platform: 'facebook',
+          text: dayOfWeek === 0 ? 'Tomorrow: reset Facebook group week counts' : 'Reset Facebook group week counts (Monday)',
+          detail: 'Set all group week counts to 0/3 in facebook-comment-log.md',
+          priority: dayOfWeek === 1 ? 'high' : 'low',
+        });
+      }
+
+      return items;
+    }
+
+    // ---- Overview ----
+    function renderOverview() {
+      const o = data.overview;
+      const lic = o.licenses;
+      const dir = o.directories;
+      return `<div class="overview">
+        <div class="metric-card">
+          <div class="metric-label">Total Actions</div>
+          <div class="metric-value">${o.totalActions}</div>
+          <div class="metric-sub">${o.activePlatforms}/4 platforms active</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Reddit</div>
+          <div class="metric-value">${data.reddit?.totalComments || 0}</div>
+          <div class="metric-sub">${data.reddit?.sessionCount || 0} sessions</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Facebook</div>
+          <div class="metric-value">${data.facebook?.totalComments || 0}</div>
+          <div class="metric-sub">${data.facebook?.sessionCount || 0} sessions</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Licenses Distributed</div>
+          <div class="metric-value">${lic.distributed}<span style="font-size:16px;color:var(--text-dim)">/${lic.total}</span></div>
+          <div class="progress-track"><div class="progress-fill green" style="width:${pct(lic.distributed, lic.total)}%"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Directory Listings</div>
+          <div class="metric-value">${dir.done}<span style="font-size:16px;color:var(--text-dim)">/${dir.total}</span></div>
+          <div class="progress-track"><div class="progress-fill blue" style="width:${pct(dir.done, dir.total)}%"></div></div>
+        </div>
+      </div>`;
+    }
+
+    // ---- Platform Cards ----
+    function renderPlatformCards() {
+      const r = data.reddit || {};
+      const f = data.facebook || {};
+      const t = data.twitter || {};
+      const i = data.influencer || {};
+
+      return `<div class="platform-grid">
+        <div class="platform-card reddit">
+          <div class="platform-header">
+            <span class="platform-name">Reddit</span>
+            <span class="platform-count">${r.totalComments || 0}</span>
+          </div>
+          <div class="platform-stats">
+            ${renderStackedBar(r.byType || {}, {karma:'var(--green)', promo:'var(--accent)', reply:'var(--blue)'})}
+            <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value">${r.sessionCount || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Subreddits</span><span class="stat-value">${r.topSubreddits?.length || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">This week</span><span class="stat-value">${getThisWeekCount(r.weeklyTrend)}</span></div>
+          </div>
+        </div>
+
+        <div class="platform-card facebook">
+          <div class="platform-header">
+            <span class="platform-name">Facebook</span>
+            <span class="platform-count">${f.totalComments || 0}</span>
+          </div>
+          <div class="platform-stats">
+            ${renderStackedBar(f.byType || {}, {karma:'var(--green)', promo:'var(--accent)', 'maker-post':'var(--blue)'})}
+            <div class="stat-row"><span class="stat-label">Groups joined</span><span class="stat-value">${f.groups?.length || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Tier 1 groups</span><span class="stat-value">${f.byTier?.[1] || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Tier 2 groups</span><span class="stat-value">${f.byTier?.[2] || 0}</span></div>
+          </div>
+        </div>
+
+        <div class="platform-card twitter">
+          <div class="platform-header">
+            <span class="platform-name">Twitter / X</span>
+            <span class="platform-count">${t.totalTweets || 0}</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-row"><span class="stat-label">Handle</span><span class="stat-value">${t.account?.handle || '--'}</span></div>
+            <div class="stat-row"><span class="stat-label">Followers</span><span class="stat-value">${t.account?.followers || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Phase</span><span class="stat-value">${t.account?.phase || 1} (0-500)</span></div>
+            <div class="stat-row"><span class="stat-label">Bio set</span><span class="stat-value">${t.account?.bioSet ? 'Yes' : 'No'}</span></div>
+          </div>
+        </div>
+
+        <div class="platform-card influencer">
+          <div class="platform-header">
+            <span class="platform-name">Influencer</span>
+            <span class="platform-count">${i.total || 0}</span>
+          </div>
+          <div class="platform-stats">
+            <div class="stat-row"><span class="stat-label">Engagements</span><span class="stat-value">${i.totalEngagements || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Engaging</span><span class="stat-value">${i.byStatus?.engaging || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Researching</span><span class="stat-value">${i.byStatus?.researching || 0}</span></div>
+            <div class="stat-row"><span class="stat-label">Licenses sent</span><span class="stat-value">${i.licenses?.sent || 0}</span></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // ---- Timeline ----
+    function renderTimeline() {
+      if (!data.timeline?.length) return '<div class="full-panel"><div style="color:var(--text-dim);font-size:12px;text-align:center;padding:12px">No activity recorded yet</div></div>';
+      return `<div class="timeline">${data.timeline.map(t => `
+        <div class="timeline-item">
+          <span class="timeline-date">${t.date}</span>
+          <span class="timeline-badge ${t.platform}">${t.platform}</span>
+          <span class="timeline-type">${t.type}</span>
+          <span class="timeline-desc">${esc(t.description)}</span>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    // ---- Reddit Deep Dive ----
+    function renderRedditDeep() {
+      const r = data.reddit;
+      if (!r) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const maxSub = Math.max(...(r.topSubreddits || []).map(s => s.count), 1);
+      const maxWeek = Math.max(...(r.weeklyTrend || []).map(w => w.count), 1);
+
+      return `<div class="deep-dive">
+        <div class="deep-panel">
+          <div class="deep-panel-title">Top Subreddits</div>
+          <div class="bar-chart">
+            ${(r.topSubreddits || []).slice(0, 12).map(s => `
+              <div class="bar-row">
+                <span class="bar-label">${esc(s.name)}</span>
+                <div class="bar-track"><div class="bar-fill" style="width:${pct(s.count, maxSub)}%;background:var(--reddit)"></div></div>
+                <span class="bar-count">${s.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Weekly Trend</div>
+          <div class="bar-chart">
+            ${(r.weeklyTrend || []).map(w => `
+              <div class="bar-row">
+                <span class="bar-label">${w.week}</span>
+                <div class="bar-track"><div class="bar-fill" style="width:${pct(w.count, maxWeek)}%;background:var(--reddit)"></div></div>
+                <span class="bar-count">${w.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Comment Types</div>
+          ${renderStackedBar(r.byType || {}, {karma:'var(--green)', promo:'var(--accent)', reply:'var(--blue)'})}
+          <div style="margin-top:12px">
+            ${Object.entries(r.byType || {}).map(([k,v]) => `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value">${v}</span></div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Recent Sessions</div>
+          ${(r.sessions || []).slice(0, 8).map(s => `
+            <div class="session-item">
+              <span class="session-date">${s.date}</span>
+              <span class="session-desc">${esc(s.description)}</span>
+              <span class="session-count">${s.count}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // ---- Facebook Deep Dive ----
+    function renderFacebookDeep() {
+      const f = data.facebook;
+      if (!f) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const activeLimits = (f.weeklyLimits || []).filter(l => l.current > 0);
+      const maxGroup = Math.max(...(f.topGroups || []).map(g => g.count), 1);
+
+      return `<div class="deep-dive">
+        <div class="deep-panel">
+          <div class="deep-panel-title">Weekly Group Limits (current week)</div>
+          ${(f.weeklyLimits || []).slice(0, 15).map(l => {
+            const fillClass = l.current >= l.max ? 'full' : l.current >= l.max - 1 ? 'warning' : '';
+            return `<div class="limit-row">
+              <span class="limit-name" title="${esc(l.group)}">${esc(l.group)}</span>
+              <div class="limit-track"><div class="limit-fill ${fillClass}" style="width:${pct(l.current, l.max)}%"></div></div>
+              <span class="limit-count">${l.current}/${l.max}</span>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Top Groups</div>
+          <div class="bar-chart">
+            ${(f.topGroups || []).slice(0, 10).map(g => `
+              <div class="bar-row">
+                <span class="bar-label" title="${esc(g.name)}">${esc(g.name.substring(0, 25))}</span>
+                <div class="bar-track"><div class="bar-fill" style="width:${pct(g.count, maxGroup)}%;background:var(--facebook)"></div></div>
+                <span class="bar-count">${g.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Comment Types</div>
+          ${renderStackedBar(f.byType || {}, {karma:'var(--green)', promo:'var(--accent)', 'maker-post':'var(--blue)'})}
+          <div style="margin-top:12px">
+            ${Object.entries(f.byType || {}).map(([k,v]) => `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value">${v}</span></div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Recent Sessions</div>
+          ${(f.sessions || []).slice(0, 8).map(s => `
+            <div class="session-item">
+              <span class="session-date">${s.date}</span>
+              <span class="session-desc">${esc(s.description)}</span>
+              <span class="session-count">${s.count}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // ---- Twitter Deep Dive ----
+    function renderTwitterDeep() {
+      const t = data.twitter;
+      if (!t) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const latestLimits = t.sessions?.[0]?.dailyLimits;
+
+      return `<div class="deep-dive">
+        <div class="deep-panel">
+          <div class="deep-panel-title">Account</div>
+          <div class="stat-row"><span class="stat-label">Handle</span><span class="stat-value">${t.account?.handle || '--'}</span></div>
+          <div class="stat-row"><span class="stat-label">Followers</span><span class="stat-value">${t.account?.followers || 0}</span></div>
+          <div class="stat-row"><span class="stat-label">Phase</span><span class="stat-value">${t.account?.phase || 1} (0-500 followers)</span></div>
+          <div class="stat-row"><span class="stat-label">Bio set</span><span class="stat-value">${t.account?.bioSet ? 'Yes' : 'No'}</span></div>
+          <div class="stat-row"><span class="stat-label">Pinned tweet</span><span class="stat-value">${t.account?.pinnedTweet ? 'Yes' : 'No'}</span></div>
+          <div class="stat-row"><span class="stat-label">Engagement list</span><span class="stat-value">${t.account?.engagementList || 'Not started'}</span></div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Daily Limits (last session)</div>
+          ${latestLimits ? `
+            ${renderGauge('Tweets', latestLimits.tweets?.current || 0, latestLimits.tweets?.max || 15)}
+            ${renderGauge('Mentions', latestLimits.mentions?.current || 0, latestLimits.mentions?.max || 2)}
+            ${renderGauge('Link tweets', latestLimits.links?.current || 0, latestLimits.links?.max || 1)}
+            <div class="stat-row" style="margin-top:8px"><span class="stat-label">Replies</span><span class="stat-value">${latestLimits.replies || 0}</span></div>
+          ` : '<div style="color:var(--text-dim);font-size:12px">No session data yet</div>'}
+        </div>
+      </div>`;
+    }
+
+    // ---- Influencer Deep Dive ----
+    function renderInfluencerDeep() {
+      const i = data.influencer;
+      if (!i) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const stages = ['researching', 'engaging', 'contacted', 'responded', 'trying-product', 'covered'];
+
+      return `<div class="deep-dive" style="grid-template-columns:1fr">
+        <div class="deep-panel">
+          <div class="deep-panel-title">Pipeline</div>
+          <div class="pipeline">
+            ${stages.map(s => {
+              const count = i.byStatus?.[s] || 0;
+              return `<div class="pipeline-stage ${count > 0 ? 'active' : 'empty'}">
+                <span class="stage-count">${count}</span>
+                ${s}
+              </div>`;
+            }).join('')}
+          </div>
+
+          <div class="deep-panel-title" style="margin-top:16px">Influencer List</div>
+          ${(i.influencers || []).map(inf => `
+            <div class="influencer-row">
+              <span class="influencer-name">${esc(inf.name)}</span>
+              <span class="tier-badge">T${inf.tier}</span>
+              <span class="status-badge ${inf.status}">${inf.status}</span>
+              <span class="influencer-next" title="${esc(inf.nextAction)}">${esc(inf.nextAction)}</span>
+            </div>`).join('')}
+
+          <div style="margin-top:16px;display:flex;gap:24px">
+            <div class="stat-row"><span class="stat-label">Total engagements</span><span class="stat-value">${i.totalEngagements}</span></div>
+            <div class="stat-row"><span class="stat-label">Licenses sent</span><span class="stat-value">${i.licenses?.sent || 0}/${i.licenses?.budget || 50}</span></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // ---- Directory Listings ----
+    function renderDirectories() {
+      const d = data.directories;
+      if (!d) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const cols = {
+        'not-started': d.directories.filter(x => x.status === 'not-started'),
+        'in-progress': d.directories.filter(x => x.status === 'in-progress'),
+        'done': d.directories.filter(x => x.status === 'done'),
+      };
+
+      return `<div class="kanban">
+        <div class="kanban-col">
+          <div class="kanban-col-title not-started">Not Started (${cols['not-started'].length})</div>
+          ${cols['not-started'].map(renderKanbanCard).join('')}
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-title in-progress">In Progress (${cols['in-progress'].length})</div>
+          ${cols['in-progress'].map(renderKanbanCard).join('')}
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-title done">Done (${cols['done'].length})</div>
+          ${cols['done'].map(renderKanbanCard).join('')}
+        </div>
+      </div>`;
+    }
+
+    function renderKanbanCard(dir) {
+      return `<div class="kanban-card">
+        <div class="kanban-card-name">${esc(dir.name)}<span class="priority-badge ${dir.priority}">${dir.priority}</span></div>
+        <div class="kanban-card-action">${esc(dir.actionNeeded)}</div>
+      </div>`;
+    }
+
+    // ---- Beta Testers ----
+    function renderBetaTesters() {
+      const b = data.betaTesters;
+      if (!b) return '<div class="full-panel" style="color:var(--text-dim)">No data</div>';
+
+      const maxPool = Math.max(...(b.pools || []).map(p => p.budget), 1);
+
+      return `<div class="deep-dive">
+        <div class="deep-panel">
+          <div class="deep-panel-title">License Pools</div>
+          <div style="margin-bottom:12px">
+            <div class="stat-row"><span class="stat-label">Total distributed</span><span class="stat-value" style="color:var(--accent)">${b.totalDistributed}/${b.totalBudget}</span></div>
+            <div class="progress-track" style="margin-top:4px"><div class="progress-fill" style="width:${pct(b.totalDistributed, b.totalBudget)}%"></div></div>
+          </div>
+          <div class="pool-grid">
+            ${(b.pools || []).map(p => `
+              <div class="pool-card">
+                <div class="pool-name">${esc(p.pool)}</div>
+                <div class="pool-numbers"><span class="distributed">${p.distributed}</span> <span class="remaining">/ ${p.budget}</span></div>
+                <div class="progress-track" style="margin-top:4px"><div class="progress-fill ${p.remaining < 0 ? 'red' : ''}" style="width:${Math.min(pct(p.distributed, p.budget), 100)}%"></div></div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="deep-panel">
+          <div class="deep-panel-title">Distribution by Platform</div>
+          ${Object.keys(b.byPlatform || {}).length > 0 ?
+            `<div class="bar-chart">
+              ${Object.entries(b.byPlatform).sort((a,b) => b[1]-a[1]).map(([p, count]) => `
+                <div class="bar-row">
+                  <span class="bar-label">${esc(p)}</span>
+                  <div class="bar-track"><div class="bar-fill" style="width:${pct(count, b.totalDistributed)}%;background:var(--accent)"></div></div>
+                  <span class="bar-count">${count}</span>
+                </div>`).join('')}
+            </div>` :
+            '<div style="color:var(--text-dim);font-size:12px">No distribution yet</div>'}
+
+          <div style="margin-top:16px">
+            <div class="stat-row"><span class="stat-label">Activation rate</span><span class="stat-value">${b.activationRate}</span></div>
+            <div class="stat-row"><span class="stat-label">Total keys sent</span><span class="stat-value">${b.distributionCount}</span></div>
+            <div class="stat-row"><span class="stat-label">Activated</span><span class="stat-value">${b.activated}</span></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // ---- Helpers ----
+    function pct(value, total) {
+      if (!total || total === 0) return 0;
+      return Math.round((value / total) * 100);
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderStackedBar(obj, colors) {
+      const total = Object.values(obj).reduce((s, v) => s + v, 0);
+      if (total === 0) return '<div class="stacked-bar"></div>';
+      const segments = Object.entries(obj).map(([key, val]) =>
+        `<div class="stacked-segment" style="width:${pct(val, total)}%;background:${colors[key] || 'var(--text-dim)'}"></div>`
+      ).join('');
+      const legend = Object.entries(obj).map(([key, val]) =>
+        `<div class="legend-item"><div class="legend-dot" style="background:${colors[key] || 'var(--text-dim)'}"></div>${key}: ${val}</div>`
+      ).join('');
+      return `<div class="stacked-bar">${segments}</div><div class="stacked-legend">${legend}</div>`;
+    }
+
+    function renderGauge(label, current, max) {
+      const ratio = pct(current, max);
+      const color = ratio >= 80 ? 'var(--red)' : ratio >= 50 ? 'var(--orange)' : 'var(--green)';
+      return `<div class="gauge-row">
+        <span class="gauge-label">${label}</span>
+        <div class="gauge-track">
+          <div class="gauge-fill" style="width:${ratio}%;background:${color}"></div>
+          <span class="gauge-text">${current}/${max}</span>
+        </div>
+      </div>`;
+    }
+
+    function getThisWeekCount(weeklyTrend) {
+      if (!weeklyTrend?.length) return 0;
+      return weeklyTrend[weeklyTrend.length - 1]?.count || 0;
+    }
+
+    // Init
+    fetchData();
+    connectSSE();
+    setInterval(fetchData, 30000);
+  </script>
+</body>
+</html>

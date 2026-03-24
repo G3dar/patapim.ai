@@ -276,6 +276,11 @@ Astro.response.headers.set('Expires', '0');
       color: var(--error);
     }
 
+    .tbadge.plan {
+      background: rgba(0, 188, 212, 0.18);
+      color: #4dd0e1;
+    }
+
     .tbadge.idle {
       background: var(--bg-elevated);
       color: var(--text-muted);
@@ -323,6 +328,41 @@ Astro.response.headers.set('Expires', '0');
 
     .later-projects { display: none; }
     .later-projects.open { display: block; }
+
+    /* Archive/unarchive action button on project items */
+    .project-archive-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-left: 4px;
+      padding: 0;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+    }
+
+    .project-archive-btn:hover {
+      color: var(--text);
+      background: var(--bg-surface);
+    }
+
+    .project-item:hover .project-archive-btn,
+    .project-item .project-archive-btn:focus {
+      display: flex;
+    }
+
+    /* On touch devices, always show the button */
+    @media (pointer: coarse) {
+      .project-archive-btn { display: flex; }
+    }
 
     /* Sidebar actions */
     .sidebar-actions {
@@ -1579,11 +1619,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function updatePlanModeButtons() {
-      isPlanMode = detectPlanMode();
-      fabPlanMode.classList.toggle('plan-active', isPlanMode);
-      const fabLabel = fabPlanMode.querySelector('span');
-      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
-      keyShiftTab.classList.toggle('active', isPlanMode);
+      applyPlanModeUI(detectPlanMode());
     }
 
     const debouncedUpdatePlanMode = debounce(updatePlanModeButtons, 500);
@@ -1595,17 +1631,42 @@ Astro.response.headers.set('Expires', '0');
       ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
 
       // Optimistically flip local state so the button responds immediately
-      isPlanMode = !isPlanMode;
+      const targetState = !isPlanMode;
+      isPlanMode = targetState;
       fabPlanMode.classList.toggle('plan-active', isPlanMode);
       const fabLabel = fabPlanMode.querySelector('span');
       if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
       keyShiftTab.classList.toggle('active', isPlanMode);
 
-      // Reconcile with actual terminal state after output arrives
-      setTimeout(updatePlanModeButtons, 700);
+      // Reconcile with actual terminal state after snapshots arrive.
+      // Use multiple checks: remote snapshots have variable latency.
+      // Keep optimistic state for at least 2s before allowing revert.
+      const toggledAt = Date.now();
+      const reconcile = () => {
+        const detected = detectPlanMode();
+        // Within the grace window, only update if detection CONFIRMS the target state.
+        // After the grace window, always reconcile with actual state.
+        if (Date.now() - toggledAt < 2000) {
+          if (detected === targetState) applyPlanModeUI(detected);
+          // else: keep optimistic state, wait for next check
+        } else {
+          applyPlanModeUI(detected);
+        }
+      };
+      setTimeout(reconcile, 800);
+      setTimeout(reconcile, 1500);
+      setTimeout(reconcile, 3000);
 
       term.focus();
       syncTerminalFocus();
+    }
+
+    function applyPlanModeUI(mode) {
+      isPlanMode = mode;
+      fabPlanMode.classList.toggle('plan-active', isPlanMode);
+      const fabLabel = fabPlanMode.querySelector('span');
+      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', isPlanMode);
     }
 
     function initTerminal() {
@@ -2004,6 +2065,7 @@ Astro.response.headers.set('Expires', '0');
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             term.write('\x1b[?25l\x1b[2J\x1b[H' + msg.data + '\x1b[?25h');
             if (window._dbgSnap) window._dbgSnap();
+            debouncedUpdatePlanMode();
           }
           break;
 
@@ -2066,9 +2128,11 @@ Astro.response.headers.set('Expires', '0');
               updatePlanModeButtons();
               // Re-lock textarea on mobile so the next tap gets a clean
               // blur → removeAttribute → focus cycle (same as switchDone).
-              if (isMobileClient && xtermTextarea) {
+              // Skip if user just tapped the keyboard button (grace period).
+              if (isMobileClient && xtermTextarea && !(keyboardOpenTime && Date.now() - keyboardOpenTime < 1200)) {
                 mobileKeyboardOpen = false;
                 xtermTextarea.setAttribute('readonly', 'readonly');
+                fabKbd.classList.remove('hidden');
               }
               // Drain any output queued during buffer write or project switch
               const queue = switchOutputQueue;
@@ -2146,9 +2210,11 @@ Astro.response.headers.set('Expires', '0');
               applyPtyDims({ syncServer: false, forceRefresh: true });
               requestAnimationFrame(() => term.scrollToBottom());
               isSwitching = false;
-              if (isMobileClient && xtermTextarea) {
+              // Skip re-lock if user just tapped the keyboard button (grace period).
+              if (isMobileClient && xtermTextarea && !(keyboardOpenTime && Date.now() - keyboardOpenTime < 1200)) {
                 mobileKeyboardOpen = false;
                 xtermTextarea.setAttribute('readonly', 'readonly');
+                fabKbd.classList.remove('hidden');
               }
               const queue = switchOutputQueue;
               switchOutputQueue = [];
@@ -2253,7 +2319,7 @@ Astro.response.headers.set('Expires', '0');
         return;
       }
 
-      active.forEach(p => projectsList.appendChild(createProjectItem(p)));
+      active.forEach(p => projectsList.appendChild(createProjectItem(p, false)));
 
       if (archived.length > 0) {
         const header = document.createElement('div');
@@ -2275,7 +2341,7 @@ Astro.response.headers.set('Expires', '0');
 
         const container = document.createElement('div');
         container.className = 'later-projects' + (laterExpanded ? ' open' : '');
-        archived.forEach(p => container.appendChild(createProjectItem(p)));
+        archived.forEach(p => container.appendChild(createProjectItem(p, true)));
 
         header.addEventListener('click', () => {
           laterExpanded = !laterExpanded;
@@ -2288,7 +2354,7 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
-    function createProjectItem(p) {
+    function createProjectItem(p, isArchived) {
       const item = document.createElement('div');
       item.className = 'project-item' + (p.path === sidebarData.currentProject ? ' active' : '');
       item.dataset.path = p.path;
@@ -2305,7 +2371,7 @@ Astro.response.headers.set('Expires', '0');
       item.appendChild(name);
 
       const counts = p.terminalCounts;
-      if (counts && (counts.attention > 0 || counts.busy > 0 || counts.idle > 0)) {
+      if (counts && (counts.attention > 0 || counts.busy > 0 || counts.planMode > 0 || counts.idle > 0)) {
         const badges = document.createElement('div');
         badges.className = 'project-badges';
 
@@ -2323,6 +2389,13 @@ Astro.response.headers.set('Expires', '0');
           b.title = counts.busy + ' processing';
           badges.appendChild(b);
         }
+        if (counts.planMode > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge plan';
+          b.textContent = counts.planMode;
+          b.title = counts.planMode + ' plan mode';
+          badges.appendChild(b);
+        }
         if (counts.idle > 0) {
           const b = document.createElement('span');
           b.className = 'tbadge idle';
@@ -2333,6 +2406,32 @@ Astro.response.headers.set('Expires', '0');
 
         item.appendChild(badges);
       }
+
+      // Archive/unarchive button
+      const archBtn = document.createElement('button');
+      archBtn.className = 'project-archive-btn';
+      if (isArchived) {
+        archBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+        archBtn.title = 'Move back to projects';
+      } else {
+        archBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        archBtn.title = 'Move to Later';
+      }
+      archBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({
+          type: 'set_project_archived',
+          path: p.path,
+          archived: !isArchived,
+        }));
+        // Optimistic update
+        p.archived = !isArchived;
+        renderProjects();
+        // Also request fresh data from backend
+        ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
+      });
+      item.appendChild(archBtn);
 
       item.addEventListener('click', () => selectProject(p.path));
       return item;
@@ -2880,15 +2979,18 @@ Astro.response.headers.set('Expires', '0');
     // Floating keyboard button: open native keyboard on mobile
     fabKbd.addEventListener('click', () => {
       if (!isMobileClient) return;
-      if (xtermTextarea) {
-        xtermTextarea.blur();
-        xtermTextarea.removeAttribute('readonly');
-        void xtermTextarea.offsetHeight;
-      }
       mobileKeyboardOpen = true;
       keyboardOpenTime = Date.now();
       fabKbd.classList.add('hidden');
-      term.focus();
+      if (xtermTextarea) {
+        // Blur first so iOS treats the subsequent focus() as a fresh gesture.
+        xtermTextarea.blur();
+        xtermTextarea.removeAttribute('readonly');
+        // Force synchronous reflow so the attribute removal is committed.
+        void xtermTextarea.offsetHeight;
+        // Focus the textarea directly (more reliable than term.focus() on iOS).
+        xtermTextarea.focus();
+      }
       syncTerminalFocus();
     });
 

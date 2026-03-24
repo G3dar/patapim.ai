@@ -45,7 +45,7 @@ export const POST: APIRoute = async (context) => {
     const siteUrl = env.SITE_URL || 'https://patapim.ai';
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: `${siteUrl}/pricing`,
+      return_url: `${siteUrl}/go`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
@@ -53,8 +53,10 @@ export const POST: APIRoute = async (context) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
+    console.error('Stripe portal error:', err.message, 'customerId:', stripeCustomerId);
+    const status = err.statusCode || 500;
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+      status,
       headers: { 'Content-Type': 'application/json' },
     });
   }
