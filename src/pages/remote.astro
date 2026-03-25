@@ -79,12 +79,20 @@ Astro.response.headers.set('Expires', '0');
       flex-shrink: 0;
     }
 
+    .status-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     .topbar-status {
       font-size: 11px;
       padding: 2px 8px;
       border-radius: 100px;
       font-weight: 500;
       flex-shrink: 0;
+      border: none;
+      font-family: inherit;
+      cursor: default;
     }
 
     .topbar-status.connecting {
@@ -95,11 +103,46 @@ Astro.response.headers.set('Expires', '0');
     .topbar-status.connected {
       background: var(--success-dim);
       color: var(--success);
+      cursor: pointer;
     }
 
     .topbar-status.disconnected {
       background: rgba(212, 120, 120, 0.12);
       color: var(--error);
+    }
+
+    .status-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px;
+      z-index: 100;
+      min-width: 110px;
+    }
+
+    .status-dropdown.visible { display: block; }
+
+    .status-dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 6px 12px;
+      background: none;
+      border: none;
+      color: var(--error);
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      text-align: left;
+    }
+
+    .status-dropdown-item:hover {
+      background: rgba(212, 120, 120, 0.12);
     }
 
     #sidebar-toggle {
@@ -822,7 +865,8 @@ Astro.response.headers.set('Expires', '0');
 
     .fab-menu-item svg { flex-shrink: 0; opacity: 0.7; }
 
-    .fab-menu-item.plan-active {
+    .fab-menu-item.plan-active,
+    .fab-menu-item.compact-active {
       color: var(--accent);
       background: var(--accent-dim);
     }
@@ -1087,15 +1131,19 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">PATAPIM <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r31</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r31</span></a>
         <span id="topbar-project"></span>
-        <span class="topbar-status connecting" id="status">Connecting...</span>
-        <span id="dbg-state" style="font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
+        <span id="dbg-state" style="display:none;font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
       </div>
       <div class="topbar-right">
         <button class="topbar-btn" id="btn-font-dec" title="Decrease font">A-</button>
         <button class="topbar-btn" id="btn-font-inc" title="Increase font">A+</button>
-        <button class="topbar-btn" id="btn-disconnect" title="Disconnect">Disconnect</button>
+        <div class="status-wrap" id="status-wrap">
+          <button class="topbar-status connecting" id="status">Connecting...</button>
+          <div class="status-dropdown" id="status-dropdown">
+            <button class="status-dropdown-item" id="btn-disconnect">Disconnect</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1170,6 +1218,15 @@ Astro.response.headers.set('Expires', '0');
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
                 Insert image file
+              </button>
+              <button class="fab-menu-item" id="fab-compact">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="4 14 10 14 10 20"/>
+                  <polyline points="20 10 14 10 14 4"/>
+                  <line x1="14" y1="10" x2="21" y2="3"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+                <span>Compact View</span>
               </button>
             </div>
             <button class="fab-trigger" id="fab-trigger" title="Actions">
@@ -1249,6 +1306,7 @@ Astro.response.headers.set('Expires', '0');
 
     // DOM
     const statusEl = document.getElementById('status');
+    const statusDropdown = document.getElementById('status-dropdown');
     const tabsEl = document.getElementById('tabs');
     const loadingEl = document.getElementById('loading');
     const loadingText = document.getElementById('loading-text');
@@ -1270,6 +1328,7 @@ Astro.response.headers.set('Expires', '0');
     const fabSkipPerms = document.getElementById('fab-skip-perms');
     const fabPaste = document.getElementById('fab-paste');
     const fabImage = document.getElementById('fab-image');
+    const fabCompact = document.getElementById('fab-compact');
     const fabToast = document.getElementById('fab-toast');
     const fabMic = document.getElementById('fab-mic');
     const fabKbd = document.getElementById('fab-kbd');
@@ -1306,6 +1365,7 @@ Astro.response.headers.set('Expires', '0');
     const modifiers = { ctrl: false, alt: false };
     let fabOpen = false;
     let isPlanMode = false;
+    let isCompactView = false;
     let selectMode = false;
 
     // ---- DEBUG OVERLAY ----
@@ -1480,7 +1540,7 @@ Astro.response.headers.set('Expires', '0');
       if (isMobile) {
         const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
 
-        if (hasRemoteDims) {
+        if (hasRemoteDims && !isCompactView) {
           // Mobile viewer: scale font to a comfortable readable size.
           // CRITICAL: we must NOT call fitAddon.fit() here because fit() resizes
           // the terminal to narrow mobile cols (e.g. 45) BEFORE we can force
@@ -2638,8 +2698,20 @@ Astro.response.headers.set('Expires', '0');
       applyPtyDims({ forceRefresh: true });
     });
 
-    // Disconnect
+    // Status pill → dropdown toggle (only when connected)
+    function closeStatusDropdown() {
+      statusDropdown.classList.remove('visible');
+    }
+    statusEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!statusEl.classList.contains('connected')) return;
+      statusDropdown.classList.toggle('visible');
+    });
+    document.addEventListener('click', closeStatusDropdown);
+
+    // Disconnect (inside status dropdown)
     document.getElementById('btn-disconnect').addEventListener('click', () => {
+      closeStatusDropdown();
       sendTerminalFocus(false);
       isAuthenticated = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -2786,6 +2858,20 @@ Astro.response.headers.set('Expires', '0');
         return;
       }
       togglePlanMode();
+    });
+
+    // ── FAB: Toggle Compact View ────────────────────────────────────
+    fabCompact.addEventListener('click', () => {
+      closeFab();
+      isCompactView = !isCompactView;
+      fabCompact.classList.toggle('compact-active', isCompactView);
+      const label = fabCompact.querySelector('span');
+      if (label) label.textContent = isCompactView ? 'Full View' : 'Compact View';
+      applyPtyDims({ syncServer: false, forceRefresh: true });
+      if (term) {
+        term.scrollToBottom();
+        term.focus();
+      }
     });
 
     // ── FAB: Start Claude (dangerously skip permissions) ──────────
