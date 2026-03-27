@@ -646,12 +646,32 @@ Astro.response.headers.set('Expires', '0');
       border-color: var(--border);
     }
 
+    /* Terminal area (non-scrolling wrapper for overlay) */
+    .terminal-area {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
     /* Terminal container */
     .terminal-wrap {
       flex: 1;
       position: relative;
       overflow: hidden;
       overscroll-behavior: contain;
+    }
+
+    /* Non-scrolling overlay for floating buttons */
+    .terminal-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .terminal-overlay > * {
+      pointer-events: auto;
     }
 
     @media (pointer: coarse) {
@@ -1176,74 +1196,80 @@ Astro.response.headers.set('Expires', '0');
       <div class="main-area">
         <div class="tabs-bar" id="tabs"></div>
 
-        <div class="terminal-wrap" id="terminal-wrap">
-          <div class="loading-screen hidden" id="loading">
-            <div class="loading-spinner"></div>
-            <div class="loading-text" id="loading-text">Connecting to device...</div>
-          </div>
-          <button class="scroll-bottom" id="scroll-bottom" title="Scroll to bottom">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-
-          <!-- Floating action button group -->
-          <div class="fab-actions" id="fab-actions">
-            <div class="fab-menu" id="fab-menu">
-              <button class="fab-menu-item" id="fab-plan-mode">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
-                </svg>
-                <span>Toggle Plan Mode</span>
-              </button>
-              <button class="fab-menu-item" id="fab-skip-perms">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-                Start Claude (skip perms)
-              </button>
-              <button class="fab-menu-item" id="fab-paste">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                </svg>
-                Paste from clipboard
-              </button>
-              <button class="fab-menu-item" id="fab-image">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Insert image file
-              </button>
-              <button class="fab-menu-item" id="fab-compact">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="4 14 10 14 10 20"/>
-                  <polyline points="20 10 14 10 14 4"/>
-                  <line x1="14" y1="10" x2="21" y2="3"/>
-                  <line x1="3" y1="21" x2="10" y2="14"/>
-                </svg>
-                <span>Compact View</span>
-              </button>
+        <div class="terminal-area">
+          <div class="terminal-wrap" id="terminal-wrap">
+            <div class="loading-screen hidden" id="loading">
+              <div class="loading-spinner"></div>
+              <div class="loading-text" id="loading-text">Connecting to device...</div>
             </div>
-            <button class="fab-trigger" id="fab-trigger" title="Actions">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
+
+            <div class="fab-toast" id="fab-toast"></div>
+            <input type="file" id="image-picker" accept="image/*" style="display:none" />
+          </div>
+
+          <!-- Non-scrolling overlay for floating buttons -->
+          <div class="terminal-overlay">
+            <button class="scroll-bottom" id="scroll-bottom" title="Scroll to bottom">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
+
+            <!-- Floating action button group -->
+            <div class="fab-actions" id="fab-actions">
+              <div class="fab-menu" id="fab-menu">
+                <button class="fab-menu-item" id="fab-plan-mode">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                  </svg>
+                  <span>Toggle Plan Mode</span>
+                </button>
+                <button class="fab-menu-item" id="fab-skip-perms">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  Start Claude (skip perms)
+                </button>
+                <button class="fab-menu-item" id="fab-paste">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Paste from clipboard
+                </button>
+                <button class="fab-menu-item" id="fab-image">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Insert image file
+                </button>
+                <button class="fab-menu-item" id="fab-compact">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 14 10 14 10 20"/>
+                    <polyline points="20 10 14 10 14 4"/>
+                    <line x1="14" y1="10" x2="21" y2="3"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                  <span>Compact View</span>
+                </button>
+              </div>
+              <button class="fab-trigger" id="fab-trigger" title="Actions">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Floating mic button (visible on all screen sizes) -->
+            <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+            <!-- Floating keyboard button (mobile only, hidden when keyboard is open) -->
+            <button class="fab-kbd" id="fab-kbd" title="Show keyboard">⌨</button>
           </div>
-
-          <div class="fab-toast" id="fab-toast"></div>
-          <input type="file" id="image-picker" accept="image/*" style="display:none" />
-
-          <!-- Floating mic button (visible on all screen sizes) -->
-          <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
-          <!-- Floating keyboard button (mobile only, hidden when keyboard is open) -->
-          <button class="fab-kbd" id="fab-kbd" title="Show keyboard">⌨</button>
         </div>
 
         <!-- Voice dictation preview -->
@@ -1844,9 +1870,24 @@ Astro.response.headers.set('Expires', '0');
         }
       };
 
+      // Prevent xterm from auto-scrolling horizontally when user hasn't scrolled
+      let userScrolledH = false;
+      let userScrollHTimer = null;
+      const markUserHScroll = () => {
+        userScrolledH = true;
+        if (userScrollHTimer) clearTimeout(userScrollHTimer);
+        userScrollHTimer = setTimeout(() => { userScrolledH = false; }, 800);
+      };
+
       // Track scroll position
       term.onScroll(updateScrollButton);
-      term.onRender(() => setTimeout(updateScrollButton, 50));
+      term.onRender(() => {
+        setTimeout(updateScrollButton, 50);
+        // Snap horizontal scroll back to where user left it (or 0) if xterm auto-scrolled
+        if (!userScrolledH && terminalWrap.scrollLeft > 0) {
+          terminalWrap.scrollLeft = 0;
+        }
+      });
 
       const viewport = terminalWrap.querySelector('.xterm-viewport');
       if (viewport) {
@@ -1943,6 +1984,7 @@ Astro.response.headers.set('Expires', '0');
           // Manually apply horizontal scroll so it works even during vertical scroll
           const hDelta = lastTouchX - t.clientX;
           if (Math.abs(hDelta) > 1) {
+            markUserHScroll();
             terminalWrap.scrollLeft += hDelta;
           }
           lastTouchX = t.clientX;
