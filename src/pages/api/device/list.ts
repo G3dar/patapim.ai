@@ -43,16 +43,18 @@ export const GET: APIRoute = async (context) => {
       // Server-side ping to tunnel URL for real-time status
       let online = false;
       let terminalCount = d.terminalCount;
+      let terminalCounts = d.terminalCounts || null;
       if (d.tunnelUrl && heartbeatOnline) {
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 4000);
           const pingRes = await fetch(d.tunnelUrl + '/ping', { signal: ctrl.signal });
           clearTimeout(timer);
-          const pingData = await pingRes.json() as { ok?: boolean; terminalCount?: number };
+          const pingData = await pingRes.json() as { ok?: boolean; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number } };
           if (pingData.ok) {
             online = true;
             if (pingData.terminalCount) terminalCount = pingData.terminalCount;
+            if (pingData.terminalCounts) terminalCounts = pingData.terminalCounts;
           }
         } catch {
           // Tunnel unreachable — device may still be running
@@ -70,6 +72,7 @@ export const GET: APIRoute = async (context) => {
         lastSeen: d.lastSeen,
         tunnelUrl: d.tunnelUrl,
         terminalCount,
+        terminalCounts,
         ip: d.ip,
         city: d.city,
         country: d.country,

@@ -446,6 +446,43 @@ const paired = Astro.url.searchParams.get('paired') === '1';
     font-size: 12px;
   }
 
+  .device-badges {
+    display: inline-flex;
+    gap: 3px;
+    vertical-align: middle;
+  }
+
+  .device-badges .tbadge {
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: inline-block;
+  }
+
+  .device-badges .tbadge.attention {
+    background: rgba(124, 179, 130, 0.18);
+    color: var(--success);
+  }
+
+  .device-badges .tbadge.busy {
+    background: rgba(212, 120, 120, 0.18);
+    color: var(--error);
+  }
+
+  .device-badges .tbadge.plan {
+    background: rgba(0, 188, 212, 0.18);
+    color: #4dd0e1;
+  }
+
+  .device-badges .tbadge.idle {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
 
   /* Empty state (dynamic) */
   .dash-empty {
@@ -577,6 +614,21 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         if (ago < 86400000) return 'Last seen ' + Math.floor(ago / 3600000) + 'h ago';
         return 'Last seen ' + Math.floor(ago / 86400000) + 'd ago';
       }
+      function renderTerminalBadges(d) {
+        if (d.status !== 'online') return lastSeenText(d);
+        const tc = d.terminalCounts;
+        if (tc && (tc.attention > 0 || tc.busy > 0 || tc.planMode > 0 || tc.idle > 0)) {
+          let html = '<span class="device-badges">';
+          if (tc.attention > 0) html += '<span class="tbadge attention" title="' + tc.attention + ' finished">' + tc.attention + '</span>';
+          if (tc.busy > 0) html += '<span class="tbadge busy" title="' + tc.busy + ' processing">' + tc.busy + '</span>';
+          if (tc.planMode > 0) html += '<span class="tbadge plan" title="' + tc.planMode + ' plan mode">' + tc.planMode + '</span>';
+          if (tc.idle > 0) html += '<span class="tbadge idle" title="' + tc.idle + ' idle">' + tc.idle + '</span>';
+          html += '</span>';
+          return html;
+        }
+        if (d.terminalCount) return 'Terminals: ' + d.terminalCount;
+        return '';
+      }
       container.innerHTML = '<div class="devices-grid">' + devices.map(d => `
           <div class="${cardClass(d)}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
             <div class="device-card-header">
@@ -584,7 +636,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
               <span class="online-badge ${badgeClass(d)}">${badgeLabel(d)}</span>
             </div>
             <div class="device-meta">
-              <span>${d.status === 'online' && d.terminalCount ? 'Terminals: ' + d.terminalCount : lastSeenText(d)}</span>
+              <span>${renderTerminalBadges(d)}</span>
               ${d.city || d.ip ? '<span class="device-location">' + [d.city, d.country].filter(Boolean).join(', ') + (d.ip ? ((d.city || d.country) ? ' \u00b7 ' : '') + escapeHtml(d.ip) : '') + '</span>' : ''}
             </div>
           </div>`

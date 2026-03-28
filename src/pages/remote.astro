@@ -1653,6 +1653,37 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
+    function getCellWidth() {
+      try {
+        return term._core._renderService.dimensions.css.cell.width;
+      } catch (e) {
+        const screen = terminalWrap.querySelector('.xterm-screen');
+        if (screen && term.cols > 0) return screen.offsetWidth / term.cols;
+        return 0;
+      }
+    }
+
+    let isUserTouchScrolling = false;
+
+    function scrollToCursorX() {
+      if (!isMobileResizeMode() || !term || isUserTouchScrolling) return;
+      const cellWidth = getCellWidth();
+      if (!cellWidth) return;
+
+      const cursorX = term.buffer.active.cursorX;
+      const cursorRight = (cursorX + 1) * cellWidth;
+      const cursorLeft = cursorX * cellWidth;
+      const viewLeft = terminalWrap.scrollLeft;
+      const viewRight = viewLeft + terminalWrap.clientWidth;
+      const margin = cellWidth * 2;
+
+      if (cursorRight + margin > viewRight) {
+        terminalWrap.scrollLeft = cursorRight + margin - terminalWrap.clientWidth;
+      } else if (cursorLeft - margin < viewLeft && viewLeft > 0) {
+        terminalWrap.scrollLeft = Math.max(0, cursorLeft - margin);
+      }
+    }
+
     function isClientFocused() {
       return !document.hidden && document.visibilityState === 'visible';
     }
@@ -1817,6 +1848,12 @@ Astro.response.headers.set('Expires', '0');
       const xtermTextarea = terminalWrap.querySelector('.xterm-helper-textarea');
       if (isMobileClient && xtermTextarea) {
         xtermTextarea.setAttribute('readonly', 'readonly');
+        // Prevent iOS keyboard-switch from triggering xterm text selection.
+        // iOS fires a `select` event on the textarea when switching keyboard
+        // layouts (e.g. letters → numbers); clear the unwanted selection.
+        xtermTextarea.addEventListener('select', () => {
+          if (!selectMode) term.clearSelection();
+        });
       }
 
       fitAddon.fit();
@@ -1882,6 +1919,7 @@ Astro.response.headers.set('Expires', '0');
       // Track scroll position
       term.onScroll(updateScrollButton);
       term.onRender(() => {
+        scrollToCursorX();
         setTimeout(updateScrollButton, 50);
         // Snap horizontal scroll back to where user left it (or 0) if xterm auto-scrolled
         if (!userScrolledH && terminalWrap.scrollLeft > 0) {
@@ -1986,8 +2024,12 @@ Astro.response.headers.set('Expires', '0');
           if (Math.abs(hDelta) > 1) {
             markUserHScroll();
             terminalWrap.scrollLeft += hDelta;
+            isUserTouchScrolling = true;
           }
           lastTouchX = t.clientX;
+        }, { passive: true });
+        terminalWrap.addEventListener('touchend', () => {
+          setTimeout(() => { isUserTouchScrolling = false; }, 300);
         }, { passive: true });
       } else {
         terminalWrap.addEventListener('touchstart', () => {
@@ -2165,7 +2207,7 @@ Astro.response.headers.set('Expires', '0');
             window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
             // Replace visible viewport: clear screen, home cursor, write snapshot.
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
-            term.write('\x1b[?25l\x1b[2J\x1b[H' + msg.data + '\x1b[?25h');
+            term.write('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
             if (window._dbgSnap) window._dbgSnap();
             debouncedUpdatePlanMode();
           }
@@ -2220,7 +2262,7 @@ Astro.response.headers.set('Expires', '0');
             // Do NOT call resetTerminalView() or applyPtyDims() before the write —
             // they queue writes/resizes that corrupt xterm's write processor.
             isWritingBuffer = true;
-            term.write('\x1b[2J\x1b[3J\x1b[H' + (msg.data || ''));
+            term.write('\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.data || '') + '\x1b[?2026l');
             const initDone = () => {
               if (!isWritingBuffer) return; // guard against double-fire
               drainTimerId = null;
@@ -2304,7 +2346,7 @@ Astro.response.headers.set('Expires', '0');
             // Write buffer + cleanup. Do NOT use term.write(data, callback) —
             // xterm.js silently drops the callback for large writes.
             isWritingBuffer = true;
-            term.write('\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || ''));
+            term.write('\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || '') + '\x1b[?2026l');
             const switchDone = () => {
               if (!isWritingBuffer) return; // guard against double-fire
               drainTimerId = null;

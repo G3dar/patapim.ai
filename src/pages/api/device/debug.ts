@@ -60,6 +60,7 @@ export const GET: APIRoute = async (context) => {
         tunnelUrl: d.tunnelUrl || null,
         ping: pingResult,
         terminalCount: d.terminalCount || 0,
+        terminalCounts: d.terminalCounts || null,
         ip: d.ip,
         city: d.city,
         country: d.country,

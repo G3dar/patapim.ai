@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; deviceName?: string } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -47,6 +47,7 @@ export const POST: APIRoute = async (context) => {
   device.lastSeen = new Date().toISOString();
   if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
   if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
+  if (body.terminalCounts !== undefined) device.terminalCounts = body.terminalCounts;
   if (ip !== undefined) device.ip = ip;
   if (city !== undefined) device.city = city;
   if (country !== undefined) device.country = country;
