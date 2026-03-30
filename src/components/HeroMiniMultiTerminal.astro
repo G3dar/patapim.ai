@@ -1,45 +1,61 @@
-<div class="hm-mt" data-hm-mt>
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.multiTerminal;
+
+const scriptI18n = {
+  projectNames: dm.projectNames,
+  taskNames: dm.taskNames,
+  tabs: dm.tabs,
+};
+---
+
+<div class="hm-mt" data-hm-mt data-i18n={JSON.stringify(scriptI18n)}>
   <div class="hm-chrome">
     <div class="hm-dots">
       <span class="hm-dot hm-dot-r"></span>
       <span class="hm-dot hm-dot-y"></span>
       <span class="hm-dot hm-dot-g"></span>
     </div>
-    <span class="hm-title">PATAPIM</span>
+    <span class="hm-title">{t(locale, 'demos.multiTerminal.windowTitle')}</span>
   </div>
   <div class="hm-layout">
     <!-- Sidebar -->
     <div class="hm-sidebar">
       <div class="hm-sb-section">
-        <div class="hm-sb-header">PROJECTS</div>
+        <div class="hm-sb-header">{t(locale, 'demos.multiTerminal.projects')}</div>
         <div class="hm-sb-item hm-sb-active" data-proj="0">
           <span class="hm-sb-dot" style="background:#7cb382"></span>
-          <span class="hm-sb-name">my-app</span>
+          <span class="hm-sb-name">{dm.projectNames[0]}</span>
           <span class="hm-notif-dot" data-notif="0"></span>
           <span class="hm-sb-badge">3</span>
         </div>
         <div class="hm-sb-item" data-proj="1">
           <span class="hm-sb-dot" style="background:#6ba4d4"></span>
-          <span class="hm-sb-name">api-server</span>
+          <span class="hm-sb-name">{dm.projectNames[1]}</span>
           <span class="hm-notif-dot" data-notif="1"></span>
           <span class="hm-sb-badge">2</span>
         </div>
         <div class="hm-sb-item" data-proj="2">
           <span class="hm-sb-dot" style="background:#e0a458"></span>
-          <span class="hm-sb-name">docs</span>
+          <span class="hm-sb-name">{dm.projectNames[2]}</span>
           <span class="hm-notif-dot" data-notif="2"></span>
           <span class="hm-sb-badge">1</span>
         </div>
       </div>
       <div class="hm-sb-section">
-        <div class="hm-sb-header">TASKS</div>
+        <div class="hm-sb-header">{t(locale, 'demos.multiTerminal.tasks')}</div>
         <div class="hm-sb-task" data-task="fix-auth">
           <span class="hm-task-icon" data-task-icon="fix-auth">
             <span class="hm-task-circle">&#x25CB;</span>
             <span class="hm-task-checkmark">&#x2713;</span>
           </span>
           <span class="hm-task-running-dot" data-task-dot="fix-auth"></span>
-          Fix auth flow
+          {dm.taskNames[0]}
         </div>
         <div class="hm-sb-task" data-task="add-tests">
           <span class="hm-task-icon" data-task-icon="add-tests">
@@ -47,17 +63,17 @@
             <span class="hm-task-checkmark">&#x2713;</span>
           </span>
           <span class="hm-task-running-dot" data-task-dot="add-tests"></span>
-          Add tests
+          {dm.taskNames[1]}
         </div>
-        <div class="hm-sb-task hm-task-done"><span class="hm-task-check hm-done">&#x2713;</span> Setup CI</div>
+        <div class="hm-sb-task hm-task-done"><span class="hm-task-check hm-done">&#x2713;</span> {dm.taskNames[2]}</div>
       </div>
     </div>
     <!-- Main area -->
     <div class="hm-main">
       <div class="hm-tabs" data-hm-tabs>
-        <span class="hm-tab hm-tab-active" data-tab="0">Claude</span>
-        <span class="hm-tab" data-tab="1">Dev</span>
-        <span class="hm-tab" data-tab="2">Tests</span>
+        <span class="hm-tab hm-tab-active" data-tab="0">{dm.tabs.claude}</span>
+        <span class="hm-tab" data-tab="1">{dm.tabs.dev}</span>
+        <span class="hm-tab" data-tab="2">{dm.tabs.tests}</span>
         <span class="hm-tab-add">+</span>
       </div>
       <div class="hm-terminal" data-hm-term>
@@ -332,6 +348,8 @@
     const root = document.querySelector('[data-hm-mt]') as HTMLElement;
     if (!root) return;
 
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+
     const projects = root.querySelectorAll('[data-proj]');
     const tabs = root.querySelectorAll('[data-tab]');
     const lines = root.querySelectorAll('[data-tln]');
@@ -343,9 +361,13 @@
     const dotAddTests = root.querySelector('[data-task-dot="add-tests"]') as HTMLElement;
     const notifDots = root.querySelectorAll('[data-notif]');
 
+    const tabClaude = i18n.tabs?.claude || 'Claude';
+    const tabDev = i18n.tabs?.dev || 'Dev';
+    const tabTests = i18n.tabs?.tests || 'Tests';
+
     const projectData: Record<string, { tabs: string[]; activeTab: number; lines: string[][] }> = {
       '0': {
-        tabs: ['Claude', 'Dev', 'Tests'],
+        tabs: [tabClaude, tabDev, tabTests],
         activeTab: 0,
         lines: [
           ['> fix the auth flow', '✓ Updated auth middleware', '✓ Added token refresh', '> Ready.'],
@@ -354,7 +376,7 @@
         ]
       },
       '1': {
-        tabs: ['Claude', 'Server'],
+        tabs: [tabClaude, 'Server'],
         activeTab: 0,
         lines: [
           ['> add rate limiting', '✓ Added middleware', '✓ Config: 100 req/min', '> Done.'],

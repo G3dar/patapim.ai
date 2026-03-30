@@ -7,5 +7,12 @@ export default defineConfig({
   adapter: cloudflare(),
   build: {
     assets: '_assets'
-  }
+  },
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'ja'],
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
 });

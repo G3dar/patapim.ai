@@ -1,5 +1,10 @@
 ---
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 const year = new Date().getFullYear();
+const copyright = t(locale, 'footer.copyright').replace('{year}', String(year));
 ---
 
 <footer class="footer">
@@ -10,47 +15,47 @@ const year = new Date().getFullYear();
           <span class="brand-icon">&#x276F;_</span>
           <span class="brand-text">patapim</span>
         </div>
-        <p class="footer-tagline">Free AI automation. Your accounts, your browser, your machine.</p>
+        <p class="footer-tagline">{t(locale, 'footer.tagline')}</p>
         <a href="mailto:info@patapim.ai" class="footer-email">info@patapim.ai</a>
       </div>
 
       <div class="footer-col">
-        <h4>Product</h4>
-        <a href="/#multi-terminal">Multi-Terminal</a>
-        <a href="/#voice-dictation">Voice Dictation</a>
-        <a href="/#remote-access">Remote Access</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/download">Download</a>
+        <h4>{t(locale, 'footer.product')}</h4>
+        <a href={`${lp('/')}#multi-terminal`}>{t(locale, 'footer.multiTerminal')}</a>
+        <a href={`${lp('/')}#voice-dictation`}>{t(locale, 'footer.voiceDictation')}</a>
+        <a href={`${lp('/')}#remote-access`}>{t(locale, 'footer.remoteAccess')}</a>
+        <a href={lp('/pricing')}>{t(locale, 'common.pricing')}</a>
+        <a href={lp('/download')}>{t(locale, 'common.download')}</a>
       </div>
 
       <div class="footer-col">
-        <h4>Documentation</h4>
-        <a href="/docs/getting-started/installation">Installation</a>
-        <a href="/docs/getting-started/quick-start">Quick Start</a>
-        <a href="/docs/features/multi-terminal">Multi-Terminal</a>
-        <a href="/docs/features/remote-access">Remote Access</a>
+        <h4>{t(locale, 'footer.documentation')}</h4>
+        <a href={lp('/docs/getting-started/installation')}>{t(locale, 'footer.installation')}</a>
+        <a href={lp('/docs/getting-started/quick-start')}>{t(locale, 'footer.quickStart')}</a>
+        <a href={lp('/docs/features/multi-terminal')}>{t(locale, 'footer.multiTerminal')}</a>
+        <a href={lp('/docs/features/remote-access')}>{t(locale, 'footer.remoteAccess')}</a>
       </div>
 
       <div class="footer-col">
-        <h4>Community</h4>
-        <a href="https://github.com/G3dar/patapim" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">Issues</a>
-        <a href="https://github.com/G3dar/patapim/discussions" target="_blank" rel="noopener">Discussions</a>
+        <h4>{t(locale, 'footer.community')}</h4>
+        <a href="https://github.com/G3dar/patapim" target="_blank" rel="noopener">{t(locale, 'footer.github')}</a>
+        <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">{t(locale, 'footer.issues')}</a>
+        <a href="https://github.com/G3dar/patapim/discussions" target="_blank" rel="noopener">{t(locale, 'footer.discussions')}</a>
       </div>
 
       <div class="footer-col">
-        <h4>Legal</h4>
-        <a href="/terms">Terms of Use</a>
-        <a href="/privacy">Privacy Policy</a>
+        <h4>{t(locale, 'footer.legal')}</h4>
+        <a href={lp('/terms')}>{t(locale, 'footer.termsOfUse')}</a>
+        <a href={lp('/privacy')}>{t(locale, 'footer.privacyPolicy')}</a>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; {year} <span class="brand-text">patapim</span>. All rights reserved.</p>
+      <p set:html={copyright} />
       <div class="footer-legal-links">
-        <a href="/terms">Terms</a>
+        <a href={lp('/terms')}>{t(locale, 'footer.terms')}</a>
         <span class="footer-dot">&middot;</span>
-        <a href="/privacy">Privacy</a>
+        <a href={lp('/privacy')}>{t(locale, 'footer.privacy')}</a>
       </div>
     </div>
   </div>

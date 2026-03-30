@@ -1,0 +1,45 @@
+---
+import { getLocaleFromUrl, getAlternateUrl } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const altLocale = locale === 'en' ? 'ja' : 'en';
+const altPath = getAlternateUrl(locale, Astro.url.pathname);
+const altLabel = altLocale === 'ja' ? '日本語' : 'English';
+---
+
+<a href={altPath} class="lang-switcher" aria-label={`Switch to ${altLabel}`}>
+  <span class:list={['lang-option', { active: locale === 'en' }]}>EN</span>
+  <span class="lang-sep">/</span>
+  <span class:list={['lang-option', { active: locale === 'ja' }]}>JA</span>
+</a>
+
+<style>
+  .lang-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-tertiary);
+    transition: all var(--transition-fast);
+  }
+  .lang-switcher:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+  }
+  .lang-option {
+    color: var(--text-muted);
+    transition: color var(--transition-fast);
+  }
+  .lang-option.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+  .lang-sep {
+    color: var(--text-muted);
+  }
+</style>

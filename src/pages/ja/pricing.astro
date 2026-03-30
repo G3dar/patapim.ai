@@ -1,0 +1,330 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+import en from '../../i18n/translations/en';
+import ja from '../../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
+
+const featuresCompare = translations.pricing.featuresCompare;
+const faq = translations.pricing.faq;
+---
+
+<BaseLayout title={t(locale, 'meta.pricingTitle')} description={t(locale, 'meta.pricingDescription')}>
+  <Navbar />
+
+  <main class="pricing-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">{t(locale, 'pricing.label')}</span>
+        <h1 class="section-title">{t(locale, 'pricing.title')}</h1>
+        <p class="section-subtitle">
+          {t(locale, 'pricing.subtitle')}
+        </p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-cards">
+        <div class="p-card">
+          <h3>{t(locale, 'pricing.freeTitle')}</h3>
+          <div class="p-price"><span class="p-amount">{t(locale, 'pricing.freePrice')}</span> <span class="p-period">{t(locale, 'pricing.freePeriod')}</span></div>
+          <p class="p-desc">{t(locale, 'pricing.freeDesc')}</p>
+          <a href={lp('/download')} class="btn btn-secondary" style="width:100%; justify-content:center;">{t(locale, 'common.downloadFree')}</a>
+          <ul class="p-list">
+            {featuresCompare.map((f) => (
+              <li>
+                <span class="p-label">{f.name}</span>
+                <span class={`p-value ${f.free === 'No' ? 'dim' : ''}`}>{f.free}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="p-card featured">
+          <h3>{t(locale, 'pricing.proTitle')}</h3>
+          <div class="p-price">
+            <span class="p-amount">{t(locale, 'pricing.proPrice')}</span>
+            <span class="p-period">{t(locale, 'pricing.proPeriod')}</span>
+          </div>
+          <p class="p-desc">{t(locale, 'pricing.proDesc')}</p>
+          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">{t(locale, 'common.goPro')}</a>
+          <ul class="p-list">
+            {featuresCompare.map((f) => (
+              <li>
+                <span class="p-label">{f.name}</span>
+                <span class={`p-value ${f.pro !== f.free ? 'highlight' : ''}`}>{f.pro}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Unlock Forever Banner -->
+      <div class="unlock-section">
+        <div class="unlock-card">
+          <span class="unlock-badge">{t(locale, 'pricing.unlockBadge')}</span>
+          <h3 class="unlock-title">{t(locale, 'pricing.unlockTitle')}</h3>
+          <p class="unlock-desc" set:html={t(locale, 'pricing.unlockDesc').replace(/\n/g, '<br/>')} />
+          <div class="unlock-price-row">
+            <div class="unlock-price-area">
+              <span class="unlock-price">{t(locale, 'pricing.unlockPrice')}</span>
+              <span class="unlock-once">{t(locale, 'pricing.unlockNote')}</span>
+            </div>
+            <a href="#" class="btn btn-primary" id="checkout-lifetime">{t(locale, 'pricing.unlockButton')}</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="faq-section section">
+        <h2 class="section-title" style="font-size: 28px;">{t(locale, 'pricing.faqTitle')}</h2>
+        <div class="faq-grid">
+          {faq.map((item) => (
+            <div class="faq-item">
+              <h4>{item.q}</h4>
+              <p set:html={item.a} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .pricing-page {
+    min-height: 100vh;
+  }
+
+  .pricing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .p-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    position: relative;
+  }
+
+  .p-card.featured {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 40px rgba(212, 165, 116, 0.1);
+  }
+
+  .p-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .p-card h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+  }
+
+  .p-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: var(--space-xs);
+  }
+  .p-amount {
+    font-size: 48px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+  .p-period {
+    font-size: 16px;
+    color: var(--text-tertiary);
+  }
+  .p-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .p-list {
+    list-style: none;
+    margin-top: var(--space-xl);
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-lg);
+  }
+  .p-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px;
+  }
+  .p-label { color: var(--text-secondary); }
+  .p-value { color: var(--text-primary); font-weight: 500; }
+  .p-value.dim { color: var(--text-muted); font-weight: 400; }
+  .p-value.highlight { color: var(--accent-primary); }
+
+  /* Unlock Forever */
+  .unlock-section {
+    max-width: 800px;
+    margin: var(--space-2xl) auto 0;
+  }
+
+  .unlock-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    text-align: center;
+  }
+
+  .unlock-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--warning);
+    background: rgba(224, 164, 88, 0.12);
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: var(--space-md);
+  }
+
+  .unlock-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+  }
+
+  .unlock-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto var(--space-xl);
+  }
+
+  .unlock-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xl);
+  }
+
+  .unlock-price-area {
+    text-align: center;
+  }
+
+  .unlock-price {
+    display: block;
+    font-size: 42px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  .unlock-once {
+    display: block;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  /* FAQ */
+  .faq-section {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-top: var(--space-2xl);
+  }
+
+  .faq-item h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+  .faq-item p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 640px) {
+    .pricing-cards { grid-template-columns: 1fr; }
+    .faq-grid { grid-template-columns: 1fr; }
+    .unlock-price-row {
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+  }
+</style>
+
+<script>
+  async function handleCheckout(plan: 'pro' | 'lifetime') {
+    const btn = document.getElementById(plan === 'pro' ? 'checkout-monthly' : 'checkout-lifetime');
+    if (btn) btn.setAttribute('disabled', '');
+    try {
+      // Best-effort: include authenticated email if signed in
+      let email: string | undefined;
+      try {
+        const sessionRes = await fetch('/api/auth/session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData.authenticated) email = sessionData.user.email;
+        }
+      } catch {}
+
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, email }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Checkout error:', data.error);
+        if (btn) btn.removeAttribute('disabled');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      if (btn) btn.removeAttribute('disabled');
+    }
+  }
+
+  document.getElementById('checkout-monthly')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleCheckout('pro');
+  });
+
+  document.getElementById('checkout-lifetime')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleCheckout('lifetime');
+  });
+</script>

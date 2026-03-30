@@ -4,174 +4,57 @@ description: "PATAPIM configuration options"
 order: 2
 ---
 
-# Configuration
+## Global Configuration Directory
 
-PATAPIM configuration is managed through multiple files and environment variables.
+All PATAPIM configuration is stored at `~/.patapim/`:
 
-## Project-Level Configuration
-
-### .patapim/config.json
-
-Project-specific configuration stored in `.patapim/config.json` at the project root.
-
-```json
-{
-  "projectName": "My Project",
-  "defaultTerminalCount": 2,
-  "historyFile": ".patapim/history.txt",
-  "taskFile": "tasks.json"
-}
-```
-
-**Location:** `<project-root>/.patapim/config.json`
-
-**Common Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `projectName` | string | folder name | Display name for the project |
-| `defaultTerminalCount` | number | 1 | Number of terminals to open on launch |
-| `historyFile` | string | `.patapim/history.txt` | Path to history file |
-| `taskFile` | string | `tasks.json` | Path to tasks file |
-
-## Workspace Configuration
-
-### workspace.json
-
-Global workspace configuration tracks open projects and window state.
-
-**Location:** `~/.patapim/workspace.json` (user home directory)
-
-```json
-{
-  "projects": [
-    {
-      "path": "/Users/username/project1",
-      "lastOpened": "2026-02-06T10:30:00Z"
-    }
-  ],
-  "recentProjects": [
-    "/Users/username/project1",
-    "/Users/username/project2"
-  ],
-  "windowState": {
-    "width": 1200,
-    "height": 800,
-    "x": 100,
-    "y": 100
-  }
-}
-```
-
-This file is automatically managed by PATAPIM and should not be edited manually.
+| File | Purpose |
+|------|---------|
+| `workspaces.json` | Project list, active workspace, and project metadata |
+| `sessions.json` | Terminal sessions, working directories, and state per project |
+| `account.json` | Auth token, email address, and license tier |
+| `passkeys.json` | WebAuthn/PassKey credentials for remote access |
+| `trusted-passkeys.json` | Whitelist of trusted PassKeys for remote authentication |
+| `downloads/` | Files downloaded by embedded browser panels |
+| `mcp-token` | MCP server authentication token (production) |
+| `mcp-token-dev` | MCP server authentication token (dev instance) |
 
 ## Environment Variables
 
-### PATAPIM_DEBUG
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PATAPIM_INSTANCE=dev` | Run as dev instance (isolates CDP port to 9223, uses separate userData directory `PATAPIM-dev/`) | Not set |
+| `PATAPIM_DEBUG=1` | Open Electron DevTools on startup | Not set |
+| `PATAPIM_PORT` | Override remote access server port | `31415` |
+| `PATAPIM_MCP_TOKEN` | MCP server authentication token (also synced to `~/.patapim/mcp-token` file) | Auto-generated |
+| `PATAPIM_TERMINAL_ID` | Terminal ID for MCP server — set by the remote server to link browser to terminal | Auto-set |
 
-Enable development tools for debugging.
+## Per-Project Configuration
 
-```bash
-# Windows (PowerShell)
-$env:PATAPIM_DEBUG=1
-.\node_modules\electron\dist\electron.exe .
+Each project can have a `.patapim/config.json` in its root for project-specific settings.
 
-# Linux/macOS
-PATAPIM_DEBUG=1 electron .
-```
+## Runtime Settings
 
-When enabled:
-- DevTools panel opens automatically
-- Console logging is more verbose
-- Error messages include stack traces
+PATAPIM stores UI preferences in the Electron renderer's localStorage:
 
-### PATAPIM_AUTH_SECRET
+- Window size and position
+- Active terminal and tab state
+- Panel visibility preferences
+- Voice dictation provider selection
+- Grid layout preference
 
-Authentication secret for remote access (future feature).
+These settings persist across app restarts but are tied to the Electron app data directory.
 
-```bash
-export PATAPIM_AUTH_SECRET="your-secret-key"
-```
+## Multi-Instance (Dev Mode)
 
-### PATAPIM_MCP_TOKEN
+You can run two PATAPIM instances simultaneously:
 
-Authentication token for the MCP browser control REST API.
+| Property | Stable | Dev |
+|----------|--------|-----|
+| CDP Port | 9222 | 9223 |
+| userData | `PATAPIM/` | `PATAPIM-dev/` |
+| Window Title | `PATAPIM` | `PATAPIM [DEV]` |
+| Logo Color | Default | Amber |
+| PID File | — | `%APPDATA%/PATAPIM-dev/patapim-dev.pid` |
 
-```bash
-# Auto-generated on startup — typically not set manually
-echo $PATAPIM_MCP_TOKEN
-```
-
-This token is generated automatically when PATAPIM starts and is injected into Claude Code and other AI CLI tools for MCP authentication. You generally don't need to set this manually.
-
-## Runtime Settings (localStorage)
-
-PATAPIM stores user preferences in the browser's localStorage:
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `patapim.theme` | string | UI theme (`light`, `dark`, `auto`) |
-| `patapim.fontSize` | number | Terminal font size (10-20) |
-| `patapim.fontFamily` | string | Terminal font family |
-| `patapim.gridLayout` | boolean | Enable/disable grid layout |
-| `patapim.historyPanel` | boolean | Show/hide history panel |
-| `patapim-toolbar-hidden-buttons` | string (JSON) | Toolbar buttons hidden by the user via View > Toolbar Buttons |
-| `patapim-dictation-provider` | string | Active dictation provider (whisper, webspeech, local-whisper) |
-| `patapim-dictation-mic-device` | string | Selected microphone device ID |
-| `patapim-sidebar-width` | number | Sidebar width in pixels |
-
-These are set through the UI and persist across sessions.
-
-## Configuration Files
-
-### Account & Auth Files
-
-| File | Location | Purpose |
-|------|----------|---------|
-| `account.json` | `~/.patapim/` | Cached account data and plan info |
-| `trusted-passkeys.json` | `~/.patapim/` | Registered PassKey credentials |
-| `remote-token.json` | `~/.patapim/` | Remote access authentication token |
-
-These files are managed automatically by PATAPIM. Manual editing is not recommended.
-
-## Configuration Priority
-
-PATAPIM follows this priority order:
-
-1. **Environment variables** (highest priority)
-2. **Project-level config** (`.patapim/config.json`)
-3. **Workspace config** (`~/.patapim/workspace.json`)
-4. **Runtime settings** (localStorage)
-5. **Default values** (hardcoded)
-
-## Example: Complete Setup
-
-```bash
-# 1. Create project config
-mkdir .patapim
-echo '{
-  "projectName": "My App",
-  "defaultTerminalCount": 2
-}' > .patapim/config.json
-
-# 2. Set environment variable
-export PATAPIM_DEBUG=1
-
-# 3. Launch PATAPIM
-electron .
-```
-
-## Configuration Files Location Summary
-
-| File | Location | Purpose |
-|------|----------|---------|
-| `config.json` | `<project>/.patapim/` | Project settings |
-| `workspace.json` | `~/.patapim/` | Global workspace state |
-| `history.txt` | `<project>/.patapim/` | Command history |
-| `tasks.json` | `<project>/` | Task tracking |
-| `CLAUDE.md` | `<project>/` | Claude Code instructions |
-| `STRUCTURE.json` | `<project>/` | Module map |
-| `account.json` | `~/.patapim/` | Account and license data |
-| `trusted-passkeys.json` | `~/.patapim/` | PassKey credentials |
-| `remote-token.json` | `~/.patapim/` | Remote auth token |
-| `terminal-logs/` | `~/.patapim/` | Terminal session logs |
+Start a dev instance with `PATAPIM_INSTANCE=dev npm start`.

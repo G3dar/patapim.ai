@@ -18,5 +18,7 @@ interface Env {
 }
 
 declare namespace App {
-  interface Locals extends Runtime {}
+  interface Locals extends Runtime {
+    locale?: import('./i18n').Locale;
+  }
 }

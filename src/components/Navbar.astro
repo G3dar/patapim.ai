@@ -1,27 +1,32 @@
 ---
-const currentPath = Astro.url.pathname;
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 ---
 
 <nav class="navbar">
   <div class="navbar-inner container">
-    <a href="/" class="navbar-brand">
+    <a href={lp('/')} class="navbar-brand">
       <span class="brand-icon">&#x276F;_</span>
-      <span class="brand-text">patapim</span>
+      <span class="brand-text">{t(locale, 'nav.brand')}</span>
     </a>
 
     <div class="navbar-links">
-      <a href="/#why-patapim" class="nav-link">Features</a>
-      <a href="/docs/getting-started/installation" class="nav-link">Docs</a>
-      <a href="/pricing" class="nav-link">Pricing</a>
-      <a href="/download" class="nav-link">Download</a>
+      <a href={`${lp('/')}#why-patapim`} class="nav-link">{t(locale, 'nav.features')}</a>
+      <a href={lp('/docs/getting-started/installation')} class="nav-link">{t(locale, 'nav.docs')}</a>
+      <a href={lp('/pricing')} class="nav-link">{t(locale, 'nav.pricing')}</a>
+      <a href={lp('/download')} class="nav-link">{t(locale, 'nav.download')}</a>
     </div>
 
     <div class="navbar-actions">
-      <a href="/api/auth/google" class="nav-signin" id="nav-signin" style="display:none;">Sign In</a>
-      <a href="/go" class="btn btn-primary btn-nav">Dashboard</a>
+      <LanguageSwitcher />
+      <a href="/api/auth/google" class="nav-signin" id="nav-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+      <a href={lp('/go')} class="btn btn-primary btn-nav">{t(locale, 'nav.dashboard')}</a>
     </div>
 
-    <a href="/go" class="btn btn-primary btn-mobile-dash">Dashboard</a>
+    <a href={lp('/go')} class="btn btn-primary btn-mobile-dash">{t(locale, 'nav.dashboard')}</a>
     <button class="mobile-toggle" aria-label="Toggle menu" id="mobile-toggle">
       <span></span>
       <span></span>
@@ -30,12 +35,13 @@ const currentPath = Astro.url.pathname;
   </div>
 
   <div class="mobile-menu" id="mobile-menu">
-    <a href="/#why-patapim">Features</a>
-    <a href="/docs/getting-started/installation">Docs</a>
-    <a href="/pricing">Pricing</a>
-    <a href="/download">Download</a>
-    <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">Sign In</a>
-    <a href="/go" class="btn btn-primary" style="margin-top: 8px; justify-content: center;">Dashboard</a>
+    <div class="mobile-lang-row"><LanguageSwitcher /></div>
+    <a href={`${lp('/')}#why-patapim`}>{t(locale, 'nav.features')}</a>
+    <a href={lp('/docs/getting-started/installation')}>{t(locale, 'nav.docs')}</a>
+    <a href={lp('/pricing')}>{t(locale, 'nav.pricing')}</a>
+    <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
+    <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+    <a href={lp('/go')} class="btn btn-primary" style="margin-top: 8px; justify-content: center;">{t(locale, 'nav.dashboard')}</a>
   </div>
 
 </nav>
@@ -160,6 +166,14 @@ const currentPath = Astro.url.pathname;
   }
   .mobile-menu a:last-child {
     border: none;
+  }
+
+  .mobile-lang-row {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 4px;
   }
 
   .navbar-actions {

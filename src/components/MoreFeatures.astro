@@ -1,20 +1,24 @@
 ---
+import { getLocaleFromUrl, t } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+
 const features = [
-  { icon: '&#x1F4DD;', title: 'Context Preservation', desc: 'CLAUDE.md, STRUCTURE.json &mdash; auto-updated context files in every project' },
-  { icon: '&#x1F4BE;', title: 'Session Persistence', desc: 'Terminal sessions saved per-project, survive restarts' },
-  { icon: '&#x2611;', title: 'Task Management', desc: 'Built-in task panel synced with tasks.json' },
-  { icon: '&#x1F4CB;', title: 'GitHub Integration', desc: 'Issues, labels, and filters directly in the sidebar' },
-  { icon: '&#x1F9E9;', title: 'Plugin System', desc: 'Official marketplace + community plugins' },
-  { icon: '&#x270F;', title: 'File Editor', desc: 'Multi-tab editor with syntax highlighting' },
-  { icon: '&#x2328;', title: 'Keyboard-First', desc: 'Ctrl+1-9 for terminals, Ctrl+K for Claude' },
+  { icon: '&#x1F4DD;', title: t(locale, 'moreFeatures.contextPreservation'), desc: t(locale, 'moreFeatures.contextPreservationDesc') },
+  { icon: '&#x1F4BE;', title: t(locale, 'moreFeatures.sessionPersistence'), desc: t(locale, 'moreFeatures.sessionPersistenceDesc') },
+  { icon: '&#x2611;', title: t(locale, 'moreFeatures.taskManagement'), desc: t(locale, 'moreFeatures.taskManagementDesc') },
+  { icon: '&#x1F4CB;', title: t(locale, 'moreFeatures.githubIntegration'), desc: t(locale, 'moreFeatures.githubIntegrationDesc') },
+  { icon: '&#x1F9E9;', title: t(locale, 'moreFeatures.pluginSystem'), desc: t(locale, 'moreFeatures.pluginSystemDesc') },
+  { icon: '&#x270F;', title: t(locale, 'moreFeatures.fileEditor'), desc: t(locale, 'moreFeatures.fileEditorDesc') },
+  { icon: '&#x2328;', title: t(locale, 'moreFeatures.keyboardFirst'), desc: t(locale, 'moreFeatures.keyboardFirstDesc') },
 ];
 ---
 
 <section class="section more-features" id="more-features">
   <div class="container">
     <div class="section-header">
-      <span class="section-label">And Much More</span>
-      <h2 class="section-title">Everything Else You Need</h2>
+      <span class="section-label">{t(locale, 'moreFeatures.label')}</span>
+      <h2 class="section-title">{t(locale, 'moreFeatures.title')}</h2>
     </div>
 
     <div class="mf-grid">

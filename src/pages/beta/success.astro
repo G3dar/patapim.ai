@@ -4,10 +4,14 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 
 ---
 
-<BaseLayout title="You're in — PATAPIM" description="Your PATAPIM Pro lifetime license is active.">
+<BaseLayout title={t(locale, 'meta.betaSuccessTitle')} description={t(locale, 'meta.betaSuccessDescription')}>
   <Navbar />
 
   <main class="ea-page">
@@ -19,39 +23,39 @@ import Footer from '../../components/Footer.astro';
         <span class="dot dot-7"></span><span class="dot dot-8"></span>
       </div>
 
-      <span class="ea-badge">Early Access</span>
-      <h1 class="ea-title">You're in!</h1>
-      <p class="ea-sub">Pro lifetime license activated and linked to your account. Just download and log in &mdash; it's already there.</p>
+      <span class="ea-badge">{t(locale, 'betaSuccess.badge')}</span>
+      <h1 class="ea-title">{t(locale, 'betaSuccess.title')}</h1>
+      <p class="ea-sub">{t(locale, 'betaSuccess.subtitle')}</p>
 
-      <a href="/download" class="ea-dl-btn">Download PATAPIM</a>
-      <span class="ea-platform">Windows 10+ &mdash; macOS coming soon</span>
+      <a href={lp('/download')} class="ea-dl-btn">{t(locale, 'betaSuccess.downloadButton')}</a>
+      <span class="ea-platform">{t(locale, 'betaSuccess.platformNote')}</span>
 
       <!-- Personal note -->
       <div class="ea-divider"></div>
 
       <div class="ea-personal">
-        <p>Hey &mdash; genuinely, thank you for trying this out. I'm building PATAPIM solo and having real people use it means everything to me.</p>
-        <p>One thing I'd really love you to try: <strong>voice dictation</strong>. Hit the mic, talk to your agent, see what happens. It runs completely local and it changed how I work. I think it'll click for you too.</p>
-        <p>If anything feels off, or you have an idea, or you just want to say hi &mdash; I read every single message and I'll reply personally.</p>
-        <span class="ea-signature">&mdash; German</span>
+        <p>{t(locale, 'betaSuccess.personalNote')}</p>
+        <p set:html={t(locale, 'betaSuccess.voiceTip').replace('voice dictation', '<strong>voice dictation</strong>')} />
+        <p>{t(locale, 'betaSuccess.feedbackNote')}</p>
+        <span class="ea-signature">{t(locale, 'betaSuccess.signoff')}</span>
       </div>
 
       <!-- Quick start cards -->
       <div class="ea-cards">
         <div class="ea-card ea-card-voice">
           <span class="ea-card-icon">🎙️</span>
-          <h3>Talk, don't type</h3>
-          <p>Local Whisper, zero latency. Give it 5 minutes.</p>
+          <h3>{t(locale, 'betaSuccess.tipTalk')}</h3>
+          <p>{t(locale, 'betaSuccess.tipTalkDesc')}</p>
         </div>
         <div class="ea-card ea-card-grid">
           <span class="ea-card-icon">⚡</span>
-          <h3>Run agents in parallel</h3>
-          <p>Red = working. Green = needs you. No more alt-tab.</p>
+          <h3>{t(locale, 'betaSuccess.tipParallel')}</h3>
+          <p>{t(locale, 'betaSuccess.tipParallelDesc')}</p>
         </div>
         <div class="ea-card ea-card-phone">
           <span class="ea-card-icon">📱</span>
-          <h3>Check from your phone</h3>
-          <p>Scan the QR. Walk away. You'll know.</p>
+          <h3>{t(locale, 'betaSuccess.tipPhone')}</h3>
+          <p>{t(locale, 'betaSuccess.tipPhoneDesc')}</p>
         </div>
       </div>
 

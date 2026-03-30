@@ -2,6 +2,12 @@
 import RemoteAccessDemo from './RemoteAccessDemo.astro';
 import MultiTerminalDemo from './MultiTerminalDemo.astro';
 import VoiceDictationDemo from './VoiceDictationDemo.astro';
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
 ---
 
 <section class="section core-features">
@@ -10,18 +16,13 @@ import VoiceDictationDemo from './VoiceDictationDemo.astro';
     <!-- Pillar 1: Multi-Terminal -->
     <div class="dive-block" id="multi-terminal">
       <div class="dive-content">
-        <span class="section-label">Core Feature</span>
-        <h2 class="dive-title">Organized Multi-Terminal</h2>
-        <p class="dive-desc">
-          Persistent sessions that survive app restarts. Run up to 9 terminals simultaneously and
-          multitask across multiple AI agents &mdash; each in its own dedicated space.
-        </p>
+        <span class="section-label">{t(locale, 'coreFeatures.label')}</span>
+        <h2 class="dive-title">{t(locale, 'coreFeatures.multiTerminalTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'coreFeatures.multiTerminalDesc')}</p>
         <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> Tab view for focus, grid view for overview</li>
-          <li><span class="check">&#x2714;</span> Layouts: 2x1, 2x2, 3x2, 3x3</li>
-          <li><span class="check">&#x2714;</span> Persistent sessions per project</li>
-          <li><span class="check">&#x2714;</span> Resizable grid cells with drag handles</li>
-          <li><span class="check">&#x2714;</span> Ctrl+1-9 instant terminal switching</li>
+          {translations.coreFeatures.multiTerminalItems.map((item) => (
+            <li><span class="check">&#x2714;</span> {item}</li>
+          ))}
         </ul>
       </div>
       <div class="dive-visual">
@@ -32,18 +33,13 @@ import VoiceDictationDemo from './VoiceDictationDemo.astro';
     <!-- Pillar 2: Voice Dictation -->
     <div class="dive-block reverse" id="voice-dictation">
       <div class="dive-content">
-        <span class="section-label">Core Feature</span>
-        <h2 class="dive-title">Built-In Voice Dictation</h2>
-        <p class="dive-desc">
-          Talk to each terminal instead of typing. Whisper API for accurate transcription, with
-          Web Speech API as a free fallback. Persistent mode lets you keep talking.
-        </p>
+        <span class="section-label">{t(locale, 'coreFeatures.label')}</span>
+        <h2 class="dive-title">{t(locale, 'coreFeatures.voiceTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'coreFeatures.voiceDesc')}</p>
         <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> Whisper API transcription ($0.006/min)</li>
-          <li><span class="check">&#x2714;</span> Free fallback: browser Web Speech API</li>
-          <li><span class="check">&#x2714;</span> Per-terminal dictation</li>
-          <li><span class="check">&#x2714;</span> Persistent dictation mode</li>
-          <li><span class="check">&#x2714;</span> Works with remote access sessions</li>
+          {translations.coreFeatures.voiceItems.map((item) => (
+            <li><span class="check">&#x2714;</span> {item}</li>
+          ))}
         </ul>
       </div>
       <div class="dive-visual">
@@ -54,19 +50,13 @@ import VoiceDictationDemo from './VoiceDictationDemo.astro';
     <!-- Pillar 3: Remote Access -->
     <div class="dive-block" id="remote-access">
       <div class="dive-content">
-        <span class="section-label">Core Feature</span>
-        <h2 class="dive-title">Access From Any Device</h2>
-        <p class="dive-desc">
-          Control your PATAPIM instance from your phone, tablet, or another computer.
-          Your desktop executes everything &mdash; you just control it remotely via URL.
-        </p>
+        <span class="section-label">{t(locale, 'coreFeatures.label')}</span>
+        <h2 class="dive-title">{t(locale, 'coreFeatures.remoteTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'coreFeatures.remoteDesc')}</p>
         <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> QR code quick connect from mobile</li>
-          <li><span class="check">&#x2714;</span> Cloudflare Tunnels &mdash; no port forwarding</li>
-          <li><span class="check">&#x2714;</span> PassKey/biometric authentication</li>
-          <li><span class="check">&#x2714;</span> Responsive mobile UI</li>
-          <li><span class="check">&#x2714;</span> Local network + cloud modes</li>
-          <li><span class="check">&#x2714;</span> Unlimited concurrent sessions (Pro)</li>
+          {translations.coreFeatures.remoteItems.map((item) => (
+            <li><span class="check">&#x2714;</span> {item}</li>
+          ))}
         </ul>
       </div>
       <div class="dive-visual">

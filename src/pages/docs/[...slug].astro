@@ -6,7 +6,9 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
 export async function getStaticPaths() {
   const docs = await getCollection('docs');
-  return docs.map((doc) => ({
+  // English docs: exclude ja/ prefix
+  const enDocs = docs.filter((doc) => !doc.id.startsWith('ja/'));
+  return enDocs.map((doc) => ({
     params: { slug: doc.id },
     props: { doc },
   }));

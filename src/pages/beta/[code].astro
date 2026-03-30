@@ -4,6 +4,13 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+import en from '../../i18n/translations/en';
+import ja from '../../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
 
 const { code } = Astro.params;
 const env = Astro.locals.runtime.env;
@@ -40,7 +47,7 @@ if (status === 'valid' && code) {
 }
 ---
 
-<BaseLayout title="Beta Invite — PATAPIM" description="You've been invited to the PATAPIM beta. Claim your free Pro lifetime license.">
+<BaseLayout title={t(locale, 'meta.betaTitle')} description={t(locale, 'meta.betaDescription')}>
   <Navbar />
 
   <main class="beta-page">
@@ -54,10 +61,10 @@ if (status === 'valid' && code) {
               <line x1="9" y1="9" x2="15" y2="15"/>
             </svg>
           </div>
-          <h1 class="beta-title">Invalid Invite Link</h1>
-          <p class="beta-desc">This invite link is not valid. Please check the URL and try again.</p>
+          <h1 class="beta-title">{t(locale, 'beta.invalidTitle')}</h1>
+          <p class="beta-desc">{t(locale, 'beta.invalidDesc')}</p>
           <div class="beta-cta">
-            <a href="/" class="btn btn-secondary">Go to Homepage</a>
+            <a href={lp('/')} class="btn btn-secondary">{t(locale, 'common.goToHomepage')}</a>
           </div>
         </div>
       )}
@@ -71,10 +78,10 @@ if (status === 'valid' && code) {
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h1 class="beta-title">Already Claimed</h1>
-          <p class="beta-desc">This invite has already been claimed. Each beta invite can only be used once.</p>
+          <h1 class="beta-title">{t(locale, 'beta.claimedTitle')}</h1>
+          <p class="beta-desc">{t(locale, 'beta.claimedDesc')}</p>
           <div class="beta-cta">
-            <a href="/" class="btn btn-secondary">Go to Homepage</a>
+            <a href={lp('/')} class="btn btn-secondary">{t(locale, 'common.goToHomepage')}</a>
           </div>
         </div>
       )}
@@ -87,44 +94,34 @@ if (status === 'valid' && code) {
               <polyline points="12 6 12 12 16 14"/>
             </svg>
           </div>
-          <h1 class="beta-title">Invite Expired</h1>
-          <p class="beta-desc">This invite link has expired. Beta invites are valid for 7 days.</p>
+          <h1 class="beta-title">{t(locale, 'beta.expiredTitle')}</h1>
+          <p class="beta-desc">{t(locale, 'beta.expiredDesc')}</p>
           <div class="beta-cta">
-            <a href="/" class="btn btn-secondary">Go to Homepage</a>
+            <a href={lp('/')} class="btn btn-secondary">{t(locale, 'common.goToHomepage')}</a>
           </div>
         </div>
       )}
 
       {status === 'valid' && (
         <div class="beta-card beta-card-valid">
-          <div class="beta-badge">Beta Invite</div>
-          <h1 class="beta-title">You've been invited to the PATAPIM beta</h1>
-          <p class="beta-value">Free Pro lifetime license <span class="beta-value-note">($30 value)</span></p>
+          <div class="beta-badge">{t(locale, 'beta.badge')}</div>
+          <h1 class="beta-title">{t(locale, 'beta.title')}</h1>
+          <p class="beta-value">{t(locale, 'beta.freeProLifetime')} <span class="beta-value-note">{t(locale, 'beta.value')}</span></p>
 
           <ul class="beta-features">
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Unlimited terminals &amp; projects
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Unlimited voice dictation
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Remote access &amp; all Pro features
-            </li>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Yours forever &mdash; no strings attached
-            </li>
+            {translations.beta.features.map((feature) => (
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                {feature}
+              </li>
+            ))}
           </ul>
 
           <a href={`/api/auth/google?beta=${code}`} class="btn btn-primary beta-cta-btn">
-            Claim your free Pro license
+            {t(locale, 'beta.claimButton')}
           </a>
 
-          <p class="beta-note">Sign in with Google to activate your license.</p>
+          <p class="beta-note">{t(locale, 'beta.claimHint')}</p>
         </div>
       )}
     </div>

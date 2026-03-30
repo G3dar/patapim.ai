@@ -4,9 +4,13 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 ---
 
-<BaseLayout title="Terms of Use — PATAPIM" description="PATAPIM End User License Agreement (EULA). Read the terms governing use of the PATAPIM desktop application.">
+<BaseLayout title={t(locale, 'meta.termsTitle')} description={t(locale, 'meta.termsDescription')}>
   <Navbar />
 
   <main class="legal-page">
@@ -36,10 +40,10 @@ import Footer from '../components/Footer.astro';
         <p>The scope of Your license depends on Your subscription plan:</p>
         <ul>
           <li><strong>Free Plan:</strong> Use of the Software with limitations including up to 9 terminals, up to 3 active projects, 60 minutes of voice dictation, and local network (LAN) remote access only.</li>
-          <li><strong>Pro Plan ($6.99/month):</strong> Use of the Software with expanded capabilities including unlimited terminals, unlimited projects, unlimited voice dictation, full remote access via Cloudflare Tunnels, and additional features as described at <a href="/pricing">patapim.ai/pricing</a>.</li>
+          <li><strong>Pro Plan ($6.99/month):</strong> Use of the Software with expanded capabilities including unlimited terminals, unlimited projects, unlimited voice dictation, full remote access via Cloudflare Tunnels, and additional features as described at <a href={lp('/pricing')}>patapim.ai/pricing</a>.</li>
           <li><strong>Lifetime Plan ($29.99 one-time):</strong> All Pro Plan features granted in perpetuity, subject to the terms of this Agreement.</li>
         </ul>
-        <p>Feature availability and plan limits may change. Current plan details are available at <a href="/pricing">patapim.ai/pricing</a>.</p>
+        <p>Feature availability and plan limits may change. Current plan details are available at <a href={lp('/pricing')}>patapim.ai/pricing</a>.</p>
 
         <h2>3. Restrictions</h2>
         <p>You shall NOT:</p>
@@ -73,7 +77,7 @@ import Footer from '../components/Footer.astro';
         </ul>
 
         <h2>6. Data and Privacy</h2>
-        <p>The Software collects and processes certain data as described in our <a href="/privacy">Privacy Policy</a>. By using the Software, You acknowledge that You have read and understood the Privacy Policy. The Privacy Policy is incorporated into this Agreement by reference.</p>
+        <p>The Software collects and processes certain data as described in our <a href={lp('/privacy')}>Privacy Policy</a>. By using the Software, You acknowledge that You have read and understood the Privacy Policy. The Privacy Policy is incorporated into this Agreement by reference.</p>
 
         <h2>7. Intellectual Property</h2>
         <ul>

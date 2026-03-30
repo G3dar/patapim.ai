@@ -8,6 +8,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { getUserFromRequest } from '../lib/auth';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 
 const env = Astro.locals.runtime.env;
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
@@ -28,9 +32,23 @@ const plan = license?.plan || userData?.plan || 'free';
 const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId || null;
 
 const paired = Astro.url.searchParams.get('paired') === '1';
+
+const scriptI18n = {
+  manageBilling: t(locale, 'common.manageBilling'),
+  loadingDevices: t(locale, 'dashboard.loadingDevices'),
+  noDevices: t(locale, 'dashboard.noDevices'),
+  noDevicesHint: t(locale, 'dashboard.noDevicesHint'),
+  online: t(locale, 'dashboard.online'),
+  connecting: t(locale, 'dashboard.connecting'),
+  offline: t(locale, 'dashboard.offline'),
+  lastSeenJustNow: t(locale, 'dashboard.lastSeenJustNow'),
+  lastSeenMinutes: t(locale, 'dashboard.lastSeenMinutes'),
+  lastSeenHours: t(locale, 'dashboard.lastSeenHours'),
+  lastSeenDays: t(locale, 'dashboard.lastSeenDays'),
+};
 ---
 
-<BaseLayout title="Dashboard — PATAPIM" description="Manage your PATAPIM devices and sessions.">
+<BaseLayout title={t(locale, 'meta.dashboardTitle')} description={t(locale, 'meta.dashboardDescription')}>
   <Navbar />
 
   <!-- Success overlay for post-pairing -->
@@ -43,15 +61,15 @@ const paired = Astro.url.searchParams.get('paired') === '1';
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
         </div>
-        <h2 class="success-title">Signed In</h2>
-        <p class="success-desc">Your desktop app is now connected.</p>
-        <p class="success-close">You can close this tab.</p>
-        <a href="/go" class="success-dashboard-link">Go to Dashboard</a>
+        <h2 class="success-title">{t(locale, 'dashboard.pairedTitle')}</h2>
+        <p class="success-desc">{t(locale, 'dashboard.pairedMessage')}</p>
+        <p class="success-close">{t(locale, 'dashboard.pairedHint')}</p>
+        <a href={lp('/go')} class="success-dashboard-link">{t(locale, 'common.goToDashboard')}</a>
       </div>
     </div>
   )}
 
-  <main class="dashboard-page">
+  <main class="dashboard-page" data-i18n={JSON.stringify(scriptI18n)}>
     <div class="container">
       <!-- Dashboard Header -->
       <div class="dash-header">
@@ -61,7 +79,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
             <div class="dash-name-row">
               <span class="dash-name">{user.name}</span>
               <span class={`plan-badge plan-${plan}`}>
-                {plan === 'free' ? 'Free' : plan === 'pro' ? 'Pro' : 'Lifetime'}
+                {plan === 'free' ? t(locale, 'dashboard.planFree') : plan === 'pro' ? t(locale, 'dashboard.planPro') : t(locale, 'dashboard.planLifetime')}
               </span>
             </div>
             <span class="dash-email">{user.email}</span>
@@ -69,19 +87,19 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         </div>
         <div class="dash-actions">
           {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
-            <button class="btn-link" id="manage-billing-btn">Manage Billing</button>
+            <button class="btn-link" id="manage-billing-btn">{t(locale, 'common.manageBilling')}</button>
           )}
           {plan === 'free' && (
-            <a href="/pricing" class="btn-link btn-link-accent">Upgrade</a>
+            <a href={lp('/pricing')} class="btn-link btn-link-accent">{t(locale, 'common.upgrade')}</a>
           )}
-          <button class="btn btn-secondary btn-sm" id="sign-out-btn">Sign Out</button>
+          <button class="btn btn-secondary btn-sm" id="sign-out-btn">{t(locale, 'common.signOut')}</button>
         </div>
       </div>
 
       <!-- Active Sessions -->
       <div class="dash-section">
-        <h2 class="section-title">Active Sessions</h2>
-        <div id="devices-loading" class="panel-loading">Loading devices...</div>
+        <h2 class="section-title">{t(locale, 'dashboard.activeSessions')}</h2>
+        <div id="devices-loading" class="panel-loading">{t(locale, 'dashboard.loadingDevices')}</div>
         <div id="devices-content" style="display:none;"></div>
       </div>
 
@@ -524,6 +542,10 @@ const paired = Astro.url.searchParams.get('paired') === '1';
 </style>
 
 <script define:vars={{ stripeCustomerId }}>
+  // Read i18n strings from data attribute
+  const i18nEl = document.querySelector('[data-i18n]');
+  const i18n = i18nEl ? JSON.parse(i18nEl.dataset.i18n || '{}') : {};
+
   // Load devices immediately on page load
   loadDevices();
 
@@ -545,13 +567,13 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         console.error('Portal error:', data.error);
         alert(data.error || 'Failed to open billing portal');
         btn.disabled = false;
-        btn.textContent = 'Manage Billing';
+        btn.textContent = i18n.manageBilling || 'Manage Billing';
       }
     } catch (e) {
       console.error('Portal fetch error:', e);
       alert('Failed to open billing portal');
       btn.disabled = false;
-      btn.textContent = 'Manage Billing';
+      btn.textContent = i18n.manageBilling || 'Manage Billing';
     }
   });
 
@@ -584,8 +606,8 @@ const paired = Astro.url.searchParams.get('paired') === '1';
                 <line x1="12" y1="19" x2="20" y2="19"></line>
               </svg>
             </div>
-            <h3 class="dash-empty-title">No devices</h3>
-            <p class="dash-empty-desc">Open PATAPIM on your desktop and sign in to see it here.</p>
+            <h3 class="dash-empty-title">${i18n.noDevices || 'No devices'}</h3>
+            <p class="dash-empty-desc">${i18n.noDevicesHint || 'Open PATAPIM on your desktop and sign in to see it here.'}</p>
           </div>`;
         return;
       }
@@ -597,9 +619,9 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         return 'offline';
       }
       function badgeLabel(d) {
-        if (d.status === 'online') return 'Online';
-        if (d.status === 'heartbeat') return 'Connecting\u2026';
-        return 'Offline';
+        if (d.status === 'online') return i18n.online || 'Online';
+        if (d.status === 'heartbeat') return i18n.connecting || 'Connecting\u2026';
+        return i18n.offline || 'Offline';
       }
       function cardClass(d) {
         if (d.status === 'online') return 'device-card';
@@ -609,10 +631,10 @@ const paired = Astro.url.searchParams.get('paired') === '1';
       function lastSeenText(d) {
         if (d.status === 'online' || !d.lastSeen) return '';
         const ago = Date.now() - new Date(d.lastSeen).getTime();
-        if (ago < 60000) return 'Last seen just now';
-        if (ago < 3600000) return 'Last seen ' + Math.floor(ago / 60000) + 'm ago';
-        if (ago < 86400000) return 'Last seen ' + Math.floor(ago / 3600000) + 'h ago';
-        return 'Last seen ' + Math.floor(ago / 86400000) + 'd ago';
+        if (ago < 60000) return i18n.lastSeenJustNow || 'Last seen just now';
+        if (ago < 3600000) return (i18n.lastSeenMinutes || 'Last seen {n}m ago').replace('{n}', String(Math.floor(ago / 60000)));
+        if (ago < 86400000) return (i18n.lastSeenHours || 'Last seen {n}h ago').replace('{n}', String(Math.floor(ago / 3600000)));
+        return (i18n.lastSeenDays || 'Last seen {n}d ago').replace('{n}', String(Math.floor(ago / 86400000)));
       }
       function renderTerminalBadges(d) {
         if (d.status !== 'online') return lastSeenText(d);
@@ -726,7 +748,7 @@ const paired = Astro.url.searchParams.get('paired') === '1';
         });
       });
     } catch {
-      document.getElementById('devices-loading').textContent = 'Failed to load devices.';
+      document.getElementById('devices-loading').textContent = 'Failed to load devices.'; // Not translated — error state
     }
   }
 

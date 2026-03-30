@@ -1,42 +1,52 @@
 ---
-const rows = [
-  { feature: 'Terminal-First Design', patapim: true, vscode: false, cursor: false, terminal: true },
-  { feature: 'Multi-Terminal Grid (up to 9)', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'Claude Code Integration', patapim: true, vscode: false, cursor: false, terminal: true },
-  { feature: 'Context Preservation Files', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'Remote Access (Phone/Browser)', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'Voice Dictation', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'Task Management (tasks.json)', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'GitHub Issues Panel', patapim: true, vscode: true, cursor: true, terminal: false },
-  { feature: 'Plugin System', patapim: true, vscode: true, cursor: true, terminal: false },
-  { feature: 'File Editor', patapim: true, vscode: true, cursor: true, terminal: false },
-  { feature: 'Auto-Updates', patapim: true, vscode: true, cursor: true, terminal: false },
-  { feature: 'Keyboard-Centric Workflow', patapim: true, vscode: true, cursor: true, terminal: true },
-  { feature: 'Project Standardization', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'PassKey/Biometric Auth', patapim: true, vscode: false, cursor: false, terminal: false },
-  { feature: 'Free Tier Available', patapim: true, vscode: true, cursor: false, terminal: true },
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+
+const boolData = [
+  { patapim: true, vscode: false, cursor: false, terminal: true },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: false, cursor: false, terminal: true },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: true, cursor: true, terminal: false },
+  { patapim: true, vscode: true, cursor: true, terminal: false },
+  { patapim: true, vscode: true, cursor: true, terminal: false },
+  { patapim: true, vscode: true, cursor: true, terminal: false },
+  { patapim: true, vscode: true, cursor: true, terminal: true },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: false, cursor: false, terminal: false },
+  { patapim: true, vscode: true, cursor: false, terminal: true },
 ];
+
+const rows = translations.comparisonTable.features.map((feature, i) => ({
+  feature,
+  ...boolData[i],
+}));
 ---
 
 <section class="section comparison-section" id="comparison">
   <div class="container">
     <div class="section-header">
-      <span class="section-label">Comparison</span>
-      <h2 class="section-title">PATAPIM vs. The Rest</h2>
-      <p class="section-subtitle">
-        Not another code editor. A terminal framework built for AI development.
-      </p>
+      <span class="section-label">{t(locale, 'comparisonTable.label')}</span>
+      <h2 class="section-title">{t(locale, 'comparisonTable.title')}</h2>
+      <p class="section-subtitle">{t(locale, 'comparisonTable.subtitle')}</p>
     </div>
 
     <div class="table-wrapper">
       <table class="comparison-table">
         <thead>
           <tr>
-            <th class="feature-col">Feature</th>
-            <th class="tool-col highlight">PATAPIM</th>
-            <th class="tool-col">VS Code</th>
-            <th class="tool-col">Cursor</th>
-            <th class="tool-col">Terminal</th>
+            <th class="feature-col">{t(locale, 'comparisonTable.headerFeature')}</th>
+            <th class="tool-col highlight">{t(locale, 'comparisonTable.headerPatapim')}</th>
+            <th class="tool-col">{t(locale, 'comparisonTable.headerVscode')}</th>
+            <th class="tool-col">{t(locale, 'comparisonTable.headerCursor')}</th>
+            <th class="tool-col">{t(locale, 'comparisonTable.headerTerminal')}</th>
           </tr>
         </thead>
         <tbody>

@@ -4,18 +4,27 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
+
+const sysReqs = translations.download.sysReqs;
 ---
 
-<BaseLayout title="Download PATAPIM" description="Download PATAPIM for Windows and macOS. Terminal-first IDE framework for AI development.">
+<BaseLayout title={t(locale, 'meta.downloadTitle')} description={t(locale, 'meta.downloadDescription')}>
   <Navbar />
 
   <main class="download-page">
     <div class="container">
       <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">Download</span>
-        <h1 class="section-title">Get PATAPIM</h1>
+        <span class="section-label">{t(locale, 'download.label')}</span>
+        <h1 class="section-title">{t(locale, 'download.title')}</h1>
         <p class="section-subtitle">
-          Terminal-first development, supercharged with AI.
+          {t(locale, 'download.subtitle')}
         </p>
       </div>
 
@@ -30,10 +39,10 @@ import Footer from '../components/Footer.astro';
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
               </svg>
             </div>
-            <h3>Windows</h3>
-            <p class="dl-version">Windows 10 or later</p>
+            <h3>{t(locale, 'download.windows')}</h3>
+            <p class="dl-version">{t(locale, 'download.windowsNote')}</p>
             <a href="/api/download/latest" class="btn btn-primary dl-btn">
-              Download Installer (.exe)
+              {t(locale, 'download.downloadInstaller')}
             </a>
           </div>
           <div class="dl-install-cmds">
@@ -68,14 +77,14 @@ import Footer from '../components/Footer.astro';
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
               </svg>
             </div>
-            <h3>macOS</h3>
-            <p class="dl-version">macOS 12+ &mdash; Intel &amp; Apple Silicon</p>
+            <h3>{t(locale, 'download.macos')}</h3>
+            <p class="dl-version" set:html={t(locale, 'download.macosNote')} />
             <div class="dl-mac-buttons">
               <a href="/api/download/latest-mac-arm64" class="btn btn-primary dl-btn">
-                Download for Apple Silicon
+                {t(locale, 'download.downloadAppleSilicon')}
               </a>
               <a href="/api/download/latest-mac-x64" class="btn btn-secondary dl-btn dl-btn-alt">
-                Download for Intel
+                {t(locale, 'download.downloadIntel')}
               </a>
             </div>
           </div>
@@ -97,24 +106,14 @@ import Footer from '../components/Footer.astro';
 
       <!-- Requirements -->
       <div class="requirements section">
-        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">System Requirements</h2>
+        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">{t(locale, 'download.sysReqTitle')}</h2>
         <div class="req-grid">
-          <div class="req-item">
-            <h4>Operating System</h4>
-            <p>Windows 10+ or macOS 12+ (64-bit)</p>
-          </div>
-          <div class="req-item">
-            <h4>Runtime</h4>
-            <p>Node.js 18+ and Git</p>
-          </div>
-          <div class="req-item">
-            <h4>Disk Space</h4>
-            <p>~200 MB (with dependencies)</p>
-          </div>
-          <div class="req-item">
-            <h4>AI CLI</h4>
-            <p>Claude Code, Codex, or Gemini CLI installed</p>
-          </div>
+          {sysReqs.map((req) => (
+            <div class="req-item">
+              <h4>{req.label}</h4>
+              <p>{req.value}</p>
+            </div>
+          ))}
         </div>
       </div>
 

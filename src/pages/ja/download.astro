@@ -1,0 +1,347 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+import en from '../../i18n/translations/en';
+import ja from '../../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
+
+const sysReqs = translations.download.sysReqs;
+---
+
+<BaseLayout title={t(locale, 'meta.downloadTitle')} description={t(locale, 'meta.downloadDescription')}>
+  <Navbar />
+
+  <main class="download-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">{t(locale, 'download.label')}</span>
+        <h1 class="section-title">{t(locale, 'download.title')}</h1>
+        <p class="section-subtitle">
+          {t(locale, 'download.subtitle')}
+        </p>
+      </div>
+
+      <!-- Platform cards grid -->
+      <div class="dl-grid">
+
+        <!-- Windows -->
+        <div class="dl-card dl-card-windows">
+          <div class="dl-card-top">
+            <div class="dl-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+              </svg>
+            </div>
+            <h3>{t(locale, 'download.windows')}</h3>
+            <p class="dl-version">{t(locale, 'download.windowsNote')}</p>
+            <a href="/api/download/latest" class="btn btn-primary dl-btn">
+              {t(locale, 'download.downloadInstaller')}
+            </a>
+          </div>
+          <div class="dl-install-cmds">
+            <div class="dl-cmd-block">
+              <span class="dl-cmd-label">PowerShell</span>
+              <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
+                <span class="dl-tooltip">Click to copy</span>
+                <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
+                <span class="dl-copy-btn" aria-label="Copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+              </div>
+            </div>
+            <div class="dl-cmd-block">
+              <span class="dl-cmd-label">CMD</span>
+              <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
+                <span class="dl-tooltip">Click to copy</span>
+                <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
+                <span class="dl-copy-btn" aria-label="Copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- macOS -->
+        <div class="dl-card dl-card-macos">
+          <div class="dl-card-top">
+            <div class="dl-icon dl-icon-apple">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+            </div>
+            <h3>{t(locale, 'download.macos')}</h3>
+            <p class="dl-version" set:html={t(locale, 'download.macosNote')} />
+            <div class="dl-mac-buttons">
+              <a href="/api/download/latest-mac-arm64" class="btn btn-primary dl-btn">
+                {t(locale, 'download.downloadAppleSilicon')}
+              </a>
+              <a href="/api/download/latest-mac-x64" class="btn btn-secondary dl-btn dl-btn-alt">
+                {t(locale, 'download.downloadIntel')}
+              </a>
+            </div>
+          </div>
+          <div class="dl-install-cmds">
+            <div class="dl-cmd-block">
+              <span class="dl-cmd-label">Terminal</span>
+              <div class="dl-cmd-line" data-dl-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
+                <span class="dl-tooltip">Click to copy</span>
+                <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
+                <span class="dl-copy-btn" aria-label="Copy">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Requirements -->
+      <div class="requirements section">
+        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">{t(locale, 'download.sysReqTitle')}</h2>
+        <div class="req-grid">
+          {sysReqs.map((req) => (
+            <div class="req-item">
+              <h4>{req.label}</h4>
+              <p>{req.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .download-page {
+    min-height: 100vh;
+  }
+
+  .dl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dl-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dl-card-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dl-card h3 {
+    font-size: 24px;
+    margin-bottom: var(--space-xs);
+  }
+
+  .dl-card-windows {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
+  }
+
+  .dl-card-macos {
+    border-color: rgba(130, 120, 255, 0.5);
+    box-shadow: 0 0 30px rgba(130, 120, 255, 0.1);
+    background: linear-gradient(160deg, rgba(130, 120, 255, 0.06) 0%, var(--bg-secondary) 50%, rgba(90, 200, 250, 0.06) 100%);
+  }
+
+  .dl-icon {
+    color: var(--text-primary);
+    margin-bottom: var(--space-lg);
+  }
+  .dl-icon-apple {
+    color: rgba(180, 170, 255, 0.9);
+  }
+
+  .dl-version {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dl-btn {
+    justify-content: center;
+    max-width: 320px;
+    width: 100%;
+  }
+
+  .dl-mac-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .dl-btn-alt {
+    font-size: 13px;
+    padding: 8px 20px;
+  }
+
+  /* Install commands */
+  .dl-install-cmds {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    text-align: left;
+  }
+  .dl-cmd-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .dl-cmd-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dl-cmd-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .dl-cmd-line:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .dl-cmd-line:hover .dl-copy-btn {
+    color: var(--accent-primary);
+  }
+  .dl-cmd-line.copied {
+    border-color: var(--success);
+  }
+  .dl-cmd-line .dl-tooltip {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    font-size: 11px;
+    font-family: var(--font-sans, sans-serif);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .dl-cmd-line:hover .dl-tooltip {
+    opacity: 1;
+  }
+  .dl-cmd-line.copied .dl-tooltip {
+    background: var(--success);
+    color: #fff;
+  }
+  .dl-cmd-line code {
+    flex: 1;
+    font-size: 12px;
+    background: none;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.85);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .dl-copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    transition: color 0.2s;
+  }
+  .dl-copy-btn.copied {
+    color: var(--success);
+  }
+
+  /* Requirements */
+  .req-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .req-item {
+    text-align: center;
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+  .req-item h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    color: var(--accent-primary);
+  }
+  .req-item p {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .dl-grid { grid-template-columns: 1fr; }
+    .dl-card { padding: var(--space-xl); }
+    .req-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .req-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  // Copy command - clicking anywhere on the line
+  document.querySelectorAll<HTMLElement>('[data-dl-copy]').forEach(line => {
+    line.addEventListener('click', () => {
+      const text = line.dataset.dlCopy;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const tooltip = line.querySelector('.dl-tooltip');
+        const icon = line.querySelector('.dl-copy-btn');
+        line.classList.add('copied');
+        if (tooltip) tooltip.textContent = 'Copied!';
+        if (icon) icon.classList.add('copied');
+        setTimeout(() => {
+          line.classList.remove('copied');
+          if (tooltip) tooltip.textContent = 'Click to copy';
+          if (icon) icon.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  });
+</script>

@@ -1,4 +1,24 @@
-<div class="vd-demo" data-vd-demo>
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+
+const scriptI18n = {
+  listening: translations.demos.voice.listening,
+  command1: translations.demos.voice.command1,
+  analyzing: translations.demos.voice.analyzing,
+  created: translations.demos.voice.created,
+  command3: translations.demos.voice.command3,
+  writingTests: translations.demos.voice.writingTests,
+  testsPassing: translations.demos.voice.testsPassing,
+  prompt: translations.demos.voice.prompt,
+};
+---
+
+<div class="vd-demo" data-vd-demo data-i18n={JSON.stringify(scriptI18n)}>
   <div class="vd-cursor" data-vd-cursor>
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M1 1L6.5 14L8.5 8.5L14 6.5L1 1Z" fill="white" stroke="white" stroke-width="0.5"/>
@@ -13,7 +33,7 @@
         <span class="vd-dot vd-dot-y"></span>
         <span class="vd-dot vd-dot-g"></span>
       </div>
-      <span class="vd-title">PATAPIM &mdash; Dev Session</span>
+      <span class="vd-title">{t(locale, 'demos.voice.windowTitle')}</span>
       <div class="vd-mic-btn" data-vd-mic>
         <svg class="vd-mic-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="1" width="6" height="12" rx="3"/>
@@ -26,7 +46,7 @@
     </div>
     <div class="vd-body">
       <div class="vd-line vd-prompt-line">
-        <span class="vd-p">~/project $</span>
+        <span class="vd-p">{t(locale, 'demos.voice.prompt')}</span>
         <span class="vd-cmd" data-vd-cmd></span>
         <span class="vd-caret" data-vd-caret>|</span>
       </div>
@@ -41,7 +61,7 @@
       <span class="vd-bar"></span>
       <span class="vd-bar"></span>
     </div>
-    <div class="vd-badge-flash" data-vd-badge>Whisper API</div>
+    <div class="vd-badge-flash" data-vd-badge>{t(locale, 'demos.voice.whisperApi')}</div>
   </div>
 </div>
 
@@ -276,6 +296,8 @@
     const wave = root.querySelector('[data-vd-wave]');
     const badge = root.querySelector('[data-vd-badge]');
 
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+
     let animId = null;
     let running = false;
 
@@ -288,11 +310,11 @@
 
     function showStaticState() {
       mic.classList.add('active');
-      micLabel.textContent = 'Listening...';
-      cmd.textContent = 'implement the login form with email validation';
+      micLabel.textContent = i18n.listening || 'Listening...';
+      cmd.textContent = i18n.command1 || 'implement the login form with email validation';
       caret.style.display = 'none';
-      addOutputLine('\u25B7 Analyzing requirements...', 'secondary');
-      addOutputLine('\u2714 Created src/components/LoginForm.tsx', 'success');
+      addOutputLine(i18n.analyzing || '\u25B7 Analyzing requirements...', 'secondary');
+      addOutputLine(i18n.created || '\u2714 Created src/components/LoginForm.tsx', 'success');
     }
 
     // IntersectionObserver
@@ -397,7 +419,7 @@
         await schedule(() => {
           doRipple();
           mic.classList.add('active');
-          micLabel.textContent = 'Listening...';
+          micLabel.textContent = i18n.listening || 'Listening...';
         }, 400);
         if (!running) break;
 
@@ -409,7 +431,7 @@
 
         // 3.5-6.5s: Type first transcription
         caret.style.display = 'none';
-        await typeText(cmd, 'implement the login form with email validation');
+        await typeText(cmd, i18n.command1 || 'implement the login form with email validation');
         if (!running) break;
 
         // Badge flash
@@ -424,18 +446,18 @@
         micLabel.textContent = '';
 
         await schedule(() => {
-          addOutputLine('\u25B7 Analyzing requirements...', 'secondary');
+          addOutputLine(i18n.analyzing || '\u25B7 Analyzing requirements...', 'secondary');
         }, 400);
         if (!running) break;
         await schedule(() => {
-          addOutputLine('\u2714 Created src/components/LoginForm.tsx', 'success');
+          addOutputLine(i18n.created || '\u2714 Created src/components/LoginForm.tsx', 'success');
         }, 1200);
         if (!running) break;
 
         // 8.5-9.5s: Second dictation
         await schedule(() => {
           mic.classList.add('active');
-          micLabel.textContent = 'Listening...';
+          micLabel.textContent = i18n.listening || 'Listening...';
           wave.classList.add('active');
         }, 800);
         if (!running) break;
@@ -443,7 +465,7 @@
         // Add new prompt line
         const prompt2 = document.createElement('div');
         prompt2.className = 'vd-line vd-prompt-line';
-        prompt2.innerHTML = '<span class="vd-p">~/project $</span><span class="vd-cmd" data-vd-cmd2></span>';
+        prompt2.innerHTML = '<span class="vd-p">' + escHtml(i18n.prompt || '~/project $') + '</span><span class="vd-cmd" data-vd-cmd2></span>';
         prompt2.style.opacity = '0';
         output.appendChild(prompt2);
         void prompt2.offsetWidth;
@@ -454,7 +476,7 @@
         const cmd2 = prompt2.querySelector('[data-vd-cmd2]');
         await schedule(() => {}, 300);
         if (!running) break;
-        await typeText(cmd2, 'now add unit tests for it');
+        await typeText(cmd2, i18n.command3 || 'now add unit tests for it');
         if (!running) break;
 
         badge.classList.add('show');
@@ -468,11 +490,11 @@
         micLabel.textContent = '';
 
         await schedule(() => {
-          addOutputLine('\u25B7 Writing tests...', 'secondary');
+          addOutputLine(i18n.writingTests || '\u25B7 Writing tests...', 'secondary');
         }, 400);
         if (!running) break;
         await schedule(() => {
-          addOutputLine('\u2714 8 tests passing', 'success');
+          addOutputLine(i18n.testsPassing || '\u2714 8 tests passing', 'success');
         }, 800);
         if (!running) break;
 

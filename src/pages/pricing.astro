@@ -4,104 +4,61 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
 
-const freeFeatures = [
-  { name: 'Terminals', value: 'Up to 9' },
-  { name: 'Active Projects', value: 'Up to 3' },
-  { name: 'Voice Dictation', value: '30 min included' },
-  { name: 'Remote Access', value: 'Yes' },
-  { name: 'Task Management', value: 'Yes' },
-  { name: 'GitHub Integration', value: 'Yes' },
-  { name: 'Plugin System', value: 'Yes' },
-  { name: 'File Editor', value: 'Yes' },
-  { name: 'Context Preservation', value: 'Yes' },
-  { name: 'Session Persistence', value: 'Yes' },
-];
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
 
-const proFeatures = [
-  { name: 'Terminals', value: 'Unlimited', upgraded: true },
-  { name: 'Active Projects', value: 'Unlimited', upgraded: true },
-  { name: 'Voice Dictation', value: 'Unlimited', upgraded: true },
-  { name: 'Remote Access', value: 'Yes' },
-  { name: 'Task Management', value: 'Yes' },
-  { name: 'GitHub Integration', value: 'Yes' },
-  { name: 'Plugin System', value: 'Yes' },
-  { name: 'File Editor', value: 'Yes' },
-  { name: 'Context Preservation', value: 'Yes' },
-  { name: 'Session Persistence', value: 'Yes' },
-];
-
-const faq = [
-  {
-    q: 'What happens if I cancel Pro?',
-    a: 'Your Pro access continues until the end of the billing period. Then you switch to the Free plan. No data is lost &mdash; Pro features simply become unavailable. You can re-subscribe anytime.'
-  },
-  {
-    q: 'What does "Unlock Forever" include?',
-    a: 'All Pro features, permanently. One-time payment of $29.99, no recurring charges. This offer is available for a limited time during early access.'
-  },
-  {
-    q: 'Can I use PATAPIM commercially for free?',
-    a: 'Yes. The Free plan is free for commercial use. Pro removes the limits on terminals, projects, and voice dictation.'
-  },
-  {
-    q: 'What payment methods are accepted?',
-    a: 'We use Stripe for payments. All major credit cards, debit cards, and regional payment methods supported by Stripe.'
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel via Stripe Customer Portal. Your Pro access continues until the end of the billing period. Then you switch to Free.'
-  },
-  {
-    q: 'Is PATAPIM open source?',
-    a: 'No. PATAPIM is proprietary software. The Free plan is available at no cost, but the source code is not open source.'
-  },
-];
+const featuresCompare = translations.pricing.featuresCompare;
+const faq = translations.pricing.faq;
 ---
 
-<BaseLayout title="Pricing — PATAPIM" description="PATAPIM pricing plans. Start free, upgrade to Pro for unlimited terminals, remote access, voice dictation, and more.">
+<BaseLayout title={t(locale, 'meta.pricingTitle')} description={t(locale, 'meta.pricingDescription')}>
   <Navbar />
 
   <main class="pricing-page">
     <div class="container">
       <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">Pricing</span>
-        <h1 class="section-title">Simple, Transparent Pricing</h1>
+        <span class="section-label">{t(locale, 'pricing.label')}</span>
+        <h1 class="section-title">{t(locale, 'pricing.title')}</h1>
         <p class="section-subtitle">
-          All features included. Pro removes the limits.
+          {t(locale, 'pricing.subtitle')}
         </p>
       </div>
 
       <!-- Pricing Cards -->
       <div class="pricing-cards">
         <div class="p-card">
-          <h3>Free</h3>
-          <div class="p-price"><span class="p-amount">$0</span> <span class="p-period">forever</span></div>
-          <p class="p-desc">Everything you need to get started.</p>
-          <a href="/download" class="btn btn-secondary" style="width:100%; justify-content:center;">Download Free</a>
+          <h3>{t(locale, 'pricing.freeTitle')}</h3>
+          <div class="p-price"><span class="p-amount">{t(locale, 'pricing.freePrice')}</span> <span class="p-period">{t(locale, 'pricing.freePeriod')}</span></div>
+          <p class="p-desc">{t(locale, 'pricing.freeDesc')}</p>
+          <a href={lp('/download')} class="btn btn-secondary" style="width:100%; justify-content:center;">{t(locale, 'common.downloadFree')}</a>
           <ul class="p-list">
-            {freeFeatures.map((f) => (
+            {featuresCompare.map((f) => (
               <li>
                 <span class="p-label">{f.name}</span>
-                <span class={`p-value ${f.value === 'No' ? 'dim' : ''}`}>{f.value}</span>
+                <span class={`p-value ${f.free === 'No' ? 'dim' : ''}`}>{f.free}</span>
               </li>
             ))}
           </ul>
         </div>
 
         <div class="p-card featured">
-          <h3>Pro</h3>
+          <h3>{t(locale, 'pricing.proTitle')}</h3>
           <div class="p-price">
-            <span class="p-amount">$6.99</span>
-            <span class="p-period">/month</span>
+            <span class="p-amount">{t(locale, 'pricing.proPrice')}</span>
+            <span class="p-period">{t(locale, 'pricing.proPeriod')}</span>
           </div>
-          <p class="p-desc">Full power, no limits.</p>
-          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">Go Pro</a>
+          <p class="p-desc">{t(locale, 'pricing.proDesc')}</p>
+          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">{t(locale, 'common.goPro')}</a>
           <ul class="p-list">
-            {proFeatures.map((f) => (
+            {featuresCompare.map((f) => (
               <li>
                 <span class="p-label">{f.name}</span>
-                <span class={`p-value ${f.upgraded ? 'highlight' : ''}`}>{f.value}</span>
+                <span class={`p-value ${f.pro !== f.free ? 'highlight' : ''}`}>{f.pro}</span>
               </li>
             ))}
           </ul>
@@ -111,25 +68,22 @@ const faq = [
       <!-- Unlock Forever Banner -->
       <div class="unlock-section">
         <div class="unlock-card">
-          <span class="unlock-badge">Limited Time Offer</span>
-          <h3 class="unlock-title">Unlock Forever</h3>
-          <p class="unlock-desc">
-            One-time payment. All Pro features for life.
-            No subscriptions, no renewals &mdash; ever.
-          </p>
+          <span class="unlock-badge">{t(locale, 'pricing.unlockBadge')}</span>
+          <h3 class="unlock-title">{t(locale, 'pricing.unlockTitle')}</h3>
+          <p class="unlock-desc" set:html={t(locale, 'pricing.unlockDesc').replace(/\n/g, '<br/>')} />
           <div class="unlock-price-row">
             <div class="unlock-price-area">
-              <span class="unlock-price">$29.99</span>
-              <span class="unlock-once">one-time payment</span>
+              <span class="unlock-price">{t(locale, 'pricing.unlockPrice')}</span>
+              <span class="unlock-once">{t(locale, 'pricing.unlockNote')}</span>
             </div>
-            <a href="#" class="btn btn-primary" id="checkout-lifetime">Get Lifetime Access</a>
+            <a href="#" class="btn btn-primary" id="checkout-lifetime">{t(locale, 'pricing.unlockButton')}</a>
           </div>
         </div>
       </div>
 
       <!-- FAQ -->
       <div class="faq-section section">
-        <h2 class="section-title" style="font-size: 28px;">Frequently Asked Questions</h2>
+        <h2 class="section-title" style="font-size: 28px;">{t(locale, 'pricing.faqTitle')}</h2>
         <div class="faq-grid">
           {faq.map((item) => (
             <div class="faq-item">

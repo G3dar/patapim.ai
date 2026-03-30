@@ -1,0 +1,759 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getUserFromRequest } from '../../lib/auth';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  return Astro.redirect('/api/auth/google');
+}
+
+// Server-side data fetch
+const [licenseRaw, userRaw] = await Promise.all([
+  env.LICENSES.get(`license:${user.email}`),
+  env.LICENSES.get(`user:${user.googleId}`),
+]);
+
+const license = licenseRaw ? JSON.parse(licenseRaw) : null;
+const userData = userRaw ? JSON.parse(userRaw) : null;
+const plan = license?.plan || userData?.plan || 'free';
+const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId || null;
+
+const paired = Astro.url.searchParams.get('paired') === '1';
+
+const scriptI18n = {
+  manageBilling: t(locale, 'common.manageBilling'),
+  loadingDevices: t(locale, 'dashboard.loadingDevices'),
+  noDevices: t(locale, 'dashboard.noDevices'),
+  noDevicesHint: t(locale, 'dashboard.noDevicesHint'),
+  online: t(locale, 'dashboard.online'),
+  connecting: t(locale, 'dashboard.connecting'),
+  offline: t(locale, 'dashboard.offline'),
+  lastSeenJustNow: t(locale, 'dashboard.lastSeenJustNow'),
+  lastSeenMinutes: t(locale, 'dashboard.lastSeenMinutes'),
+  lastSeenHours: t(locale, 'dashboard.lastSeenHours'),
+  lastSeenDays: t(locale, 'dashboard.lastSeenDays'),
+};
+---
+
+<BaseLayout title={t(locale, 'meta.dashboardTitle')} description={t(locale, 'meta.dashboardDescription')}>
+  <Navbar />
+
+  <!-- Success overlay for post-pairing -->
+  {paired && (
+    <div class="success-overlay" id="success-overlay">
+      <div class="success-card">
+        <div class="success-check">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h2 class="success-title">{t(locale, 'dashboard.pairedTitle')}</h2>
+        <p class="success-desc">{t(locale, 'dashboard.pairedMessage')}</p>
+        <p class="success-close">{t(locale, 'dashboard.pairedHint')}</p>
+        <a href={lp('/go')} class="success-dashboard-link">{t(locale, 'common.goToDashboard')}</a>
+      </div>
+    </div>
+  )}
+
+  <main class="dashboard-page" data-i18n={JSON.stringify(scriptI18n)}>
+    <div class="container">
+      <!-- Dashboard Header -->
+      <div class="dash-header">
+        <div class="dash-user">
+          <img src={user.picture} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
+          <div class="dash-user-info">
+            <div class="dash-name-row">
+              <span class="dash-name">{user.name}</span>
+              <span class={`plan-badge plan-${plan}`}>
+                {plan === 'free' ? t(locale, 'dashboard.planFree') : plan === 'pro' ? t(locale, 'dashboard.planPro') : t(locale, 'dashboard.planLifetime')}
+              </span>
+            </div>
+            <span class="dash-email">{user.email}</span>
+          </div>
+        </div>
+        <div class="dash-actions">
+          {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
+            <button class="btn-link" id="manage-billing-btn">{t(locale, 'common.manageBilling')}</button>
+          )}
+          {plan === 'free' && (
+            <a href={lp('/pricing')} class="btn-link btn-link-accent">{t(locale, 'common.upgrade')}</a>
+          )}
+          <button class="btn btn-secondary btn-sm" id="sign-out-btn">{t(locale, 'common.signOut')}</button>
+        </div>
+      </div>
+
+      <!-- Active Sessions -->
+      <div class="dash-section">
+        <h2 class="section-title">{t(locale, 'dashboard.activeSessions')}</h2>
+        <div id="devices-loading" class="panel-loading">{t(locale, 'dashboard.loadingDevices')}</div>
+        <div id="devices-content" style="display:none;"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .dashboard-page {
+    min-height: 100vh;
+    padding-top: 96px;
+    padding-bottom: var(--space-4xl);
+  }
+
+  /* Success Overlay */
+  .success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 11, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .success-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-4xl) var(--space-3xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  .success-check {
+    color: var(--success);
+    margin-bottom: var(--space-xl);
+  }
+
+  .success-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .success-desc {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+    line-height: 1.5;
+  }
+
+  .success-close {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3xl);
+  }
+
+  .success-dashboard-link {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .success-dashboard-link:hover {
+    color: var(--text-secondary);
+  }
+
+  /* Dashboard Header */
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xl) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .dash-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--border-default);
+  }
+
+  .dash-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dash-name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .dash-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .dash-email {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .dash-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition-fast);
+  }
+
+  .btn-link:hover {
+    color: var(--text-primary);
+  }
+
+  .btn-link-accent {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+
+  .btn-link-accent:hover {
+    color: var(--text-primary);
+  }
+
+  .btn-sm {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+
+  .plan-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+  }
+
+  .plan-free {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .plan-pro {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+  }
+
+  .plan-lifetime {
+    background: rgba(224, 164, 88, 0.15);
+    color: var(--warning);
+  }
+
+  /* Sections */
+  .dash-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .panel-loading {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  @media (max-width: 640px) {
+    .dash-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-lg);
+    }
+
+    .dash-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+</style>
+
+<!-- Dynamic content styles (injected by JS, can't be scoped) -->
+<style is:global>
+  /* Device Cards */
+  .devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .device-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .device-card:hover {
+    border-color: var(--accent-primary);
+  }
+
+  .device-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+  }
+
+  .device-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .device-name:hover {
+    border-color: var(--border-default);
+    background: var(--bg-tertiary);
+  }
+
+  .device-name-input {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+    width: 100%;
+    max-width: 200px;
+    font-family: inherit;
+  }
+
+  .online-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.2px;
+  }
+
+  .online-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .online-badge.online {
+    background: rgba(124, 179, 130, 0.12);
+    color: var(--success);
+  }
+
+  .online-badge.online::before {
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+  }
+
+  .online-badge.offline {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+
+  .online-badge.offline::before {
+    background: var(--text-muted);
+  }
+
+  .online-badge.heartbeat {
+    background: rgba(224, 164, 88, 0.12);
+    color: var(--warning);
+  }
+
+  .online-badge.heartbeat::before {
+    background: var(--warning);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .device-card.device-offline {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .device-card.device-offline:hover {
+    border-color: var(--border-default);
+  }
+
+  .device-card.device-heartbeat {
+    opacity: 0.75;
+    cursor: default;
+  }
+
+  .device-card.device-heartbeat:hover {
+    border-color: var(--border-default);
+  }
+
+  .device-meta {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.7;
+  }
+
+  .device-meta span {
+    display: block;
+  }
+
+  .device-meta .meta-label {
+    color: var(--text-muted);
+  }
+
+  .device-location {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .device-badges {
+    display: inline-flex;
+    gap: 3px;
+    vertical-align: middle;
+  }
+
+  .device-badges .tbadge {
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: inline-block;
+  }
+
+  .device-badges .tbadge.attention {
+    background: rgba(124, 179, 130, 0.18);
+    color: var(--success);
+  }
+
+  .device-badges .tbadge.busy {
+    background: rgba(212, 120, 120, 0.18);
+    color: var(--error);
+  }
+
+  .device-badges .tbadge.plan {
+    background: rgba(0, 188, 212, 0.18);
+    color: #4dd0e1;
+  }
+
+  .device-badges .tbadge.idle {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+
+  /* Empty state (dynamic) */
+  .dash-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-4xl) var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+  }
+
+  .dash-empty-icon {
+    color: var(--text-muted);
+    margin-bottom: var(--space-xl);
+    opacity: 0.6;
+  }
+
+  .dash-empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .dash-empty-desc {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-2xl);
+    max-width: 400px;
+  }
+
+  @media (max-width: 640px) {
+    .devices-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script define:vars={{ stripeCustomerId }}>
+  // Read i18n strings from data attribute
+  const i18nEl = document.querySelector('[data-i18n]');
+  const i18n = i18nEl ? JSON.parse(i18nEl.dataset.i18n || '{}') : {};
+
+  // Load devices immediately on page load
+  loadDevices();
+
+  // Manage billing
+  document.getElementById('manage-billing-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('manage-billing-btn');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: stripeCustomerId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Portal error:', data.error);
+        alert(data.error || 'Failed to open billing portal');
+        btn.disabled = false;
+        btn.textContent = i18n.manageBilling || 'Manage Billing';
+      }
+    } catch (e) {
+      console.error('Portal fetch error:', e);
+      alert('Failed to open billing portal');
+      btn.disabled = false;
+      btn.textContent = i18n.manageBilling || 'Manage Billing';
+    }
+  });
+
+  // Sign out
+  document.getElementById('sign-out-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('sign-out-btn');
+    btn.disabled = true;
+    btn.textContent = 'Signing out...';
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/';
+  });
+
+  // Load devices (server pings tunnel URLs to determine online status)
+  async function loadDevices() {
+    try {
+      const res = await fetch('/api/device/list');
+      const data = await res.json();
+      const container = document.getElementById('devices-content');
+      document.getElementById('devices-loading').style.display = 'none';
+      container.style.display = 'block';
+
+      const devices = data.devices || [];
+
+      if (devices.length === 0) {
+        container.innerHTML = `
+          <div class="dash-empty">
+            <div class="dash-empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+            </div>
+            <h3 class="dash-empty-title">${i18n.noDevices || 'No devices'}</h3>
+            <p class="dash-empty-desc">${i18n.noDevicesHint || 'Open PATAPIM on your desktop and sign in to see it here.'}</p>
+          </div>`;
+        return;
+      }
+
+      // Render devices with server-determined status
+      function badgeClass(d) {
+        if (d.status === 'online') return 'online';
+        if (d.status === 'heartbeat') return 'heartbeat';
+        return 'offline';
+      }
+      function badgeLabel(d) {
+        if (d.status === 'online') return i18n.online || 'Online';
+        if (d.status === 'heartbeat') return i18n.connecting || 'Connecting\u2026';
+        return i18n.offline || 'Offline';
+      }
+      function cardClass(d) {
+        if (d.status === 'online') return 'device-card';
+        if (d.status === 'heartbeat') return 'device-card device-heartbeat';
+        return 'device-card device-offline';
+      }
+      function lastSeenText(d) {
+        if (d.status === 'online' || !d.lastSeen) return '';
+        const ago = Date.now() - new Date(d.lastSeen).getTime();
+        if (ago < 60000) return i18n.lastSeenJustNow || 'Last seen just now';
+        if (ago < 3600000) return (i18n.lastSeenMinutes || 'Last seen {n}m ago').replace('{n}', String(Math.floor(ago / 60000)));
+        if (ago < 86400000) return (i18n.lastSeenHours || 'Last seen {n}h ago').replace('{n}', String(Math.floor(ago / 3600000)));
+        return (i18n.lastSeenDays || 'Last seen {n}d ago').replace('{n}', String(Math.floor(ago / 86400000)));
+      }
+      function renderTerminalBadges(d) {
+        if (d.status !== 'online') return lastSeenText(d);
+        const tc = d.terminalCounts;
+        if (tc && (tc.attention > 0 || tc.busy > 0 || tc.planMode > 0 || tc.idle > 0)) {
+          let html = '<span class="device-badges">';
+          if (tc.attention > 0) html += '<span class="tbadge attention" title="' + tc.attention + ' finished">' + tc.attention + '</span>';
+          if (tc.busy > 0) html += '<span class="tbadge busy" title="' + tc.busy + ' processing">' + tc.busy + '</span>';
+          if (tc.planMode > 0) html += '<span class="tbadge plan" title="' + tc.planMode + ' plan mode">' + tc.planMode + '</span>';
+          if (tc.idle > 0) html += '<span class="tbadge idle" title="' + tc.idle + ' idle">' + tc.idle + '</span>';
+          html += '</span>';
+          return html;
+        }
+        if (d.terminalCount) return 'Terminals: ' + d.terminalCount;
+        return '';
+      }
+      container.innerHTML = '<div class="devices-grid">' + devices.map(d => `
+          <div class="${cardClass(d)}" data-token="${escapeHtml(d.token)}" data-tunnel="${escapeHtml(d.tunnelUrl || '')}">
+            <div class="device-card-header">
+              <span class="device-name" data-token="${escapeHtml(d.token)}" title="Click to rename">${escapeHtml(d.deviceName)}</span>
+              <span class="online-badge ${badgeClass(d)}">${badgeLabel(d)}</span>
+            </div>
+            <div class="device-meta">
+              <span>${renderTerminalBadges(d)}</span>
+              ${d.city || d.ip ? '<span class="device-location">' + [d.city, d.country].filter(Boolean).join(', ') + (d.ip ? ((d.city || d.country) ? ' \u00b7 ' : '') + escapeHtml(d.ip) : '') + '</span>' : ''}
+            </div>
+          </div>`
+      ).join('') + '</div>';
+
+      // Inline rename: click device-name to edit
+      container.addEventListener('click', (e) => {
+        const nameEl = e.target.closest('.device-name');
+        if (!nameEl || nameEl.querySelector('input')) return;
+        e.stopPropagation();
+
+        const token = nameEl.dataset.token;
+        const currentName = nameEl.textContent.trim();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'device-name-input';
+        input.value = currentName;
+        input.maxLength = 50;
+        nameEl.textContent = '';
+        nameEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        async function save() {
+          const newName = input.value.trim();
+          if (!newName || newName === currentName) {
+            nameEl.textContent = currentName;
+            return;
+          }
+          nameEl.textContent = newName;
+          try {
+            const res = await fetch('/api/device/rename', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceToken: token, deviceName: newName }),
+            });
+            const result = await res.json();
+            if (!result.ok) {
+              nameEl.textContent = currentName;
+            } else {
+              nameEl.textContent = result.deviceName;
+            }
+          } catch {
+            nameEl.textContent = currentName;
+          }
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { input.blur(); }
+          if (ev.key === 'Escape') {
+            input.removeEventListener('blur', save);
+            nameEl.textContent = currentName;
+          }
+        });
+      });
+
+      // Click-to-connect on online device cards
+      container.querySelectorAll('.device-card').forEach(card => {
+        card.addEventListener('click', async (e) => {
+          if (e.target.closest('.device-name')) return;
+          if (card.classList.contains('device-offline') || card.classList.contains('device-heartbeat')) return;
+          if (card.classList.contains('connecting')) return;
+          card.classList.add('connecting');
+          card.style.opacity = '0.6';
+          try {
+            const res = await fetch('/api/device/connect-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceToken: card.dataset.token }),
+            });
+            const result = await res.json();
+            if (result.connectToken && result.tunnelUrl) {
+              window.location.href =
+                '/remote?t=' + encodeURIComponent(result.connectToken) +
+                '&url=' + encodeURIComponent(result.tunnelUrl) +
+                '&d=' + encodeURIComponent(card.dataset.token) +
+                '&v=' + Date.now();
+            } else {
+              alert(result.error || 'Failed to connect');
+            }
+          } catch {
+            alert('Failed to connect to device');
+          }
+          card.classList.remove('connecting');
+          card.style.opacity = '';
+        });
+      });
+    } catch {
+      document.getElementById('devices-loading').textContent = 'Failed to load devices.'; // Not translated — error state
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+</script>

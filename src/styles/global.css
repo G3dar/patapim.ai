@@ -253,6 +253,25 @@ a:hover {
   box-shadow: var(--shadow-glow);
 }
 
+/* ==================== JAPANESE TYPOGRAPHY ==================== */
+:lang(ja) {
+  --font-sans: 'Noto Sans JP', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  word-break: auto-phrase;
+  overflow-wrap: break-word;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+}
+
+:lang(ja) .section-title {
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+}
+
+:lang(ja) .hero-title,
+:lang(ja) .hero-brainrot-accent {
+  letter-spacing: -0.5px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

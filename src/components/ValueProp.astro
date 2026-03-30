@@ -1,12 +1,14 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+const locale = getLocaleFromUrl(Astro.url);
+---
+
 <section class="section value-prop" id="why-patapim">
   <div class="container">
     <div class="section-header">
-      <span class="section-label">Why Patapim</span>
-      <h2 class="section-title">Everything You Do Is in the Browser.<br/>Now AI Can Do It Too.</h2>
-      <p class="section-subtitle">
-        99% of your daily work happens in a browser. Patapim gives AI agents
-        direct access to yours &mdash; securely, from your machine, with your accounts.
-      </p>
+      <span class="section-label">{t(locale, 'valueProp.label')}</span>
+      <h2 class="section-title" set:html={t(locale, 'valueProp.title').replace('\n', '<br/>')} />
+      <p class="section-subtitle">{t(locale, 'valueProp.subtitle')}</p>
     </div>
 
     <div class="vp-grid">
@@ -17,19 +19,16 @@
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
           </svg>
         </div>
-        <h3 class="vp-title">Zero API Costs</h3>
-        <p class="vp-desc">
-          Use your existing Claude, Codex, or Gemini subscriptions.
-          Patapim connects to them directly &mdash; no middleman, no extra charges, no per-token billing.
-        </p>
+        <h3 class="vp-title">{t(locale, 'valueProp.zeroCostTitle')}</h3>
+        <p class="vp-desc">{t(locale, 'valueProp.zeroCostDesc')}</p>
         <div class="vp-comparison">
           <div class="vp-comp-item vp-comp-bad">
-            <span class="vp-comp-label">Others</span>
-            <span class="vp-comp-value">~$200/mo in API</span>
+            <span class="vp-comp-label">{t(locale, 'valueProp.others')}</span>
+            <span class="vp-comp-value">{t(locale, 'valueProp.othersCost')}</span>
           </div>
           <div class="vp-comp-item vp-comp-good">
-            <span class="vp-comp-label">Patapim</span>
-            <span class="vp-comp-value">$0</span>
+            <span class="vp-comp-label">{t(locale, 'valueProp.patapim')}</span>
+            <span class="vp-comp-value">{t(locale, 'valueProp.patapimCost')}</span>
           </div>
         </div>
       </div>
@@ -40,21 +39,21 @@
     <div class="vp-how">
       <div class="vp-how-step">
         <span class="vp-step-num">1</span>
-        <span class="vp-step-text">Install Patapim on your PC</span>
+        <span class="vp-step-text">{t(locale, 'valueProp.step1')}</span>
       </div>
       <div class="vp-how-arrow">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
       <div class="vp-how-step">
         <span class="vp-step-num">2</span>
-        <span class="vp-step-text">Connect your AI accounts (Claude, Codex, Gemini)</span>
+        <span class="vp-step-text">{t(locale, 'valueProp.step2')}</span>
       </div>
       <div class="vp-how-arrow">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
       <div class="vp-how-step">
         <span class="vp-step-num">3</span>
-        <span class="vp-step-text">Automate everything &mdash; browser, terminal, tasks</span>
+        <span class="vp-step-text">{t(locale, 'valueProp.step3')}</span>
       </div>
     </div>
   </div>

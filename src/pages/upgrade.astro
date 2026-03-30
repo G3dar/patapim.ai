@@ -4,56 +4,52 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
 
-const features = [
-  'Unlimited terminals',
-  'Unlimited projects',
-  'Unlimited voice dictation',
-  'Remote access',
-  'Task management',
-  'File editor',
-  'GitHub integration',
-  'Plugin system',
-  'Context preservation',
-  'Session persistence',
-];
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+const translations = locale === 'ja' ? ja : en;
+
+const features = translations.upgrade.features;
 ---
 
-<BaseLayout title="Upgrade to Pro — PATAPIM" description="Upgrade PATAPIM to Pro. Unlimited terminals, voice dictation, remote access, and more.">
+<BaseLayout title={t(locale, 'meta.upgradeTitle')} description={t(locale, 'meta.upgradeDescription')}>
   <Navbar />
 
   <main class="upgrade-page">
     <div class="container">
       <div class="section-header" style="padding-top: 120px;">
-        <h1 class="section-title">Upgrade to Pro</h1>
+        <h1 class="section-title">{t(locale, 'upgrade.title')}</h1>
         <p class="section-subtitle">
-          Unlock the full power of PATAPIM. Choose the plan that works for you.
+          {t(locale, 'upgrade.subtitle')}
         </p>
       </div>
 
       <div class="upgrade-cards">
         <!-- Pro Monthly -->
         <div class="u-card featured">
-          <div class="u-badge">Most Popular</div>
-          <h3>Pro</h3>
+          <div class="u-badge">{t(locale, 'upgrade.proBadge')}</div>
+          <h3>{t(locale, 'pricing.proTitle')}</h3>
           <div class="u-price">
-            <span class="u-amount">$6.99</span>
-            <span class="u-period">/month</span>
+            <span class="u-amount">{t(locale, 'upgrade.proPrice')}</span>
+            <span class="u-period">{t(locale, 'upgrade.proPeriod')}</span>
           </div>
-          <p class="u-desc">Cancel anytime. No commitment.</p>
-          <a href="#" class="btn btn-primary" id="checkout-pro" style="width:100%; justify-content:center;">Go Pro</a>
+          <p class="u-desc">{t(locale, 'upgrade.proDesc')}</p>
+          <a href="#" class="btn btn-primary" id="checkout-pro" style="width:100%; justify-content:center;">{t(locale, 'upgrade.proButton')}</a>
         </div>
 
         <!-- Unlock Forever -->
         <div class="u-card lifetime">
-          <div class="u-badge lifetime-badge">Best Value</div>
-          <h3>Unlock Forever</h3>
+          <div class="u-badge lifetime-badge">{t(locale, 'upgrade.unlockBadge')}</div>
+          <h3>{t(locale, 'pricing.unlockTitle')}</h3>
           <div class="u-price">
-            <span class="u-amount">$29.99</span>
-            <span class="u-period">one-time</span>
+            <span class="u-amount">{t(locale, 'upgrade.unlockPrice')}</span>
+            <span class="u-period">{t(locale, 'upgrade.unlockPeriod')}</span>
           </div>
-          <p class="u-desc">Pay once, keep Pro features forever.</p>
-          <a href="#" class="btn btn-primary" id="checkout-lifetime" style="width:100%; justify-content:center;">Unlock Forever</a>
+          <p class="u-desc">{t(locale, 'upgrade.unlockDesc')}</p>
+          <a href="#" class="btn btn-primary" id="checkout-lifetime" style="width:100%; justify-content:center;">{t(locale, 'upgrade.unlockButton')}</a>
         </div>
       </div>
 
@@ -61,19 +57,19 @@ const features = [
       <div class="referral-section">
         <button class="referral-toggle" id="referral-toggle" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          <span>Referred by someone?</span>
+          <span>{t(locale, 'upgrade.referralToggle')}</span>
           <svg class="referral-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="referral-form-container" id="referral-form">
-          <p class="referral-hint">Enter the email of the person who told you about PATAPIM. They'll get credit toward a free license.</p>
-          <input type="email" class="referral-input" id="referral-email" placeholder="friend@example.com" autocomplete="email" />
+          <p class="referral-hint">{t(locale, 'upgrade.referralHint')}</p>
+          <input type="email" class="referral-input" id="referral-email" placeholder={t(locale, 'upgrade.referralPlaceholder')} autocomplete="email" />
           <p class="referral-error" id="referral-error"></p>
         </div>
       </div>
 
       <!-- Shared feature list -->
       <div class="features-section">
-        <h4 class="features-heading">Everything included with Pro</h4>
+        <h4 class="features-heading">{t(locale, 'upgrade.includedTitle')}</h4>
         <ul class="features-list">
           {features.map((f) => (
             <li>

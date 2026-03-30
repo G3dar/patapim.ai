@@ -1,11 +1,25 @@
-<div class="hm-vd" data-hm-vd>
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+
+const scriptI18n = {
+  command: translations.demos.miniVoice.command,
+  result: translations.demos.miniVoice.result,
+};
+---
+
+<div class="hm-vd" data-hm-vd data-i18n={JSON.stringify(scriptI18n)}>
   <div class="hm-chrome">
     <div class="hm-dots">
       <span class="hm-dot hm-dot-r"></span>
       <span class="hm-dot hm-dot-y"></span>
       <span class="hm-dot hm-dot-g"></span>
     </div>
-    <span class="hm-title">Voice Dictation</span>
+    <span class="hm-title">{t(locale, 'demos.miniVoice.windowTitle')}</span>
   </div>
   <div class="hm-body">
     <!-- Mic + waveform centered scene -->
@@ -30,7 +44,7 @@
         <span class="hm-bar"></span>
         <span class="hm-bar"></span>
       </div>
-      <div class="hm-mic-label" data-hm-mic-label>Press to dictate</div>
+      <div class="hm-mic-label" data-hm-mic-label>{t(locale, 'demos.miniVoice.pressToDictate')}</div>
     </div>
     <!-- Terminal output scene -->
     <div class="hm-output-scene" data-hm-output>
@@ -214,6 +228,8 @@
     const root = document.querySelector('[data-hm-vd]') as HTMLElement;
     if (!root) return;
 
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+
     const micScene = root.querySelector('[data-hm-mic-scene]') as HTMLElement;
     const ring = root.querySelector('[data-hm-ring]') as HTMLElement;
     const wave = root.querySelector('[data-hm-wave]') as HTMLElement;
@@ -224,8 +240,8 @@
     const response = root.querySelector('[data-hm-response]') as HTMLElement;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      typed.textContent = 'fix the login bug';
-      response.textContent = '✓ Fixed login validation';
+      typed.textContent = i18n.command || 'fix the login bug';
+      response.textContent = i18n.result || '✓ Fixed login validation';
       response.classList.add('hm-show');
       cursor.style.display = 'none';
       return;
@@ -283,14 +299,14 @@
         await wait(300);
         if (!running) break;
 
-        await typeText('fix the login bug');
+        await typeText(i18n.command || 'fix the login bug');
         if (!running) break;
         await wait(300);
         if (!running) break;
 
         // Scene 4: response
         cursor.style.display = 'none';
-        response.textContent = '✓ Fixed login validation';
+        response.textContent = i18n.result || '✓ Fixed login validation';
         response.classList.add('hm-show');
         await wait(2500);
         if (!running) break;

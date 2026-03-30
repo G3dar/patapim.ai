@@ -1,4 +1,18 @@
-<div class="hm-ra" data-hm-ra>
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dr = translations.demos.miniRemote;
+
+const scriptI18n = {
+  phoneLines: dr.phoneLines,
+};
+---
+
+<div class="hm-ra" data-hm-ra data-i18n={JSON.stringify(scriptI18n)}>
   <div class="hm-chrome">
     <div class="hm-dots">
       <span class="hm-dot hm-dot-r"></span>
@@ -10,22 +24,22 @@
       <path d="M8.5 12.5a3.5 3.5 0 0 1 7 0"/>
       <circle cx="12" cy="12.5" r="1" fill="currentColor"/>
     </svg>
-    <span class="hm-title">Remote Control</span>
+    <span class="hm-title">{t(locale, 'demos.miniRemote.windowTitle')}</span>
   </div>
   <div class="hm-body">
     <!-- Desktop terminal -->
     <div class="hm-desktop" data-hm-desktop>
-      <div class="hm-dln"><span class="hm-pr">~$</span> claude</div>
-      <div class="hm-dln hm-dim">Claude Code initialized</div>
-      <div class="hm-dln hm-dim">Ready. 2 tasks pending.</div>
+      <div class="hm-dln">{dr.desktopLines[0]}</div>
+      <div class="hm-dln hm-dim">{dr.desktopLines[1]}</div>
+      <div class="hm-dln hm-dim">{dr.desktopLines[2]}</div>
       <div class="hm-dln"><span class="hm-pr">~$</span> <span class="hm-blink">|</span></div>
     </div>
     <!-- URL overlay -->
     <div class="hm-url-overlay" data-hm-url>
       <div class="hm-url-box">
-        <div class="hm-url-label">Open on your phone:</div>
-        <div class="hm-url-link">patapim.ai/go</div>
-        <div class="hm-url-sub">Sign in with Google</div>
+        <div class="hm-url-label">{t(locale, 'demos.miniRemote.openOnPhone')}</div>
+        <div class="hm-url-link">{t(locale, 'demos.miniRemote.url')}</div>
+        <div class="hm-url-sub">{t(locale, 'demos.miniRemote.signInWithGoogle')}</div>
       </div>
     </div>
     <!-- Small phone (corner, for auth flow) -->
@@ -41,11 +55,11 @@
           </div>
           <div class="hm-phone-auth" data-hm-auth>
             <span class="hm-auth-g">G</span>
-            <span class="hm-auth-text">Sign in</span>
+            <span class="hm-auth-text">{t(locale, 'demos.miniRemote.signIn')}</span>
           </div>
           <div class="hm-phone-connected" data-hm-connected>
             <span class="hm-phone-check">&#x2713;</span>
-            <span class="hm-phone-text">Connected</span>
+            <span class="hm-phone-text">{t(locale, 'demos.miniRemote.connected')}</span>
           </div>
         </div>
       </div>
@@ -55,11 +69,11 @@
       <div class="hm-big-frame">
         <div class="hm-big-notch"></div>
         <div class="hm-big-screen">
-          <div class="hm-bln" data-bln="0"><span class="hm-bpr">~$</span> claude</div>
-          <div class="hm-bln" data-bln="1">Claude Code initialized</div>
-          <div class="hm-bln" data-bln="2">Ready. 2 tasks pending.</div>
-          <div class="hm-bln hm-bln-gap" data-bln="3"><span class="hm-bpr">&gt;</span> fix the login bug</div>
-          <div class="hm-bln" data-bln="4"><span class="hm-bok">&#x2713;</span> Fixed login validation</div>
+          <div class="hm-bln" data-bln="0">{dr.phoneLines[0]}</div>
+          <div class="hm-bln" data-bln="1">{dr.phoneLines[1]}</div>
+          <div class="hm-bln" data-bln="2">{dr.phoneLines[2]}</div>
+          <div class="hm-bln hm-bln-gap" data-bln="3">{dr.phoneLines[3]}</div>
+          <div class="hm-bln" data-bln="4">{dr.phoneLines[4]}</div>
           <div class="hm-bln" data-bln="5"><span class="hm-bpr">&gt;</span> <span class="hm-blink">|</span></div>
         </div>
       </div>

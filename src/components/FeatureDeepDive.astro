@@ -1,6 +1,14 @@
 ---
 import RemoteAccessDemo from './RemoteAccessDemo.astro';
 import MultiTerminalDemo from './MultiTerminalDemo.astro';
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+
+const contextFileIcons = ['&#x1F4C4;', '&#x1F4CA;', '&#x1F4DD;', '&#x2611;'];
 ---
 
 <section class="section deep-dive">
@@ -9,19 +17,13 @@ import MultiTerminalDemo from './MultiTerminalDemo.astro';
     <!-- Deep Dive: Remote Access -->
     <div class="dive-block">
       <div class="dive-content">
-        <span class="section-label">Remote Access</span>
-        <h2 class="dive-title">Work From Anywhere</h2>
-        <p class="dive-desc">
-          Access your PATAPIM instance from your phone, tablet, or any browser.
-          Local network mode works instantly. Cloudflare Tunnels give you a public URL
-          &mdash; no port forwarding, no VPN, no complexity.
-        </p>
+        <span class="section-label">{t(locale, 'featureDeepDive.remoteLabel')}</span>
+        <h2 class="dive-title">{t(locale, 'featureDeepDive.remoteTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'featureDeepDive.remoteDesc')}</p>
         <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> QR code quick connect from mobile</li>
-          <li><span class="check">&#x2714;</span> Responsive mobile UI optimized for touch</li>
-          <li><span class="check">&#x2714;</span> PassKey/biometric authentication (Touch ID, Windows Hello)</li>
-          <li><span class="check">&#x2714;</span> Unlimited concurrent sessions (Pro)</li>
-          <li><span class="check">&#x2714;</span> Cloudflare edge network &mdash; fast globally</li>
+          {translations.featureDeepDive.remoteItems.map((item) => (
+            <li><span class="check">&#x2714;</span> {item}</li>
+          ))}
         </ul>
       </div>
       <div class="dive-visual">
@@ -32,19 +34,13 @@ import MultiTerminalDemo from './MultiTerminalDemo.astro';
     <!-- Deep Dive: Multi-Terminal + Dictation -->
     <div class="dive-block reverse">
       <div class="dive-content">
-        <span class="section-label">Multi-Terminal + Voice</span>
-        <h2 class="dive-title">Run 9 Terminals. Talk to All of Them.</h2>
-        <p class="dive-desc">
-          Grid view lets you see up to 9 terminals at once. Run builds, tests, servers, and Claude Code
-          sessions side by side. Voice dictation sends speech directly to the active terminal.
-        </p>
+        <span class="section-label">{t(locale, 'featureDeepDive.multiVoiceLabel')}</span>
+        <h2 class="dive-title">{t(locale, 'featureDeepDive.multiVoiceTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'featureDeepDive.multiVoiceDesc')}</p>
         <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> Tab view for focus, grid view for overview</li>
-          <li><span class="check">&#x2714;</span> 2x1, 2x2, 3x1, 3x2, 3x3 grid layouts</li>
-          <li><span class="check">&#x2714;</span> Resizable grid cells with drag handles</li>
-          <li><span class="check">&#x2714;</span> Whisper API transcription ($0.006/min)</li>
-          <li><span class="check">&#x2714;</span> Free fallback: browser Web Speech API</li>
-          <li><span class="check">&#x2714;</span> Persistent dictation mode &mdash; keep talking</li>
+          {translations.featureDeepDive.multiVoiceItems.map((item) => (
+            <li><span class="check">&#x2714;</span> {item}</li>
+          ))}
         </ul>
       </div>
       <div class="dive-visual">
@@ -55,55 +51,22 @@ import MultiTerminalDemo from './MultiTerminalDemo.astro';
     <!-- Deep Dive: Context Preservation -->
     <div class="dive-block">
       <div class="dive-content">
-        <span class="section-label">Context Preservation</span>
-        <h2 class="dive-title">Never Lose Context Again</h2>
-        <p class="dive-desc">
-          Every PATAPIM project comes with standardized files that preserve your development context.
-          Claude Code reads these automatically &mdash; no re-explaining, no lost decisions.
-        </p>
-        <ul class="dive-list">
-          <li><span class="check">&#x2714;</span> <code>CLAUDE.md</code> &mdash; instructions for Claude Code</li>
-          <li><span class="check">&#x2714;</span> <code>STRUCTURE.json</code> &mdash; auto-updated module map</li>
-          <li><span class="check">&#x2714;</span> <code>PROJECT_NOTES.md</code> &mdash; session notes, decisions</li>
-          <li><span class="check">&#x2714;</span> <code>tasks.json</code> &mdash; structured task tracking</li>
-          <li><span class="check">&#x2714;</span> Pre-commit hooks auto-update structure</li>
-          <li><span class="check">&#x2714;</span> Context prompts after completing tasks</li>
-        </ul>
+        <span class="section-label">{t(locale, 'featureDeepDive.contextLabel')}</span>
+        <h2 class="dive-title">{t(locale, 'featureDeepDive.contextTitle')}</h2>
+        <p class="dive-desc">{t(locale, 'featureDeepDive.contextDesc')}</p>
       </div>
       <div class="dive-visual">
         <div class="files-mock">
-          <div class="file-item">
-            <span class="file-icon">&#x1F4C4;</span>
-            <div class="file-info">
-              <span class="file-name">CLAUDE.md</span>
-              <span class="file-desc">Project instructions for AI</span>
+          {translations.featureDeepDive.contextFiles.map((file, i) => (
+            <div class="file-item">
+              <span class="file-icon" set:html={contextFileIcons[i]} />
+              <div class="file-info">
+                <span class="file-name">{file.name}</span>
+                <span class="file-desc">{file.desc}</span>
+              </div>
+              <span class="file-badge">{file.badge}</span>
             </div>
-            <span class="file-badge">Auto</span>
-          </div>
-          <div class="file-item">
-            <span class="file-icon">&#x1F4CA;</span>
-            <div class="file-info">
-              <span class="file-name">STRUCTURE.json</span>
-              <span class="file-desc">Module map &amp; IPC channels</span>
-            </div>
-            <span class="file-badge">Auto</span>
-          </div>
-          <div class="file-item">
-            <span class="file-icon">&#x1F4DD;</span>
-            <div class="file-info">
-              <span class="file-name">PROJECT_NOTES.md</span>
-              <span class="file-desc">Session notes &amp; decisions</span>
-            </div>
-            <span class="file-badge">Prompted</span>
-          </div>
-          <div class="file-item">
-            <span class="file-icon">&#x2611;</span>
-            <div class="file-info">
-              <span class="file-name">tasks.json</span>
-              <span class="file-desc">Structured task tracking</span>
-            </div>
-            <span class="file-badge">Synced</span>
-          </div>
+          ))}
         </div>
       </div>
     </div>

@@ -1,5 +1,25 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const fmt = translations.demos.fullMultiTerminal;
+
+const scriptI18n = {
+  tabs: fmt.tabs,
+  layouts: fmt.layouts,
+  devServer: fmt.devServer,
+  tests: fmt.tests,
+  build: fmt.build,
+  claude: fmt.claude,
+  gridCells: fmt.gridCells,
+};
+---
+
 <!-- MultiTerminalDemo.astro — Animated HTML5 demo of the Multi-Terminal Grid feature -->
-<div class="mt-demo" id="mt-demo">
+<div class="mt-demo" id="mt-demo" data-i18n={JSON.stringify(scriptI18n)}>
   <!-- Animated cursor -->
   <div class="mt-cursor" id="mt-cursor">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#222" stroke-width="1.2">
@@ -28,10 +48,10 @@
         <span class="mt-dot mt-dot-green"></span>
       </div>
       <div class="mt-tabs" id="mt-tabs">
-        <span class="mt-tab active" data-tab="devserver">Dev Server</span>
-        <span class="mt-tab" data-tab="tests">Tests</span>
-        <span class="mt-tab" data-tab="build">Build</span>
-        <span class="mt-tab" data-tab="claude">Claude</span>
+        <span class="mt-tab active" data-tab="devserver">{fmt.tabs[0]}</span>
+        <span class="mt-tab" data-tab="tests">{fmt.tabs[1]}</span>
+        <span class="mt-tab" data-tab="build">{fmt.tabs[2]}</span>
+        <span class="mt-tab" data-tab="claude">{fmt.tabs[3]}</span>
       </div>
       <div class="mt-chrome-right">
         <div class="mt-grid-btn" id="mt-grid-btn">
@@ -57,14 +77,14 @@
         <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="1" y="1" width="6" height="10" rx="1"/><rect x="9" y="1" width="6" height="10" rx="1"/>
         </svg>
-        <span>2x1</span>
+        <span>{fmt.layouts[0]}</span>
       </div>
       <div class="mt-dropdown-item checked" data-layout="2x2">
         <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="1" y="1" width="6" height="4" rx="1"/><rect x="9" y="1" width="6" height="4" rx="1"/>
           <rect x="1" y="7" width="6" height="4" rx="1"/><rect x="9" y="7" width="6" height="4" rx="1"/>
         </svg>
-        <span>2x2</span>
+        <span>{fmt.layouts[1]}</span>
         <svg class="mt-check" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="2,6 5,9 10,3"/>
         </svg>
@@ -74,7 +94,7 @@
           <rect x="1" y="1" width="4" height="4" rx="0.5"/><rect x="6" y="1" width="4" height="4" rx="0.5"/><rect x="11" y="1" width="4" height="4" rx="0.5"/>
           <rect x="1" y="7" width="4" height="4" rx="0.5"/><rect x="6" y="7" width="4" height="4" rx="0.5"/><rect x="11" y="7" width="4" height="4" rx="0.5"/>
         </svg>
-        <span>3x2</span>
+        <span>{fmt.layouts[2]}</span>
       </div>
       <div class="mt-dropdown-item" data-layout="3x3">
         <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -82,7 +102,7 @@
           <rect x="1" y="5" width="4" height="3" rx="0.5"/><rect x="6" y="5" width="4" height="3" rx="0.5"/><rect x="11" y="5" width="4" height="3" rx="0.5"/>
           <rect x="1" y="9" width="4" height="3" rx="0.5"/><rect x="6" y="9" width="4" height="3" rx="0.5"/><rect x="11" y="9" width="4" height="3" rx="0.5"/>
         </svg>
-        <span>3x3</span>
+        <span>{fmt.layouts[3]}</span>
       </div>
     </div>
 
@@ -90,24 +110,24 @@
     <div class="mt-body" id="mt-body">
       <!-- Tab content panels -->
       <div class="mt-panel active" data-panel="devserver" id="panel-devserver">
-        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run dev</span></div>
-        <div class="mt-line"><span class="mt-out">ready - started server on localhost:3000</span></div>
-        <div class="mt-line"><span class="mt-out-success">compiled client and server successfully</span></div>
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.devServer[0]}</span></div>
+        <div class="mt-line"><span class="mt-out">{fmt.devServer[1]}</span></div>
+        <div class="mt-line"><span class="mt-out-success">{fmt.devServer[2]}</span></div>
         <div class="mt-line"><span class="mt-blink-cursor">_</span></div>
       </div>
       <div class="mt-panel" data-panel="tests" id="panel-tests">
-        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm test --watch</span></div>
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.tests[0]}</span></div>
         <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/auth.test.ts (4 tests)</span></div>
         <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/api.test.ts (8 tests)</span></div>
-        <div class="mt-line"><span class="mt-out">Tests: </span><span class="mt-out-success">12 passed</span><span class="mt-out">, 0 failed</span></div>
+        <div class="mt-line"><span class="mt-out">{fmt.tests[3]}</span></div>
       </div>
       <div class="mt-panel" data-panel="build" id="panel-build">
-        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run build</span></div>
-        <div class="mt-line"><span class="mt-out-success">Compiled successfully in 3.2s</span></div>
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.build[0]}</span></div>
+        <div class="mt-line"><span class="mt-out-success">{fmt.build[1]}</span></div>
         <div class="mt-line"><span class="mt-out">Output: dist/ (1.2 MB)</span></div>
       </div>
       <div class="mt-panel" data-panel="claude" id="panel-claude">
-        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">claude "optimize queries"</span></div>
+        <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.claude}</span></div>
         <div class="mt-line"><span class="mt-out-accent">&#x25B7; Analyzing 3 slow queries...</span></div>
         <div class="mt-line"><span class="mt-out-success">&#x2714; Optimized: added indexes</span></div>
       </div>
@@ -116,43 +136,43 @@
       <div class="mt-grid" id="mt-grid">
         <!-- Cell 1: Dev Server -->
         <div class="mt-cell" data-cell="0" id="cell-0">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#28c840"></span><span class="mt-cell-name">Dev Server</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#28c840"></span><span class="mt-cell-name">{fmt.gridCells[0].title}</span></div>
           <div class="mt-cell-body">
-            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run dev</span></div>
-            <div class="mt-line"><span class="mt-out">ready - started server on localhost:3000</span></div>
-            <div class="mt-line"><span class="mt-out-success">compiled client and server successfully</span></div>
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.devServer[0]}</span></div>
+            <div class="mt-line"><span class="mt-out">{fmt.devServer[1]}</span></div>
+            <div class="mt-line"><span class="mt-out-success">{fmt.devServer[2]}</span></div>
           </div>
         </div>
         <!-- Cell 2: Tests -->
         <div class="mt-cell" data-cell="1" id="cell-1">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">Tests</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">{fmt.gridCells[1].title}</span></div>
           <div class="mt-cell-body">
-            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm test --watch</span></div>
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.tests[0]}</span></div>
             <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/auth.test.ts (4 tests)</span></div>
             <div class="mt-line"><span class="mt-out-success">PASS</span> <span class="mt-out">src/api.test.ts (8 tests)</span></div>
           </div>
         </div>
         <!-- Cell 3: Build -->
         <div class="mt-cell" data-cell="2" id="cell-2">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">Build</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">{fmt.gridCells[2].title}</span></div>
           <div class="mt-cell-body">
-            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">npm run build</span></div>
-            <div class="mt-line"><span class="mt-out-success">Compiled successfully in 3.2s</span></div>
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.build[0]}</span></div>
+            <div class="mt-line"><span class="mt-out-success">{fmt.build[1]}</span></div>
             <div class="mt-line"><span class="mt-out">Output: dist/ (1.2 MB)</span></div>
           </div>
         </div>
         <!-- Cell 4: Claude -->
         <div class="mt-cell" data-cell="3" id="cell-3">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d4a574"></span><span class="mt-cell-name">Claude</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d4a574"></span><span class="mt-cell-name">{fmt.gridCells[3].title}</span></div>
           <div class="mt-cell-body">
-            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">claude "optimize queries"</span></div>
+            <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">{fmt.claude}</span></div>
             <div class="mt-line"><span class="mt-out-accent">&#x25B7; Analyzing 3 slow queries...</span></div>
             <div class="mt-line"><span class="mt-out-success">&#x2714; Optimized: added indexes</span></div>
           </div>
         </div>
         <!-- Cell 5: Docker (3x3 only) -->
         <div class="mt-cell mt-cell-extra" data-cell="4" id="cell-4">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">Docker</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#78a5d4"></span><span class="mt-cell-name">{fmt.gridCells[4].title}</span></div>
           <div class="mt-cell-body">
             <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">docker logs -f app</span></div>
             <div class="mt-line"><span class="mt-out">[info] Server started</span></div>
@@ -161,7 +181,7 @@
         </div>
         <!-- Cell 6: Logs (3x3 only) -->
         <div class="mt-cell mt-cell-extra" data-cell="5" id="cell-5">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">Logs</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">{fmt.gridCells[5].title}</span></div>
           <div class="mt-cell-body">
             <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">tail -f /var/log/app.log</span></div>
             <div class="mt-line"><span class="mt-out">[200] GET /api/health</span></div>
@@ -170,7 +190,7 @@
         </div>
         <!-- Cell 7: Git (3x3 only) -->
         <div class="mt-cell mt-cell-extra" data-cell="6" id="cell-6">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">Git</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#e0a458"></span><span class="mt-cell-name">{fmt.gridCells[6].title}</span></div>
           <div class="mt-cell-body">
             <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">git status</span></div>
             <div class="mt-line"><span class="mt-out">2 files modified</span></div>
@@ -179,7 +199,7 @@
         </div>
         <!-- Cell 8: DB (3x3 only) -->
         <div class="mt-cell mt-cell-extra" data-cell="7" id="cell-7">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d47878"></span><span class="mt-cell-name">DB</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#d47878"></span><span class="mt-cell-name">{fmt.gridCells[7].title}</span></div>
           <div class="mt-cell-body">
             <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">psql mydb</span></div>
             <div class="mt-line"><span class="mt-out">mydb=# SELECT count(*) FROM users;</span></div>
@@ -188,7 +208,7 @@
         </div>
         <!-- Cell 9: API (3x3 only) -->
         <div class="mt-cell mt-cell-extra" data-cell="8" id="cell-8">
-          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">API</span></div>
+          <div class="mt-cell-bar"><span class="mt-cell-dot" style="background:#7cb382"></span><span class="mt-cell-name">{fmt.gridCells[8].title}</span></div>
           <div class="mt-cell-body">
             <div class="mt-line"><span class="mt-prompt">~$</span> <span class="mt-cmd">node api.js</span></div>
             <div class="mt-line"><span class="mt-out">API listening on :4000</span></div>

@@ -1,0 +1,330 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+---
+
+<BaseLayout title={t(locale, 'meta.privacyTitle')} description={t(locale, 'meta.privacyDescription')}>
+  <Navbar />
+
+  <main class="legal-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">法的情報</span>
+        <h1 class="section-title">プライバシーポリシー</h1>
+        <p class="section-subtitle">最終更新日: 2026年2月8日</p>
+      </div>
+
+      <div class="legal-content">
+        <p class="legal-intro">
+          本プライバシーポリシーは、PATAPIMデスクトップアプリケーション（以下「ソフトウェア」）および
+          patapim.ai（以下「サービス」）の関連サービスをご利用の際に、PATAPIM（以下「当社」）が情報を
+          どのように収集、使用、保護するかを説明するものです。当社はお客様のプライバシーを保護し、
+          取り扱うデータについて透明性を保つことに努めています。
+        </p>
+
+        <h2>1. お客様のデバイスにローカル保存されるデータ</h2>
+        <p>以下のデータはお客様のデバイスにのみ保存され、<strong>PATAPIMサーバーに送信されることは一切ありません</strong>：</p>
+        <ul>
+          <li><strong>ターミナルセッションログ</strong>（<code>~/.patapim/terminal-logs/</code>）&mdash; 各セッションのターミナル出力とコマンド履歴。30日後に自動削除されます。</li>
+          <li><strong>プロンプトとコマンド履歴</strong>（<code>~/.patapim/</code>）&mdash; ターミナルで入力されたコマンドおよびプロンプトの履歴。</li>
+          <li><strong>ワークスペース設定</strong>（<code>~/.patapim/</code>）&mdash; プロジェクトリスト、レイアウト設定、およびアプリケーション設定。</li>
+          <li><strong>セッションデータ</strong> &mdash; ターミナルの状態、アクティブなタブ、およびウィンドウ位置がアプリケーションデータディレクトリに保存されます。</li>
+          <li><strong>OpenAI APIキー</strong>（提供された場合）&mdash; アプリケーション内のブラウザlocalStorageに保存されます。PATAPIMサーバーに送信されることはありません。</li>
+          <li><strong>検索履歴</strong> &mdash; 最近の検索クエリがアプリケーション内のブラウザlocalStorageに保存されます。</li>
+        </ul>
+
+        <h2>2. PATAPIMサーバーに送信されるデータ</h2>
+        <p>PATAPIMサーバー（patapim.ai）に送信される<strong>唯一のデータ</strong>は以下のとおりです：</p>
+        <ul>
+          <li><strong>ライセンス認証：</strong>アプリケーション実行中、サブスクリプションの状態を確認するために、約30分ごとにメールアドレスとライセンスキーが送信されます。</li>
+          <li><strong>アカウント認証：</strong>サインイン時に、お客様のアカウントを認証しセッションを維持するために、デバイストークンとセッションIDが送信されます。</li>
+        </ul>
+        <div class="legal-highlight">
+          <p><strong>その他のデータは一切サーバーに送信されません。</strong>使用分析、テレメトリ、クラッシュレポート、またはターミナルセッションのコンテンツは収集しません。</p>
+        </div>
+
+        <h2>3. サードパーティサービス</h2>
+        <p>PATAPIMは以下のサードパーティサービスと連携しています。各サービスには、お客様が共有するデータを規律する独自のプライバシーポリシーがあります：</p>
+
+        <div class="service-grid">
+          <div class="service-item">
+            <h4>Anthropic（Claude Code）</h4>
+            <p>PATAPIMはClaude Code CLIをターミナルでラップします。すべてのデータはお客様とAnthropicのサーバー間で直接やり取りされます。PATAPIMはこのデータの傍受、読み取り、または変更を行いません。</p>
+            <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">Anthropicプライバシーポリシー</a>
+          </div>
+
+          <div class="service-item">
+            <h4>OpenAI（Whisper API）</h4>
+            <p>オプションのクラウド音声入力。有効にした場合、お客様自身のAPIキーを使用して、音声録音がOpenAIに直接送信され文字起こしされます。</p>
+            <a href="https://openai.com/privacy" target="_blank" rel="noopener">OpenAIプライバシーポリシー</a>
+          </div>
+
+          <div class="service-item">
+            <h4>Hugging Face（ローカルWhisper）</h4>
+            <p>オプションのローカル音声入力。Whisperモデルが一度ダウンロードされ、完全にお客様のデバイス上で実行されます。ダウンロード後、音声データが外部に送信されることはありません。</p>
+            <a href="https://huggingface.co/privacy" target="_blank" rel="noopener">Hugging Faceプライバシーポリシー</a>
+          </div>
+
+          <div class="service-item">
+            <h4>GitHub（gh CLI）</h4>
+            <p>ローカルにインストールされたgh CLIツールを使用します。認証はGitHubが直接処理します。PATAPIMはGitHubの認証情報を保存または送信しません。</p>
+            <a href="https://docs.github.com/en/site-policy/privacy-policies" target="_blank" rel="noopener">GitHubプライバシーポリシー</a>
+          </div>
+
+          <div class="service-item">
+            <h4>Cloudflare（トンネリング）</h4>
+            <p>オプションのリモートアクセス機能（Pro）。Cloudflare Tunnels経由でお客様のデバイスへの安全なトンネル接続を作成します。</p>
+            <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflareプライバシーポリシー</a>
+          </div>
+
+          <div class="service-item">
+            <h4>Stripe（決済）</h4>
+            <p>すべての決済処理はpatapim.ai上でStripeを通じて行われます。デスクトップアプリケーションが決済カードデータを取り扱うことはありません。</p>
+            <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripeプライバシーポリシー</a>
+          </div>
+        </div>
+
+        <h2>4. 当社が行わないこと</h2>
+        <ul>
+          <li>分析やテレメトリデータの収集は行いません</li>
+          <li>クラッシュレポートは行いません</li>
+          <li>行動追跡や使用パターンの監視は行いません</li>
+          <li>ユーザーデータの販売、共有、または第三者への提供は行いません</li>
+          <li>AI会話内容の傍受、読み取り、または保存は行いません</li>
+          <li>Cookieやトラッキングピクセルは使用しません（デスクトップアプリケーション）</li>
+          <li>広告目的のユーザープロファイリングは行いません</li>
+        </ul>
+
+        <h2>5. マイクの使用</h2>
+        <p>PATAPIMにはオプションの音声入力機能があります。</p>
+        <ul>
+          <li>マイクは、お客様が能動的に音声入力を開始した場合（音声入力ボタンの押下またはキーボードショートカットの使用）にのみアクセスされます。</li>
+          <li>音声入力を使用する前に、オペレーティングシステムを通じてマイクの許可を付与する必要があります。</li>
+          <li>音声は選択したプロバイダーにより処理されます：
+            <ul>
+              <li><strong>ローカルWhisper：</strong>音声は完全にお客様のデバイス上で処理されます。音声データがコンピュータの外に出ることはありません。</li>
+              <li><strong>OpenAI Whisper API：</strong>お客様自身のAPIキーを使用して、音声がOpenAIに送信され文字起こしされます。</li>
+            </ul>
+          </li>
+          <li>音声がPATAPIMサーバーに送信されることは一切ありません。</li>
+          <li>バックグラウンドでの音声収集は行われません。マイクは、アクティブな音声入力セッション中にのみ有効です。</li>
+        </ul>
+
+        <h2>6. データの保持</h2>
+        <ul>
+          <li><strong>ターミナルセッションログ：</strong>30日後に自動削除されます。</li>
+          <li><strong>アカウントセッションデータ：</strong>サインアウトするまで保持されます。</li>
+          <li><strong>ライセンス認証：</strong>認証レスポンス以外のデータはサーバーに保存されません。</li>
+          <li><strong>完全なデータ削除：</strong><code>~/.patapim/</code>ディレクトリの削除およびアプリケーションデータのクリアにより、すべてのローカルデータを削除できます。</li>
+        </ul>
+
+        <h2>7. ユーザーの管理権限</h2>
+        <p>お客様はご自身のデータを完全に管理できます：</p>
+        <ul>
+          <li><strong>すべてのローカルデータの削除：</strong><code>~/.patapim/</code>ディレクトリを削除してください。</li>
+          <li><strong>サインアウト：</strong>アプリケーションからセッションおよびライセンスデータが削除されます。</li>
+          <li><strong>オプション機能の辞退：</strong>音声入力、リモートアクセス、およびクラウドベースの機能はすべてオプションです。</li>
+          <li><strong>APIキーの削除：</strong>アプリケーション設定からいつでもOpenAI APIキーを削除できます。</li>
+        </ul>
+
+        <h2>8. 児童のプライバシー</h2>
+        <p>PATAPIMは13歳未満の児童を対象としていません。当社は13歳未満の児童から意図的に個人情報を収集することはありません。そのような情報を不注意に収集したと思われる場合は、速やかに削除できるようご連絡ください。</p>
+
+        <h2>9. セキュリティ</h2>
+        <p>当社はお客様のデータを保護するため、合理的なセキュリティ対策を実施しています：</p>
+        <ul>
+          <li>patapim.aiとのすべての通信はHTTPS暗号化を使用します。</li>
+          <li>認証にはJWT（JSON Web Tokens）を使用します。</li>
+          <li>リモートアクセスにはWebAuthn/PassKey認証を使用します（Pro機能）。</li>
+          <li>APIキーはローカルに保存され、当社のサーバーに送信されることはありません。</li>
+          <li>アプリケーションを閉じている間、バックグラウンドサービスは実行されません。</li>
+        </ul>
+
+        <h2>10. 本ポリシーの変更</h2>
+        <p>当社は随時本プライバシーポリシーを更新する場合があります。変更は「最終更新日」を更新してこのページに掲載されます。変更後もソフトウェアの使用を継続した場合、更新されたポリシーに同意したものとみなされます。</p>
+
+        <h2>11. お問い合わせ</h2>
+        <p>プライバシーに関するご質問、ご懸念、またはリクエストがございましたら、以下までご連絡ください：</p>
+        <ul>
+          <li><strong>メール：</strong> <a href="mailto:privacy@patapim.ai">privacy@patapim.ai</a></li>
+          <li><strong>一般的なお問い合わせ：</strong> <a href="mailto:info@patapim.ai">info@patapim.ai</a></li>
+          <li><strong>GitHub：</strong> <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">github.com/G3dar/patapim/issues</a></li>
+        </ul>
+
+        <p class="legal-copyright">Copyright &copy; 2026 Blip Haus. All rights reserved.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+  }
+
+  .legal-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .legal-intro {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-2xl);
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .legal-content h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .legal-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal-content ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-content ul li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    padding: var(--space-sm) 0;
+    padding-left: var(--space-lg);
+    position: relative;
+  }
+
+  .legal-content ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    opacity: 0.5;
+  }
+
+  .legal-content ul li ul {
+    margin-top: var(--space-sm);
+    margin-bottom: 0;
+  }
+
+  .legal-content ul li ul li {
+    padding-left: var(--space-lg);
+  }
+
+  .legal-content strong {
+    color: var(--text-primary);
+  }
+
+  .legal-content code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--accent-primary);
+  }
+
+  .legal-content a {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+  .legal-content a:hover {
+    text-decoration: underline;
+  }
+
+  .legal-highlight {
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--accent-primary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-highlight p {
+    margin-bottom: 0;
+  }
+
+  .service-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .service-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+  }
+
+  .service-item h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .service-item p {
+    font-size: 13px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .service-item a {
+    font-size: 12px;
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+  .service-item a:hover {
+    text-decoration: underline;
+  }
+
+  .legal-copyright {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .legal-content {
+      padding-left: var(--space-md);
+      padding-right: var(--space-md);
+    }
+    .service-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

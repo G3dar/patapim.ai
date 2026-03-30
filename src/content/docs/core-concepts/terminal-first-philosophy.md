@@ -4,131 +4,53 @@ description: "Why PATAPIM puts the terminal at the center"
 order: 1
 ---
 
-# Terminal-First Philosophy
+## The Terminal IS the IDE
 
-PATAPIM is built on a simple principle: **Claude Code is a terminal tool, so your IDE should be terminal-first.**
+PATAPIM is built on a simple premise: when you're working with AI coding agents like Claude Code, Codex, or Gemini CLI, the terminal is where everything happens. Code editors become secondary.
 
-## Why Terminal-First?
+Traditional IDEs treat the terminal as an afterthought — a small panel at the bottom you resize when you need it. PATAPIM flips this: the terminal occupies center stage, and everything else revolves around it.
 
-Claude Code operates through a command-line interface. It reads files, writes code, runs commands, and commits changes—all from the terminal. This isn't a limitation; it's the natural workflow for AI-assisted development.
+## Real PTY, Not a Simulation
 
-When you use Claude Code, you're working in a **conversation-driven development cycle**:
+PATAPIM uses **xterm.js 5.3** and **node-pty 1.0** to provide real pseudo-terminal allocation. This means:
 
-1. You describe what you need
-2. Claude reads your codebase
-3. Claude makes changes
-4. You test the results
-5. Claude commits the work
+- Full shell emulation with signals, job control, colors, and resize
+- Proper stdin/stdout/stderr handling
+- Native terminal dimensions that AI agents can detect
+- Every program that works in your system terminal works in PATAPIM
 
-The terminal is where this happens. PATAPIM embraces this reality instead of fighting it.
+This is the same terminal technology used by VS Code, but in PATAPIM it's the primary interface — not a secondary panel.
 
-## Why Not VS Code or Cursor?
+## 3-Panel Layout
 
-VS Code and Cursor are excellent **code editors** designed for manual coding. They excel at:
+PATAPIM organizes your workspace into three areas:
 
-- Syntax highlighting and IntelliSense
-- Manual refactoring and navigation
-- Interactive debugging with breakpoints
-- Extensions for specific languages
+| Panel | Position | Content |
+|-------|----------|---------|
+| **Sidebar** | Left | File explorer, project list |
+| **Terminals** | Center | Tab view or grid view (up to 9) |
+| **Panels** | Right (toggleable) | History, tasks, GitHub, remote, find, preferences, sessions |
 
-But they were built for *you* to write code, not for Claude to write code.
+The center panel — where your terminals live — always takes the most space. Side panels toggle in and out as needed.
 
-### The Mismatch
+## Why This Matters for AI
 
-When using Claude Code with traditional editors, you encounter friction:
+AI coding agents need a real terminal, not a text box. With node-pty, Claude Code gets:
 
-- **Context switching**: Terminal → Editor → Terminal → Browser
-- **Manual file management**: Opening files Claude just created
-- **Lost context**: Claude can't see what's in your editor
-- **Tool duplication**: Terminal commands + editor commands for the same task
+- Proper terminal dimensions (it adjusts output formatting to your window size)
+- Signal handling (Ctrl+C actually sends SIGINT)
+- Full ANSI color support (diff output, syntax highlighting in responses)
+- Process isolation (each terminal is an independent shell session)
 
-PATAPIM eliminates this friction by putting the terminal at the center.
+When you run `claude` in PATAPIM, it behaves identically to running it in your native terminal — because it IS a real terminal.
 
-## What Makes PATAPIM Different?
+## Multi-Agent Workflow
 
-PATAPIM is **not a code editor**. It's a **framework for Claude Code development**.
+The terminal-first design enables running multiple AI agents simultaneously. In a 3x3 grid, you could have:
 
-### PATAPIM is a Framework
+- Claude Code refactoring a module in terminal 1
+- Codex writing tests in terminal 2
+- A dev server running in terminal 3
+- Your build process in terminal 4
 
-Think of PATAPIM as the scaffolding around your development workflow:
-
-- **Terminal-first UI**: The terminal is the primary interface, not a sidebar
-- **Integrated browser**: Test your web apps without leaving the workspace
-- **Project structure**: Standardized files for context preservation
-- **Session continuity**: Claude picks up where you left off
-
-### What PATAPIM Provides
-
-- **Workspace management**: Switch between projects instantly
-- **Context files**: CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, tasks.json
-- **Auto-documentation**: Pre-commit hooks keep STRUCTURE.json updated
-- **Built-in DevTools**: Debug web apps in the integrated browser
-- **Voice dictation**: Speak commands instead of typing
-
-### What PATAPIM Doesn't Replace
-
-PATAPIM doesn't replace your code editor. When you need to:
-
-- Manually write complex code
-- Debug with breakpoints
-- Use language-specific tools
-
-...you can still open your project in VS Code, Cursor, or any editor. PATAPIM manages the **Claude Code workflow**, not manual coding.
-
-## The Claude Code Workflow
-
-Here's how PATAPIM fits into your development process:
-
-### 1. Start a Session
-
-Open PATAPIM, select your project. Claude reads your context files (CLAUDE.md, PROJECT_NOTES.md, tasks.json) and understands:
-
-- What the project is
-- What happened last session
-- What needs to be done next
-
-### 2. Work with Claude
-
-You work in the terminal:
-
-```
-You: "Add a settings panel to the UI"
-Claude: *reads STRUCTURE.json, identifies relevant files*
-Claude: *modifies src/renderer/settings.js*
-Claude: *updates src/renderer/index.js*
-You: "npm run build"
-```
-
-### 3. Test in Browser
-
-The integrated browser shows your changes immediately. No alt-tabbing, no external browser windows.
-
-### 4. Commit and Document
-
-When the work is done:
-
-```
-You: "Commit this"
-Claude: *creates commit*
-Pre-commit hook: *updates STRUCTURE.json automatically*
-Claude: "Should I add this to PROJECT_NOTES.md?"
-```
-
-Your context is preserved for the next session.
-
-## Terminal-First ≠ Terminal-Only
-
-PATAPIM is terminal-first, not terminal-only. The integrated browser panel is critical for web development. The file tree provides navigation. The project list enables workspace management.
-
-But the **terminal remains central** because that's where Claude Code lives. Everything else supports the terminal workflow.
-
-## The Result
-
-With PATAPIM, you work **with** Claude Code's nature, not against it:
-
-- No context switching between windows
-- No manual file hunting
-- No lost conversation history
-- No "what did we do last session?" moments
-
-You focus on building. Claude focuses on coding. PATAPIM manages the rest.
+Each terminal is independent. You see all of them at once and can interact with any of them.

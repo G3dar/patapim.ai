@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, getLocalePath } from '../i18n';
 
 interface Props {
   title: string;
@@ -10,53 +11,116 @@ interface Props {
 
 const { title, description } = Astro.props;
 const currentPath = Astro.url.pathname;
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+
+const sidebarTitles: Record<string, Record<string, string>> = {
+  en: {
+    gettingStarted: 'Getting Started',
+    coreConcepts: 'Core Concepts',
+    features: 'Features',
+    reference: 'Reference',
+  },
+  ja: {
+    gettingStarted: 'はじめに',
+    coreConcepts: 'コアコンセプト',
+    features: '機能',
+    reference: 'リファレンス',
+  },
+};
+const titles = sidebarTitles[locale] || sidebarTitles.en;
+
+const sidebarLinks: Record<string, Record<string, Record<string, string>>> = {
+  en: {
+    gettingStarted: {
+      'getting-started/installation': 'Installation',
+      'getting-started/quick-start': 'Quick Start',
+      'getting-started/system-requirements': 'System Requirements',
+    },
+    coreConcepts: {
+      'core-concepts/terminal-first-philosophy': 'Terminal-First Philosophy',
+      'core-concepts/patapim-projects': 'PATAPIM Projects',
+      'core-concepts/context-preservation': 'Context Preservation',
+    },
+    features: {
+      'features/multi-terminal': 'Multi-Terminal',
+      'features/remote-access': 'Remote Access',
+      'features/voice-dictation': 'Voice Dictation',
+      'features/project-management': 'Project Management',
+      'features/task-management': 'Task Management',
+      'features/github-integration': 'GitHub Integration',
+      'features/plugin-system': 'Plugin System',
+      'features/mcp-browser-control': 'MCP Browser Control',
+      'features/file-editor': 'File Editor',
+      'features/session-persistence': 'Session Persistence',
+      'features/passkey-auth': 'PassKey Authentication',
+      'features/auto-updates': 'Auto-Updates',
+      'features/account-licensing': 'Account & Licensing',
+      'features/referral-program': 'Referral Program',
+    },
+    reference: {
+      'reference/keyboard-shortcuts': 'Keyboard Shortcuts',
+      'reference/configuration': 'Configuration',
+      'reference/claude-md-reference': 'CLAUDE.md Reference',
+      'reference/structure-json-reference': 'STRUCTURE.json Reference',
+      'reference/tasks-json-reference': 'tasks.json Reference',
+    },
+  },
+  ja: {
+    gettingStarted: {
+      'getting-started/installation': 'インストール',
+      'getting-started/quick-start': 'クイックスタート',
+      'getting-started/system-requirements': 'システム要件',
+    },
+    coreConcepts: {
+      'core-concepts/terminal-first-philosophy': 'ターミナルファースト思想',
+      'core-concepts/patapim-projects': 'PATAPIMプロジェクト',
+      'core-concepts/context-preservation': 'コンテキスト保持',
+    },
+    features: {
+      'features/multi-terminal': 'マルチターミナル',
+      'features/remote-access': 'リモートアクセス',
+      'features/voice-dictation': '音声入力',
+      'features/project-management': 'プロジェクト管理',
+      'features/task-management': 'タスク管理',
+      'features/github-integration': 'GitHub連携',
+      'features/plugin-system': 'プラグインシステム',
+      'features/mcp-browser-control': 'MCPブラウザ操作',
+      'features/file-editor': 'ファイルエディタ',
+      'features/session-persistence': 'セッション永続化',
+      'features/passkey-auth': 'PassKey認証',
+      'features/auto-updates': '自動アップデート',
+      'features/account-licensing': 'アカウントとライセンス',
+      'features/referral-program': '紹介プログラム',
+    },
+    reference: {
+      'reference/keyboard-shortcuts': 'キーボードショートカット',
+      'reference/configuration': '設定',
+      'reference/claude-md-reference': 'CLAUDE.mdリファレンス',
+      'reference/structure-json-reference': 'STRUCTURE.jsonリファレンス',
+      'reference/tasks-json-reference': 'tasks.jsonリファレンス',
+    },
+  },
+};
+const links = sidebarLinks[locale] || sidebarLinks.en;
 
 const sidebar = [
   {
-    title: 'Getting Started',
-    items: [
-      { title: 'Installation', slug: 'getting-started/installation' },
-      { title: 'Quick Start', slug: 'getting-started/quick-start' },
-      { title: 'System Requirements', slug: 'getting-started/system-requirements' },
-    ]
+    title: titles.gettingStarted,
+    items: Object.entries(links.gettingStarted).map(([slug, label]) => ({ title: label, slug })),
   },
   {
-    title: 'Core Concepts',
-    items: [
-      { title: 'Terminal-First Philosophy', slug: 'core-concepts/terminal-first-philosophy' },
-      { title: 'PATAPIM Projects', slug: 'core-concepts/patapim-projects' },
-      { title: 'Context Preservation', slug: 'core-concepts/context-preservation' },
-    ]
+    title: titles.coreConcepts,
+    items: Object.entries(links.coreConcepts).map(([slug, label]) => ({ title: label, slug })),
   },
   {
-    title: 'Features',
-    items: [
-      { title: 'Multi-Terminal', slug: 'features/multi-terminal' },
-      { title: 'Remote Access', slug: 'features/remote-access' },
-      { title: 'Voice Dictation', slug: 'features/voice-dictation' },
-      { title: 'Project Management', slug: 'features/project-management' },
-      { title: 'Task Management', slug: 'features/task-management' },
-      { title: 'GitHub Integration', slug: 'features/github-integration' },
-      { title: 'Plugin System', slug: 'features/plugin-system' },
-      { title: 'MCP Browser Control', slug: 'features/mcp-browser-control' },
-      { title: 'File Editor', slug: 'features/file-editor' },
-      { title: 'Session Persistence', slug: 'features/session-persistence' },
-      { title: 'PassKey Authentication', slug: 'features/passkey-auth' },
-      { title: 'Auto-Updates', slug: 'features/auto-updates' },
-      { title: 'Account & Licensing', slug: 'features/account-licensing' },
-      { title: 'Referral Program', slug: 'features/referral-program' },
-    ]
+    title: titles.features,
+    items: Object.entries(links.features).map(([slug, label]) => ({ title: label, slug })),
   },
   {
-    title: 'Reference',
-    items: [
-      { title: 'Keyboard Shortcuts', slug: 'reference/keyboard-shortcuts' },
-      { title: 'Configuration', slug: 'reference/configuration' },
-      { title: 'CLAUDE.md Reference', slug: 'reference/claude-md-reference' },
-      { title: 'STRUCTURE.json Reference', slug: 'reference/structure-json-reference' },
-      { title: 'tasks.json Reference', slug: 'reference/tasks-json-reference' },
-    ]
-  }
+    title: titles.reference,
+    items: Object.entries(links.reference).map(([slug, label]) => ({ title: label, slug })),
+  },
 ];
 ---
 
@@ -73,7 +137,7 @@ const sidebar = [
               {group.items.map((item) => (
                 <li>
                   <a
-                    href={`/docs/${item.slug}`}
+                    href={lp(`/docs/${item.slug}`)}
                     class={`nav-item ${currentPath.includes(item.slug) ? 'active' : ''}`}
                   >
                     {item.title}

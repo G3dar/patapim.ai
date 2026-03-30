@@ -1,0 +1,23 @@
+---
+export const prerender = true;
+
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  // Japanese docs: only ja/ prefix, strip ja/ from slug for URL
+  const jaDocs = docs.filter((doc) => doc.id.startsWith('ja/'));
+  return jaDocs.map((doc) => ({
+    params: { slug: doc.id.replace(/^ja\//, '') },
+    props: { doc },
+  }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+---
+
+<DocsLayout title={doc.data.title} description={doc.data.description}>
+  <Content />
+</DocsLayout>

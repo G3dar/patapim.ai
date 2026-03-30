@@ -4,173 +4,71 @@ description: "Get up and running with PATAPIM in 5 minutes"
 order: 2
 ---
 
-# Quick Start
-
-Get productive with PATAPIM in just a few minutes. This guide covers the essentials to start developing with Claude Code.
-
 ## First Launch
 
-When you first launch PATAPIM, you'll see:
+When you open PATAPIM, you'll see a 3-panel layout:
 
-- **Sidebar** on the left with project management, file tree, and settings
-- **Terminal area** in the center where your terminals will appear
-- **Status bar** at the bottom showing connection status and shortcuts
+- **Left**: Sidebar with file explorer and project list
+- **Center**: Terminal area (tab view by default)
+- **Right**: Toggleable panels (history, tasks, GitHub, remote, find, preferences, sessions)
 
-## Creating a Project
+## Create Your First Project
 
-1. Click the **Projects** button in the sidebar (or press Ctrl+P)
+1. Click the **Projects** button in the sidebar
 2. Click **Add Project**
-3. Select a folder on your system
-4. Give your project a name
-5. Click **Create**
+3. Select an existing project folder
+4. PATAPIM opens the project and starts a terminal in that directory
 
-Your project will now appear in the sidebar, and the file tree will show your project's files.
+## Run Your First Terminal
 
-## Opening a Terminal
+PATAPIM gives you a real pseudo-terminal (PTY) — the same technology used by VS Code's terminal. You can run any command you'd run in a native terminal.
 
-PATAPIM supports up to 9 terminals in a grid layout:
+- Press **Ctrl+Shift+T** to open a new terminal
+- Use **Ctrl+1** through **Ctrl+9** to switch between terminals
+- Press **Ctrl+Shift+G** to toggle grid view (see up to 9 terminals at once)
 
-- **New terminal**: Press `Ctrl+Shift+T` (or `Cmd+Shift+T` on macOS)
-- **Switch terminals**: Press `Ctrl+1` through `Ctrl+9` to jump to a specific terminal
-- **Close terminal**: Press `Ctrl+Shift+W` or click the X button on the terminal tab
+## Start Claude Code
 
-The terminal opens in your project's root directory by default.
+Press **Ctrl+K** to open the Claude quick-ask dialog, or type `claude` in any terminal. PATAPIM wraps Claude Code natively — your conversations, context files, and sessions are all preserved.
 
-## Running Claude Code
+PATAPIM also supports Codex and Gemini CLI. Each terminal can run a different AI agent.
 
-PATAPIM has deep integration with Claude Code CLI:
+## Try Voice Dictation
 
-### Quick Ask (Ctrl+K)
+PATAPIM includes built-in voice dictation powered by Parakeet V3 (runs locally, no API key needed):
 
-Press `Ctrl+K` (or `Cmd+K` on macOS) to open the Claude Code quick ask dialog:
+1. Click the **microphone button** in the lower-right corner
+2. Follow the setup wizard (first time only)
+3. Hold **Ctrl+Alt** and speak, then release to transcribe
 
-1. Type your question or request
-2. Press Enter
-3. Claude's response appears in the terminal
-
-Example: "Create a Python script that reads a CSV file"
-
-### Full Claude Code Session
-
-Run Claude Code directly in any terminal:
-
-```bash
-claude
-```
-
-This starts an interactive session where you can have a conversation with Claude about your code.
-
-## Basic Navigation
-
-### Sidebar
-
-- **Projects**: Manage your projects (Ctrl+P)
-- **File Tree**: Browse and open files (click to open in your default editor)
-- **Tasks**: View and manage tasks from tasks.json (Ctrl+Shift+B)
-- **Settings**: Configure PATAPIM preferences
-
-### File Tree
-
-- Click any file to open it in your default editor
-- Right-click for context menu (open folder, reveal in explorer, etc.)
-- Use the search bar to filter files
-
-### Terminal Grid
-
-- Drag terminal tabs to reorder them
-- Click the grid icon to change layout (1x1, 2x2, 3x3)
-- Each terminal runs independently
+Your voice is processed entirely on your device. Nothing leaves your machine.
 
 ## Essential Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+Shift+T` | Open new terminal |
-| `Ctrl+Shift+W` | Close current terminal |
-| `Ctrl+K` | Claude Code quick ask |
-| `Ctrl+1-9` | Switch to terminal 1-9 |
-| `Ctrl+P` | Open projects panel |
-| `Ctrl+Shift+B` | Open tasks panel |
-| `Ctrl+,` | Open settings |
-| `Ctrl+Alt+M` | Toggle voice dictation |
+| `Ctrl+K` | Start Claude Code |
+| `Ctrl+Shift+T` | New terminal |
+| `Ctrl+1-9` | Switch to terminal N |
+| `Ctrl+Shift+G` | Toggle grid view |
+| `Ctrl+Alt` (hold) | Push-to-talk dictation |
+| `Ctrl+F` | Open find panel |
+| `Ctrl+,` | Open preferences |
 
-*Replace Ctrl with Cmd on macOS*
+## Basic Workflow
 
-## Working with Claude Code
+1. **Open a project** — Add it via the sidebar
+2. **Start an AI agent** — `Ctrl+K` or type `claude` / `codex` / `gemini`
+3. **Use multiple terminals** — Run builds, tests, and agents side by side
+4. **Dictate instead of typing** — Hold `Ctrl+Alt` to speak
+5. **Check from your phone** — Enable remote access in preferences for on-the-go monitoring
 
-Here are some common workflows:
+## Context Files
 
-### Ask Claude for help
+PATAPIM automatically creates context files in your project that help AI agents understand your codebase:
 
-```bash
-# Quick ask with Ctrl+K
-"How do I read a JSON file in Python?"
+- **CLAUDE.md** — Instructions for Claude Code
+- **STRUCTURE.json** — Module map and IPC channels
+- **tasks.json** — Task tracking
 
-# Or in a full session
-claude
-> Read the config.json file and explain its structure
-```
-
-### Generate code
-
-```bash
-claude
-> Create a React component for a login form with email and password fields
-```
-
-### Debug code
-
-```bash
-claude
-> This script is giving me an error, can you help debug it?
-```
-
-### Refactor code
-
-```bash
-claude
-> Refactor this function to use async/await instead of promises
-```
-
-## Voice Dictation
-
-PATAPIM includes voice dictation powered by Whisper:
-
-1. Press `Ctrl+Alt+M` to start recording
-2. Speak your command or question
-3. Press `Ctrl+Alt+M` again to stop and transcribe
-4. The text appears in the active terminal or Claude Code prompt
-
-Great for hands-free coding or when you're away from the keyboard.
-
-## Remote Access
-
-PATAPIM can be accessed remotely via WebSocket and Cloudflare tunnels:
-
-1. Go to Settings > Remote Access
-2. Enable remote access
-3. Copy the provided URL
-4. Open the URL on any device with a web browser
-5. Authenticate with PassKey
-
-Your terminals, file tree, and Claude Code integration are accessible from anywhere.
-
-## Next Steps
-
-Now that you're familiar with the basics:
-
-- Explore [System Requirements](./system-requirements) to optimize performance
-- Check out the [Features Guide](../features) to learn about advanced capabilities
-- Read about [Task Management](../features/task-management) to organize your work
-- Learn about [Plugin System](../features/plugin-system) to extend PATAPIM
-
-## Tips for Productivity
-
-- Use keyboard shortcuts to navigate quickly
-- Keep related terminals in a grid layout for comparison
-- Use Claude Code for repetitive tasks (generating boilerplate, writing tests)
-- Enable voice dictation when documenting your code
-- Set up remote access to continue work from anywhere
-- Leverage the task management system to track TODOs
-
-Happy coding with PATAPIM and Claude Code!
+Run `/init` in a Claude Code terminal to generate these files.

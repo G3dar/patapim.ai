@@ -1,0 +1,263 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+---
+
+<BaseLayout title={t(locale, 'meta.termsTitle')} description={t(locale, 'meta.termsDescription')}>
+  <Navbar />
+
+  <main class="legal-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">法的情報</span>
+        <h1 class="section-title">利用規約（EULA）</h1>
+        <p class="section-subtitle">最終更新日: 2026年2月8日</p>
+      </div>
+
+      <div class="legal-content">
+        <p class="legal-intro">
+          PATAPIMをご利用になる前に、本エンドユーザーライセンス契約（以下「本契約」）をよくお読みください。
+          本ソフトウェアをインストール、コピー、またはその他の方法で使用することにより、お客様は本契約の条件に
+          拘束されることに同意したものとみなされます。本契約の条件に同意しない場合は、本ソフトウェアを
+          インストールまたは使用しないでください。
+        </p>
+
+        <h2>1. 定義</h2>
+        <p><strong>「ソフトウェア」</strong>とは、PATAPIMデスクトップアプリケーション（関連するすべてのファイル、ライブラリ、ドキュメント、およびライセンサーが提供するアップデートを含む）を意味します。</p>
+        <p><strong>「ライセンサー」</strong>とは、PATAPIMの開発者および所有者であるBlip Hausを意味します。</p>
+        <p><strong>「ユーザー」</strong>または<strong>「お客様」</strong>とは、本ソフトウェアをインストールまたは使用する個人または法人を意味します。</p>
+        <p><strong>「サービス」</strong>とは、patapim.aiでアクセス可能なPATAPIMオンラインサービス（アカウント管理、ライセンス認証、決済処理を含むがこれらに限定されない）を意味します。</p>
+
+        <h2>2. ライセンスの付与</h2>
+        <p>本契約の条件および該当するサブスクリプションプランに従い、ライセンサーはお客様に対し、お客様が所有または管理するデバイスに本ソフトウェアをインストールし使用するための、限定的、非独占的、譲渡不能、取消可能なライセンスを、個人的または社内業務目的に限り付与します。</p>
+        <p>ライセンスの範囲は、お客様のサブスクリプションプランに依存します：</p>
+        <ul>
+          <li><strong>Freeプラン：</strong>最大9個のターミナル、最大3個のアクティブプロジェクト、60分の音声入力、ローカルネットワーク（LAN）リモートアクセスのみの制限付きで本ソフトウェアを使用できます。</li>
+          <li><strong>Proプラン（月額$6.99）：</strong>無制限のターミナル、無制限のプロジェクト、無制限の音声入力、Cloudflare Tunnels経由のフルリモートアクセス、および<a href={lp('/pricing')}>patapim.ai/pricing</a>に記載されている追加機能を含む、拡張された機能で本ソフトウェアを使用できます。</li>
+          <li><strong>Lifetimeプラン（$29.99一回払い）：</strong>本契約の条件に従い、Proプランのすべての機能が永久に付与されます。</li>
+        </ul>
+        <p>機能の提供状況およびプランの制限は変更される場合があります。最新のプラン詳細は<a href={lp('/pricing')}>patapim.ai/pricing</a>でご確認いただけます。</p>
+
+        <h2>3. 制限事項</h2>
+        <p>お客様は以下の行為を行ってはなりません：</p>
+        <ul>
+          <li>本ソフトウェアの複製、改変、翻案、翻訳、または派生著作物の作成</li>
+          <li>本ソフトウェアのリバースエンジニアリング、逆アセンブル、逆コンパイル、またはその他の方法によるソースコードの解析</li>
+          <li>本ソフトウェアまたはその権利の第三者への配布、サブライセンス、リース、賃貸、貸与、またはその他の形式による譲渡</li>
+          <li>本ソフトウェア上の所有権表示、ラベル、または商標の除去、変更、または隠蔽</li>
+          <li>本ソフトウェアを使用した競合製品またはサービスの開発</li>
+          <li>本ソフトウェアに組み込まれたライセンス認証、機能制限、または使用制限の回避またはその試み</li>
+          <li>適用される法令に違反する方法での本ソフトウェアの使用</li>
+        </ul>
+
+        <h2>4. サードパーティAIサービス</h2>
+        <div class="legal-highlight">
+          <p><strong>PATAPIMはAIコーディングアシスタントのためのターミナルラッパーおよびIDE環境です。AIの会話データの傍受、変更、プロキシ、または保存は一切行いません。</strong></p>
+        </div>
+        <ul>
+          <li>PATAPIMは、Anthropic Claude、OpenAI Codex、Google Geminiを含む（ただしこれらに限定されない）サードパーティAIサービスとお客様がやり取りするためのターミナル/IDEインターフェースを提供します。これらのサービスは、PATAPIMのターミナル内で標準的なコマンドラインプロセスとして実行されます。</li>
+          <li>お客様とサードパーティAIサービス間のすべてのやり取りは、当該サービス独自の利用規約およびプライバシーポリシーによって完全に規律されます。PATAPIMはこれらのやり取りを一切仲介しません。</li>
+          <li>PATAPIMは、お客様のAIサービスとの会話内容へのアクセス、読み取り、傍受、変更、キャッシュ、または送信を行いません。データは、他のターミナルエミュレータで行われるのとまったく同様に、お客様とAIサービスプロバイダー間で直接やり取りされます。</li>
+          <li>PATAPIMを通じて使用するサードパーティAIサービスの利用規約および許容使用ポリシーの遵守については、お客様が単独で責任を負います。</li>
+          <li>ライセンサーは、いかなるサードパーティAIサービスとも提携しておらず、推薦を受けておらず、責任を負いません。PATAPIMはターミナル環境のみを提供します。これは、コードエディタがその中で書かれたコードに対して責任を負わないのと同様です。</li>
+        </ul>
+
+        <h2>5. ユーザーAPIキー</h2>
+        <ul>
+          <li>本ソフトウェアの一部のオプション機能（OpenAI Whisper音声入力など）では、お客様自身のAPIキーの提供が必要な場合があります。</li>
+          <li>お客様が提供するAPIキーは、お客様のデバイスにのみローカルに保存されます。PATAPIMサーバーに送信されることはありません。</li>
+          <li>APIキーのセキュリティおよび適切な使用については、お客様が単独で責任を負います。ライセンサーは、お客様のAPIキーの使用または漏洩から生じるいかなる料金、データ露出、またはその他の結果についても責任を負いません。</li>
+        </ul>
+
+        <h2>6. データとプライバシー</h2>
+        <p>本ソフトウェアは、当社の<a href={lp('/privacy')}>プライバシーポリシー</a>に記載されているとおり、特定のデータを収集および処理します。本ソフトウェアを使用することにより、お客様はプライバシーポリシーを読み、理解したことを確認するものとします。プライバシーポリシーは参照により本契約に組み込まれます。</p>
+
+        <h2>7. 知的財産</h2>
+        <ul>
+          <li>本ソフトウェアは著作権法および国際条約の規定により保護されています。ライセンサーは、知的財産権を含む本ソフトウェアに関するすべての権利、権原、および利益を留保します。</li>
+          <li>本契約は、ライセンサーの商標、サービスマーク、ロゴ、または商号に関するいかなる権利もお客様に付与するものではありません。</li>
+          <li>本契約に基づき、本ソフトウェアまたはその知的財産権の所有権がお客様に移転されることはありません。</li>
+        </ul>
+
+        <h2>8. サブスクリプションと決済</h2>
+        <ul>
+          <li>有料プラン（ProおよびLifetime）は、patapim.aiのサービスを通じて購入します。すべての決済はStripeにより処理されます。本ソフトウェア自体が決済情報を取り扱うことはありません。</li>
+          <li>Proプランのサブスクリプションは月額課金です。Stripeカスタマーポータルからいつでもサブスクリプションをキャンセルできます。キャンセルすると、現在の請求期間の終了までProアクセスが継続し、その後アカウントはFreeプランに戻ります。</li>
+          <li>ライセンサーは、合理的な通知を行った上で料金を変更する権利を留保します。価格変更は、現在有効な請求期間には影響しません。</li>
+        </ul>
+
+        <h2>9. 返金ポリシー</h2>
+        <p><strong>すべての販売は最終的なものです。</strong>Proプランのサブスクリプション料金またはLifetimeプランの購入に対する返金は行われません。購入前に、Freeプランで本ソフトウェアを評価されることをお勧めします。</p>
+
+        <h2>10. アップデート</h2>
+        <ul>
+          <li>本ソフトウェアは自動的にアップデートを確認する場合があります。更新されたバージョンの本ソフトウェアは、新しい契約が提示されない限り、本契約に従うものとします。</li>
+          <li>ライセンサーは、アップデート、機能強化、または技術サポートを提供する義務を負いません。</li>
+        </ul>
+
+        <h2>11. 契約の終了</h2>
+        <ul>
+          <li>本契約は、終了するまで有効です。お客様が本契約のいずれかの条件に違反した場合、本契約に基づくお客様の権利は通知なく自動的に終了します。</li>
+          <li>終了に際し、お客様は本ソフトウェアのすべての使用を中止し、所有するすべてのコピーを破棄しなければなりません。</li>
+          <li>ライセンサーは、本契約の違反を含むがこれに限定されない理由により、いつでもサービスへのお客様のアクセスを終了または停止することができます。</li>
+          <li>第3条、第4条、第7条、第9条、第12条、第13条、および第14条は、本契約の終了後も存続するものとします。</li>
+        </ul>
+
+        <h2>12. 保証の免責</h2>
+        <p class="legal-caps">本ソフトウェアは「現状のまま」かつ「利用可能な状態で」提供され、商品性、特定目的への適合性、権原、および非侵害の黙示の保証を含むがこれらに限定されない、明示または黙示を問わずいかなる種類の保証も伴いません。ライセンサーは、本ソフトウェアが中断なく、エラーなく、または有害なコンポーネントなく動作することを保証しません。</p>
+        <p class="legal-caps">ライセンサーは、本ソフトウェアを通じてアクセスされるサードパーティAIサービスが生成する出力の正確性、信頼性、または完全性について、いかなる表明または保証も行いません。</p>
+
+        <h2>13. 責任の制限</h2>
+        <p class="legal-caps">適用される法律が許容する最大限度において：</p>
+        <ul>
+          <li>いかなる場合においても、ライセンサーは、本契約または本ソフトウェアの使用に起因または関連して生じる、利益、データ、ビジネス機会、またはのれんの喪失を含むがこれらに限定されない、間接的、付随的、特別、結果的、または懲罰的損害について責任を負いません。</li>
+          <li>本契約に起因または関連するライセンサーの累計賠償責任は、請求の原因となった事象に先立つ12ヶ月間にお客様がライセンサーに支払った総額を超えないものとします。</li>
+          <li>ライセンサーは、不正確なAI出力、データの喪失、またはサードパーティの利用規約違反を含むがこれらに限定されない、お客様によるサードパーティAIサービスの使用から生じる損害について責任を負いません。</li>
+        </ul>
+
+        <h2>14. 準拠法と紛争解決</h2>
+        <ul>
+          <li>本契約は、法の抵触に関する原則にかかわらず、アルゼンチン共和国ブエノスアイレス自治市の法律に準拠し、同法に従って解釈されるものとします。</li>
+          <li>本契約に起因または関連するいかなる紛争も、アルゼンチン共和国ブエノスアイレス自治市の裁判所の専属管轄に付託されるものとします。</li>
+        </ul>
+
+        <h2>15. 完全合意</h2>
+        <ul>
+          <li>本契約は、プライバシーポリシーとともに、本ソフトウェアに関するお客様とライセンサー間の完全な合意を構成し、それ以前またはそれと同時期のすべての合意、了解、および通信に優先します。</li>
+          <li>本契約のいずれかの条項が強制不能と判断された場合でも、残りの条項は引き続き完全な効力を有するものとします。</li>
+          <li>ライセンサーが本契約のいずれかの条項を行使しなかったとしても、当該条項の放棄を構成するものではありません。</li>
+          <li>ライセンサーは随時本契約を更新する場合があります。変更後も本ソフトウェアの使用を継続した場合、更新された条件に同意したものとみなされます。</li>
+        </ul>
+
+        <h2>16. お問い合わせ</h2>
+        <p>本契約に関するご質問やご懸念がございましたら、以下までご連絡ください：</p>
+        <ul>
+          <li><strong>メール：</strong> <a href="mailto:info@patapim.ai">info@patapim.ai</a></li>
+          <li><strong>GitHub：</strong> <a href="https://github.com/G3dar/patapim/issues" target="_blank" rel="noopener">github.com/G3dar/patapim/issues</a></li>
+        </ul>
+
+        <p class="legal-copyright">Copyright &copy; 2026 Blip Haus. All rights reserved.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+  }
+
+  .legal-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .legal-intro {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-2xl);
+    padding: var(--space-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+
+  .legal-content h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .legal-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal-content ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-content ul li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    padding: var(--space-sm) 0;
+    padding-left: var(--space-lg);
+    position: relative;
+  }
+
+  .legal-content ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    opacity: 0.5;
+  }
+
+  .legal-content strong {
+    color: var(--text-primary);
+  }
+
+  .legal-content a {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+  .legal-content a:hover {
+    text-decoration: underline;
+  }
+
+  .legal-highlight {
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--accent-primary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal-highlight p {
+    margin-bottom: 0;
+  }
+
+  .legal-caps {
+    font-size: 13px !important;
+  }
+
+  .legal-copyright {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .legal-content {
+      padding-left: var(--space-md);
+      padding-right: var(--space-md);
+    }
+  }
+</style>

@@ -1,15 +1,24 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+
+const processMarkdown = (text: string) => text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+---
+
 <section class="section problem-solution" id="problem">
   <div class="container">
     <div class="ps-grid">
       <div class="ps-card problem">
         <div class="ps-icon">&#x2717;</div>
-        <h3>The Problem</h3>
+        <h3>{t(locale, 'problemSolution.problemTitle')}</h3>
         <ul>
-          <li>VS Code and Cursor are built for <strong>manual coding</strong> &mdash; you don't need that with Claude Code</li>
-          <li>Terminal-only workflow means <strong>projects stay disorganized</strong></li>
-          <li><strong>Context is lost</strong> between sessions &mdash; decisions forgotten, progress unclear</li>
-          <li>No standardization across projects &mdash; every project is a <strong>different mess</strong></li>
-          <li>Juggling multiple terminals, files, and tasks is <strong>chaos</strong></li>
+          {translations.problemSolution.problemItems.map((item) => (
+            <li set:html={processMarkdown(item)} />
+          ))}
         </ul>
       </div>
 
@@ -22,13 +31,11 @@
 
       <div class="ps-card solution">
         <div class="ps-icon">&#x2714;</div>
-        <h3>The PATAPIM Way</h3>
+        <h3>{t(locale, 'problemSolution.solutionTitle')}</h3>
         <ul>
-          <li><strong>Terminal-first</strong> &mdash; the terminal IS the IDE, not an afterthought</li>
-          <li>Up to <strong>9 terminals in a grid</strong> &mdash; all visible, all productive</li>
-          <li><strong>Context preservation</strong> &mdash; CLAUDE.md, tasks.json, STRUCTURE.json in every project</li>
-          <li>Every project follows the <strong>same standard structure</strong> &mdash; PATAPIM projects</li>
-          <li>Remote access, voice dictation, GitHub issues, plugins &mdash; <strong>everything integrated</strong></li>
+          {translations.problemSolution.solutionItems.map((item) => (
+            <li set:html={processMarkdown(item)} />
+          ))}
         </ul>
       </div>
     </div>

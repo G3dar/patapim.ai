@@ -1,63 +1,55 @@
 ---
-const free = [
-  'Up to 9 terminals',
-  'Up to 3 projects',
-  '30 min dictation included',
-  'Remote access',
-  'Task management',
-  'File editor',
-  'Context preservation',
-  'Session persistence',
-];
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
 
-const pro = [
-  'Unlimited terminals',
-  'Unlimited projects',
-  'Unlimited dictation',
-  'Everything in Free',
-  'Priority support',
-];
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const lp = (path: string) => getLocalePath(locale, path);
+
+const free = translations.pricingPreview.freeFeatures;
+const pro = translations.pricingPreview.proFeatures;
 ---
 
 <section class="section pricing-section" id="pricing">
   <div class="container">
     <div class="section-header">
-      <span class="section-label">Pricing</span>
-      <h2 class="section-title">Start Free. Upgrade When You're Ready.</h2>
+      <span class="section-label">{t(locale, 'pricingPreview.label')}</span>
+      <h2 class="section-title">{t(locale, 'pricingPreview.title')}</h2>
       <p class="section-subtitle">
-        All features included. Pro removes the limits.
+        {t(locale, 'pricingPreview.subtitle')}
       </p>
     </div>
 
     <div class="pricing-grid">
       <div class="pricing-card">
         <div class="pricing-header">
-          <h3>Free</h3>
+          <h3>{t(locale, 'pricingPreview.freeTitle')}</h3>
           <div class="pricing-price">
-            <span class="price-amount">$0</span>
-            <span class="price-period">forever</span>
+            <span class="price-amount">{t(locale, 'pricingPreview.freePrice')}</span>
+            <span class="price-period">{t(locale, 'pricingPreview.freePeriod')}</span>
           </div>
-          <p class="pricing-desc">Everything you need to get started.</p>
+          <p class="pricing-desc">{t(locale, 'pricingPreview.freeDesc')}</p>
         </div>
         <ul class="pricing-features">
           {free.map((f) => (
             <li><span class="check">&#x2714;</span> {f}</li>
           ))}
         </ul>
-        <a href="/download" class="btn btn-secondary" style="width: 100%; justify-content: center;">
-          Download Free
+        <a href={lp('/download')} class="btn btn-secondary" style="width: 100%; justify-content: center;">
+          {t(locale, 'common.downloadFree')}
         </a>
       </div>
 
       <div class="pricing-card pro">
-        <div class="pro-badge">Most Popular</div>
+        <div class="pro-badge">{t(locale, 'pricingPreview.proBadge')}</div>
         <div class="pricing-header">
-          <h3>Pro</h3>
+          <h3>{t(locale, 'pricingPreview.proTitle')}</h3>
           <div class="pricing-price">
-            <span class="price-amount">$6.99</span>
-            <span class="price-period">/month</span>
+            <span class="price-amount">{t(locale, 'pricingPreview.proPrice')}</span>
+            <span class="price-period">{t(locale, 'pricingPreview.proPeriod')}</span>
           </div>
-          <p class="pricing-desc">Full power, no limits.</p>
+          <p class="pricing-desc">{t(locale, 'pricingPreview.proDesc')}</p>
         </div>
         <ul class="pricing-features">
           {pro.map((f) => (
@@ -65,7 +57,7 @@ const pro = [
           ))}
         </ul>
         <a href="#" class="btn btn-primary" id="hp-checkout-pro" style="width: 100%; justify-content: center;">
-          Go Pro
+          {t(locale, 'common.goPro')}
         </a>
       </div>
     </div>
@@ -73,15 +65,15 @@ const pro = [
     <div class="unlock-banner">
       <div class="unlock-inner">
         <div class="unlock-content">
-          <span class="unlock-badge">Limited Time</span>
-          <h3 class="unlock-title">Unlock Forever</h3>
-          <p class="unlock-desc">One-time payment. Pro features for life. No subscriptions, no renewals.</p>
+          <span class="unlock-badge">{t(locale, 'pricingPreview.unlockBadge')}</span>
+          <h3 class="unlock-title">{t(locale, 'pricingPreview.unlockTitle')}</h3>
+          <p class="unlock-desc">{t(locale, 'pricingPreview.unlockDesc')}</p>
         </div>
         <div class="unlock-price-area">
-          <span class="unlock-price">$29.99</span>
-          <span class="unlock-once">one-time</span>
+          <span class="unlock-price">{t(locale, 'pricingPreview.unlockPrice')}</span>
+          <span class="unlock-once">{t(locale, 'pricingPreview.unlockPeriod')}</span>
         </div>
-        <a href="#" class="btn btn-primary" id="hp-checkout-lifetime">Get Lifetime Access</a>
+        <a href="#" class="btn btn-primary" id="hp-checkout-lifetime">{t(locale, 'pricingPreview.unlockButton')}</a>
       </div>
     </div>
   </div>

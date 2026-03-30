@@ -4,18 +4,27 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+
+const scriptI18n = {
+  planPro: t(locale, 'dashboard.planPro'),
+  planLifetime: t(locale, 'dashboard.planLifetime'),
+};
 ---
 
-<BaseLayout title="Purchase Complete — PATAPIM" description="Your PATAPIM account has been upgraded.">
+<BaseLayout title={t(locale, 'meta.successTitle')} description={t(locale, 'meta.successDescription')}>
   <Navbar />
 
   <main class="success-page">
     <div class="container">
-      <div class="success-card" id="success-card">
+      <div class="success-card" id="success-card" data-i18n={JSON.stringify(scriptI18n)}>
         <!-- Loading state -->
         <div class="success-loading" id="success-loading">
           <div class="spinner"></div>
-          <p>Confirming your purchase...</p>
+          <p>{t(locale, 'success.loading')}</p>
         </div>
 
         <!-- Success state (hidden until data loads) -->
@@ -26,13 +35,13 @@ import Footer from '../components/Footer.astro';
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
           </div>
-          <h1 class="success-title">Purchase Complete!</h1>
+          <h1 class="success-title">{t(locale, 'success.title')}</h1>
           <span class="plan-badge" id="plan-badge"></span>
           <p class="success-email" id="success-email"></p>
-          <p class="success-desc">Your account has been upgraded.<br/>You can close this page and return to PATAPIM.</p>
+          <p class="success-desc" set:html={t(locale, 'success.message').replace('\n', '<br/>')} />
           <div class="success-cta">
-            <a href="/go" class="btn btn-primary">Go to Dashboard</a>
-            <a href="/download" class="success-link">Download PATAPIM</a>
+            <a href={lp('/go')} class="btn btn-primary">{t(locale, 'common.goToDashboard')}</a>
+            <a href={lp('/download')} class="success-link">{t(locale, 'success.downloadPatapim')}</a>
           </div>
         </div>
 
@@ -45,11 +54,11 @@ import Footer from '../components/Footer.astro';
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h1 class="success-title">Processing Payment</h1>
-          <p class="success-desc">Your payment was received but the license is still being set up.<br/>This usually takes a few seconds. Try refreshing the page.</p>
+          <h1 class="success-title">{t(locale, 'success.processingTitle')}</h1>
+          <p class="success-desc" set:html={t(locale, 'success.processingMessage').replace('\n', '<br/>')} />
           <div class="success-cta">
-            <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
-            <a href="/go" class="success-link">Go to Dashboard</a>
+            <button class="btn btn-primary" onclick="location.reload()">{t(locale, 'common.refresh')}</button>
+            <a href={lp('/go')} class="success-link">{t(locale, 'common.goToDashboard')}</a>
           </div>
         </div>
       </div>
@@ -207,6 +216,9 @@ import Footer from '../components/Footer.astro';
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get('session_id');
 
+  const i18nEl = document.getElementById('success-card');
+  const i18n = i18nEl ? JSON.parse(i18nEl.dataset.i18n || '{}') : {};
+
   if (sessionId) {
     (async () => {
       const delays = [1000, 2000, 4000];
@@ -224,10 +236,10 @@ import Footer from '../components/Footer.astro';
 
             const badge = document.getElementById('plan-badge')!;
             if (data.plan === 'lifetime') {
-              badge.textContent = 'Lifetime';
+              badge.textContent = i18n.planLifetime || 'Lifetime';
               badge.classList.add('plan-lifetime');
             } else {
-              badge.textContent = 'Pro';
+              badge.textContent = i18n.planPro || 'Pro';
               badge.classList.add('plan-pro');
             }
 

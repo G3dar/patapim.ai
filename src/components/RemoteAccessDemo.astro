@@ -1,4 +1,18 @@
-<div class="ra-demo">
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const fr = translations.demos.fullRemote;
+
+const scriptI18n = {
+  remoteLines: fr.remoteLines,
+};
+---
+
+<div class="ra-demo" data-i18n-ra={JSON.stringify(scriptI18n)}>
   <!-- Animated Cursor -->
   <div class="ra-cursor" id="raCursor">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#222" stroke-width="1.5">
@@ -15,7 +29,7 @@
         <span class="ra-dot ra-dot-yellow"></span>
         <span class="ra-dot ra-dot-green"></span>
       </div>
-      <div class="ra-chrome-title">PATAPIM &mdash; Dev Session</div>
+      <div class="ra-chrome-title">{t(locale, 'demos.fullRemote.windowTitle')}</div>
     </div>
     <div class="ra-workspace">
       <!-- Sidebar -->
@@ -36,21 +50,21 @@
 
       <!-- Terminal Body -->
       <div class="ra-body">
-        <div class="ra-line"><span class="ra-prompt">~/project $</span> <span class="ra-cmd">claude</span></div>
-        <div class="ra-line ra-output"><span class="ra-accent-text">&#x276F;</span> Claude Code initialized in ~/project</div>
-        <div class="ra-line ra-output"><span class="ra-success-text">&#x2714;</span> Found CLAUDE.md, STRUCTURE.json</div>
-        <div class="ra-line ra-output"><span class="ra-success-text">&#x2714;</span> Context restored from session #4</div>
-        <div class="ra-line"><span class="ra-prompt">~/project $</span> <span class="ra-blink-cursor">|</span></div>
+        <div class="ra-line"><span class="ra-prompt">{fr.prompt}</span> <span class="ra-cmd">{fr.terminalLines[0]}</span></div>
+        <div class="ra-line ra-output">{fr.terminalLines[1]}</div>
+        <div class="ra-line ra-output">{fr.terminalLines[2]}</div>
+        <div class="ra-line ra-output">{fr.terminalLines[3]}</div>
+        <div class="ra-line"><span class="ra-prompt">{fr.prompt}</span> <span class="ra-blink-cursor">|</span></div>
       </div>
 
       <!-- Settings Panel (slides in from right) -->
       <div class="ra-settings" id="raSettings">
         <div class="ra-settings-header">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span>Remote Access</span>
+          <span>{t(locale, 'demos.fullRemote.remoteAccess')}</span>
         </div>
         <div class="ra-toggle-row">
-          <span class="ra-toggle-label">Enable Remote Access</span>
+          <span class="ra-toggle-label">{t(locale, 'demos.fullRemote.enableRemoteAccess')}</span>
           <div class="ra-toggle" id="raToggle">
             <div class="ra-toggle-thumb"></div>
           </div>
@@ -175,7 +189,7 @@
               <rect x="6" y="12" width="1" height="1" fill="#1a1a1c"/>
             </svg>
           </div>
-          <div class="ra-qr-label">Scan with your phone</div>
+          <div class="ra-qr-label">{t(locale, 'demos.fullRemote.scanWithPhone')}</div>
           <div class="ra-qr-pin">PIN: <span class="ra-pin-dots">&#x25CF;&#x25CF;&#x25CF;&#x25CF;</span></div>
         </div>
       </div>
@@ -194,12 +208,12 @@
           <div class="ra-vf-corner ra-vf-br"></div>
           <div class="ra-scan-line" id="raScanLine"></div>
         </div>
-        <div class="ra-vf-label">Point camera at QR code</div>
+        <div class="ra-vf-label">{t(locale, 'demos.fullRemote.pointCamera')}</div>
       </div>
 
       <!-- Scene: PIN Entry -->
       <div class="ra-phone-scene ra-scene-pin" id="raScenePin">
-        <div class="ra-pin-title">Enter PIN</div>
+        <div class="ra-pin-title">{t(locale, 'demos.fullRemote.enterPin')}</div>
         <div class="ra-pin-dots-entry">
           <span class="ra-pin-dot" id="raPinDot0">&#x25CB;</span>
           <span class="ra-pin-dot" id="raPinDot1">&#x25CB;</span>
@@ -213,18 +227,18 @@
         <div class="ra-auth-check">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <div class="ra-auth-text">Authenticated</div>
+        <div class="ra-auth-text">{t(locale, 'demos.fullRemote.authenticated')}</div>
       </div>
 
       <!-- Scene: Remote Terminal -->
       <div class="ra-phone-scene ra-scene-remote" id="raSceneRemote">
         <div class="ra-remote-header">
-          <span class="ra-remote-title">&#x276F;_ PATAPIM Remote</span>
+          <span class="ra-remote-title">{t(locale, 'demos.fullRemote.remoteHeader')}</span>
         </div>
         <div class="ra-remote-body">
-          <div class="ra-remote-line" id="raRemoteLine0"><span class="ra-remote-prompt">$</span> claude "fix the auth bug"</div>
-          <div class="ra-remote-line ra-remote-accent" id="raRemoteLine1">&#x25B7; Analyzing auth module...</div>
-          <div class="ra-remote-line ra-remote-success" id="raRemoteLine2">&#x2714; Fixed: token refresh logic updated</div>
+          <div class="ra-remote-line" id="raRemoteLine0"><span class="ra-remote-prompt">$</span> {fr.remoteLines[0]}</div>
+          <div class="ra-remote-line ra-remote-accent" id="raRemoteLine1">{fr.remoteLines[1]}</div>
+          <div class="ra-remote-line ra-remote-success" id="raRemoteLine2">{fr.remoteLines[2]}</div>
           <div class="ra-remote-line" id="raRemoteLine3"><span class="ra-remote-prompt">$</span> <span class="ra-blink-cursor">|</span></div>
         </div>
       </div>

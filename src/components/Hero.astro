@@ -2,6 +2,10 @@
 import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
 import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
 ---
 
 <section class="hero">
@@ -10,14 +14,11 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
 
     <!-- New main headline -->
     <h1 class="hero-title">
-      Vibe Coding <span class="hero-title-mid">without the</span><br/>
-      <span class="hero-brainrot-accent">Brain Rot</span>
+      {t(locale, 'hero.titleLine1')} <span class="hero-title-mid">{t(locale, 'hero.titleMid')}</span><br/>
+      <span class="hero-brainrot-accent">{t(locale, 'hero.titleAccent')}</span>
     </h1>
 
-    <p class="hero-subtitle">
-      Run 10 projects at the same time. Stay focused. Stay organized.<br/>
-      This is how you'll code in the future.
-    </p>
+    <p class="hero-subtitle" set:html={t(locale, 'hero.subtitle')} />
 
     <!-- Brain Rot Demo Video -->
     <div class="hero-video-wrapper">
@@ -29,22 +30,22 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
       <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
         <div class="hf-text">
-          <span class="hf-label">Multi-Project Workspace</span>
-          <p class="hf-desc">Organize terminals by project. Named tasks with status tracking and completion notifications.</p>
+          <span class="hf-label">{t(locale, 'hero.multiProject')}</span>
+          <p class="hf-desc">{t(locale, 'hero.multiProjectDesc')}</p>
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniVoiceDictation />
         <div class="hf-text">
-          <span class="hf-label">Voice Dictation</span>
-          <p class="hf-desc">Lightning fast, 100% local. Your voice never leaves your machine.</p>
+          <span class="hf-label">{t(locale, 'hero.voiceDictation')}</span>
+          <p class="hf-desc">{t(locale, 'hero.voiceDictationDesc')}</p>
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniRemoteAccess />
         <div class="hf-text">
-          <span class="hf-label">Remote Control</span>
-          <p class="hf-desc">Control your local workstation from any phone or laptop.</p>
+          <span class="hf-label">{t(locale, 'hero.remoteControl')}</span>
+          <p class="hf-desc">{t(locale, 'hero.remoteControlDesc')}</p>
         </div>
       </div>
     </div>
@@ -52,49 +53,46 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
     <!-- Original "Open Claw" section (secondary) -->
     <div class="hero-openclaw-section">
       <h2 class="hero-title-secondary">
-        <span class="hero-accent">Open Claw,</span> but Free.<br/>
+        <span class="hero-accent" set:html={t(locale, 'hero.clawTitle')} /><br/>
         <span class="hero-secure">
           <svg class="hero-lock" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          AND SECURE.
+          {t(locale, 'hero.clawAccent')}
         </span>
       </h2>
 
-      <p class="hero-subtitle-secondary">
-        Same power. Your accounts. Your machine. Zero API costs.<br/>
-        Browser automation + Claude Code + remote access &mdash; without paying a cent more.
-      </p>
+      <p class="hero-subtitle-secondary" set:html={t(locale, 'hero.clawDesc')} />
 
       <div class="hero-killers">
         <div class="hero-killer">
           <span class="hk-x">&#x2717;</span>
-          <span>No per-token billing</span>
+          <span>{t(locale, 'hero.noTokenBilling')}</span>
         </div>
         <div class="hero-killer">
           <span class="hk-x">&#x2717;</span>
-          <span>No cloud middleman</span>
+          <span>{t(locale, 'hero.noCloudMiddleman')}</span>
         </div>
         <div class="hero-killer">
           <span class="hk-x">&#x2717;</span>
-          <span>No extra subscriptions</span>
+          <span>{t(locale, 'hero.noExtraSubscriptions')}</span>
         </div>
         <div class="hero-killer hk-yes">
           <span class="hk-check">&#x2714;</span>
-          <span>Your existing AI accounts. That's it.</span>
+          <span>{t(locale, 'hero.existingAccounts')}</span>
         </div>
       </div>
 
       <div class="hero-install">
         <div class="hero-install-tabs">
-          <button class="hi-tab active" data-hero-tab="cmd">CMD</button>
-          <button class="hi-tab" data-hero-tab="ps">PowerShell</button>
-          <button class="hi-tab" data-hero-tab="mac">macOS</button>
+          <button class="hi-tab active" data-hero-tab="cmd">{t(locale, 'hero.tabCmd')}</button>
+          <button class="hi-tab" data-hero-tab="ps">{t(locale, 'hero.tabPowerShell')}</button>
+          <button class="hi-tab" data-hero-tab="mac">{t(locale, 'hero.tabMacOS')}</button>
         </div>
         <div class="hero-install-panels">
           <div class="hi-panel active" data-hero-panel="cmd">
             <div class="hi-line" data-hero-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
               <span class="hi-prompt">C:\&gt;</span>
               <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
-              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+              <button class="hi-copy-btn" aria-label={t(locale, 'common.copyToClipboard')}>
                 <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
@@ -104,7 +102,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
             <div class="hi-line" data-hero-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
               <span class="hi-prompt">PS&gt;</span>
               <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
-              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+              <button class="hi-copy-btn" aria-label={t(locale, 'common.copyToClipboard')}>
                 <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
@@ -114,7 +112,7 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
             <div class="hi-line" data-hero-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
               <span class="hi-prompt">$</span>
               <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
-              <button class="hi-copy-btn" aria-label="Copy to clipboard">
+              <button class="hi-copy-btn" aria-label={t(locale, 'common.copyToClipboard')}>
                 <svg class="hi-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <svg class="hi-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
@@ -122,11 +120,11 @@ import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
           </div>
         </div>
         <div class="hero-install-meta">
-          <span>Windows 10+</span>
+          <span>{t(locale, 'hero.metaWindows')}</span>
           <span class="meta-dot">&#x2022;</span>
-          <span>macOS 12+</span>
+          <span>{t(locale, 'hero.metaMacOS')}</span>
           <span class="meta-dot">&#x2022;</span>
-          <a href="/download" class="meta-link">Download page</a>
+          <a href={lp('/download')} class="meta-link">{t(locale, 'hero.metaDownloadPage')}</a>
         </div>
       </div>
     </div>

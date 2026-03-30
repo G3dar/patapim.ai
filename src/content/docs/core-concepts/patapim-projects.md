@@ -4,267 +4,88 @@ description: "Understanding the PATAPIM project structure"
 order: 2
 ---
 
-# PATAPIM Projects
+## Workspace Management
 
-A **PATAPIM project** is a directory with standardized files and configuration that enable Claude Code to maintain context across sessions.
+PATAPIM manages projects through a workspace system. Your workspace configuration is stored at `~/.patapim/workspaces.json` and tracks all your projects.
 
-## What is a PATAPIM Project?
+### Adding a Project
 
-At its core, a PATAPIM project is any directory that contains:
+1. Click the **Projects** button in the sidebar
+2. Click **Add Project**
+3. Select an existing project folder
+4. PATAPIM adds it to your workspace and opens it
 
-1. **Standard context files**: CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, tasks.json
-2. **A .patapim directory**: Stores project-specific configuration
-3. **Git repository** (recommended but not required): For version control and auto-documentation
+You can add as many projects as you want. The Free plan allows up to 3 active projects; Pro and Lifetime are unlimited.
 
-When you open a project in PATAPIM, Claude automatically reads these files and understands:
+### Switching Projects
 
-- How to work with your codebase (CLAUDE.md)
-- What modules exist and how they connect (STRUCTURE.json)
-- What happened in previous sessions (PROJECT_NOTES.md)
-- What tasks are pending (tasks.json)
+Click any project in the sidebar to switch to it. When you switch projects:
 
-## Initializing a Project
+- All terminal sessions switch to the new project directory
+- The file tree updates to show the new project's files
+- Session state (terminal content, working directories) is preserved per project
+- Tasks, GitHub issues, and context files update to the new project
 
-### Option 1: Initialize an Existing Directory
+This **project isolation** means each project has its own independent workspace.
 
-If you have an existing codebase, initialize it as a PATAPIM project:
+## Project Files
 
-```bash
-cd /path/to/your/project
-patapim init
+Each PATAPIM project can contain these files in its root directory:
+
+| File | Purpose | Generated |
+|------|---------|-----------|
+| `CLAUDE.md` | Instructions for Claude Code | On `/init` |
+| `STRUCTURE.json` | Module map and IPC channels | Auto/manual |
+| `PROJECT_NOTES.md` | Decision log | During sessions |
+| `tasks.json` | Task tracking | Via task panel |
+| `QUICKSTART.md` | Quick-start guide | On init |
+
+These files are plain text and can be committed to your Git repository.
+
+## Per-Project Configuration
+
+Each project can have a `.patapim/` directory in its root for project-specific configuration:
+
 ```
-
-This creates:
-
-```
-your-project/
+my-project/
 ├── .patapim/
-│   └── config.json
+│   └── config.json    # Project-specific settings
 ├── CLAUDE.md
 ├── STRUCTURE.json
-├── PROJECT_NOTES.md
 ├── tasks.json
-└── (your existing files)
+└── ... (your code)
 ```
 
-### Option 2: Create a New Project
+## Global Configuration
 
-Start from scratch:
+Global PATAPIM data is stored at `~/.patapim/`:
 
-```bash
-patapim new my-project
-cd my-project
-```
+| File | Purpose |
+|------|---------|
+| `workspaces.json` | Project list and metadata |
+| `sessions.json` | Terminal sessions per project |
+| `account.json` | Auth token, email, license |
+| `passkeys.json` | WebAuthn credentials |
+| `trusted-passkeys.json` | Trusted PassKey whitelist |
+| `downloads/` | Browser download directory |
+| `mcp-token` | MCP server authentication |
 
-PATAPIM scaffolds a new project with:
+## Session Persistence
 
-- Context files (CLAUDE.md, STRUCTURE.json, etc.)
-- .patapim directory
-- Git repository initialized
-- Pre-commit hooks configured
+Terminal sessions are saved per project. When you close PATAPIM and reopen it:
 
-### What Gets Created?
+1. Your last active project is restored
+2. All terminal sessions for that project are re-created
+3. Working directories are restored
+4. Claude Code session IDs are preserved (sessions can be resumed)
 
-#### CLAUDE.md
+Sessions are stored in `~/.patapim/sessions.json`. The restore process has a 10-second timeout — if a session can't be restored in time, a fresh terminal is created instead.
 
-Instructions for Claude Code. This file tells Claude:
+## File Explorer
 
-- How to build and run your project
-- Project-specific conventions
-- When to update documentation
-- Task management rules
+The sidebar includes a file explorer that shows your project's file tree:
 
-Think of this as the "README for Claude."
-
-#### STRUCTURE.json
-
-An auto-generated map of your codebase:
-
-```json
-{
-  "modules": {
-    "main/menu": {
-      "path": "src/main/menu.js",
-      "purpose": "Application menu bar",
-      "exports": ["createMenu", "updateMenu"],
-      "depends": ["electron", "main/window"]
-    }
-  },
-  "ipcChannels": {
-    "OPEN_PROJECT": {
-      "direction": "renderer → main",
-      "handler": "main/projectManager.js"
-    }
-  }
-}
-```
-
-This file is updated automatically via pre-commit hooks (if configured).
-
-#### PROJECT_NOTES.md
-
-Session notes and decisions. Claude asks to add notes when:
-
-- A task is completed
-- An architectural decision is made
-- A complex bug is solved
-- Work is deferred ("let's do this later")
-
-Format:
-
-```markdown
-### [2026-02-06] Added settings panel
-User requested a settings panel for theme customization.
-Created src/renderer/settings.js with theme toggle...
-```
-
-#### tasks.json
-
-Structured task tracking:
-
-```json
-{
-  "tasks": [
-    {
-      "id": "add-settings-panel",
-      "title": "Add settings panel to UI",
-      "status": "completed",
-      "userRequest": "Add a settings panel",
-      "description": "Create settings.js module...",
-      "acceptanceCriteria": "Settings panel opens and saves preferences",
-      "completedAt": "2026-02-06T14:30:00Z"
-    }
-  ]
-}
-```
-
-## The .patapim Directory
-
-The `.patapim` directory stores project-specific configuration:
-
-```
-.patapim/
-├── config.json          # Project settings
-├── terminal-history.log # Terminal session history (optional)
-└── bookmarks.json       # File/folder bookmarks (future)
-```
-
-### config.json
-
-Stores project metadata:
-
-```json
-{
-  "name": "My Project",
-  "initialized": "2026-02-06T10:00:00Z",
-  "lastOpened": "2026-02-06T14:30:00Z",
-  "settings": {
-    "terminalShell": "bash",
-    "defaultBranch": "main"
-  }
-}
-```
-
-This file is managed by PATAPIM—you rarely need to edit it manually.
-
-## Project List & Workspace
-
-PATAPIM maintains a **workspace**: a list of all projects you've opened.
-
-### Viewing Projects
-
-Open the project list:
-
-- Click the projects icon in the toolbar
-- Or press `Ctrl+P` (keyboard shortcut, if configured)
-
-You'll see:
-
-```
-┌─────────────────────────────┐
-│ Projects                    │
-├─────────────────────────────┤
-│ patapim                     │
-│ /Users/ghell/patapim        │
-│ Last opened: 2 hours ago    │
-├─────────────────────────────┤
-│ my-website                  │
-│ /Users/ghell/my-website     │
-│ Last opened: 3 days ago     │
-└─────────────────────────────┘
-```
-
-### Adding Projects
-
-Projects are added automatically when you:
-
-1. Use `patapim init` in a directory
-2. Use `patapim new project-name`
-3. Open a directory via "Open Folder" in PATAPIM
-
-### Removing Projects
-
-Remove a project from the list (doesn't delete files):
-
-```bash
-patapim remove-project /path/to/project
-```
-
-Or remove from the UI (right-click → Remove from list).
-
-## Switching Between Projects
-
-Click a project in the project list to switch. PATAPIM:
-
-1. Saves the current terminal session
-2. Closes the current project
-3. Opens the new project directory
-4. Loads context files (CLAUDE.md, etc.)
-5. Restores the terminal in the new project directory
-
-Your terminal history and context are preserved for each project.
-
-## Project Portability
-
-PATAPIM projects are portable. The context files (CLAUDE.md, STRUCTURE.json, etc.) are plain text and committed to your Git repository.
-
-This means:
-
-- **Team members** can clone your repo and open it in PATAPIM—Claude gets the same context
-- **Different machines**: Your laptop and desktop share the same project context via Git
-- **No lock-in**: The files are human-readable. You can use them without PATAPIM if needed.
-
-## Best Practices
-
-### Keep Context Files Updated
-
-Let Claude update STRUCTURE.json (via pre-commit hooks) and PROJECT_NOTES.md (when prompted). Don't skip these steps—they're critical for session continuity.
-
-### One Project Per Repository
-
-Each Git repository should be one PATAPIM project. Don't nest PATAPIM projects inside each other.
-
-### Commit Context Files
-
-Always commit CLAUDE.md, STRUCTURE.json, PROJECT_NOTES.md, and tasks.json. These files are documentation, not temporary artifacts.
-
-### Use Descriptive Project Names
-
-When creating projects, use clear names:
-
-```bash
-patapim new my-saas-app      # ✅ Clear
-patapim new project1         # ❌ Vague
-```
-
-The project name appears in the project list and terminal title.
-
-## Summary
-
-A PATAPIM project is:
-
-- A directory with standardized context files
-- A .patapim directory for configuration
-- Part of a workspace managed by PATAPIM
-
-By standardizing project structure, PATAPIM ensures Claude Code always has the context needed to continue your work.
+- Displays up to 5 levels deep
+- Excludes `node_modules`, `.git`, and other common ignored directories
+- Click a file to open it in the overlay editor
+- Files are sorted with directories first
