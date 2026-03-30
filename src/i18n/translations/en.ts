@@ -18,6 +18,9 @@ const en = {
     manageBilling: 'Manage Billing',
     upgrade: 'Upgrade',
     copyToClipboard: 'Copy to clipboard',
+    clickToCopy: 'Click to copy',
+    copied: 'Copied!',
+    terminal: 'Terminal',
     loading: 'Loading...',
   },
   meta: {

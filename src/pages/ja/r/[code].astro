@@ -92,7 +92,7 @@ if (validReferral && referrerEmail) {
           <div class="dl-cmd-block">
             <span class="dl-cmd-label">PowerShell</span>
             <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
-              <span class="dl-tooltip">Click to copy</span>
+              <span class="dl-tooltip">{t(locale, 'common.clickToCopy')}</span>
               <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
               <span class="dl-copy-btn" aria-label="Copy">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -102,7 +102,7 @@ if (validReferral && referrerEmail) {
           <div class="dl-cmd-block">
             <span class="dl-cmd-label">CMD</span>
             <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
-              <span class="dl-tooltip">Click to copy</span>
+              <span class="dl-tooltip">{t(locale, 'common.clickToCopy')}</span>
               <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
               <span class="dl-copy-btn" aria-label="Copy">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -131,6 +131,7 @@ if (validReferral && referrerEmail) {
         </div>
       </div>
 
+      <div id="dl-i18n" data-copied={t(locale, 'common.copied')} data-click-to-copy={t(locale, 'common.clickToCopy')} style="display:none;"></div>
       <!-- Requirements -->
       <div class="requirements section">
         <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">{t(locale, 'download.sysReqTitle')}</h2>
@@ -380,11 +381,14 @@ if (validReferral && referrerEmail) {
         const tooltip = line.querySelector('.dl-tooltip');
         const icon = line.querySelector('.dl-copy-btn');
         line.classList.add('copied');
-        if (tooltip) tooltip.textContent = 'Copied!';
+        const i18nEl = document.getElementById('dl-i18n');
+        const copiedText = i18nEl?.dataset.copied || 'Copied!';
+        const clickText = i18nEl?.dataset.clickToCopy || 'Click to copy';
+        if (tooltip) tooltip.textContent = copiedText;
         if (icon) icon.classList.add('copied');
         setTimeout(() => {
           line.classList.remove('copied');
-          if (tooltip) tooltip.textContent = 'Click to copy';
+          if (tooltip) tooltip.textContent = clickText;
           if (icon) icon.classList.remove('copied');
         }, 1500);
       });

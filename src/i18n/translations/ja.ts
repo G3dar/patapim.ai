@@ -20,6 +20,9 @@ const ja: typeof en = {
     manageBilling: '\u8ACB\u6C42\u7BA1\u7406',
     upgrade: '\u30A2\u30C3\u30D7\u30B0\u30EC\u30FC\u30C9',
     copyToClipboard: '\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u306B\u30B3\u30D4\u30FC',
+    clickToCopy: '\u30AF\u30EA\u30C3\u30AF\u3067\u30B3\u30D4\u30FC',
+    copied: '\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F\uFF01',
+    terminal: '\u30BF\u30FC\u30DF\u30CA\u30EB',
     loading: '\u8AAD\u307F\u8FBC\u307F\u4E2D...',
   },
   meta: {
