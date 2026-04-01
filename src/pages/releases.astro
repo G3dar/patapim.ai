@@ -43,17 +43,23 @@ const lp = (path: string) => getLocalePath(locale, path);
       if (!res.ok) throw new Error(`GitHub API ${res.status}`);
       const releases = await res.json();
 
-      if (!releases.length) {
+      // Filter out version-bump-only releases (no user-facing changes)
+      const meaningful = releases.filter(r => {
+        const body = (r.body || '').trim();
+        return body && !body.includes('version bump only');
+      });
+
+      if (!meaningful.length) {
         container.innerHTML = '<p class="releases-empty">No releases found.</p>';
         return;
       }
 
-      container.innerHTML = releases.map(r => {
+      container.innerHTML = meaningful.map(r => {
         const date = new Date(r.published_at).toLocaleDateString('en-US', {
           year: 'numeric', month: 'long', day: 'numeric'
         });
         const version = r.tag_name.replace(/^v/, '');
-        const body = renderMarkdown(r.body || 'Bug fixes and improvements.');
+        const body = renderMarkdown(r.body || '');
 
         return `
           <article class="release-card" id="${r.tag_name}">
