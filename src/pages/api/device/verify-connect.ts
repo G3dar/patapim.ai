@@ -37,8 +37,12 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ valid: false, error: 'connectToken required' }), { status: 400, headers });
   }
 
-  // Look up connect token
-  const connectRaw = await env.SESSIONS.get(`connect:${connectToken}`);
+  // Look up connect token (retry once for KV eventual consistency across edge POPs)
+  let connectRaw = await env.SESSIONS.get(`connect:${connectToken}`);
+  if (!connectRaw) {
+    await new Promise(r => setTimeout(r, 1500));
+    connectRaw = await env.SESSIONS.get(`connect:${connectToken}`);
+  }
   if (!connectRaw) {
     return new Response(JSON.stringify({ valid: false, error: 'Invalid or expired connect token' }), { status: 200, headers });
   }
