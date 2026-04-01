@@ -15,8 +15,11 @@ export const GET: APIRoute = async (context) => {
   const cursorParam = url.searchParams.get('cursor') || '';
   const limit = 50;
 
-  // List all user keys
-  const userKeys = await listAllKeys(kv, 'user:');
+  // List all user keys and license keys in parallel
+  const [userKeys, licenseKeys] = await Promise.all([
+    listAllKeys(kv, 'user:'),
+    listAllKeys(kv, 'license:'),
+  ]);
   const userValues = await fetchAllValues(kv, userKeys.map(k => k.name));
 
   // Build user list with license info
@@ -48,6 +51,9 @@ export const GET: APIRoute = async (context) => {
     fetchAllValues(kv, googleIds.map(id => `devices:${id}`)),
   ]);
 
+  // Track emails from signed-in users so we can find license-only users
+  const signedInEmails = new Set(emails.map(e => e.toLowerCase()));
+
   for (const [, u] of userValues) {
     const license = licenseMap.get(`license:${u.email}`);
     const devices = devicesMap.get(`devices:${u.googleId}`);
@@ -65,6 +71,30 @@ export const GET: APIRoute = async (context) => {
       createdAt: u.createdAt || '',
       lastLogin: u.lastLogin || '',
     });
+  }
+
+  // Include license-only users (haven't signed in yet)
+  const licenseOnlyKeys = licenseKeys
+    .map(k => k.name) // "license:email@example.com"
+    .filter(k => !signedInEmails.has(k.replace('license:', '').toLowerCase()));
+
+  if (licenseOnlyKeys.length > 0) {
+    const licenseOnlyValues = await fetchAllValues(kv, licenseOnlyKeys);
+    for (const [, lic] of licenseOnlyValues) {
+      if (!lic?.email) continue;
+      allUsers.push({
+        googleId: '',
+        email: lic.email,
+        name: '',
+        picture: '',
+        plan: lic.plan || 'free',
+        licenseStatus: lic.status || null,
+        licenseKey: lic.licenseKey || null,
+        deviceCount: 0,
+        createdAt: lic.createdAt || '',
+        lastLogin: '',
+      });
+    }
   }
 
   // Sort by createdAt descending

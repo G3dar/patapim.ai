@@ -1,4 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
+import { parseCookie } from './lib/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   // Detect locale from URL path
@@ -43,25 +44,43 @@ export const onRequest = defineMiddleware(async (context, next) => {
       }
     } catch {}
 
-    context.locals.runtime.ctx.waitUntil((async () => {
-      try {
-        const reads = [kv.get(`stats:pageviews:${today}`)];
-        if (refDomain) reads.push(kv.get(`stats:referrers:${today}`));
-        const [pvRaw, refRaw] = await Promise.all(reads);
+    const sessionId = parseCookie(context.request);
 
-        const puts = [
-          kv.put(`stats:pageviews:${today}`, String((parseInt(pvRaw || '0', 10) || 0) + 1)),
-        ];
+    const reads: Promise<string | null>[] = [kv.get(`stats:pageviews:${today}`)];
+    if (refDomain) reads.push(kv.get(`stats:referrers:${today}`));
+    const [pvRaw, refRaw] = await Promise.all(reads);
 
-        if (refDomain) {
-          const referrers = refRaw ? JSON.parse(refRaw) : {};
-          referrers[refDomain] = (referrers[refDomain] || 0) + 1;
-          puts.push(kv.put(`stats:referrers:${today}`, JSON.stringify(referrers)));
-        }
+    const puts: Promise<void>[] = [
+      kv.put(`stats:pageviews:${today}`, String((parseInt(pvRaw || '0', 10) || 0) + 1)),
+    ];
 
-        await Promise.all(puts);
-      } catch {}
-    })());
+    if (refDomain) {
+      const referrers = refRaw ? JSON.parse(refRaw) : {};
+      referrers[refDomain] = (referrers[refDomain] || 0) + 1;
+      puts.push(kv.put(`stats:referrers:${today}`, JSON.stringify(referrers)));
+    }
+
+    // DAU tracking
+    if (sessionId) {
+      const sessions = env.SESSIONS;
+      const userRaw = await sessions.get(sessionId);
+      if (userRaw) {
+        try {
+          const userData = JSON.parse(userRaw);
+          if (userData.email) {
+            const dauKey = `stats:dau:${today}`;
+            const dauRaw = await kv.get(dauKey);
+            const dau: Record<string, boolean> = dauRaw ? JSON.parse(dauRaw) : {};
+            if (!dau[userData.email]) {
+              dau[userData.email] = true;
+              puts.push(kv.put(dauKey, JSON.stringify(dau)));
+            }
+          }
+        } catch {}
+      }
+    }
+
+    await Promise.all(puts);
   } catch {}
 
   return response;

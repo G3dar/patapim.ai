@@ -44,15 +44,17 @@ export async function GET(ctx: APIContext) {
         kv.get('stats:downloads:total'),
         kv.get(`stats:downloads:${today}`),
         kv.get('stats:downloads:mac:total'),
+        kv.get(`stats:downloads:mac:${today}`),
       ];
       if (country && country.length === 2) {
         reads.push(kv.get(`stats:downloads:geo:${country}`));
       }
-      const [totalRaw, dailyRaw, macRaw, geoRaw] = await Promise.all(reads);
+      const [totalRaw, dailyRaw, macRaw, macDailyRaw, geoRaw] = await Promise.all(reads);
       const puts: Promise<void>[] = [
         kv.put('stats:downloads:total', String((parseInt(totalRaw || '0', 10) || 0) + 1)),
         kv.put(`stats:downloads:${today}`, String((parseInt(dailyRaw || '0', 10) || 0) + 1)),
         kv.put('stats:downloads:mac:total', String((parseInt(macRaw || '0', 10) || 0) + 1)),
+        kv.put(`stats:downloads:mac:${today}`, String((parseInt(macDailyRaw || '0', 10) || 0) + 1)),
       ];
       if (country && country.length === 2) {
         puts.push(kv.put(`stats:downloads:geo:${country}`, String((parseInt(geoRaw || '0', 10) || 0) + 1)));

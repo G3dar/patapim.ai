@@ -9,7 +9,7 @@ export const POST: APIRoute = async (context) => {
   const auth = await requireAdmin(env.SESSIONS, context.request);
   if ('response' in auth) return auth.response;
 
-  let body: { email: string; googleId: string; plan: 'pro' | 'lifetime' | 'free' };
+  let body: { email: string; googleId?: string; plan: 'pro' | 'lifetime' | 'free' };
   try {
     body = await context.request.json();
   } catch {
@@ -17,7 +17,7 @@ export const POST: APIRoute = async (context) => {
   }
 
   const { email, googleId, plan } = body;
-  if (!email || !googleId || !['pro', 'lifetime', 'free'].includes(plan)) {
+  if (!email || !['pro', 'lifetime', 'free'].includes(plan)) {
     return new Response(JSON.stringify({ error: 'Missing or invalid fields' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -34,12 +34,14 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Remove plan from user record
-    const userRaw = await kv.get(`user:${googleId}`);
-    if (userRaw) {
-      const userData = JSON.parse(userRaw);
-      delete userData.plan;
-      delete userData.licenseKey;
-      await kv.put(`user:${googleId}`, JSON.stringify(userData));
+    if (googleId) {
+      const userRaw = await kv.get(`user:${googleId}`);
+      if (userRaw) {
+        const userData = JSON.parse(userRaw);
+        delete userData.plan;
+        delete userData.licenseKey;
+        await kv.put(`user:${googleId}`, JSON.stringify(userData));
+      }
     }
   } else {
     // Upgrade to pro or lifetime
@@ -60,14 +62,16 @@ export const POST: APIRoute = async (context) => {
       kv.put(`key:${licenseKey}`, email),
     ];
 
-    // Update user record
-    const userRaw = await kv.get(`user:${googleId}`);
-    if (userRaw) {
-      const userData = JSON.parse(userRaw);
-      userData.licenseKey = licenseKey;
-      userData.plan = plan;
-      userData.stripeCustomerId = 'admin-grant';
-      writes.push(kv.put(`user:${googleId}`, JSON.stringify(userData)));
+    // Update user record if googleId provided
+    if (googleId) {
+      const userRaw = await kv.get(`user:${googleId}`);
+      if (userRaw) {
+        const userData = JSON.parse(userRaw);
+        userData.licenseKey = licenseKey;
+        userData.plan = plan;
+        userData.stripeCustomerId = 'admin-grant';
+        writes.push(kv.put(`user:${googleId}`, JSON.stringify(userData)));
+      }
     }
 
     await Promise.all(writes);
@@ -78,7 +82,7 @@ export const POST: APIRoute = async (context) => {
     action: 'plan-change',
     adminEmail: auth.user.email,
     targetEmail: email,
-    targetGoogleId: googleId,
+    targetGoogleId: googleId || null,
     newPlan: plan,
     timestamp: now,
   }));

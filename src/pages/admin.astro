@@ -588,6 +588,17 @@ if (!isAdmin(user)) {
     border: 2px solid var(--gray-200);
   }
 
+  .ucell-av-letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-100);
+    color: var(--gray-400);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
   .ucell-info { display: flex; flex-direction: column; }
 
   .ucell-name {
@@ -1400,8 +1411,8 @@ if (!isAdmin(user)) {
             <tbody>
               ${data.users.map((u: any) => `<tr>
                 <td><div class="ucell">
-                  ${u.picture ? `<img src="${esc(u.picture)}" class="ucell-av" referrerpolicy="no-referrer" />` : ''}
-                  <div class="ucell-info"><span class="ucell-name">${esc(u.name)}</span><span class="ucell-email">${esc(u.email)}</span></div>
+                  ${u.picture ? `<img src="${esc(u.picture)}" class="ucell-av" referrerpolicy="no-referrer" />` : `<span class="ucell-av ucell-av-letter">${(u.name || u.email || '?')[0].toUpperCase()}</span>`}
+                  <div class="ucell-info"><span class="ucell-name">${u.name ? esc(u.name) : `<span style="color:var(--gray-300);font-style:italic">Not signed up</span>`}</span><span class="ucell-email">${esc(u.email)}</span></div>
                 </div></td>
                 <td><span class="badge badge-${u.plan}">${u.plan === 'free' ? 'Free' : u.plan === 'pro' ? 'Pro' : 'Lifetime'}</span></td>
                 <td>${u.licenseStatus ? `<span class="badge badge-${u.licenseStatus}">${u.licenseStatus}</span>` : '<span style="color:var(--gray-300)">\u2014</span>'}</td>

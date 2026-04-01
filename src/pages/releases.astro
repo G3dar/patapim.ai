@@ -1,0 +1,264 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+---
+
+<BaseLayout title="Release Notes — PATAPIM" description="Full changelog and release notes for every PATAPIM version.">
+  <Navbar />
+
+  <main class="releases-page">
+    <div class="container">
+      <div class="section-header" style="padding-top: 120px;">
+        <span class="section-label">Changelog</span>
+        <h1 class="section-title">Release Notes</h1>
+        <p class="section-subtitle">Every update, feature, and fix — from day one.</p>
+      </div>
+
+      <div class="releases-content" id="releases-content">
+        <div class="releases-loading">
+          <div class="spinner"></div>
+          <p>Loading releases...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  async function loadReleases() {
+    const container = document.getElementById('releases-content');
+    if (!container) return;
+
+    try {
+      const res = await fetch('https://api.github.com/repos/G3dar/patapim-releases/releases?per_page=100');
+      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+      const releases = await res.json();
+
+      if (!releases.length) {
+        container.innerHTML = '<p class="releases-empty">No releases found.</p>';
+        return;
+      }
+
+      container.innerHTML = releases.map(r => {
+        const date = new Date(r.published_at).toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        const version = r.tag_name.replace(/^v/, '');
+        const body = renderMarkdown(r.body || 'Bug fixes and improvements.');
+
+        return `
+          <article class="release-card" id="${r.tag_name}">
+            <div class="release-header">
+              <div class="release-version">
+                <span class="version-badge">${version}</span>
+                <time class="release-date" datetime="${r.published_at}">${date}</time>
+              </div>
+              <a href="${r.html_url}" class="release-github" target="_blank" rel="noopener">View on GitHub</a>
+            </div>
+            <div class="release-body">${body}</div>
+          </article>
+        `;
+      }).join('');
+    } catch (err) {
+      container.innerHTML = `
+        <div class="releases-error">
+          <p>Could not load releases. <a href="https://github.com/G3dar/patapim-releases/releases" target="_blank" rel="noopener">View on GitHub</a></p>
+        </div>
+      `;
+    }
+  }
+
+  function renderMarkdown(md) {
+    // Lightweight markdown: headers, bold, lists, links, paragraphs
+    let html = md
+      .replace(/### (.+)/g, '<h3>$1</h3>')
+      .replace(/## (.+)/g, '<h2>$1</h2>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    // Convert lines starting with - into <ul><li>
+    const lines = html.split('\n');
+    const out = [];
+    let inList = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('- ')) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push(`<li>${trimmed.slice(2)}</li>`);
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        if (trimmed && !trimmed.startsWith('<h')) {
+          out.push(trimmed.startsWith('<') ? trimmed : `<p>${trimmed}</p>`);
+        } else {
+          out.push(trimmed);
+        }
+      }
+    }
+    if (inList) out.push('</ul>');
+    return out.join('\n');
+  }
+
+  loadReleases();
+</script>
+
+<style>
+  .releases-page {
+    min-height: 100vh;
+    padding-bottom: var(--space-3xl);
+  }
+
+  .releases-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--space-xl) 0;
+  }
+
+  /* Loading */
+  .releases-loading {
+    text-align: center;
+    padding: var(--space-3xl) 0;
+    color: var(--text-muted);
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    margin: 0 auto var(--space-md);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error / empty */
+  .releases-error, .releases-empty {
+    text-align: center;
+    padding: var(--space-2xl) 0;
+    color: var(--text-muted);
+  }
+  .releases-error a { color: var(--accent-primary); }
+
+  /* Release card */
+  .release-card {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    background: var(--bg-surface, var(--bg-secondary));
+    transition: border-color 0.2s;
+  }
+  .release-card:first-child {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  }
+
+  .release-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .release-version {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .version-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: var(--bg-primary, #1a1a2e);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 2px 10px;
+    border-radius: 6px;
+  }
+
+  .release-date {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .release-github {
+    color: var(--text-muted);
+    font-size: 12px;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .release-github:hover { opacity: 1; }
+
+  /* Release body (rendered markdown) */
+  .release-body h2 {
+    font-size: 16px;
+    color: var(--text-primary);
+    margin: var(--space-md) 0 var(--space-xs);
+  }
+  .release-body h3 {
+    font-size: 14px;
+    color: var(--accent-primary);
+    margin: var(--space-md) 0 var(--space-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .release-body p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-xs);
+  }
+  .release-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-sm);
+  }
+  .release-body li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    padding-left: var(--space-md);
+    position: relative;
+  }
+  .release-body li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    opacity: 0.5;
+  }
+  .release-body strong {
+    color: var(--text-primary);
+  }
+  .release-body a {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+  .release-body a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .releases-content {
+      padding-left: var(--space-md);
+      padding-right: var(--space-md);
+    }
+    .release-card {
+      padding: var(--space-md);
+    }
+  }
+</style>
