@@ -39,16 +39,27 @@
     // Render device pills
     container.innerHTML = devices.map((d: any) => {
       const badges = renderBadges(d.terminalCounts);
+      const totalTerminals = d.terminalCounts
+        ? (d.terminalCounts.attention + d.terminalCounts.busy + d.terminalCounts.planMode + d.terminalCounts.idle)
+        : d.terminalCount || 0;
+      const location = [d.city, d.country].filter(Boolean).join(', ');
+      const meta = [
+        totalTerminals > 0 ? totalTerminals + ' terminal' + (totalTerminals > 1 ? 's' : '') : '',
+        location
+      ].filter(Boolean).join(' · ');
+
       return `<button class="session-device" data-token="${esc(d.token)}">
         <span class="session-dot"></span>
-        <span class="session-name">${esc(d.deviceName)}</span>
-        ${badges}
+        <div class="session-info">
+          <span class="session-name">${esc(d.deviceName)}</span>
+          <span class="session-meta">${meta ? esc(meta) : 'Online'}${badges ? ' ' + badges : ''}</span>
+        </div>
       </button>`;
     }).join('');
 
     // Show bar + adjust page padding
     bar.style.display = '';
-    document.documentElement.style.setProperty('--session-bar-height', '44px');
+    document.documentElement.style.setProperty('--session-bar-height', '56px');
 
     // Click to connect
     container.addEventListener('click', async (e: Event) => {
@@ -108,7 +119,7 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle);
-    height: 44px;
+    height: 56px;
   }
 
   .session-bar-inner {
@@ -131,13 +142,12 @@
   .session-device {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 8px;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 10px;
     border: 1px solid var(--border-subtle);
     background: rgba(255, 255, 255, 0.04);
     color: var(--text-secondary);
-    font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s, border-color 0.15s;
@@ -153,15 +163,30 @@
   }
 
   .session-dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: #22c55e;
     flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+  }
+
+  .session-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   .session-name {
     font-weight: 500;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .session-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.2;
   }
 
   /* Terminal count badges — same colors as go.astro */
@@ -209,8 +234,13 @@
       padding: 0 12px;
     }
     .session-device {
-      padding: 3px 8px;
+      padding: 5px 10px;
+    }
+    .session-name {
       font-size: 12px;
+    }
+    .session-meta {
+      font-size: 10px;
     }
     .session-dashboard-link {
       font-size: 11px;
