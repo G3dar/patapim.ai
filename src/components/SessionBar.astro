@@ -1,0 +1,219 @@
+---
+/**
+ * SessionBar — shows active remote devices below the navbar for signed-in users.
+ * Entirely client-side: works on prerendered pages, hidden for anonymous users.
+ */
+---
+
+<div class="session-bar" id="session-bar" style="display:none;">
+  <div class="session-bar-inner container">
+    <div class="session-devices" id="session-devices"></div>
+    <a href="/go" class="session-dashboard-link">Dashboard &rarr;</a>
+  </div>
+</div>
+
+<script>
+  (async () => {
+    const bar = document.getElementById('session-bar');
+    const container = document.getElementById('session-devices');
+    if (!bar || !container) return;
+
+    // Check auth
+    let authenticated = false;
+    try {
+      const res = await fetch('/api/auth/session');
+      const data = await res.json();
+      authenticated = data.authenticated;
+    } catch { return; }
+    if (!authenticated) return;
+
+    // Fetch devices
+    let devices = [];
+    try {
+      const res = await fetch('/api/device/list');
+      const data = await res.json();
+      devices = (data.devices || []).filter((d: any) => d.status === 'online');
+    } catch { return; }
+    if (devices.length === 0) return;
+
+    // Render device pills
+    container.innerHTML = devices.map((d: any) => {
+      const badges = renderBadges(d.terminalCounts);
+      return `<button class="session-device" data-token="${esc(d.token)}">
+        <span class="session-dot"></span>
+        <span class="session-name">${esc(d.deviceName)}</span>
+        ${badges}
+      </button>`;
+    }).join('');
+
+    // Show bar + adjust page padding
+    bar.style.display = '';
+    document.documentElement.style.setProperty('--session-bar-height', '44px');
+
+    // Click to connect
+    container.addEventListener('click', async (e: Event) => {
+      const btn = (e.target as Element).closest('.session-device') as HTMLElement | null;
+      if (!btn || btn.classList.contains('connecting')) return;
+      btn.classList.add('connecting');
+      btn.style.opacity = '0.5';
+      try {
+        const res = await fetch('/api/device/connect-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceToken: btn.dataset.token }),
+        });
+        const result = await res.json();
+        if (result.connectToken && result.tunnelUrl) {
+          window.location.href =
+            '/remote?t=' + encodeURIComponent(result.connectToken) +
+            '&url=' + encodeURIComponent(result.tunnelUrl) +
+            '&d=' + encodeURIComponent(btn.dataset.token || '') +
+            '&v=' + Date.now();
+          return;
+        }
+      } catch {}
+      btn.classList.remove('connecting');
+      btn.style.opacity = '';
+    });
+
+    function renderBadges(tc: any) {
+      if (!tc) return '';
+      let html = '';
+      if (tc.attention > 0) html += `<span class="sb-badge sb-attention" title="${tc.attention} finished">${tc.attention}</span>`;
+      if (tc.busy > 0) html += `<span class="sb-badge sb-busy" title="${tc.busy} processing">${tc.busy}</span>`;
+      if (tc.planMode > 0) html += `<span class="sb-badge sb-plan" title="${tc.planMode} plan mode">${tc.planMode}</span>`;
+      if (tc.idle > 0) html += `<span class="sb-badge sb-idle" title="${tc.idle} idle">${tc.idle}</span>`;
+      return html;
+    }
+
+    function esc(s: string) {
+      if (!s) return '';
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  })();
+</script>
+
+<style is:global>
+  :root {
+    --session-bar-height: 0px;
+  }
+
+  .session-bar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: rgba(10, 10, 12, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+    height: 44px;
+  }
+
+  .session-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: 12px;
+  }
+
+  .session-devices {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .session-device {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .session-device:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+  }
+  .session-device.connecting {
+    pointer-events: none;
+  }
+
+  .session-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+  }
+
+  .session-name {
+    font-weight: 500;
+  }
+
+  /* Terminal count badges — same colors as go.astro */
+  .sb-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .sb-attention { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+  .sb-busy { background: rgba(239, 68, 68, 0.15); color: #ef4444; animation: sb-pulse 2s ease-in-out infinite; }
+  .sb-plan { background: rgba(17, 168, 205, 0.15); color: #11a8cd; }
+  .sb-idle { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+
+  @keyframes sb-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .session-dashboard-link {
+    color: var(--text-muted);
+    font-size: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .session-dashboard-link:hover {
+    color: var(--accent-primary);
+  }
+
+  /* Push page content down when session bar is visible */
+  main, .hero, .legal-page, .releases-page {
+    padding-top: calc(var(--session-bar-height));
+  }
+
+  @media (max-width: 640px) {
+    .session-bar-inner {
+      padding: 0 12px;
+    }
+    .session-device {
+      padding: 3px 8px;
+      font-size: 12px;
+    }
+    .session-dashboard-link {
+      font-size: 11px;
+    }
+  }
+</style>

@@ -3,6 +3,7 @@ export const prerender = true;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
+import SessionBar from '../components/SessionBar.astro';
 import Footer from '../components/Footer.astro';
 import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
 import en from '../i18n/translations/en';
@@ -17,6 +18,7 @@ const sysReqs = translations.download.sysReqs;
 
 <BaseLayout title={t(locale, 'meta.downloadTitle')} description={t(locale, 'meta.downloadDescription')}>
   <Navbar />
+  <SessionBar />
 
   <main class="download-page">
     <div class="container">
