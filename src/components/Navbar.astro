@@ -17,6 +17,7 @@ const lp = (path: string) => getLocalePath(locale, path);
       <a href={`${lp('/')}#why-patapim`} class="nav-link">{t(locale, 'nav.features')}</a>
       <a href={lp('/docs/getting-started/installation')} class="nav-link">{t(locale, 'nav.docs')}</a>
       <a href={lp('/pricing')} class="nav-link">{t(locale, 'nav.pricing')}</a>
+      <a href={lp('/releases')} class="nav-link">Releases</a>
       <a href={lp('/download')} class="nav-link">{t(locale, 'nav.download')}</a>
     </div>
 
@@ -39,6 +40,7 @@ const lp = (path: string) => getLocalePath(locale, path);
     <a href={`${lp('/')}#why-patapim`}>{t(locale, 'nav.features')}</a>
     <a href={lp('/docs/getting-started/installation')}>{t(locale, 'nav.docs')}</a>
     <a href={lp('/pricing')}>{t(locale, 'nav.pricing')}</a>
+    <a href={lp('/releases')}>Releases</a>
     <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
     <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
     <a href={lp('/go')} class="btn btn-primary" style="margin-top: 8px; justify-content: center;">{t(locale, 'nav.dashboard')}</a>
