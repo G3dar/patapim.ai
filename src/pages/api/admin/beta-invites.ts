@@ -23,7 +23,7 @@ export const GET: APIRoute = async (context) => {
   return new Response(JSON.stringify({
     generated,
     claimed,
-    max: 50,
+    max: null,
     invites,
   }), {
     status: 200,

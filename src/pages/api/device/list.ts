@@ -76,6 +76,7 @@ export const GET: APIRoute = async (context) => {
         ip: d.ip,
         city: d.city,
         country: d.country,
+        platform: d.platform || null,
       };
     })
   );

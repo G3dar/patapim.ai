@@ -3,7 +3,6 @@ import { requireAdmin } from '../../../lib/admin';
 
 export const prerender = false;
 
-const BETA_MAX = 50;
 const CODE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
 const CODE_LEN = 8;
 const EXPIRY_DAYS = 7;
@@ -21,15 +20,8 @@ export const POST: APIRoute = async (context) => {
 
   const kv = env.LICENSES;
 
-  // Check cap
   const generatedRaw = await kv.get('beta:generated');
   const generated = parseInt(generatedRaw || '0', 10) || 0;
-  if (generated >= BETA_MAX) {
-    return new Response(JSON.stringify({ error: `Beta invite cap reached (${BETA_MAX})` }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
 
   // Parse body
   let ref = '';

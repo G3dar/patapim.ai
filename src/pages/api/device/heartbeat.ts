@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -52,6 +52,7 @@ export const POST: APIRoute = async (context) => {
   if (city !== undefined) device.city = city;
   if (country !== undefined) device.country = country;
   if (nameChanged) device.deviceName = incomingName;
+  if (body.platform) device.platform = body.platform;
   await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
 
   // Also update the device name in the user's device list (same pattern as rename.ts)

@@ -1654,9 +1654,9 @@ if (!isAdmin(user)) {
 
       el.innerHTML = `
         <div class="kpi-grid" style="margin-bottom:24px;">
-          <div class="kpi"><div class="kpi-label">Generated</div><div class="kpi-value">${data.generated}</div><div class="kpi-sub">of ${data.max} max</div></div>
+          <div class="kpi"><div class="kpi-label">Generated</div><div class="kpi-value">${data.generated}</div></div>
           <div class="kpi"><div class="kpi-label">Claimed</div><div class="kpi-value">${data.claimed}</div></div>
-          <div class="kpi"><div class="kpi-label">Remaining</div><div class="kpi-value">${data.max - data.generated}</div></div>
+          <div class="kpi"><div class="kpi-label">Unclaimed</div><div class="kpi-value">${data.generated - data.claimed}</div></div>
         </div>
 
         ${!data.invites.length ? '<div class="no-data">No beta invites yet.</div>' : `
