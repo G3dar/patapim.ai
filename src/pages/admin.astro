@@ -63,8 +63,15 @@ if (!isAdmin(user)) {
 
       <!-- Overview -->
       <section class="pane" id="tab-overview">
-        <div class="loader" id="overview-loading">Loading...</div>
-        <div id="overview-content" style="display:none;"></div>
+        <div class="overview-layout">
+          <div class="overview-main">
+            <div class="loader" id="overview-loading">Loading...</div>
+            <div id="overview-content" style="display:none;"></div>
+          </div>
+          <aside class="online-sidebar" id="online-sidebar">
+            <div class="sidebar-loader">Loading users...</div>
+          </aside>
+        </div>
       </section>
 
       <!-- Users -->
@@ -184,7 +191,7 @@ if (!isAdmin(user)) {
   }
 
   .topbar-inner {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 0 24px;
     height: 56px;
@@ -264,7 +271,7 @@ if (!isAdmin(user)) {
   }
 
   .admin-container {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
   }
 
@@ -1061,6 +1068,208 @@ if (!isAdmin(user)) {
   .badge-expired { background: var(--red-100); color: var(--red-600); }
   .badge-claimed { background: var(--green-100); color: var(--green-700); }
 
+  /* ── Overview Layout ────────────────────── */
+  .overview-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .overview-main {
+    min-width: 0;
+  }
+
+  /* ── Online Sidebar (ICQ-style) ────────── */
+  .online-sidebar {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    color: #e0e0e0;
+    font-size: 13px;
+  }
+
+  .online-sidebar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .online-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .online-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .sidebar-loader {
+    text-align: center;
+    padding: 32px 16px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+  }
+
+  .sidebar-header {
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .sidebar-header-icon {
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .sidebar-header-text {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .sidebar-header-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    background: #22c55e;
+    color: #000;
+    padding: 1px 7px;
+    border-radius: 100px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .sidebar-section {
+    padding: 8px 0;
+  }
+
+  .sidebar-section-label {
+    padding: 4px 16px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 12px;
+  }
+
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    transition: background 150ms;
+    cursor: default;
+    position: relative;
+  }
+
+  .sidebar-user:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .sidebar-user-avatar {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-avatar img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: block;
+  }
+
+  .sidebar-user-avatar .avatar-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .sidebar-status-dot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #1a1a2e;
+  }
+
+  .sidebar-status-dot.online {
+    background: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  }
+
+  .sidebar-status-dot.offline {
+    background: #6b7280;
+  }
+
+  .sidebar-user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .sidebar-user-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e8e8e8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-user-detail {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--mono);
+  }
+
+  .sidebar-user-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+  }
+
+  .sidebar-empty {
+    padding: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.25);
+    font-style: italic;
+  }
+
   /* ── Responsive ────────────────────────── */
   @media (max-width: 900px) {
     .kpi-grid {
@@ -1069,6 +1278,16 @@ if (!isAdmin(user)) {
 
     .map-top-countries {
       grid-template-columns: 1fr;
+    }
+
+    .overview-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .online-sidebar {
+      position: static;
+      max-height: 400px;
+      order: -1;
     }
   }
 
@@ -1122,7 +1341,7 @@ if (!isAdmin(user)) {
     document.querySelectorAll('.pane').forEach(c => (c as HTMLElement).style.display = c.id === `tab-${tab}` ? 'block' : 'none');
     if (!loaded[tab]) {
       loaded[tab] = true;
-      if (tab === 'overview') loadOverview();
+      if (tab === 'overview') { loadOverview(); loadOnlineSidebar(); }
       else if (tab === 'users') loadUsers();
       else if (tab === 'referrals') loadReferrals();
       else if (tab === 'beta') loadBeta();
@@ -1234,6 +1453,80 @@ if (!isAdmin(user)) {
       }
     } catch {
       document.getElementById('overview-loading')!.textContent = 'Failed to load stats.';
+    }
+  }
+
+  // ── Online Sidebar ──
+  async function loadOnlineSidebar() {
+    const sidebar = document.getElementById('online-sidebar')!;
+    try {
+      const res = await fetch('/api/admin/online');
+      const data = await res.json();
+
+      function timeAgo(iso: string): string {
+        const diff = Date.now() - new Date(iso).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'now';
+        if (mins < 60) return `${mins}m`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h`;
+        const days = Math.floor(hrs / 24);
+        return `${days}d`;
+      }
+
+      function userAvatar(u: { ownerPicture: string; ownerName: string; ownerEmail: string }) {
+        if (u.ownerPicture) {
+          return `<img src="${esc(u.ownerPicture)}" alt="" referrerpolicy="no-referrer" />`;
+        }
+        const letter = (u.ownerName || u.ownerEmail || '?')[0].toUpperCase();
+        return `<span class="avatar-letter">${letter}</span>`;
+      }
+
+      function userRow(u: any, isOnline: boolean) {
+        const name = u.ownerName || u.ownerEmail?.split('@')[0] || 'Unknown';
+        const location = [u.city, u.country].filter(Boolean).join(', ');
+        const detail = location || u.deviceName || u.platform || '';
+        return `
+          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}">
+            <div class="sidebar-user-avatar">
+              ${userAvatar(u)}
+              <span class="sidebar-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+            </div>
+            <div class="sidebar-user-info">
+              <span class="sidebar-user-name">${esc(name)}</span>
+              <span class="sidebar-user-detail">${esc(detail)}</span>
+            </div>
+            <span class="sidebar-user-time">${timeAgo(u.lastSeen)}</span>
+          </div>
+        `;
+      }
+
+      const onlineHtml = data.online.length
+        ? data.online.map((u: any) => userRow(u, true)).join('')
+        : '<div class="sidebar-empty">No users online</div>';
+
+      const recentHtml = data.recent.length
+        ? data.recent.map((u: any) => userRow(u, false)).join('')
+        : '<div class="sidebar-empty">No recent activity</div>';
+
+      sidebar.innerHTML = `
+        <div class="sidebar-header">
+          <span class="sidebar-header-icon">&#x26A1;</span>
+          <span class="sidebar-header-text">Online Users</span>
+          <span class="sidebar-header-count">${data.online.length}</span>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Online Now</div>
+          ${onlineHtml}
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Recently Connected</div>
+          ${recentHtml}
+        </div>
+      `;
+    } catch {
+      sidebar.innerHTML = '<div class="sidebar-loader">Failed to load</div>';
     }
   }
 
