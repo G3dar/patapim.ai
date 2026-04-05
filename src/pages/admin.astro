@@ -1486,10 +1486,13 @@ if (!isAdmin(user)) {
         const name = u.ownerName || u.ownerEmail?.split('@')[0] || 'Unknown';
         const location = [u.city, u.country].filter(Boolean).join(', ');
         const detail = location || u.deviceName || u.platform || '';
-        const promptTime = u.lastPrompt || u.lastSeen;
-        const promptLabel = u.lastPrompt ? timeAgo(u.lastPrompt) : '\u2014';
+        const hasPrompt = !!u.lastPrompt;
+        const promptLabel = hasPrompt ? timeAgo(u.lastPrompt) : (u.lastSeen ? timeAgo(u.lastSeen) : '\u2014');
+        const timeTooltip = hasPrompt
+          ? 'Last prompt: ' + new Date(u.lastPrompt).toLocaleString()
+          : (u.lastSeen ? 'Last online: ' + new Date(u.lastSeen).toLocaleString() : '');
         return `
-          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}${u.lastPrompt ? '&#10;Last prompt: ' + new Date(u.lastPrompt).toLocaleString() : ''}">
+          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}${timeTooltip ? '&#10;' + timeTooltip : ''}">
             <div class="sidebar-user-avatar">
               ${userAvatar(u)}
               <span class="sidebar-status-dot ${isOnline ? 'online' : 'offline'}"></span>
@@ -1498,7 +1501,7 @@ if (!isAdmin(user)) {
               <span class="sidebar-user-name">${esc(name)}</span>
               <span class="sidebar-user-detail">${esc(detail)}</span>
             </div>
-            <span class="sidebar-user-time">${promptLabel}</span>
+            <span class="sidebar-user-time" ${!hasPrompt ? 'style="opacity:0.5"' : ''}>${hasPrompt ? '&#x25B8; ' : ''}${promptLabel}</span>
           </div>
         `;
       }
