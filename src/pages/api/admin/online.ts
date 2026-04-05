@@ -34,6 +34,7 @@ export const GET: APIRoute = async (context) => {
   type DeviceEntry = {
     deviceName: string;
     lastSeen: string;
+    lastPrompt: string;
     online: boolean;
     city: string;
     country: string;
@@ -51,6 +52,7 @@ export const GET: APIRoute = async (context) => {
     allDevices.push({
       deviceName: d.deviceName || 'Unknown',
       lastSeen: d.lastSeen,
+      lastPrompt: d.lastPrompt || '',
       online: (now - new Date(d.lastSeen).getTime()) < ONLINE_THRESHOLD_MS,
       city: d.city || '',
       country: d.country || '',
@@ -62,8 +64,12 @@ export const GET: APIRoute = async (context) => {
     });
   }
 
-  // Sort by lastSeen descending
-  allDevices.sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
+  // Sort by lastPrompt (most recent first), fall back to lastSeen
+  allDevices.sort((a, b) => {
+    const aTime = new Date(a.lastPrompt || a.lastSeen).getTime();
+    const bTime = new Date(b.lastPrompt || b.lastSeen).getTime();
+    return bTime - aTime;
+  });
 
   // Split into online and recent (last 30 unique users who aren't currently online)
   const onlineDevices = allDevices.filter(d => d.online);
