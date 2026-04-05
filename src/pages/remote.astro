@@ -646,6 +646,28 @@ Astro.response.headers.set('Expires', '0');
       border-color: var(--border);
     }
 
+    .tab-add-ai {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
+      color: var(--success);
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      background: none;
+      font-family: inherit;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tab-add-ai:hover {
+      background: rgba(124, 179, 130, 0.15);
+      border-color: var(--success);
+    }
+
     /* Terminal area (non-scrolling wrapper for overlay) */
     .terminal-area {
       position: relative;
@@ -1393,6 +1415,7 @@ Astro.response.headers.set('Expires', '0');
     let isPlanMode = false;
     let isCompactView = false;
     let selectMode = false;
+    let pendingAIStart = false;
 
     // ---- DEBUG OVERLAY ----
     const dbgPanel = document.getElementById('dbg-panel');
@@ -1919,12 +1942,13 @@ Astro.response.headers.set('Expires', '0');
       // Track scroll position
       term.onScroll(updateScrollButton);
       term.onRender(() => {
-        scrollToCursorX();
-        setTimeout(updateScrollButton, 50);
-        // Snap horizontal scroll back to where user left it (or 0) if xterm auto-scrolled
+        // Snap horizontal scroll back to 0 if xterm auto-scrolled and user didn't touch-scroll
         if (!userScrolledH && terminalWrap.scrollLeft > 0) {
           terminalWrap.scrollLeft = 0;
         }
+        // Then scroll to keep the cursor visible (must run AFTER snap-back)
+        scrollToCursorX();
+        setTimeout(updateScrollButton, 50);
       });
 
       const viewport = terminalWrap.querySelector('.xterm-viewport');
@@ -2417,6 +2441,26 @@ Astro.response.headers.set('Expires', '0');
             // Re-fetch terminals after successful command
             ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
+
+            if (msg.command === 'new_terminal' && pendingAIStart) {
+              pendingAIStart = false;
+              const newTermId = msg.terminalId || currentTerminalId;
+              setTimeout(() => {
+                const aiCommands = {
+                  claude: 'claude --dangerously-skip-permissions',
+                  gemini: 'gemini --yolo',
+                  codex: 'codex --dangerously-bypass-approvals-and-sandbox',
+                };
+                const selectedAI = localStorage.getItem('patapim-remote-last-ai') || 'claude';
+                const cmd = aiCommands[selectedAI] || aiCommands.claude;
+                const targetId = newTermId || currentTerminalId;
+                if (ws && ws.readyState === WebSocket.OPEN && targetId) {
+                  ws.send(JSON.stringify({ type: 'input', terminalId: targetId, data: cmd + '\r' }));
+                }
+                const aiNames = { claude: 'Claude Code', gemini: 'Gemini', codex: 'Codex' };
+                showToast((aiNames[selectedAI] || 'AI') + ' starting...');
+              }, 800);
+            }
           }
           break;
 
@@ -2696,6 +2740,22 @@ Astro.response.headers.set('Expires', '0');
         });
         tabsEl.appendChild(addBtn);
       }
+
+      // Ensure AI + button exists (creates terminal + starts selected LLM)
+      if (!tabsEl.querySelector('.tab-add-ai')) {
+        const aiBtn = document.createElement('button');
+        aiBtn.className = 'tab-add-ai';
+        aiBtn.textContent = '+';
+        aiBtn.title = 'New AI terminal';
+        aiBtn.addEventListener('click', () => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            pendingAIStart = true;
+            ws.send(JSON.stringify({ type: 'new_terminal' }));
+            showToast('Creating AI terminal...');
+          }
+        });
+        tabsEl.appendChild(aiBtn);
+      }
     }
 
     function highlightTab(id) {
@@ -2752,14 +2812,17 @@ Astro.response.headers.set('Expires', '0');
     }
 
     btnStartClaude.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'claude');
       sendAICommand('claude --dangerously-skip-permissions');
     });
 
     btnStartGemini.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'gemini');
       sendAICommand('gemini --yolo');
     });
 
     btnStartCodex.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'codex');
       sendAICommand('codex --dangerously-bypass-approvals-and-sandbox');
     });
 
