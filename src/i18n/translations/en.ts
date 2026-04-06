@@ -48,8 +48,8 @@ const en = {
   nav: {
     brand: 'patapim',
     features: 'Features',
-    docs: 'Docs',
-    pricing: 'Pricing',
+    docs: 'Documentation',
+    about: 'About',
     download: 'Download',
     signIn: 'Sign In',
     dashboard: 'Dashboard',

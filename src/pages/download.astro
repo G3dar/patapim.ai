@@ -106,6 +106,67 @@ const sysReqs = translations.download.sysReqs;
 
       </div>
 
+      <!-- Plans -->
+      <div class="upgrade-section">
+        <h2 class="upgrade-title">Choose your plan</h2>
+        <div class="upgrade-cards">
+
+          <div class="upgrade-card upgrade-card-featured">
+            <div class="upgrade-card-inner">
+              <h3 class="plan-name">{t(locale, 'pricing.freeTitle')}</h3>
+              <div class="upgrade-price">
+                <span class="upgrade-amount">{t(locale, 'pricing.freePrice')}</span>
+                <span class="upgrade-period">{t(locale, 'pricing.freePeriod')}</span>
+              </div>
+              <p class="plan-desc">{t(locale, 'pricing.freeDesc')}</p>
+              <ul class="plan-features">
+                <li>Up to 9 terminals</li>
+                <li>Up to 3 projects</li>
+                <li>30 min voice dictation</li>
+                <li>Remote access</li>
+              </ul>
+              <span class="plan-tag plan-tag-free">Included with download</span>
+            </div>
+          </div>
+
+          <div class="upgrade-card upgrade-card-pro">
+            <div class="upgrade-card-inner">
+              <h3 class="plan-name">{t(locale, 'pricing.proTitle')}</h3>
+              <div class="upgrade-price">
+                <span class="upgrade-amount">{t(locale, 'pricing.proPrice')}</span>
+                <span class="upgrade-period">{t(locale, 'pricing.proPeriod')}</span>
+              </div>
+              <p class="plan-desc">{t(locale, 'pricing.proDesc')}</p>
+              <ul class="plan-features">
+                <li>Unlimited terminals</li>
+                <li>Unlimited projects</li>
+                <li>Unlimited voice dictation</li>
+                <li>Remote access</li>
+              </ul>
+              <a href="#" class="btn btn-primary upgrade-btn upgrade-btn-pro" id="checkout-monthly">{t(locale, 'common.goPro')}</a>
+            </div>
+          </div>
+
+          <div class="upgrade-card upgrade-card-lifetime">
+            <div class="upgrade-card-inner">
+              <h3 class="plan-name">Lifetime</h3>
+              <div class="upgrade-price">
+                <span class="upgrade-amount">{t(locale, 'pricing.unlockPrice')}</span>
+                <span class="upgrade-period">{t(locale, 'pricing.unlockNote')}</span>
+              </div>
+              <p class="plan-desc">All Pro features, forever. No subscriptions.</p>
+              <ul class="plan-features">
+                <li>Everything in Pro</li>
+                <li>Pay once, own forever</li>
+                <li>All future updates</li>
+              </ul>
+              <a href="#" class="btn btn-primary upgrade-btn upgrade-btn-lifetime" id="checkout-lifetime">{t(locale, 'pricing.unlockButton')}</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Requirements -->
       <div class="requirements section">
         <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">{t(locale, 'download.sysReqTitle')}</h2>
@@ -290,6 +351,189 @@ const sysReqs = translations.download.sysReqs;
     color: var(--success);
   }
 
+  /* Upgrade section */
+  .upgrade-section {
+    max-width: 900px;
+    margin: 0 auto var(--space-3xl);
+    padding-top: var(--space-3xl);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .upgrade-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .upgrade-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-lg);
+  }
+
+  .upgrade-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .upgrade-card-inner {
+    padding: var(--space-2xl) var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+  }
+
+  .plan-name {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+  }
+
+  .upgrade-card-featured {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 40px rgba(212, 165, 116, 0.08);
+  }
+
+  .upgrade-card-featured .plan-name {
+    color: var(--accent-primary);
+  }
+
+  .upgrade-card-pro {
+    border-color: rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 40px rgba(74, 222, 128, 0.06);
+  }
+
+  .upgrade-card-pro .plan-name {
+    color: rgb(74, 222, 128);
+  }
+
+  .upgrade-card-pro .plan-features li::before {
+    color: rgb(74, 222, 128);
+  }
+
+  .upgrade-card-lifetime {
+    border-color: rgba(130, 120, 255, 0.5);
+    box-shadow: 0 0 40px rgba(130, 120, 255, 0.08);
+  }
+
+  .upgrade-card-lifetime .plan-name {
+    color: rgba(170, 160, 255, 0.9);
+  }
+
+  .upgrade-price {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .upgrade-amount {
+    font-size: 36px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  .upgrade-period {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .plan-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 auto;
+    width: 100%;
+    text-align: left;
+    padding-bottom: var(--space-xl);
+  }
+
+  .plan-features li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .plan-features li:last-child {
+    border-bottom: none;
+  }
+
+  .plan-features li::before {
+    content: '✓';
+    color: var(--accent-primary);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .plan-tag {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .plan-tag-free {
+    color: var(--accent-primary);
+    border: 1px solid rgba(212, 165, 116, 0.25);
+    background: rgba(212, 165, 116, 0.08);
+  }
+
+  .upgrade-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .upgrade-btn-pro {
+    background: rgba(74, 222, 128, 0.85);
+    border-color: rgba(74, 222, 128, 0.85);
+    color: #111;
+  }
+
+  .upgrade-btn-pro:hover {
+    background: rgba(74, 222, 128, 1);
+    border-color: rgba(74, 222, 128, 1);
+  }
+
+  .upgrade-btn-lifetime {
+    background: rgba(130, 120, 255, 0.9);
+    border-color: rgba(130, 120, 255, 0.9);
+  }
+
+  .upgrade-btn-lifetime:hover {
+    background: rgba(150, 140, 255, 1);
+    border-color: rgba(150, 140, 255, 1);
+  }
+
+  @media (max-width: 768px) {
+    .upgrade-cards { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+  }
+
   /* Requirements */
   .req-grid {
     display: grid;
@@ -327,6 +571,48 @@ const sysReqs = translations.download.sysReqs;
 </style>
 
 <script>
+  // Checkout
+  async function handleCheckout(plan: 'pro' | 'lifetime') {
+    const btn = document.getElementById(plan === 'pro' ? 'checkout-monthly' : 'checkout-lifetime');
+    if (btn) btn.setAttribute('disabled', '');
+    try {
+      let email: string | undefined;
+      try {
+        const sessionRes = await fetch('/api/auth/session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData.authenticated) email = sessionData.user.email;
+        }
+      } catch {}
+
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, email }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Checkout error:', data.error);
+        if (btn) btn.removeAttribute('disabled');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      if (btn) btn.removeAttribute('disabled');
+    }
+  }
+
+  document.getElementById('checkout-monthly')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleCheckout('pro');
+  });
+
+  document.getElementById('checkout-lifetime')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleCheckout('lifetime');
+  });
+
   // Copy command - clicking anywhere on the line
   document.querySelectorAll<HTMLElement>('[data-dl-copy]').forEach(line => {
     line.addEventListener('click', () => {

@@ -1,0 +1,380 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import SessionBar from '../components/SessionBar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="About | PATAPIM" description="The story behind Patapim, told by the person who built it.">
+  <Navbar />
+  <SessionBar />
+
+  <main class="about-page">
+
+    <!-- Opening -->
+    <section class="about-intro">
+      <div class="container-narrow">
+        <h1 class="intro-headline">Working with AI agents is a new discipline.<br/>It needs a <span class="headline-accent">new kind of tool.</span></h1>
+      </div>
+    </section>
+
+    <!-- The problem & the method -->
+    <section class="about-story">
+      <div class="container-narrow">
+
+        <h3 class="story-subtitle">The concentration problem</h3>
+        <p class="story-text">
+          You give an agent a task. Then you wait. That idle time is where <strong>concentration breaks</strong>. You drift, you check something else, and by the time the agent finishes, you've lost the context you needed. The problem isn't the AI. <strong>Waiting is fundamentally incompatible with staying focused.</strong>
+        </p>
+
+        <h3 class="story-subtitle">Structured multitasking</h3>
+        <p class="story-text">
+          The solution: <strong>don't wait. Launch multiple agents at once.</strong> One works on a migration, another writes tests, another refactors a component. You <em>orchestrate</em>: review what's done, redirect what's off track, launch the next thing. <strong>The agents handle execution. You handle direction.</strong> The bottleneck was never intelligence. It's workflow.
+        </p>
+
+        <h3 class="story-subtitle">Voice over typing</h3>
+        <p class="story-text">
+          Typing forces you to <strong>linearize your thinking before you've finished thinking</strong>. It's slow, unnatural, and it burns energy. Voice lets you think out loud, verbalize the need as it forms. <strong>Removing the friction between thought and instruction</strong> changes everything.
+        </p>
+
+        <h3 class="story-subtitle">Structure over chaos</h3>
+        <p class="story-text">
+          Most LLM workflows are one long, unstructured conversation. No separation between projects, tasks, or contexts. Real work is <strong>folder-based</strong>: every task belongs to a project, every project has its own context. A tool that ignores this is fighting you.
+        </p>
+
+      </div>
+    </section>
+
+    <!-- What Patapim is -->
+    <section class="about-why">
+      <div class="container-narrow">
+        <div class="why-block">
+          <h2>A framework for structured multi-agent work</h2>
+          <p>
+            Patapim is an organizational framework for working with multiple AI agents. Multiple agents side by side, with <strong>instant notifications</strong> when tasks finish. A dashboard showing what's in progress and what's done. <strong>Voice dictation</strong> to think out loud. <strong>Folder-based projects</strong> with persistent context. Session recovery.
+          </p>
+          <div class="why-callout">
+            <p>A <strong>built-in browser</strong> your agents can control directly, all within the same framework. Gmail, WhatsApp, dashboards, web apps. If it runs in a browser, your agents can automate it.</p>
+          </div>
+          <div class="why-callout">
+            <p>Everything runs on your local machine. <strong>Remote access with voice dictation</strong> means you can keep directing your agents from anywhere. Walking, commuting, away from your desk. You dictate from your phone, the agents execute on your computer. You never stop working just because you stepped away.</p>
+          </div>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3DAR -->
+    <section class="about-3dar">
+      <div class="container-narrow">
+        <div class="dar-header">
+          <img src="/german-heller.jpg" alt="German Heller" class="dar-portrait" />
+          <div>
+            <a href="https://3dar.com" target="_blank" rel="noopener" class="dar-logo-link">
+              <img src="/3dar-logo.svg" alt="3DAR logo" class="dar-logo" />
+            </a>
+            <h2 class="section-break-title">About me & 3DAR</h2>
+          </div>
+        </div>
+        <p class="dar-text">
+          I'm the co-founder and CEO of <a href="https://3dar.com" target="_blank" rel="noopener">3DAR</a>, an animation and VFX studio based in Buenos Aires and Santa Monica since 2004. We've worked with Disney, Google, Meta, Sony, Bad Bunny, Colin Farrell, Edward Norton. Premiered at Sundance, won at Venice, got an Emmy nomination. Fast Company named us the #2 most innovative company in Latin America.
+        </p>
+        <p class="dar-text">
+          Patapim came out of that same obsession with making things work better. I built it for myself, and now I'd like to share it with anyone who finds it useful.
+        </p>
+
+        <div class="dar-reel">
+          <video
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+            poster="https://3dar-site.s3.us-east-2.amazonaws.com/versions/covers/960x540/cUS54m4vm66Sn3w2LhHvpWGr8y0X7zSR2X7T8Anv.webp"
+          >
+            <source src="https://player.vimeo.com/progressive_redirect/playback/1123995054/rendition/540p/file.mp4?loc=external&log_user=0&signature=266e47614cbe436f221290d45a418de2c3cfc796e5891dfe9201b9aa19cb0019" type="video/mp4" />
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="about-find-me">
+      <div class="container-narrow">
+        <p class="find-me-text">Find me around the internet:</p>
+        <div class="find-me-links">
+          <a href="https://germanheller.com" target="_blank" rel="noopener">germanheller.com</a>
+          <span class="link-sep">/</span>
+          <a href="https://3dar.com" target="_blank" rel="noopener">3dar.com</a>
+          <span class="link-sep">/</span>
+          <a href="https://linkedin.com/in/german-heller-35500a8" target="_blank" rel="noopener">LinkedIn</a>
+          <span class="link-sep">/</span>
+          <a href="https://imdb.com/name/nm5265626" target="_blank" rel="noopener">IMDb</a>
+        </div>
+        <a href="/download" class="btn btn-primary btn-lg about-download">Download Patapim</a>
+      </div>
+    </section>
+
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .about-page {
+    padding-bottom: var(--space-5xl);
+  }
+
+  .container-narrow {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
+  }
+
+  /* Intro */
+  .about-intro {
+    padding-top: 140px;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .intro-hi {
+    color: var(--accent-primary);
+    font-size: 18px;
+    margin-bottom: var(--space-lg);
+    font-weight: 500;
+  }
+
+  .intro-headline {
+    color: var(--text-primary);
+    font-size: clamp(28px, 5vw, 44px);
+    line-height: 1.2;
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+  }
+
+  .headline-accent {
+    color: var(--accent-primary);
+  }
+
+  /* Story */
+  .about-story {
+    padding-bottom: var(--space-4xl);
+  }
+
+  .story-subtitle {
+    color: var(--accent-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--space-sm);
+    margin-top: var(--space-2xl);
+  }
+
+  .story-subtitle:first-child {
+    margin-top: 0;
+  }
+
+  .story-text {
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1.8;
+    margin-bottom: 0;
+  }
+
+  .story-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .story-text em {
+    color: var(--text-primary);
+    font-style: italic;
+  }
+
+  .section-break-title {
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-xl);
+  }
+
+  /* Why */
+  .about-why {
+    padding: var(--space-4xl) 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .why-block h2 {
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-xl);
+  }
+
+  .why-block p {
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1.8;
+    margin-bottom: var(--space-lg);
+  }
+
+  .why-block p:last-child {
+    margin-bottom: 0;
+  }
+
+  .why-callout {
+    border-left: 3px solid var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: var(--space-lg) var(--space-xl);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin-bottom: var(--space-lg);
+  }
+
+  .why-callout p {
+    color: var(--text-primary);
+    margin-bottom: 0;
+  }
+
+  /* 3DAR Section */
+  .about-3dar {
+    padding: var(--space-4xl) 0;
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .dar-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
+
+  .dar-portrait {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 15%;
+    filter: grayscale(1);
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+
+  .dar-header .section-break-title {
+    margin-bottom: 0;
+  }
+
+  .dar-logo-link {
+    display: block;
+    margin-bottom: var(--space-sm);
+  }
+
+  .dar-logo {
+    width: 110px;
+    height: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+  }
+
+  .dar-logo-link:hover .dar-logo {
+    opacity: 1;
+  }
+
+  .dar-text {
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1.8;
+    margin-bottom: var(--space-lg);
+  }
+
+  .dar-text a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--transition-fast);
+  }
+
+  .dar-text a:hover {
+    border-bottom-color: var(--accent-primary);
+  }
+
+  .dar-reel {
+    margin-top: var(--space-2xl);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .dar-reel video {
+    width: 100%;
+    display: block;
+  }
+
+  /* Find Me */
+  .about-find-me {
+    padding: var(--space-3xl) 0 var(--space-4xl);
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .find-me-text {
+    color: var(--text-tertiary);
+    font-size: 15px;
+    margin-bottom: var(--space-lg);
+  }
+
+  .find-me-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .find-me-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 15px;
+    transition: color var(--transition-fast);
+  }
+
+  .find-me-links a:hover {
+    color: var(--accent-primary);
+  }
+
+  .link-sep {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .about-download {
+    display: inline-flex;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .about-intro {
+      padding-top: 120px;
+    }
+
+    .intro-headline br {
+      display: none;
+    }
+
+    .find-me-links {
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .link-sep {
+      display: none;
+    }
+  }
+</style>

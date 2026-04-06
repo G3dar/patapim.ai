@@ -16,12 +16,14 @@ const lp = (path: string) => getLocalePath(locale, path);
 
 const sidebarTitles: Record<string, Record<string, string>> = {
   en: {
+    releaseNotes: 'Release Notes',
     gettingStarted: 'Getting Started',
     coreConcepts: 'Core Concepts',
     features: 'Features',
     reference: 'Reference',
   },
   ja: {
+    releaseNotes: 'リリースノート',
     gettingStarted: 'はじめに',
     coreConcepts: 'コアコンセプト',
     features: '機能',
@@ -32,6 +34,9 @@ const titles = sidebarTitles[locale] || sidebarTitles.en;
 
 const sidebarLinks: Record<string, Record<string, Record<string, string>>> = {
   en: {
+    releaseNotes: {
+      'releases': 'All Releases',
+    },
     gettingStarted: {
       'getting-started/installation': 'Installation',
       'getting-started/quick-start': 'Quick Start',
@@ -67,6 +72,9 @@ const sidebarLinks: Record<string, Record<string, Record<string, string>>> = {
     },
   },
   ja: {
+    releaseNotes: {
+      'releases': '全リリース',
+    },
     gettingStarted: {
       'getting-started/installation': 'インストール',
       'getting-started/quick-start': 'クイックスタート',

@@ -37,16 +37,7 @@ On macOS, you may need to right-click and select "Open" the first time to bypass
 
 ## Install from Source
 
-For development or if you prefer building from source:
-
-```bash
-git clone https://github.com/G3dar/patapim.git
-cd patapim
-npm install
-npm start
-```
-
-Requires Node.js 18+ and Git. On macOS, you may also need Xcode command line tools (`xcode-select --install`).
+Source builds are not currently available. Please use the download page or Homebrew to install PATAPIM.
 
 ## Verify Installation
 

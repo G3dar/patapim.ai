@@ -37,14 +37,7 @@ macOSでは初回起動時に右クリックして「開く」を選択する必
 
 ## ソースからインストール
 
-```bash
-git clone https://github.com/G3dar/patapim.git
-cd patapim
-npm install
-npm start
-```
-
-Node.js 18+とGitが必要です。macOSではXcodeコマンドラインツール（`xcode-select --install`）も必要な場合があります。
+ソースビルドは現在利用できません。ダウンロードページまたはHomebrewを使用してPATAPIMをインストールしてください。
 
 ## インストール確認
 

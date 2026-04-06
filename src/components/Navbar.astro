@@ -15,10 +15,9 @@ const lp = (path: string) => getLocalePath(locale, path);
 
     <div class="navbar-links">
       <a href={`${lp('/')}#why-patapim`} class="nav-link">{t(locale, 'nav.features')}</a>
-      <a href={lp('/docs/getting-started/installation')} class="nav-link">{t(locale, 'nav.docs')}</a>
-      <a href={lp('/pricing')} class="nav-link">{t(locale, 'nav.pricing')}</a>
-      <a href={lp('/releases')} class="nav-link">Releases</a>
       <a href={lp('/download')} class="nav-link">{t(locale, 'nav.download')}</a>
+      <a href={lp('/docs/releases')} class="nav-link">{t(locale, 'nav.docs')}</a>
+      <a href={lp('/about')} class="nav-link">{t(locale, 'nav.about')}</a>
     </div>
 
     <div class="navbar-actions">
@@ -38,10 +37,9 @@ const lp = (path: string) => getLocalePath(locale, path);
   <div class="mobile-menu" id="mobile-menu">
     <div class="mobile-lang-row"><LanguageSwitcher /></div>
     <a href={`${lp('/')}#why-patapim`}>{t(locale, 'nav.features')}</a>
-    <a href={lp('/docs/getting-started/installation')}>{t(locale, 'nav.docs')}</a>
-    <a href={lp('/pricing')}>{t(locale, 'nav.pricing')}</a>
-    <a href={lp('/releases')}>Releases</a>
     <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
+    <a href={lp('/docs/releases')}>{t(locale, 'nav.docs')}</a>
+    <a href={lp('/about')}>{t(locale, 'nav.about')}</a>
     <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
     <a href={lp('/go')} class="btn btn-primary" style="margin-top: 8px; justify-content: center;">{t(locale, 'nav.dashboard')}</a>
   </div>

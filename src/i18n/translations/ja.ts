@@ -49,12 +49,12 @@ const ja: typeof en = {
   },
   nav: {
     brand: 'patapim',
-    features: '\u6A5F\u80FD',
-    docs: '\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8',
-    pricing: '\u6599\u91D1',
-    download: '\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
-    signIn: '\u30B5\u30A4\u30F3\u30A4\u30F3',
-    dashboard: '\u30C0\u30C3\u30B7\u30E5\u30DC\u30FC\u30C9',
+    features: '機能',
+    docs: 'ドキュメント',
+    about: 'アバウト',
+    download: 'ダウンロード',
+    signIn: 'サインイン',
+    dashboard: 'ダッシュボード',
   },
   footer: {
     tagline: '\u7121\u6599\u306EAI\u81EA\u52D5\u5316\u3002\u3042\u306A\u305F\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u3001\u3042\u306A\u305F\u306E\u30D6\u30E9\u30A6\u30B6\u3001\u3042\u306A\u305F\u306E\u30DE\u30B7\u30F3\u3002',
