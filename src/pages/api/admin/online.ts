@@ -43,6 +43,8 @@ export const GET: APIRoute = async (context) => {
     ownerEmail: string;
     ownerPicture: string;
     ownerGoogleId: string;
+    ownerPlan: string;
+    ownerCreatedAt: string;
   };
 
   const allDevices: DeviceEntry[] = [];
@@ -61,6 +63,8 @@ export const GET: APIRoute = async (context) => {
       ownerEmail: owner?.email || d.email || '',
       ownerPicture: owner?.picture || '',
       ownerGoogleId: d.googleId || '',
+      ownerPlan: owner?.plan || '',
+      ownerCreatedAt: owner?.createdAt || '',
     });
   }
 

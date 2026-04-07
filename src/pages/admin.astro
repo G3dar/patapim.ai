@@ -884,6 +884,59 @@ if (!isAdmin(user)) {
     margin-bottom: 28px;
   }
 
+  .geo-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 0;
+    flex-wrap: wrap;
+  }
+
+  .geo-filter-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--white);
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .geo-filter-btn:hover {
+    border-color: var(--blue-400);
+    color: var(--blue-600);
+  }
+
+  .geo-filter-btn.active {
+    background: var(--blue-600);
+    color: var(--white);
+    border-color: var(--blue-600);
+  }
+
+  .geo-filter-sep {
+    color: var(--gray-300);
+    margin: 0 4px;
+  }
+
+  .geo-filter-date-label {
+    font-size: 12px;
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .geo-date-input {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--white);
+    color: var(--gray-700);
+  }
+
   .map-container {
     position: relative;
     width: 100%;
@@ -1244,6 +1297,31 @@ if (!isAdmin(user)) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .sidebar-plan-tag {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    line-height: 14px;
+  }
+
+  .sidebar-plan-tag.pro {
+    background: rgba(168, 85, 247, 0.25);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+  }
+
+  .sidebar-plan-tag.lifetime {
+    background: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.3);
   }
 
   .sidebar-user-detail {
@@ -1425,6 +1503,16 @@ if (!isAdmin(user)) {
         ${s.downloads.geo && Object.keys(s.downloads.geo).length > 0 ? `
         <div class="map-section">
           <div class="section-heading">Downloads by Country</div>
+          <div class="geo-filters">
+            <button class="geo-filter-btn active" data-range="all">All Time</button>
+            <button class="geo-filter-btn" data-range="today">Today</button>
+            <button class="geo-filter-btn" data-range="7d">Last 7 Days</button>
+            <button class="geo-filter-btn" data-range="30d">Last 30 Days</button>
+            <span class="geo-filter-sep">|</span>
+            <label class="geo-filter-date-label">From <input type="date" id="geo-from" class="geo-date-input" /></label>
+            <label class="geo-filter-date-label">To <input type="date" id="geo-to" class="geo-date-input" /></label>
+            <button class="geo-filter-btn" id="geo-custom-apply">Apply</button>
+          </div>
           <div class="chart-wrap">
             <div class="map-container" id="geo-map"></div>
             <div id="map-legend"></div>
@@ -1450,6 +1538,7 @@ if (!isAdmin(user)) {
         buildGeoMap(s.downloads.geo);
         buildTopCountries(s.downloads.geo);
         buildMapLegend(s.downloads.geo);
+        initGeoFilters(s.downloads.geo);
       }
     } catch {
       document.getElementById('overview-loading')!.textContent = 'Failed to load stats.';
@@ -1482,6 +1571,24 @@ if (!isAdmin(user)) {
         return `<span class="avatar-letter">${letter}</span>`;
       }
 
+      function joinedAgo(iso: string): string {
+        if (!iso) return '';
+        const diff = Date.now() - new Date(iso).getTime();
+        const days = Math.floor(diff / 86400000);
+        if (days < 1) return 'Joined today';
+        if (days === 1) return 'Joined 1 day ago';
+        if (days < 30) return `Joined ${days} days ago`;
+        const months = Math.floor(days / 30);
+        if (months === 1) return 'Joined 1 month ago';
+        return `Joined ${months} months ago`;
+      }
+
+      function planTag(plan: string) {
+        if (plan === 'lifetime') return '<span class="sidebar-plan-tag lifetime">LIFETIME</span>';
+        if (plan === 'pro') return '<span class="sidebar-plan-tag pro">PRO</span>';
+        return '';
+      }
+
       function userRow(u: any, isOnline: boolean) {
         const name = u.ownerName || u.ownerEmail?.split('@')[0] || 'Unknown';
         const location = [u.city, u.country].filter(Boolean).join(', ');
@@ -1491,14 +1598,15 @@ if (!isAdmin(user)) {
         const timeTooltip = hasPrompt
           ? 'Last prompt: ' + new Date(u.lastPrompt).toLocaleString()
           : (u.lastSeen ? 'Last online: ' + new Date(u.lastSeen).toLocaleString() : '');
+        const joined = joinedAgo(u.ownerCreatedAt);
         return `
-          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}${timeTooltip ? '&#10;' + timeTooltip : ''}">
+          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}${timeTooltip ? '&#10;' + timeTooltip : ''}${joined ? '&#10;' + joined : ''}">
             <div class="sidebar-user-avatar">
               ${userAvatar(u)}
               <span class="sidebar-status-dot ${isOnline ? 'online' : 'offline'}"></span>
             </div>
             <div class="sidebar-user-info">
-              <span class="sidebar-user-name">${esc(name)}</span>
+              <span class="sidebar-user-name">${esc(name)}${planTag(u.ownerPlan)}</span>
               <span class="sidebar-user-detail">${esc(detail)}</span>
             </div>
             <span class="sidebar-user-time" ${!hasPrompt ? 'style="opacity:0.5"' : ''}>${hasPrompt ? '&#x25B8; ' : ''}${promptLabel}</span>
@@ -1652,6 +1760,64 @@ if (!isAdmin(user)) {
         <span class="map-legend-label">${max}</span>
       </div>
     `;
+  }
+
+  async function refreshGeoMap(from?: string, to?: string) {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString();
+    try {
+      const res = await fetch('/api/admin/geo-downloads' + (qs ? '?' + qs : ''));
+      const data = await res.json();
+      const geo: Record<string, number> = data.geo || {};
+      buildGeoMap(geo);
+      buildTopCountries(geo);
+      buildMapLegend(geo);
+    } catch { /* ignore */ }
+  }
+
+  function initGeoFilters(allTimeGeo: Record<string, number>) {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.geo-filter-btn[data-range]');
+    const fromInput = document.getElementById('geo-from') as HTMLInputElement;
+    const toInput = document.getElementById('geo-to') as HTMLInputElement;
+    const applyBtn = document.getElementById('geo-custom-apply') as HTMLButtonElement;
+
+    function setActive(btn: HTMLButtonElement) {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function dateStr(daysAgo: number): string {
+      const d = new Date(Date.now() - daysAgo * 86400000);
+      return d.toISOString().slice(0, 10);
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setActive(btn);
+        fromInput.value = '';
+        toInput.value = '';
+        const range = btn.dataset.range;
+        if (range === 'all') {
+          // Use the already-loaded all-time data
+          buildGeoMap(allTimeGeo);
+          buildTopCountries(allTimeGeo);
+          buildMapLegend(allTimeGeo);
+        } else if (range === 'today') {
+          refreshGeoMap(dateStr(0), dateStr(0));
+        } else if (range === '7d') {
+          refreshGeoMap(dateStr(6));
+        } else if (range === '30d') {
+          refreshGeoMap(dateStr(29));
+        }
+      });
+    });
+
+    applyBtn?.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      refreshGeoMap(fromInput.value || undefined, toInput.value || undefined);
+    });
   }
 
   function buildBreakdown(bd: Record<string, number>) {

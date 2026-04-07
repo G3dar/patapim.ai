@@ -45,14 +45,16 @@ export async function GET(ctx: APIContext) {
       ];
       if (country && country.length === 2) {
         reads.push(kv.get(`stats:downloads:geo:${country}`));
+        reads.push(kv.get(`stats:downloads:geo:${country}:${today}`));
       }
-      const [totalRaw, dailyRaw, geoRaw] = await Promise.all(reads);
+      const [totalRaw, dailyRaw, geoRaw, geoDailyRaw] = await Promise.all(reads);
       const puts: Promise<void>[] = [
         kv.put('stats:downloads:total', String((parseInt(totalRaw || '0', 10) || 0) + 1)),
         kv.put(`stats:downloads:${today}`, String((parseInt(dailyRaw || '0', 10) || 0) + 1)),
       ];
       if (country && country.length === 2) {
         puts.push(kv.put(`stats:downloads:geo:${country}`, String((parseInt(geoRaw || '0', 10) || 0) + 1)));
+        puts.push(kv.put(`stats:downloads:geo:${country}:${today}`, String((parseInt(geoDailyRaw || '0', 10) || 0) + 1)));
       }
       await Promise.all(puts);
     } catch {
