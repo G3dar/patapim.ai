@@ -633,7 +633,7 @@ Astro.response.headers.set('Expires', '0');
       color: var(--text-muted);
       cursor: pointer;
       border-radius: 4px;
-      border: 1px solid transparent;
+      border: 1px solid var(--border);
       background: none;
       font-family: inherit;
       transition: all 0.15s;
@@ -643,7 +643,7 @@ Astro.response.headers.set('Expires', '0');
     .tab-add:hover {
       color: var(--text);
       background: var(--bg-elevated);
-      border-color: var(--border);
+      border-color: var(--text-dim);
     }
 
     .tab-add-ai {
@@ -656,7 +656,7 @@ Astro.response.headers.set('Expires', '0');
       color: var(--success);
       cursor: pointer;
       border-radius: 4px;
-      border: 1px solid transparent;
+      border: 1px solid var(--success);
       background: none;
       font-family: inherit;
       transition: all 0.15s;
@@ -665,7 +665,6 @@ Astro.response.headers.set('Expires', '0');
 
     .tab-add-ai:hover {
       background: rgba(124, 179, 130, 0.15);
-      border-color: var(--success);
     }
 
     /* Terminal area (non-scrolling wrapper for overlay) */
@@ -698,7 +697,7 @@ Astro.response.headers.set('Expires', '0');
 
     @media (pointer: coarse) {
       .terminal-wrap {
-        overflow-x: auto;
+        overflow-x: hidden;
         overflow-y: hidden;
         -webkit-overflow-scrolling: auto;
       }
@@ -1173,7 +1172,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r31</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r46</span></a>
         <span id="topbar-project"></span>
         <span id="dbg-state" style="display:none;font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
       </div>
@@ -1448,7 +1447,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r31  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r46  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -1687,24 +1686,25 @@ Astro.response.headers.set('Expires', '0');
     }
 
     let isUserTouchScrolling = false;
+    let userIsTyping = false;
+    let typingTimer = null;
 
-    function scrollToCursorX() {
-      if (!isMobileResizeMode() || !term || isUserTouchScrolling) return;
-      const cellWidth = getCellWidth();
-      if (!cellWidth) return;
+    // Horizontal offset via CSS transform
+    let hOffset = 0;
 
-      const cursorX = term.buffer.active.cursorX;
-      const cursorRight = (cursorX + 1) * cellWidth;
-      const cursorLeft = cursorX * cellWidth;
-      const viewLeft = terminalWrap.scrollLeft;
-      const viewRight = viewLeft + terminalWrap.clientWidth;
-      const margin = cellWidth * 2;
+    function markTyping() {
+      userIsTyping = true;
+      if (typingTimer) clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        userIsTyping = false;
+        setHOffset(0);
+      }, 2000);
+    }
 
-      if (cursorRight + margin > viewRight) {
-        terminalWrap.scrollLeft = cursorRight + margin - terminalWrap.clientWidth;
-      } else if (cursorLeft - margin < viewLeft && viewLeft > 0) {
-        terminalWrap.scrollLeft = Math.max(0, cursorLeft - margin);
-      }
+    function setHOffset(px) {
+      hOffset = px;
+      const xtermEl = terminalWrap.querySelector('.xterm');
+      if (xtermEl) xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
     }
 
     function isClientFocused() {
@@ -1906,6 +1906,14 @@ Astro.response.headers.set('Expires', '0');
           terminalId: currentTerminalId,
           data: sendData,
         }));
+        // Enter/Return → reset to left immediately
+        if (sendData === '\r' || sendData === '\n') {
+          setHOffset(0);
+          userIsTyping = false;
+          if (typingTimer) clearTimeout(typingTimer);
+        } else {
+          markTyping();
+        }
       });
 
       const updateScrollButton = () => {
@@ -1930,24 +1938,26 @@ Astro.response.headers.set('Expires', '0');
         }
       };
 
-      // Prevent xterm from auto-scrolling horizontally when user hasn't scrolled
-      let userScrolledH = false;
-      let userScrollHTimer = null;
-      const markUserHScroll = () => {
-        userScrolledH = true;
-        if (userScrollHTimer) clearTimeout(userScrollHTimer);
-        userScrollHTimer = setTimeout(() => { userScrolledH = false; }, 800);
-      };
-
       // Track scroll position
       term.onScroll(updateScrollButton);
       term.onRender(() => {
-        // Snap horizontal scroll back to 0 if xterm auto-scrolled and user didn't touch-scroll
-        if (!userScrolledH && terminalWrap.scrollLeft > 0) {
-          terminalWrap.scrollLeft = 0;
+        // Kill any browser/xterm auto-scroll
+        if (terminalWrap.scrollLeft !== 0) terminalWrap.scrollLeft = 0;
+        const vp = terminalWrap.querySelector('.xterm-viewport');
+        if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
+
+        // Auto-scroll: only when typing, only when cursor is visually between 3/5 and 4/5
+        if (userIsTyping && isMobileResizeMode()) {
+          const cellWidth = getCellWidth();
+          if (cellWidth) {
+            const cursorPx = term.buffer.active.cursorX * cellWidth;
+            const visualPos = cursorPx - hOffset;
+            const vw = terminalWrap.clientWidth;
+            if (visualPos > vw * 0.6 && visualPos < vw * 0.8) {
+              setHOffset(Math.max(0, cursorPx - vw * 0.33));
+            }
+          }
         }
-        // Then scroll to keep the cursor visible (must run AFTER snap-back)
-        scrollToCursorX();
         setTimeout(updateScrollButton, 50);
       });
 
@@ -1956,6 +1966,8 @@ Astro.response.headers.set('Expires', '0');
         viewport.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
       }
       terminalWrap.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
+
+      // overflow-x: hidden prevents xterm auto-scroll. Touch-drag uses transform.
 
       terminalWrap.addEventListener('click', () => {
         term.focus();
@@ -2043,11 +2055,10 @@ Astro.response.headers.set('Expires', '0');
               cancelLongPress();
             }
           }
-          // Manually apply horizontal scroll so it works even during vertical scroll
+          // Manually apply horizontal scroll via transform
           const hDelta = lastTouchX - t.clientX;
           if (Math.abs(hDelta) > 1) {
-            markUserHScroll();
-            terminalWrap.scrollLeft += hDelta;
+            setHOffset(Math.max(0, hOffset + hDelta));
             isUserTouchScrolling = true;
           }
           lastTouchX = t.clientX;
@@ -2723,25 +2734,11 @@ Astro.response.headers.set('Expires', '0');
           existing[t.id].className = newClass;
         } else {
           const tab = makeTabEl(t);
-          tabsEl.insertBefore(tab, addBtn || null);
+          tabsEl.insertBefore(tab, tabsEl.querySelector('.tab-add-ai') || addBtn || null);
         }
       });
 
-      // Ensure + button exists
-      if (!addBtn) {
-        addBtn = document.createElement('button');
-        addBtn.className = 'tab-add';
-        addBtn.textContent = '+';
-        addBtn.title = 'New terminal';
-        addBtn.addEventListener('click', () => {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'new_terminal' }));
-          }
-        });
-        tabsEl.appendChild(addBtn);
-      }
-
-      // Ensure AI + button exists (creates terminal + starts selected LLM)
+      // Ensure AI + button exists (creates terminal + starts selected LLM) — green, on the left
       if (!tabsEl.querySelector('.tab-add-ai')) {
         const aiBtn = document.createElement('button');
         aiBtn.className = 'tab-add-ai';
@@ -2755,6 +2752,20 @@ Astro.response.headers.set('Expires', '0');
           }
         });
         tabsEl.appendChild(aiBtn);
+      }
+
+      // Ensure plain + button exists — gray, after AI button
+      if (!addBtn) {
+        addBtn = document.createElement('button');
+        addBtn.className = 'tab-add';
+        addBtn.textContent = '+';
+        addBtn.title = 'New terminal';
+        addBtn.addEventListener('click', () => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'new_terminal' }));
+          }
+        });
+        tabsEl.appendChild(addBtn);
       }
     }
 
