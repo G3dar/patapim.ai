@@ -17,7 +17,8 @@ const env = Astro.locals.runtime.env;
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
 if (!user) {
-  return Astro.redirect('/api/auth/google');
+  const returnTo = Astro.url.search ? `/go${Astro.url.search}` : '/go';
+  return Astro.redirect(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
 }
 
 // Server-side data fetch
@@ -71,19 +72,14 @@ const scriptI18n = {
 
   <main class="dashboard-page" data-i18n={JSON.stringify(scriptI18n)}>
     <div class="container">
-      <!-- Dashboard Header -->
+      <!-- Dashboard Header (compact) -->
       <div class="dash-header">
         <div class="dash-user">
           <img src={user.picture} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
-          <div class="dash-user-info">
-            <div class="dash-name-row">
-              <span class="dash-name">{user.name}</span>
-              <span class={`plan-badge plan-${plan}`}>
-                {plan === 'free' ? t(locale, 'dashboard.planFree') : plan === 'pro' ? t(locale, 'dashboard.planPro') : t(locale, 'dashboard.planLifetime')}
-              </span>
-            </div>
-            <span class="dash-email">{user.email}</span>
-          </div>
+          <span class="dash-email">{user.email}</span>
+          <span class={`plan-badge plan-${plan}`}>
+            {plan === 'free' ? t(locale, 'dashboard.planFree') : plan === 'pro' ? t(locale, 'dashboard.planPro') : t(locale, 'dashboard.planLifetime')}
+          </span>
         </div>
         <div class="dash-actions">
           {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
@@ -92,7 +88,7 @@ const scriptI18n = {
           {plan === 'free' && (
             <a href={lp('/pricing')} class="btn-link btn-link-accent">{t(locale, 'common.upgrade')}</a>
           )}
-          <button class="btn btn-secondary btn-sm" id="sign-out-btn">{t(locale, 'common.signOut')}</button>
+          <button class="btn-link" id="sign-out-btn">{t(locale, 'common.signOut')}</button>
         </div>
       </div>
 
@@ -179,50 +175,37 @@ const scriptI18n = {
     color: var(--text-secondary);
   }
 
-  /* Dashboard Header */
+  /* Dashboard Header (compact single line) */
   .dash-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-xl) 0;
+    padding: var(--space-sm) 0;
     border-bottom: 1px solid var(--border-subtle);
-    margin-bottom: var(--space-2xl);
+    margin-bottom: var(--space-lg);
   }
 
   .dash-user {
     display: flex;
     align-items: center;
-    gap: var(--space-lg);
+    gap: var(--space-sm);
+    min-width: 0;
   }
 
   .dash-avatar {
-    width: 44px;
-    height: 44px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    border: 2px solid var(--border-default);
-  }
-
-  .dash-user-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .dash-name-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .dash-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    flex-shrink: 0;
   }
 
   .dash-email {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .dash-actions {
@@ -590,6 +573,11 @@ const scriptI18n = {
   const i18nEl = document.querySelector('[data-i18n]');
   const i18n = i18nEl ? JSON.parse(i18nEl.dataset.i18n || '{}') : {};
 
+  // Persist native app flag across OAuth redirects (sessionStorage survives within browser session)
+  const urlNative = new URLSearchParams(window.location.search).get('native');
+  if (urlNative) sessionStorage.setItem('patapim_native', urlNative);
+  const isNativeApp = sessionStorage.getItem('patapim_native') === 'ios';
+
   // Load devices immediately on page load
   loadDevices();
 
@@ -776,6 +764,36 @@ const scriptI18n = {
         });
       });
 
+      // Native iOS app: auto-connect to first online device immediately
+      // so ASWebAuthenticationSession can close via patapimremote:// callback
+      if (isNativeApp) {
+        const onlineDevices = devices.filter(d => d.status === 'online');
+        if (onlineDevices.length > 0) {
+          const autoDevice = onlineDevices[0];
+          (async () => {
+            try {
+              const res = await fetch('/api/device/connect-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceToken: autoDevice.deviceToken }),
+              });
+              const result = await res.json();
+              if (result.connectToken && result.tunnelUrl) {
+                const remoteUrl = window.location.origin +
+                  '/remote?t=' + encodeURIComponent(result.connectToken) +
+                  '&url=' + encodeURIComponent(result.tunnelUrl) +
+                  '&d=' + encodeURIComponent(autoDevice.deviceToken) +
+                  '&v=' + Date.now();
+                window.location.href =
+                  'patapimremote://remote?url=' + encodeURIComponent(remoteUrl);
+              }
+            } catch (e) {
+              console.error('[native auto-connect]', e);
+            }
+          })();
+        }
+      }
+
       // Click-to-connect on online device cards
       container.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', async (e) => {
@@ -792,11 +810,22 @@ const scriptI18n = {
             });
             const result = await res.json();
             if (result.connectToken && result.tunnelUrl) {
-              window.location.href =
-                '/remote?t=' + encodeURIComponent(result.connectToken) +
-                '&url=' + encodeURIComponent(result.tunnelUrl) +
-                '&d=' + encodeURIComponent(card.dataset.token) +
-                '&v=' + Date.now();
+              // Native iOS app: redirect with remote URL for WKWebView
+              if (isNativeApp) {
+                const remoteUrl = window.location.origin +
+                  '/remote?t=' + encodeURIComponent(result.connectToken) +
+                  '&url=' + encodeURIComponent(result.tunnelUrl) +
+                  '&d=' + encodeURIComponent(card.dataset.token) +
+                  '&v=' + Date.now();
+                window.location.href =
+                  'patapimremote://remote?url=' + encodeURIComponent(remoteUrl);
+              } else {
+                window.location.href =
+                  '/remote?t=' + encodeURIComponent(result.connectToken) +
+                  '&url=' + encodeURIComponent(result.tunnelUrl) +
+                  '&d=' + encodeURIComponent(card.dataset.token) +
+                  '&v=' + Date.now();
+              }
             } else {
               alert(result.error || 'Failed to connect');
             }
