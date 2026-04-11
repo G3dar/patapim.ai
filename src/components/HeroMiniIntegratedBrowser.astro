@@ -1,0 +1,548 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.miniBrowser;
+
+const scriptI18n = {
+  command: dm.command,
+  launching: dm.launching,
+  authenticated: dm.authenticated,
+  sessionSaved: dm.sessionSaved,
+  sessionPreserved: dm.sessionPreserved,
+  signIn: dm.signIn,
+  urlLogin: dm.urlLogin,
+  urlHome: dm.urlHome,
+};
+---
+
+<div class="hm-ib" data-hm-ib data-i18n={JSON.stringify(scriptI18n)}>
+  <div class="hm-chrome">
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r"></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <span class="hm-title">{t(locale, 'demos.miniBrowser.windowTitle')}</span>
+  </div>
+  <div class="hm-body">
+    <!-- Terminal area -->
+    <div class="hm-ib-term">
+      <div class="hm-ib-cmd"><span class="hm-ib-prompt">&gt;</span> <span data-hm-ib-typed></span><span class="hm-ib-cursor" data-hm-ib-cursor>|</span></div>
+      <div class="hm-ib-status" data-hm-ib-status></div>
+    </div>
+
+    <!-- Embedded browser -->
+    <div class="hm-ib-browser" data-hm-ib-browser>
+      <div class="hm-ib-bchrome">
+        <div class="hm-ib-bdots">
+          <span class="hm-ib-bdot"></span>
+          <span class="hm-ib-bdot"></span>
+          <span class="hm-ib-bdot"></span>
+        </div>
+        <div class="hm-ib-url-bar">
+          <span class="hm-ib-lock">&#x1f512;</span>
+          <span data-hm-ib-url></span>
+        </div>
+      </div>
+      <div class="hm-ib-viewport">
+        <!-- Page skeleton -->
+        <div class="hm-ib-page" data-hm-ib-page>
+          <div class="hm-ib-nav"></div>
+          <div class="hm-ib-content">
+            <div class="hm-ib-block hm-ib-block-1"></div>
+            <div class="hm-ib-block hm-ib-block-2"></div>
+            <div class="hm-ib-block hm-ib-block-3"></div>
+            <div class="hm-ib-btn" data-hm-ib-btn>{dm.signIn}</div>
+          </div>
+        </div>
+        <!-- Spinner -->
+        <div class="hm-ib-spinner-wrap" data-hm-ib-spinner>
+          <div class="hm-ib-spinner"></div>
+        </div>
+        <!-- Click indicator -->
+        <div class="hm-ib-click" data-hm-ib-click></div>
+      </div>
+      <!-- Containment boundary -->
+      <div class="hm-ib-boundary" data-hm-ib-boundary></div>
+    </div>
+
+    <!-- Session badge -->
+    <div class="hm-ib-session" data-hm-ib-session>
+      <span class="hm-ib-session-dot"></span>
+      {dm.sessionPreserved}
+    </div>
+  </div>
+</div>
+
+<style>
+  .hm-ib {
+    width: 340px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: opacity 0.4s ease;
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+  }
+
+  .hm-body {
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Terminal area */
+  .hm-ib-term {
+    flex-shrink: 0;
+  }
+  .hm-ib-cmd {
+    font-size: 7.5px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .hm-ib-prompt { color: var(--accent-primary); }
+  .hm-ib-cursor {
+    color: var(--accent-primary);
+    animation: hm-ib-blink 1s step-end infinite;
+  }
+  @keyframes hm-ib-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .hm-ib-status {
+    font-size: 7px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    height: 11px;
+    white-space: nowrap;
+  }
+  .hm-ib-status.hm-ib-green { color: var(--success); }
+
+  /* Embedded browser */
+  .hm-ib-browser {
+    flex: 1;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-secondary);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    position: relative;
+  }
+  .hm-ib-browser.hm-ib-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Mini chrome bar */
+  .hm-ib-bchrome {
+    height: 14px;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 5px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-ib-bdots {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .hm-ib-bdot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+  .hm-ib-url-bar {
+    flex: 1;
+    background: var(--bg-deep);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 6px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    height: 10px;
+  }
+  .hm-ib-lock {
+    font-size: 5px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Viewport */
+  .hm-ib-viewport {
+    height: 95px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Page skeleton */
+  .hm-ib-page {
+    position: absolute;
+    inset: 0;
+    padding: 5px 8px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .hm-ib-page.hm-ib-loaded { opacity: 1; }
+  .hm-ib-nav {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .hm-ib-page.hm-ib-loaded .hm-ib-nav {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .hm-ib-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .hm-ib-block {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .hm-ib-block-1 { width: 75%; }
+  .hm-ib-block-2 { width: 60%; }
+  .hm-ib-block-3 { width: 80%; }
+  .hm-ib-page.hm-ib-loaded .hm-ib-block {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .hm-ib-page.hm-ib-loaded .hm-ib-block-1 { transition-delay: 0.1s; }
+  .hm-ib-page.hm-ib-loaded .hm-ib-block-2 { transition-delay: 0.2s; }
+  .hm-ib-page.hm-ib-loaded .hm-ib-block-3 { transition-delay: 0.3s; }
+
+  .hm-ib-btn {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 6px;
+    color: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 3px;
+    padding: 2px 8px;
+    margin-top: 4px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease, color 0.2s ease;
+  }
+  .hm-ib-page.hm-ib-loaded .hm-ib-btn {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.4s;
+  }
+  .hm-ib-btn.hm-ib-highlight {
+    background: var(--accent-primary);
+    color: var(--bg-deep);
+    transition-delay: 0s;
+  }
+
+  /* Page transform for home state */
+  .hm-ib-page.hm-ib-home .hm-ib-block-1 { width: 80%; }
+  .hm-ib-page.hm-ib-home .hm-ib-block-2 { width: 70%; }
+  .hm-ib-page.hm-ib-home .hm-ib-block-3 { width: 55%; }
+  .hm-ib-page.hm-ib-home .hm-ib-btn { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; }
+
+  /* Spinner */
+  .hm-ib-spinner-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .hm-ib-spinner-wrap.hm-ib-show { opacity: 1; }
+  .hm-ib-spinner {
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: hm-ib-spin 0.8s linear infinite;
+  }
+  @keyframes hm-ib-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Click indicator */
+  .hm-ib-click {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    left: 28px;
+    bottom: 16px;
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+    transition: none;
+  }
+  .hm-ib-click.hm-ib-pop {
+    animation: hm-ib-pop 0.5s ease forwards;
+  }
+  @keyframes hm-ib-pop {
+    0%   { opacity: 0.8; transform: scale(0.5); }
+    50%  { opacity: 1;   transform: scale(1.3); }
+    100% { opacity: 0;   transform: scale(0.8); }
+  }
+
+  /* Containment boundary */
+  .hm-ib-boundary {
+    position: absolute;
+    inset: -1px;
+    border: 1.5px solid var(--success);
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(124,179,130,0.3), inset 0 0 8px rgba(124,179,130,0.1);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .hm-ib-boundary.hm-ib-show {
+    opacity: 1;
+  }
+
+  /* Session badge */
+  .hm-ib-session {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 6.5px;
+    color: var(--success);
+    padding: 2px 0 0;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .hm-ib-session.hm-ib-show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .hm-ib-session-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: hm-ib-pulse 2s ease-in-out infinite;
+  }
+  @keyframes hm-ib-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @media (max-width: 768px) {
+    .hm-ib { width: 100%; max-width: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-ib-cursor { animation: none; opacity: 1; }
+    .hm-ib-spinner { animation: none; }
+    .hm-ib-session-dot { animation: none; }
+    .hm-ib-browser { opacity: 1; transform: none; }
+    .hm-ib-page { opacity: 1; }
+    .hm-ib-page .hm-ib-nav,
+    .hm-ib-page .hm-ib-block,
+    .hm-ib-page .hm-ib-btn { opacity: 1; transform: none; }
+    .hm-ib-boundary { opacity: 1; }
+    .hm-ib-session { opacity: 1; transform: none; }
+    .hm-ib-spinner-wrap { opacity: 0; }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-ib]') as HTMLElement;
+    if (!root) return;
+
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+
+    const typed = root.querySelector('[data-hm-ib-typed]') as HTMLElement;
+    const cursor = root.querySelector('[data-hm-ib-cursor]') as HTMLElement;
+    const status = root.querySelector('[data-hm-ib-status]') as HTMLElement;
+    const browser = root.querySelector('[data-hm-ib-browser]') as HTMLElement;
+    const urlEl = root.querySelector('[data-hm-ib-url]') as HTMLElement;
+    const spinner = root.querySelector('[data-hm-ib-spinner]') as HTMLElement;
+    const page = root.querySelector('[data-hm-ib-page]') as HTMLElement;
+    const btn = root.querySelector('[data-hm-ib-btn]') as HTMLElement;
+    const click = root.querySelector('[data-hm-ib-click]') as HTMLElement;
+    const boundary = root.querySelector('[data-hm-ib-boundary]') as HTMLElement;
+    const session = root.querySelector('[data-hm-ib-session]') as HTMLElement;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      typed.textContent = i18n.command || 'browse dashboard.app/login';
+      status.textContent = i18n.sessionSaved || '\u2713 Session saved. 2 cookies, 1 tab';
+      status.classList.add('hm-ib-green');
+      urlEl.textContent = i18n.urlHome || 'dashboard.app/home';
+      cursor.style.display = 'none';
+      page.classList.add('hm-ib-loaded', 'hm-ib-home');
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
+    }
+
+    function resetState() {
+      typed.textContent = '';
+      status.textContent = '';
+      status.classList.remove('hm-ib-green');
+      cursor.style.display = '';
+      browser.classList.remove('hm-ib-visible');
+      urlEl.textContent = '';
+      spinner.classList.remove('hm-ib-show');
+      page.classList.remove('hm-ib-loaded', 'hm-ib-home');
+      page.style.opacity = '';
+      btn.classList.remove('hm-ib-highlight');
+      click.classList.remove('hm-ib-pop');
+      boundary.classList.remove('hm-ib-show');
+      session.classList.remove('hm-ib-show');
+      root.style.opacity = '1';
+    }
+
+    async function typeText(el: HTMLElement, text: string) {
+      for (let i = 0; i < text.length; i++) {
+        if (!running) return;
+        el.textContent += text[i];
+        await wait(35 + Math.random() * 20);
+      }
+    }
+
+    async function startLoop() {
+      while (running) {
+        resetState();
+        await wait(300);
+        if (!running) break;
+
+        // Phase 1 (0-1.2s): Type command, show launching status
+        await typeText(typed, i18n.command || 'browse dashboard.app/login');
+        if (!running) break;
+        cursor.style.display = 'none';
+        status.textContent = i18n.launching || 'Launching browser...';
+        await wait(400);
+        if (!running) break;
+
+        // Phase 2 (1.2-2.2s): Browser slides up with spinner
+        urlEl.textContent = i18n.urlLogin || 'dashboard.app/login';
+        spinner.classList.add('hm-ib-show');
+        browser.classList.add('hm-ib-visible');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 3 (2.2-3.5s): Spinner fades, page loads
+        spinner.classList.remove('hm-ib-show');
+        await wait(200);
+        if (!running) break;
+        page.classList.add('hm-ib-loaded');
+        await wait(1100);
+        if (!running) break;
+
+        // Phase 4 (3.5-4.5s): Click on Sign In
+        click.classList.add('hm-ib-pop');
+        btn.classList.add('hm-ib-highlight');
+        await wait(500);
+        if (!running) break;
+        btn.classList.remove('hm-ib-highlight');
+        click.classList.remove('hm-ib-pop');
+        await wait(500);
+        if (!running) break;
+
+        // Phase 5 (4.5-5.5s): Page transitions, URL changes
+        page.style.opacity = '0.3';
+        page.style.transition = 'opacity 0.3s ease';
+        await wait(300);
+        if (!running) break;
+        urlEl.textContent = i18n.urlHome || 'dashboard.app/home';
+        page.classList.add('hm-ib-home');
+        page.style.opacity = '';
+        status.textContent = i18n.authenticated || 'Authenticated';
+        await wait(700);
+        if (!running) break;
+
+        // Phase 6 (5.5-7s): Green boundary + session badge
+        status.textContent = i18n.sessionSaved || '\u2713 Session saved. 2 cookies, 1 tab';
+        status.classList.add('hm-ib-green');
+        boundary.classList.add('hm-ib-show');
+        await wait(400);
+        if (!running) break;
+        session.classList.add('hm-ib-show');
+        await wait(1100);
+        if (!running) break;
+
+        // Phase 7 (7-9s): Hold
+        await wait(2000);
+        if (!running) break;
+
+        // Phase 8 (9-9.5s): Fade out and loop
+        root.style.opacity = '0';
+        root.style.transition = 'opacity 0.4s ease';
+        await wait(500);
+        if (!running) break;
+        root.style.opacity = '1';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>

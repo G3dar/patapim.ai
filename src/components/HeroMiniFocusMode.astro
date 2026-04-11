@@ -1,0 +1,597 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.miniFocusMode;
+
+const scriptI18n = {
+  windowTitle: dm.windowTitle,
+  tasks: dm.tasks,
+  priorities: dm.priorities,
+  statuses: dm.statuses,
+};
+---
+
+<div class="hm-fm" data-hm-fm data-i18n={JSON.stringify(scriptI18n)}>
+  <div class="hm-chrome">
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r"></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <span class="hm-title">{t(locale, 'demos.miniFocusMode.windowTitle')}</span>
+    <!-- Bell icon with notification badge -->
+    <div class="hm-fm-bell" data-fm-bell>
+      <svg viewBox="0 0 16 16" fill="none" width="10" height="10">
+        <path d="M8 1.5a4 4 0 0 0-4 4v2.5L2.5 10v1h11v-1L12 8V5.5a4 4 0 0 0-4-4zM6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="hm-fm-badge" data-fm-badge>0</span>
+    </div>
+  </div>
+  <div class="hm-body">
+    <!-- Task rows -->
+    <div class="hm-fm-tasks" data-fm-tasks>
+      <div class="hm-fm-task hm-fm-priority-high" data-fm-task="0">
+        <span class="hm-fm-status-dot hm-fm-dot-running" data-fm-dot="0"></span>
+        <span class="hm-fm-checkmark" data-fm-check="0">&#10003;</span>
+        <span class="hm-fm-task-name">{dm.tasks[0]}</span>
+        <div class="hm-fm-progress"><div class="hm-fm-progress-fill" data-fm-bar="0"></div></div>
+      </div>
+      <div class="hm-fm-task hm-fm-priority-medium" data-fm-task="1">
+        <span class="hm-fm-status-dot hm-fm-dot-queued" data-fm-dot="1"></span>
+        <span class="hm-fm-checkmark" data-fm-check="1">&#10003;</span>
+        <span class="hm-fm-task-name">{dm.tasks[1]}</span>
+        <div class="hm-fm-progress"><div class="hm-fm-progress-fill" data-fm-bar="1"></div></div>
+      </div>
+      <div class="hm-fm-task hm-fm-priority-low" data-fm-task="2">
+        <span class="hm-fm-status-dot hm-fm-dot-done" data-fm-dot="2"></span>
+        <span class="hm-fm-checkmark hm-fm-check-visible" data-fm-check="2">&#10003;</span>
+        <span class="hm-fm-task-name">{dm.tasks[2]}</span>
+        <div class="hm-fm-progress"><div class="hm-fm-progress-fill hm-fm-bar-done" data-fm-bar="2" style="width:100%"></div></div>
+      </div>
+      <div class="hm-fm-task hm-fm-priority-medium" data-fm-task="3">
+        <span class="hm-fm-status-dot hm-fm-dot-running" data-fm-dot="3"></span>
+        <span class="hm-fm-checkmark" data-fm-check="3">&#10003;</span>
+        <span class="hm-fm-task-name">{dm.tasks[3]}</span>
+        <div class="hm-fm-progress"><div class="hm-fm-progress-fill" data-fm-bar="3"></div></div>
+      </div>
+    </div>
+    <!-- Notification toast -->
+    <div class="hm-fm-toast" data-fm-toast>
+      <span class="hm-fm-toast-icon">&#10003;</span>
+      <span class="hm-fm-toast-text" data-fm-toast-text></span>
+    </div>
+    <!-- Status bar -->
+    <div class="hm-fm-statusbar" data-fm-statusbar>
+      <div class="hm-fm-status-counts">
+        <span class="hm-fm-sc-dot hm-fm-sc-running"></span>
+        <span data-fm-count-running>2</span>
+        <span class="hm-fm-sc-sep">&bull;</span>
+        <span class="hm-fm-sc-dot hm-fm-sc-queued"></span>
+        <span data-fm-count-queued>1</span>
+        <span class="hm-fm-sc-sep">&bull;</span>
+        <span class="hm-fm-sc-dot hm-fm-sc-done"></span>
+        <span data-fm-count-done>1</span>
+      </div>
+      <div class="hm-fm-focus" data-fm-focus>
+        <svg class="hm-fm-focus-ring" viewBox="0 0 20 20" width="10" height="10">
+          <circle cx="10" cy="10" r="8" stroke="rgba(255,255,255,0.08)" stroke-width="2" fill="none"/>
+          <circle class="hm-fm-focus-arc" data-fm-arc cx="10" cy="10" r="8" stroke="var(--accent-primary)" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="50.27" stroke-dashoffset="4.02" transform="rotate(-90 10 10)"/>
+        </svg>
+        <span data-fm-focus-text>92%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hm-fm {
+    width: 340px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+    position: relative;
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+    flex: 1;
+  }
+
+  /* Bell icon */
+  .hm-fm-bell {
+    position: relative;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .hm-fm-badge {
+    position: absolute;
+    top: -4px;
+    right: -5px;
+    font-family: var(--font-mono);
+    font-size: 5.5px;
+    font-weight: 700;
+    background: #ff5f57;
+    color: #fff;
+    min-width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .hm-fm-badge.hm-fm-badge-visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Body */
+  .hm-body {
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Tasks container */
+  .hm-fm-tasks {
+    flex: 1;
+    padding: 8px 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* Task row */
+  .hm-fm-task {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    font-family: var(--font-mono);
+    font-size: 7.5px;
+    background: rgba(255,255,255,0.02);
+    opacity: 0;
+    transform: translateX(12px);
+    transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease, border-left-color 0.3s ease;
+    border-left: 3px solid transparent;
+  }
+  .hm-fm-task.hm-fm-task-visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .hm-fm-task.hm-fm-task-flash {
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* Priority colors via border-left */
+  .hm-fm-priority-high { border-left-color: #ff5f57; }
+  .hm-fm-priority-medium { border-left-color: #e0a458; }
+  .hm-fm-priority-low { border-left-color: #6ba4d4; }
+
+  /* Status dot */
+  .hm-fm-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: opacity 0.3s ease, background 0.3s ease;
+  }
+  .hm-fm-dot-running {
+    background: #e0a458;
+    animation: hm-fm-dot-pulse 1.2s ease-in-out infinite;
+  }
+  .hm-fm-dot-queued {
+    background: rgba(255,255,255,0.2);
+    animation: none;
+  }
+  .hm-fm-dot-done {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  @keyframes hm-fm-dot-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Checkmark */
+  .hm-fm-checkmark {
+    font-size: 7px;
+    color: var(--success);
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+    flex-shrink: 0;
+    transition: opacity 0.3s ease, width 0.3s ease;
+  }
+  .hm-fm-checkmark.hm-fm-check-visible {
+    width: 8px;
+    opacity: 1;
+  }
+
+  /* Task name */
+  .hm-fm-task-name {
+    font-size: 8px;
+    color: var(--text-secondary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Progress bar */
+  .hm-fm-progress {
+    width: 40px;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .hm-fm-progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #e0a458, var(--accent-primary));
+    transition: width 0.5s ease, background 0.3s ease;
+  }
+  .hm-fm-bar-done {
+    background: var(--success) !important;
+  }
+
+  /* Toast notification */
+  .hm-fm-toast {
+    position: absolute;
+    top: 34px;
+    right: -200px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(15,15,16,0.95);
+    border: 1px solid rgba(124,179,130,0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--success);
+    z-index: 10;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+  .hm-fm-toast.hm-fm-toast-visible {
+    right: 8px;
+  }
+  .hm-fm-toast-icon {
+    font-size: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Status bar */
+  .hm-fm-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    border-top: 1px solid var(--border-default);
+    background: rgba(0,0,0,0.15);
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-muted);
+  }
+  .hm-fm-status-counts {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .hm-fm-sc-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .hm-fm-sc-running { background: #e0a458; }
+  .hm-fm-sc-queued { background: rgba(255,255,255,0.2); }
+  .hm-fm-sc-done { background: var(--success); }
+  .hm-fm-sc-sep {
+    color: var(--text-muted);
+    opacity: 0.3;
+    margin: 0 1px;
+  }
+
+  /* Focus score */
+  .hm-fm-focus {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--accent-primary);
+    font-size: 6.5px;
+  }
+  .hm-fm-focus-ring {
+    flex-shrink: 0;
+  }
+  .hm-fm-focus-arc {
+    transition: stroke-dashoffset 0.8s ease;
+  }
+
+  @media (max-width: 768px) {
+    .hm-fm { width: 100%; max-width: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-fm-task {
+      opacity: 1;
+      transform: none;
+    }
+    .hm-fm-dot-running {
+      animation: none;
+      opacity: 1;
+    }
+    .hm-fm-badge {
+      transition: none;
+    }
+    .hm-fm-toast {
+      transition: none;
+    }
+    .hm-fm-progress-fill {
+      transition: none;
+    }
+    .hm-fm-focus-arc {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-fm]') as HTMLElement;
+    if (!root) return;
+
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+    const tasks = root.querySelectorAll('[data-fm-task]');
+    const dots = root.querySelectorAll('[data-fm-dot]');
+    const checks = root.querySelectorAll('[data-fm-check]');
+    const bars = root.querySelectorAll('[data-fm-bar]');
+    const badge = root.querySelector('[data-fm-badge]') as HTMLElement;
+    const toast = root.querySelector('[data-fm-toast]') as HTMLElement;
+    const toastText = root.querySelector('[data-fm-toast-text]') as HTMLElement;
+    const countRunning = root.querySelector('[data-fm-count-running]') as HTMLElement;
+    const countQueued = root.querySelector('[data-fm-count-queued]') as HTMLElement;
+    const countDone = root.querySelector('[data-fm-count-done]') as HTMLElement;
+    const focusText = root.querySelector('[data-fm-focus-text]') as HTMLElement;
+    const focusArc = root.querySelector('[data-fm-arc]') as SVGCircleElement;
+
+    // circumference = 2 * PI * 8 = 50.27
+    const CIRC = 50.27;
+
+    function setFocusPercent(pct: number) {
+      const offset = CIRC - (CIRC * pct / 100);
+      focusArc.setAttribute('stroke-dashoffset', String(offset));
+      focusText.textContent = pct + '%';
+    }
+
+    function setBadge(count: number) {
+      badge.textContent = String(count);
+      if (count > 0) {
+        badge.classList.add('hm-fm-badge-visible');
+      } else {
+        badge.classList.remove('hm-fm-badge-visible');
+      }
+    }
+
+    function setStatusCounts(r: number, q: number, d: number) {
+      countRunning.textContent = String(r);
+      countQueued.textContent = String(q);
+      countDone.textContent = String(d);
+    }
+
+    function setTaskRunning(idx: number) {
+      const dot = dots[idx] as HTMLElement;
+      const check = checks[idx] as HTMLElement;
+      dot.className = 'hm-fm-status-dot hm-fm-dot-running';
+      check.classList.remove('hm-fm-check-visible');
+    }
+
+    function setTaskDone(idx: number) {
+      const dot = dots[idx] as HTMLElement;
+      const check = checks[idx] as HTMLElement;
+      dot.className = 'hm-fm-status-dot hm-fm-dot-done';
+      check.classList.add('hm-fm-check-visible');
+      (bars[idx] as HTMLElement).style.width = '100%';
+      (bars[idx] as HTMLElement).classList.add('hm-fm-bar-done');
+    }
+
+    function setTaskQueued(idx: number) {
+      const dot = dots[idx] as HTMLElement;
+      const check = checks[idx] as HTMLElement;
+      dot.className = 'hm-fm-status-dot hm-fm-dot-queued';
+      check.classList.remove('hm-fm-check-visible');
+    }
+
+    function setBar(idx: number, pct: number) {
+      (bars[idx] as HTMLElement).style.width = pct + '%';
+    }
+
+    function showToast(text: string): Promise<void> {
+      toastText.textContent = text;
+      toast.classList.add('hm-fm-toast-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          toast.classList.remove('hm-fm-toast-visible');
+          setTimeout(resolve, 400);
+        }, 1500);
+      });
+    }
+
+    function flashTask(idx: number) {
+      const task = tasks[idx] as HTMLElement;
+      task.classList.add('hm-fm-task-flash');
+      setTimeout(() => task.classList.remove('hm-fm-task-flash'), 300);
+    }
+
+    function resetState() {
+      // Hide all tasks
+      tasks.forEach(t => {
+        (t as HTMLElement).classList.remove('hm-fm-task-visible', 'hm-fm-task-flash');
+      });
+      // Reset dots & checks
+      setTaskRunning(0);
+      setTaskQueued(1);
+      // Task 2 starts as done
+      (dots[2] as HTMLElement).className = 'hm-fm-status-dot hm-fm-dot-done';
+      (checks[2] as HTMLElement).classList.add('hm-fm-check-visible');
+      setTaskRunning(3);
+      // Reset bars
+      (bars[0] as HTMLElement).style.width = '40%';
+      (bars[0] as HTMLElement).classList.remove('hm-fm-bar-done');
+      (bars[1] as HTMLElement).style.width = '0%';
+      (bars[1] as HTMLElement).classList.remove('hm-fm-bar-done');
+      (bars[2] as HTMLElement).style.width = '100%';
+      (bars[2] as HTMLElement).classList.add('hm-fm-bar-done');
+      (bars[3] as HTMLElement).style.width = '25%';
+      (bars[3] as HTMLElement).classList.remove('hm-fm-bar-done');
+      // Reset status bar
+      setStatusCounts(2, 1, 1);
+      setFocusPercent(92);
+      setBadge(0);
+      // Reset toast
+      toast.classList.remove('hm-fm-toast-visible');
+    }
+
+    // Reduced motion: show static state
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      resetState();
+      tasks.forEach(t => (t as HTMLElement).classList.add('hm-fm-task-visible'));
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
+    }
+
+    async function startLoop() {
+      while (running) {
+        // === 0-1s: Reset & stagger task rows in ===
+        resetState();
+        for (let i = 0; i < 4; i++) {
+          if (!running) break;
+          (tasks[i] as HTMLElement).classList.add('hm-fm-task-visible');
+          await wait(150);
+        }
+        if (!running) break;
+        await wait(400);
+        if (!running) break;
+
+        // === 1-3s: Task 0 "Fix auth bug" progress 40% -> 100% ===
+        setBar(0, 70);
+        await wait(800);
+        if (!running) break;
+        setBar(0, 100);
+        await wait(1200);
+        if (!running) break;
+
+        // === 3-4s: Task 0 completes ===
+        flashTask(0);
+        setTaskDone(0);
+        setBadge(1);
+        await wait(1000);
+        if (!running) break;
+
+        // === 4-5s: Task 1 "Deploy API v2" queued -> running ===
+        flashTask(1);
+        setTaskRunning(1);
+        setBar(1, 15);
+        await wait(400);
+        if (!running) break;
+        setBar(1, 35);
+        await wait(600);
+        if (!running) break;
+
+        // === 5-6.5s: Status bar updates ===
+        setStatusCounts(2, 0, 2);
+        setFocusPercent(95);
+        setBar(1, 55);
+        await wait(500);
+        if (!running) break;
+        setBar(3, 50);
+        await wait(1000);
+        if (!running) break;
+
+        // === 6.5-8s: Toast notification ===
+        const taskName = i18n.tasks?.[0] || 'Auth bug fixed';
+        await showToast('✓ ' + taskName);
+        if (!running) break;
+
+        // === 8-9s: Task 3 progress advances ===
+        setBar(1, 70);
+        setBar(3, 75);
+        await wait(1000);
+        if (!running) break;
+
+        // === 9-11s: Hold for readability ===
+        setBar(1, 85);
+        setBar(3, 90);
+        await wait(2000);
+        if (!running) break;
+
+        // === 11-11.5s: Fade out ===
+        root.style.opacity = '0';
+        root.style.transition = 'opacity 0.4s ease';
+        await wait(500);
+        if (!running) break;
+        root.style.opacity = '1';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+          root.style.opacity = '1';
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>

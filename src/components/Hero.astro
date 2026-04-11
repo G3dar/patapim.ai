@@ -2,6 +2,12 @@
 import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
 import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
+import HeroMiniConnectedTabs from './HeroMiniConnectedTabs.astro';
+import HeroMiniIntegratedBrowser from './HeroMiniIntegratedBrowser.astro';
+import HeroMiniSessionRestore from './HeroMiniSessionRestore.astro';
+import HeroMiniMultiAi from './HeroMiniMultiAi.astro';
+import HeroMiniWhatsappGmail from './HeroMiniWhatsappGmail.astro';
+import HeroMiniFocusMode from './HeroMiniFocusMode.astro';
 import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -48,39 +54,51 @@ const lp = (path: string) => getLocalePath(locale, path);
           <p class="hf-desc">{t(locale, 'hero.remoteControlDesc')}</p>
         </div>
       </div>
-    </div>
-
-    <!-- Original "Open Claw" section (secondary) -->
-    <div class="hero-openclaw-section">
-      <h2 class="hero-title-secondary">
-        <span class="hero-accent" set:html={t(locale, 'hero.clawTitle')} /><br/>
-        <span class="hero-secure">
-          <svg class="hero-lock" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          {t(locale, 'hero.clawAccent')}
-        </span>
-      </h2>
-
-      <p class="hero-subtitle-secondary" set:html={t(locale, 'hero.clawDesc')} />
-
-      <div class="hero-killers">
-        <div class="hero-killer">
-          <span class="hk-x">&#x2717;</span>
-          <span>{t(locale, 'hero.noTokenBilling')}</span>
-        </div>
-        <div class="hero-killer">
-          <span class="hk-x">&#x2717;</span>
-          <span>{t(locale, 'hero.noCloudMiddleman')}</span>
-        </div>
-        <div class="hero-killer">
-          <span class="hk-x">&#x2717;</span>
-          <span>{t(locale, 'hero.noExtraSubscriptions')}</span>
-        </div>
-        <div class="hero-killer hk-yes">
-          <span class="hk-check">&#x2714;</span>
-          <span>{t(locale, 'hero.existingAccounts')}</span>
+      <div class="hero-feature-item">
+        <HeroMiniConnectedTabs />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.connectedTabs')}</span>
+          <p class="hf-desc">{t(locale, 'hero.connectedTabsDesc')}</p>
         </div>
       </div>
+      <div class="hero-feature-item">
+        <HeroMiniIntegratedBrowser />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.integratedBrowser')}</span>
+          <p class="hf-desc">{t(locale, 'hero.integratedBrowserDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
+        <HeroMiniSessionRestore />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.sessionRestore')}</span>
+          <p class="hf-desc">{t(locale, 'hero.sessionRestoreDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
+        <HeroMiniMultiAi />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.multiAi')}</span>
+          <p class="hf-desc">{t(locale, 'hero.multiAiDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
+        <HeroMiniWhatsappGmail />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.whatsappGmail')}</span>
+          <p class="hf-desc">{t(locale, 'hero.whatsappGmailDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
+        <HeroMiniFocusMode />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.focusMode')}</span>
+          <p class="hf-desc">{t(locale, 'hero.focusModeDesc')}</p>
+        </div>
+      </div>
+    </div>
 
+    <div class="hero-install-section">
       <div class="hero-install">
         <div class="hero-install-tabs">
           <button class="hi-tab active" data-hero-tab="cmd">{t(locale, 'hero.tabCmd')}</button>
@@ -216,97 +234,11 @@ const lp = (path: string) => getLocalePath(locale, path);
   }
 
 
-  /* Secondary "Open Claw" section */
-  .hero-openclaw-section {
+  /* Install section */
+  .hero-install-section {
     margin-top: var(--space-4xl);
     padding-top: var(--space-3xl);
     border-top: 1px solid var(--border-default);
-  }
-
-  .hero-title-secondary {
-    font-size: clamp(30px, 5vw, 56px);
-    font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: var(--space-xl);
-    letter-spacing: -1.5px;
-  }
-
-  .hero-accent {
-    background: linear-gradient(135deg, var(--accent-primary), #e8c29e);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-secure {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #ff4444, #cc2233);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: clamp(18px, 3vw, 34px);
-    letter-spacing: 0.05em;
-    font-weight: 900;
-    -webkit-text-stroke: 1.5px #ff4444;
-    paint-order: stroke fill;
-  }
-
-  .hero-lock {
-    flex-shrink: 0;
-    stroke: #ff4444;
-    filter: drop-shadow(0 0 12px rgba(255, 68, 68, 0.5));
-    animation: lock-pulse 2.5s ease-in-out infinite;
-  }
-
-  @keyframes lock-pulse {
-    0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 68, 68, 0.5)); }
-    50% { filter: drop-shadow(0 0 24px rgba(255, 68, 68, 0.8)); }
-  }
-
-  .hero-subtitle-secondary {
-    font-size: clamp(15px, 1.8vw, 18px);
-    color: var(--text-secondary);
-    max-width: 620px;
-    margin: 0 auto var(--space-2xl);
-    line-height: 1.7;
-  }
-
-  /* Killer list */
-  .hero-killers {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: var(--space-3xl);
-  }
-
-  .hero-killer {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-family: var(--font-mono);
-    color: var(--text-tertiary);
-  }
-
-  .hk-x {
-    color: var(--error);
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .hk-yes {
-    margin-top: 6px;
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-
-  .hk-check {
-    color: var(--success);
-    font-size: 14px;
-    font-weight: 700;
   }
 
   /* Install command block */
@@ -432,11 +364,14 @@ const lp = (path: string) => getLocalePath(locale, path);
 
   /* Feature mini demos */
   .hero-features {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    gap: var(--space-3xl);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    gap: var(--space-3xl) var(--space-2xl);
     margin-top: var(--space-4xl);
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-feature-item {
@@ -476,12 +411,11 @@ const lp = (path: string) => getLocalePath(locale, path);
     .hero-install { max-width: 100%; }
     .hi-line { font-size: 11px; padding: 12px 14px; }
     .hi-tab { font-size: 11px; padding: 5px 14px; }
-    .hero-killer { font-size: 14px; }
-    .hero-features { flex-direction: column; align-items: center; gap: var(--space-xl); }
+    .hero-features { grid-template-columns: repeat(2, 1fr); gap: var(--space-xl); }
     .hf-label { font-size: 13px; }
     .hf-desc { font-size: 12px; max-width: 280px; }
     .hero-video-wrapper { max-width: 100%; }
-    .hero-openclaw-section { margin-top: var(--space-3xl); padding-top: var(--space-2xl); }
+    .hero-install-section { margin-top: var(--space-3xl); padding-top: var(--space-2xl); }
   }
 
   @media (max-width: 480px) {
@@ -490,6 +424,7 @@ const lp = (path: string) => getLocalePath(locale, path);
     .hero-video-wrapper { border-radius: 12px; }
     .hero-video { border-radius: 12px; }
     .hero-video-overlay { border-radius: 12px; }
+    .hero-features { grid-template-columns: 1fr; }
   }
 </style>
 

@@ -1,0 +1,448 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.miniSessionRestore;
+
+const scriptI18n = {
+  tabs: dm.tabs,
+  leftPane: dm.leftPane,
+  rightPane: dm.rightPane,
+  statusBar: dm.statusBar,
+  restored: dm.restored,
+};
+---
+
+<div class="hm-sr" data-hm-sr data-i18n={JSON.stringify(scriptI18n)}>
+  <div class="hm-chrome" data-sr-chrome>
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r" data-sr-red></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <span class="hm-title">{t(locale, 'demos.miniSessionRestore.windowTitle')}</span>
+  </div>
+  <div class="hm-sr-body">
+    <!-- Workspace -->
+    <div class="hm-sr-workspace" data-sr-workspace>
+      <!-- Tab strip -->
+      <div class="hm-sr-tabs">
+        <span class="hm-sr-tab hm-sr-tab-active" data-sr-tab="0">{dm.tabs[0]}</span>
+        <span class="hm-sr-tab" data-sr-tab="1">{dm.tabs[1]}</span>
+        <span class="hm-sr-tab" data-sr-tab="2">{dm.tabs[2]}</span>
+      </div>
+      <!-- Split view -->
+      <div class="hm-sr-split">
+        <div class="hm-sr-pane hm-sr-pane-l">
+          <div class="hm-sr-pln" data-sr-ll="0">{dm.leftPane[0]}</div>
+          <div class="hm-sr-pln hm-sr-ok" data-sr-ll="1">{dm.leftPane[1]}</div>
+          <div class="hm-sr-pln hm-sr-ok" data-sr-ll="2">{dm.leftPane[2]}</div>
+        </div>
+        <div class="hm-sr-divider"></div>
+        <div class="hm-sr-pane hm-sr-pane-r">
+          <div class="hm-sr-pln hm-sr-dim" data-sr-rl="0">{dm.rightPane[0]}</div>
+          <div class="hm-sr-pln" data-sr-rl="1">{dm.rightPane[1]}</div>
+          <div class="hm-sr-pln hm-sr-dim" data-sr-rl="2">{dm.rightPane[2]}</div>
+        </div>
+      </div>
+      <!-- Status bar -->
+      <div class="hm-sr-statusbar">
+        <span class="hm-sr-statusdot" data-sr-statusdot></span>
+        <span class="hm-sr-statustext">{dm.statusBar}</span>
+      </div>
+    </div>
+
+    <!-- Power-off overlay -->
+    <div class="hm-sr-overlay" data-sr-overlay>
+      <svg class="hm-sr-power" data-sr-power width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+        <line x1="12" y1="2" x2="12" y2="12"/>
+      </svg>
+    </div>
+
+    <!-- Green scanline -->
+    <div class="hm-sr-scanline" data-sr-scanline></div>
+
+    <!-- Restored badge -->
+    <div class="hm-sr-badge" data-sr-badge>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span>{dm.restored}</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hm-sr {
+    width: 340px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; transition: box-shadow 0.3s ease, transform 0.3s ease; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .hm-sr-body {
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Workspace */
+  .hm-sr-workspace {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease;
+    transform-origin: center center;
+  }
+  .hm-sr-workspace.hm-sr-closing {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  .hm-sr-workspace.hm-sr-closed {
+    transform: scale(0.85);
+    opacity: 0;
+    transition: none;
+  }
+  .hm-sr-workspace.hm-sr-restoring {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  /* Tab strip */
+  .hm-sr-tabs {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 0 4px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border-default);
+    flex-shrink: 0;
+  }
+  .hm-sr-tab {
+    font-family: var(--font-mono);
+    font-size: 7.5px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    cursor: default;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .hm-sr-tab.hm-sr-tab-active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+
+  /* Split view */
+  .hm-sr-split {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .hm-sr-pane {
+    flex: 1;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    justify-content: center;
+    min-width: 0;
+  }
+  .hm-sr-divider {
+    width: 1px;
+    background: var(--border-default);
+    flex-shrink: 0;
+  }
+
+  /* Terminal lines */
+  .hm-sr-pln {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hm-sr-ok { color: var(--success); }
+  .hm-sr-dim { opacity: 0.5; }
+
+  /* Status bar */
+  .hm-sr-statusbar {
+    height: 14px;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+  .hm-sr-statusdot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+    transition: box-shadow 0.3s ease;
+  }
+  .hm-sr-statusdot.hm-sr-statusdot-pulse {
+    animation: hm-sr-dot-pulse 0.8s ease-in-out 2;
+  }
+  .hm-sr-statustext {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  @keyframes hm-sr-dot-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,179,130,0); }
+    50% { box-shadow: 0 0 6px 1px rgba(124,179,130,0.6); }
+  }
+
+  /* Power-off overlay */
+  .hm-sr-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-deep);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .hm-sr-overlay.hm-sr-overlay-show {
+    opacity: 1;
+  }
+
+  .hm-sr-power {
+    color: var(--text-muted);
+    transition: color 0.4s ease, filter 0.4s ease;
+  }
+  .hm-sr-power.hm-sr-glow {
+    color: var(--warning);
+    filter: drop-shadow(0 0 8px rgba(224,164,88,0.6));
+  }
+
+  /* Scanline */
+  .hm-sr-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(124,179,130,0.3);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .hm-sr-scanline.hm-sr-sweep {
+    animation: hm-sr-sweep 0.7s ease-out forwards;
+  }
+
+  @keyframes hm-sr-sweep {
+    0% { opacity: 0.8; transform: translateY(0); }
+    80% { opacity: 0.4; }
+    100% { opacity: 0; transform: translateY(180px); }
+  }
+
+  /* Restored badge */
+  .hm-sr-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(4px);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    color: var(--success);
+    background: rgba(124,179,130,0.12);
+    border: 1px solid var(--success);
+    padding: 3px 10px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .hm-sr-badge.hm-sr-badge-show {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+
+  /* Red dot pulse */
+  .hm-sr-red-pulse {
+    box-shadow: 0 0 6px rgba(255,95,87,0.8);
+    transform: scale(1.3);
+  }
+
+  @media (max-width: 768px) {
+    .hm-sr { width: 100%; max-width: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-sr-workspace { transition: none; }
+    .hm-sr-overlay { transition: none; }
+    .hm-sr-scanline { display: none; }
+    .hm-sr-badge { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+    .hm-sr-statusdot { animation: none !important; }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-sr]') as HTMLElement;
+    if (!root) return;
+
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+
+    const workspace = root.querySelector('[data-sr-workspace]') as HTMLElement;
+    const redDot = root.querySelector('[data-sr-red]') as HTMLElement;
+    const overlay = root.querySelector('[data-sr-overlay]') as HTMLElement;
+    const power = root.querySelector('[data-sr-power]') as HTMLElement;
+    const scanline = root.querySelector('[data-sr-scanline]') as HTMLElement;
+    const badge = root.querySelector('[data-sr-badge]') as HTMLElement;
+    const statusDot = root.querySelector('[data-sr-statusdot]') as HTMLElement;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      badge?.classList.add('hm-sr-badge-show');
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
+    }
+
+    function resetState() {
+      workspace?.classList.remove('hm-sr-closing', 'hm-sr-closed', 'hm-sr-restoring');
+      redDot?.classList.remove('hm-sr-red-pulse');
+      overlay?.classList.remove('hm-sr-overlay-show');
+      power?.classList.remove('hm-sr-glow');
+      scanline?.classList.remove('hm-sr-sweep');
+      badge?.classList.remove('hm-sr-badge-show');
+      statusDot?.classList.remove('hm-sr-statusdot-pulse');
+      root.style.opacity = '1';
+      root.style.transition = '';
+    }
+
+    async function startLoop() {
+      while (running) {
+        // Phase 1 (0-2s): Reset. Workspace fully visible.
+        resetState();
+        await wait(2000);
+        if (!running) break;
+
+        // Phase 2 (2-2.5s): Red dot pulses.
+        redDot?.classList.add('hm-sr-red-pulse');
+        await wait(500);
+        if (!running) break;
+        redDot?.classList.remove('hm-sr-red-pulse');
+
+        // Phase 3 (2.5-3.5s): Workspace closes (scale down + fade).
+        workspace?.classList.add('hm-sr-closing');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 4 (3.5-4.5s): Power-off overlay fades in.
+        workspace?.classList.remove('hm-sr-closing');
+        workspace?.classList.add('hm-sr-closed');
+        overlay?.classList.add('hm-sr-overlay-show');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 5 (4.5-5.5s): Power icon glows amber.
+        power?.classList.add('hm-sr-glow');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 6 (5.5-6s): Overlay fades out, power glow off.
+        power?.classList.remove('hm-sr-glow');
+        overlay?.classList.remove('hm-sr-overlay-show');
+        await wait(500);
+        if (!running) break;
+
+        // Phase 7 (6-7s): Workspace restores. Scanline sweeps.
+        workspace?.classList.remove('hm-sr-closed');
+        workspace?.classList.add('hm-sr-restoring');
+        scanline?.classList.remove('hm-sr-sweep');
+        void scanline?.offsetWidth;
+        scanline?.classList.add('hm-sr-sweep');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 8 (7-8s): Badge fades in, status dot pulses.
+        badge?.classList.add('hm-sr-badge-show');
+        statusDot?.classList.add('hm-sr-statusdot-pulse');
+        await wait(1000);
+        if (!running) break;
+
+        // Phase 9 (8-10s): Hold for readability.
+        await wait(2000);
+        if (!running) break;
+
+        // Phase 10 (10-10.5s): Fade out and loop.
+        badge?.classList.remove('hm-sr-badge-show');
+        statusDot?.classList.remove('hm-sr-statusdot-pulse');
+        await wait(300);
+        if (!running) break;
+        root.style.transition = 'opacity 0.4s ease';
+        root.style.opacity = '0';
+        await wait(500);
+        if (!running) break;
+
+        // Loop restart
+        root.style.opacity = '1';
+        root.style.transition = '';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>

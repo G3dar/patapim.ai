@@ -1,0 +1,438 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.miniWhatsappGmail;
+
+const scriptI18n = {
+  windowTitle: dm.windowTitle,
+};
+---
+
+<div class="hm-wg" data-hm-wg data-i18n={JSON.stringify(scriptI18n)}>
+  <div class="hm-chrome">
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r"></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <span class="hm-title">{t(locale, 'demos.miniWhatsappGmail.windowTitle')}</span>
+  </div>
+  <div class="hm-body">
+    <!-- Left: WhatsApp -->
+    <div class="hm-wg-half hm-wg-wa">
+      <div class="hm-wg-icon-row">
+        <div class="hm-wg-icon-wrap">
+          <svg class="hm-wg-icon" width="20" height="20" viewBox="0 0 24 24" fill="#25D366">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          <span class="hm-wg-badge hm-wg-badge-wa" data-badge-wa></span>
+        </div>
+        <span class="hm-wg-label">WhatsApp</span>
+      </div>
+      <div class="hm-wg-content-area">
+        <div class="hm-wg-bubble" data-wa-bubble>
+          <span class="hm-wg-bubble-text">Team meeting moved to 3pm</span>
+        </div>
+        <div class="hm-wg-terminal" data-wa-terminal>
+          <div class="hm-wg-term-cmd" data-wa-cmd></div>
+          <div class="hm-wg-term-result" data-wa-result></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="hm-wg-divider"></div>
+
+    <!-- Right: Gmail -->
+    <div class="hm-wg-half hm-wg-gm">
+      <div class="hm-wg-icon-row">
+        <div class="hm-wg-icon-wrap">
+          <svg class="hm-wg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="2" stroke="#EA4335" stroke-width="1.5" fill="none"/>
+            <path d="M2 6l10 7 10-7" stroke="#EA4335" stroke-width="2" fill="none"/>
+          </svg>
+          <span class="hm-wg-badge hm-wg-badge-gm" data-badge-gm></span>
+        </div>
+        <span class="hm-wg-label">Gmail</span>
+      </div>
+      <div class="hm-wg-content-area">
+        <div class="hm-wg-email" data-gm-email>
+          <div class="hm-wg-email-from">From: client@...</div>
+          <div class="hm-wg-email-subj">Subject: Deploy request</div>
+        </div>
+        <div class="hm-wg-terminal" data-gm-terminal>
+          <div class="hm-wg-term-cmd" data-gm-cmd></div>
+          <div class="hm-wg-term-result" data-gm-result></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hm-wg {
+    width: 340px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: opacity 0.4s ease;
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .hm-body {
+    display: flex;
+    height: 180px;
+  }
+
+  /* --- Halves --- */
+  .hm-wg-half {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 8px 6px;
+    overflow: hidden;
+  }
+
+  .hm-wg-divider {
+    width: 1px;
+    background: var(--border-default);
+    flex-shrink: 0;
+  }
+
+  /* --- Icon row --- */
+  .hm-wg-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+  .hm-wg-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hm-wg-icon {
+    display: block;
+    flex-shrink: 0;
+  }
+  .hm-wg-label {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+  }
+
+  /* --- Notification badge --- */
+  .hm-wg-badge {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 6px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .hm-wg-badge-wa { background: #25D366; }
+  .hm-wg-badge-gm { background: #EA4335; }
+  .hm-wg-badge.hm-wg-vis {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* --- Content area --- */
+  .hm-wg-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+  }
+
+  /* --- WhatsApp bubble --- */
+  .hm-wg-bubble {
+    background: rgba(37,211,102,0.1);
+    border: 1px solid rgba(37,211,102,0.2);
+    border-radius: 6px 6px 6px 1px;
+    padding: 5px 6px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .hm-wg-bubble.hm-wg-vis {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .hm-wg-bubble-text {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  /* --- Gmail email preview --- */
+  .hm-wg-email {
+    background: rgba(234,67,53,0.06);
+    border: 1px solid rgba(234,67,53,0.15);
+    border-radius: 4px;
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: 0;
+    transform: translateX(8px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .hm-wg-email.hm-wg-vis {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .hm-wg-email-from {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hm-wg-email-subj {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-primary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* --- Terminal responses --- */
+  .hm-wg-terminal {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding-top: 2px;
+  }
+  .hm-wg-term-cmd {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    min-height: 9px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .hm-wg-term-cmd.hm-wg-vis { opacity: 1; }
+  .hm-wg-term-result {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--success);
+    white-space: nowrap;
+    overflow: hidden;
+    min-height: 9px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .hm-wg-term-result.hm-wg-vis { opacity: 1; }
+
+  /* --- Green glow effect --- */
+  .hm-wg-half.hm-wg-glow {
+    box-shadow: inset 0 0 12px rgba(124,179,130,0.15);
+    border-radius: 4px;
+    transition: box-shadow 0.4s ease;
+  }
+
+  @media (max-width: 768px) {
+    .hm-wg { width: 100%; max-width: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-wg-bubble,
+    .hm-wg-email {
+      opacity: 1;
+      transform: none;
+    }
+    .hm-wg-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .hm-wg-term-cmd,
+    .hm-wg-term-result {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-wg]') as HTMLElement;
+    if (!root) return;
+
+    const badgeWa = root.querySelector('[data-badge-wa]') as HTMLElement;
+    const badgeGm = root.querySelector('[data-badge-gm]') as HTMLElement;
+    const waBubble = root.querySelector('[data-wa-bubble]') as HTMLElement;
+    const waCmd = root.querySelector('[data-wa-cmd]') as HTMLElement;
+    const waResult = root.querySelector('[data-wa-result]') as HTMLElement;
+    const gmEmail = root.querySelector('[data-gm-email]') as HTMLElement;
+    const gmCmd = root.querySelector('[data-gm-cmd]') as HTMLElement;
+    const gmResult = root.querySelector('[data-gm-result]') as HTMLElement;
+    const waHalf = root.querySelector('.hm-wg-wa') as HTMLElement;
+    const gmHalf = root.querySelector('.hm-wg-gm') as HTMLElement;
+
+    function showBadge(el: HTMLElement, text: string) {
+      el.textContent = text;
+      el.classList.add('hm-wg-vis');
+    }
+    function hideBadge(el: HTMLElement) {
+      el.classList.remove('hm-wg-vis');
+    }
+
+    function showEl(el: HTMLElement) { el.classList.add('hm-wg-vis'); }
+    function hideEl(el: HTMLElement) { el.classList.remove('hm-wg-vis'); }
+
+    function resetState() {
+      hideBadge(badgeWa);
+      hideBadge(badgeGm);
+      waBubble.classList.remove('hm-wg-vis');
+      gmEmail.classList.remove('hm-wg-vis');
+      waCmd.textContent = '';
+      waCmd.classList.remove('hm-wg-vis');
+      waResult.textContent = '';
+      waResult.classList.remove('hm-wg-vis');
+      gmCmd.textContent = '';
+      gmCmd.classList.remove('hm-wg-vis');
+      gmResult.textContent = '';
+      gmResult.classList.remove('hm-wg-vis');
+      waHalf.classList.remove('hm-wg-glow');
+      gmHalf.classList.remove('hm-wg-glow');
+    }
+
+    // Reduced motion: show static final state
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      showBadge(badgeWa, '');
+      showBadge(badgeGm, '');
+      waBubble.classList.add('hm-wg-vis');
+      gmEmail.classList.add('hm-wg-vis');
+      waCmd.textContent = '> read whatsapp';
+      waCmd.classList.add('hm-wg-vis');
+      waResult.textContent = '\u2713 Calendar updated';
+      waResult.classList.add('hm-wg-vis');
+      gmCmd.textContent = '> read email';
+      gmCmd.classList.add('hm-wg-vis');
+      gmResult.textContent = '\u2713 Reply drafted & sent';
+      gmResult.classList.add('hm-wg-vis');
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
+    }
+
+    async function startLoop() {
+      while (running) {
+        // 0-0.5s: Reset, both halves visible with icons/labels only
+        resetState();
+        await wait(500);
+        if (!running) break;
+
+        // 0.5-2s: WhatsApp bubble slides in, badge appears
+        showBadge(badgeWa, '1');
+        showEl(waBubble);
+        await wait(1500);
+        if (!running) break;
+
+        // 2-3.5s: Terminal reads whatsapp, shows result, badge clears
+        waCmd.textContent = '> read whatsapp';
+        showEl(waCmd);
+        await wait(600);
+        if (!running) break;
+        waResult.textContent = '\u2713 Calendar updated';
+        showEl(waResult);
+        hideBadge(badgeWa);
+        await wait(900);
+        if (!running) break;
+
+        // 3.5-5s: Gmail email slides in, badge appears
+        showBadge(badgeGm, '1');
+        showEl(gmEmail);
+        await wait(1500);
+        if (!running) break;
+
+        // 5-7s: Terminal reads email, shows result, badge clears
+        gmCmd.textContent = '> read email';
+        showEl(gmCmd);
+        await wait(600);
+        if (!running) break;
+        gmResult.textContent = '\u2713 Reply drafted & sent';
+        showEl(gmResult);
+        hideBadge(badgeGm);
+        await wait(1400);
+        if (!running) break;
+
+        // 7-9s: Green glow on both sides
+        waHalf.classList.add('hm-wg-glow');
+        gmHalf.classList.add('hm-wg-glow');
+        await wait(2000);
+        if (!running) break;
+
+        // 9-9.5s: Fade out, loop
+        root.style.opacity = '0';
+        root.style.transition = 'opacity 0.4s ease';
+        await wait(500);
+        if (!running) break;
+        root.style.opacity = '1';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+          root.style.opacity = '1';
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>
