@@ -1172,7 +1172,7 @@ Astro.response.headers.set('Expires', '0');
     <div class="topbar">
       <div class="topbar-left">
         <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
-        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r46</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r47</span></a>
         <span id="topbar-project"></span>
         <span id="dbg-state" style="display:none;font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
       </div>
@@ -1447,7 +1447,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r46  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r47  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -1697,14 +1697,25 @@ Astro.response.headers.set('Expires', '0');
       if (typingTimer) clearTimeout(typingTimer);
       typingTimer = setTimeout(() => {
         userIsTyping = false;
-        setHOffset(0);
       }, 2000);
     }
 
     function setHOffset(px) {
       hOffset = px;
       const xtermEl = terminalWrap.querySelector('.xterm');
-      if (xtermEl) xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
+      if (xtermEl) {
+        xtermEl.style.transition = 'transform 120ms ease-out';
+        xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
+      }
+    }
+
+    function setHOffsetImmediate(px) {
+      hOffset = px;
+      const xtermEl = terminalWrap.querySelector('.xterm');
+      if (xtermEl) {
+        xtermEl.style.transition = 'none';
+        xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
+      }
     }
 
     function isClientFocused() {
@@ -1923,7 +1934,7 @@ Astro.response.headers.set('Expires', '0');
         const isAtBottom = distanceFromBottom < 10;
         const hasScrollback = viewport.scrollHeight > viewport.clientHeight + 10;
         const isScrolledUp = !isAtBottom && hasScrollback;
-        const isScrolledRight = terminalWrap.scrollLeft > 10;
+        const isScrolledRight = hOffset > 10;
         scrollBottomBtn.classList.toggle('visible', isScrolledUp || isScrolledRight);
 
         const svg = scrollBottomBtn.querySelector('svg');
@@ -1946,14 +1957,19 @@ Astro.response.headers.set('Expires', '0');
         const vp = terminalWrap.querySelector('.xterm-viewport');
         if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
 
-        // Auto-scroll: only when typing, only when cursor is visually between 3/5 and 4/5
+        // Auto-scroll: keep cursor visible when user is typing
         if (userIsTyping && isMobileResizeMode()) {
           const cellWidth = getCellWidth();
           if (cellWidth) {
             const cursorPx = term.buffer.active.cursorX * cellWidth;
-            const visualPos = cursorPx - hOffset;
             const vw = terminalWrap.clientWidth;
-            if (visualPos > vw * 0.6 && visualPos < vw * 0.8) {
+            const visualPos = cursorPx - hOffset;
+
+            if (visualPos > vw * 0.80) {
+              // Cursor past right edge → scroll right
+              setHOffset(Math.max(0, cursorPx - vw * 0.33));
+            } else if (visualPos < vw * 0.15 && hOffset > 0) {
+              // Cursor past left edge while scrolled → scroll left
               setHOffset(Math.max(0, cursorPx - vw * 0.33));
             }
           }
@@ -2058,7 +2074,7 @@ Astro.response.headers.set('Expires', '0');
           // Manually apply horizontal scroll via transform
           const hDelta = lastTouchX - t.clientX;
           if (Math.abs(hDelta) > 1) {
-            setHOffset(Math.max(0, hOffset + hDelta));
+            setHOffsetImmediate(Math.max(0, hOffset + hDelta));
             isUserTouchScrolling = true;
           }
           lastTouchX = t.clientX;
@@ -2453,6 +2469,13 @@ Astro.response.headers.set('Expires', '0');
             ws.send(JSON.stringify({ type: 'get_terminals', projectPath: sidebarData.currentProject }));
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
 
+            if (msg.command === 'new_terminal') {
+              const newTermId = msg.terminalId || currentTerminalId;
+              // Navigate to the newly created terminal
+              if (newTermId) {
+                setTimeout(() => switchTerminal(newTermId), 300);
+              }
+            }
             if (msg.command === 'new_terminal' && pendingAIStart) {
               pendingAIStart = false;
               const newTermId = msg.terminalId || currentTerminalId;
@@ -2881,6 +2904,7 @@ Astro.response.headers.set('Expires', '0');
     scrollBottomBtn.addEventListener('click', () => {
       term.scrollToBottom();
       terminalWrap.scrollLeft = 0;
+      setHOffset(0);
       scrollBottomBtn.classList.remove('visible');
     });
 
@@ -3132,7 +3156,7 @@ Astro.response.headers.set('Expires', '0');
           if (e.data.size > 0) audioChunks.push(e.data);
         };
         const recorderMimeType = mediaRecorder.mimeType || mimeType || 'audio/webm';
-        mediaRecorder.onstop = () => {
+        mediaRecorder.onstop = async () => {
           // Release mic
           stream.getTracks().forEach(t => t.stop());
           if (audioChunks.length === 0) {
@@ -3144,17 +3168,37 @@ Astro.response.headers.set('Expires', '0');
             showToast('Recording too long (max 5 MB)');
             return;
           }
-          // Base64-encode and send via WebSocket
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64 = reader.result.split(',')[1];
+          // Convert audio to 16kHz mono Float32 PCM using Web Audio API (no ffmpeg needed server-side)
+          try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let float32Data;
+            try {
+              const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+              const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+              const source = offlineCtx.createBufferSource();
+              source.buffer = decoded;
+              source.connect(offlineCtx.destination);
+              source.start(0);
+              const resampled = await offlineCtx.startRendering();
+              float32Data = resampled.getChannelData(0);
+            } finally {
+              audioCtx.close();
+            }
+
+            // Convert Float32Array to base64 for JSON transport
+            const uint8 = new Uint8Array(float32Data.buffer, float32Data.byteOffset, float32Data.byteLength);
+            let binary = '';
+            for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+            const base64Pcm = btoa(binary);
+
             if (ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
               ws.send(JSON.stringify({
                 type: 'voice_audio',
                 terminalId: currentTerminalId,
-                mimeType: blob.type,
-                data: base64,
-                size: blob.size,
+                data: base64Pcm,
+                format: 'float32_16k',
+                samples: float32Data.length,
               }));
               // Show preview with placeholder
               voiceText.value = '';
@@ -3172,8 +3216,10 @@ Astro.response.headers.set('Expires', '0');
             } else {
               showToast('No active connection');
             }
-          };
-          reader.readAsDataURL(blob);
+          } catch (err) {
+            console.error('Audio conversion failed:', err);
+            showToast('Failed to convert audio');
+          }
         };
         mediaRecorder.start();
         isRecording = true;
