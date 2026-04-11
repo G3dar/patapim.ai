@@ -1051,8 +1051,6 @@ Astro.response.headers.set('Expires', '0');
 
     @media (max-width: 768px) {
       .fab-stack { bottom: 100px; right: 16px; }
-      .fab-kbd { display: flex; }
-      .fab-kbd.hidden { display: none; }
     }
 
     /* Selection overlay */
@@ -1401,6 +1399,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-key="Enter">↵</button>
           <button class="key-btn" id="key-zoom-out" title="Zoom out">A−</button>
           <button class="key-btn" id="key-zoom-in" title="Zoom in">A+</button>
+          <button class="key-btn" id="key-kbd" title="Toggle keyboard">⌨</button>
           <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
         </div>
       </div>
@@ -3400,24 +3399,23 @@ Astro.response.headers.set('Expires', '0');
     if (keyMic) keyMic.addEventListener('click', toggleRecording);
     fabMic.addEventListener('click', toggleRecording);
 
-    // Floating keyboard button: open native keyboard on mobile
-    fabKbd.addEventListener('click', () => {
+    // Toggle native keyboard on mobile
+    function openMobileKeyboard() {
       if (!isMobileClient) return;
       mobileKeyboardOpen = true;
       keyboardOpenTime = Date.now();
       fabKbd.classList.add('hidden');
       const ta = terminalWrap.querySelector('.xterm-helper-textarea');
       if (ta) {
-        // Blur first so iOS treats the subsequent focus() as a fresh gesture.
         ta.blur();
         ta.removeAttribute('readonly');
-        // Force synchronous reflow so the attribute removal is committed.
         void ta.offsetHeight;
-        // Focus the textarea directly (more reliable than term.focus() on iOS).
         ta.focus();
       }
       syncTerminalFocus();
-    });
+    }
+    fabKbd.addEventListener('click', openMobileKeyboard);
+    document.getElementById('key-kbd').addEventListener('click', openMobileKeyboard);
 
     // Send: write transcribed text to terminal — user decides Enter
     voiceSend.addEventListener('click', () => {
