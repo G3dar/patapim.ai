@@ -1405,6 +1405,8 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-seq="\x0c">^L</button>
           <button class="key-btn" data-seq="\x1a">^Z</button>
           <button class="key-btn" id="key-mic" title="Dictado por voz">🎤</button>
+          <button class="key-btn" id="key-zoom-out" title="Zoom out">A−</button>
+          <button class="key-btn" id="key-zoom-in" title="Zoom in">A+</button>
           <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
         </div>
       </div>
@@ -2994,6 +2996,22 @@ Astro.response.headers.set('Expires', '0');
     });
 
     document.getElementById('settings-font-inc').addEventListener('click', () => {
+      fontSize = Math.min(28, fontSize + 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+
+    // Zoom buttons in keys bar
+    document.getElementById('key-zoom-out').addEventListener('click', () => {
+      fontSize = Math.max(8, fontSize - 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+    document.getElementById('key-zoom-in').addEventListener('click', () => {
       fontSize = Math.min(28, fontSize + 1);
       fontManuallySet = true;
       term.options.fontSize = fontSize;
