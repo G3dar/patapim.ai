@@ -737,6 +737,12 @@ Astro.response.headers.set('Expires', '0');
       scrollbar-color: var(--border) transparent;
     }
 
+    @media (pointer: coarse) {
+      .terminal-wrap .xterm-viewport {
+        overflow-x: hidden !important;
+      }
+    }
+
     .terminal-wrap .xterm-screen {
       touch-action: pan-x pan-y !important;
     }
