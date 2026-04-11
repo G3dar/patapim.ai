@@ -3282,14 +3282,15 @@ Astro.response.headers.set('Expires', '0');
       mobileKeyboardOpen = true;
       keyboardOpenTime = Date.now();
       fabKbd.classList.add('hidden');
-      if (xtermTextarea) {
+      const ta = terminalWrap.querySelector('.xterm-helper-textarea');
+      if (ta) {
         // Blur first so iOS treats the subsequent focus() as a fresh gesture.
-        xtermTextarea.blur();
-        xtermTextarea.removeAttribute('readonly');
+        ta.blur();
+        ta.removeAttribute('readonly');
         // Force synchronous reflow so the attribute removal is committed.
-        void xtermTextarea.offsetHeight;
+        void ta.offsetHeight;
         // Focus the textarea directly (more reliable than term.focus() on iOS).
-        xtermTextarea.focus();
+        ta.focus();
       }
       syncTerminalFocus();
     });
