@@ -1965,9 +1965,9 @@ Astro.response.headers.set('Expires', '0');
             const cursorX = buf.cursorX;
             const cursorY = buf.cursorY;
 
-            // Skip ghost cursor at bottom-right corner (last col of last row)
-            // xterm parks the cursor there during output — not a real typing position
-            if (cursorX >= term.cols - 1 && cursorY >= term.rows - 1) {
+            // Skip phantom cursor on the last row — that's Claude's footer/status bar,
+            // not a real typing position. The actual prompt is always above it.
+            if (cursorY >= term.rows - 1) {
               // don't auto-scroll for this phantom position
             } else {
               const cursorPx = cursorX * cellWidth;
