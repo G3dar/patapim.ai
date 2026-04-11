@@ -1399,12 +1399,6 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-key="ArrowLeft">&larr;</button>
           <button class="key-btn" data-key="ArrowRight">&rarr;</button>
           <button class="key-btn" data-key="Enter">↵</button>
-          <button class="key-btn" data-seq="\x01">^A</button>
-          <button class="key-btn" data-seq="\x03">^C</button>
-          <button class="key-btn" data-seq="\x04">^D</button>
-          <button class="key-btn" data-seq="\x0c">^L</button>
-          <button class="key-btn" data-seq="\x1a">^Z</button>
-          <button class="key-btn" id="key-mic" title="Dictado por voz">🎤</button>
           <button class="key-btn" id="key-zoom-out" title="Zoom out">A−</button>
           <button class="key-btn" id="key-zoom-in" title="Zoom in">A+</button>
           <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
@@ -3363,7 +3357,7 @@ Astro.response.headers.set('Expires', '0');
         };
         mediaRecorder.start();
         isRecording = true;
-        keyMic.classList.add('recording');
+        if (keyMic) keyMic.classList.add('recording');
         fabMic.classList.add('recording');
         // Auto-stop after 60s
         recordingTimeout = setTimeout(() => {
@@ -3377,7 +3371,7 @@ Astro.response.headers.set('Expires', '0');
 
     function stopRecording() {
       isRecording = false;
-      keyMic.classList.remove('recording');
+      if (keyMic) keyMic.classList.remove('recording');
       fabMic.classList.remove('recording');
       if (recordingTimeout) { clearTimeout(recordingTimeout); recordingTimeout = null; }
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -3403,7 +3397,7 @@ Astro.response.headers.set('Expires', '0');
       if (isRecording) stopRecording();
       else startRecording();
     }
-    keyMic.addEventListener('click', toggleRecording);
+    if (keyMic) keyMic.addEventListener('click', toggleRecording);
     fabMic.addEventListener('click', toggleRecording);
 
     // Floating keyboard button: open native keyboard on mobile
