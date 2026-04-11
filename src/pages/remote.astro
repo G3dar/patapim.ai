@@ -1961,16 +1961,26 @@ Astro.response.headers.set('Expires', '0');
         if (userIsTyping && isMobileResizeMode()) {
           const cellWidth = getCellWidth();
           if (cellWidth) {
-            const cursorPx = term.buffer.active.cursorX * cellWidth;
-            const vw = terminalWrap.clientWidth;
-            const visualPos = cursorPx - hOffset;
+            const buf = term.buffer.active;
+            const cursorX = buf.cursorX;
+            const cursorY = buf.cursorY;
 
-            if (visualPos > vw * 0.80) {
-              // Cursor past right edge → scroll right
-              setHOffset(Math.max(0, cursorPx - vw * 0.33));
-            } else if (visualPos < vw * 0.15 && hOffset > 0) {
-              // Cursor past left edge while scrolled → scroll left
-              setHOffset(Math.max(0, cursorPx - vw * 0.33));
+            // Skip ghost cursor at bottom-right corner (last col of last row)
+            // xterm parks the cursor there during output — not a real typing position
+            if (cursorX >= term.cols - 1 && cursorY >= term.rows - 1) {
+              // don't auto-scroll for this phantom position
+            } else {
+              const cursorPx = cursorX * cellWidth;
+              const vw = terminalWrap.clientWidth;
+              const visualPos = cursorPx - hOffset;
+
+              if (visualPos > vw * 0.80) {
+                // Cursor past right edge → scroll right
+                setHOffset(Math.max(0, cursorPx - vw * 0.33));
+              } else if (visualPos < vw * 0.15 && hOffset > 0) {
+                // Cursor past left edge while scrolled → scroll left
+                setHOffset(Math.max(0, cursorPx - vw * 0.33));
+              }
             }
           }
         }
