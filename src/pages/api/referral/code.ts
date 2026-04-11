@@ -9,6 +9,7 @@ export const OPTIONS: APIRoute = ({ request }) => corsOptions(request);
 
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
+  const siteUrl = env.SITE_URL || 'https://patapim.ai';
   const cors = getCorsHeaders(context.request);
   const headers = { 'Content-Type': 'application/json', ...cors };
 
@@ -37,7 +38,7 @@ export const POST: APIRoute = async (context) => {
     if (referralData.refCode) {
       return new Response(JSON.stringify({
         code: referralData.refCode,
-        url: `https://patapim.ai/r/${referralData.refCode}`,
+        url: `${siteUrl}/r/${referralData.refCode}`,
       }), { status: 200, headers });
     }
   } else {
@@ -76,6 +77,6 @@ export const POST: APIRoute = async (context) => {
 
   return new Response(JSON.stringify({
     code,
-    url: `https://patapim.ai/r/${code}`,
+    url: `${siteUrl}/r/${code}`,
   }), { status: 200, headers });
 };

@@ -32,7 +32,7 @@ const siteUrl = 'https://patapim.ai';
   <!-- Open Graph -->
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={ogImage} />
+  <meta property="og:image" content={ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`} />
   <meta property="og:url" content={Astro.url.href} />
   <meta property="og:type" content="website" />
 
@@ -40,12 +40,15 @@ const siteUrl = 'https://patapim.ai';
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image" content={ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`} />
 
   <!-- hreflang -->
   <link rel="alternate" hreflang="en" href={`${siteUrl}${enPath}`} />
   <link rel="alternate" hreflang="ja" href={`${siteUrl}${jaPath}`} />
   <link rel="alternate" hreflang="x-default" href={`${siteUrl}${enPath}`} />
+
+  <!-- Canonical -->
+  <link rel="canonical" href={`${siteUrl}${currentPath}`} />
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -57,6 +60,21 @@ const siteUrl = 'https://patapim.ai';
   {locale === 'ja' && (
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   )}
+
+  <!-- Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Patapim",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS",
+    "url": siteUrl,
+    "offers": [
+      { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      { "@type": "Offer", "price": "6.99", "priceCurrency": "USD" },
+      { "@type": "Offer", "price": "29.99", "priceCurrency": "USD" }
+    ]
+  })} />
 
   <!-- Global CSS -->
   <style is:global>

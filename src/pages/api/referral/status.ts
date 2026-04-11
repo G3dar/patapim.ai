@@ -16,6 +16,7 @@ function maskEmail(email: string): string {
 
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
+  const siteUrl = env.SITE_URL || 'https://patapim.ai';
   const cors = getCorsHeaders(context.request);
   const headers = { 'Content-Type': 'application/json', ...cors };
 
@@ -63,6 +64,6 @@ export const POST: APIRoute = async (context) => {
     rewardGrantedAt: data.rewardGrantedAt || null,
     licenseKey: data.rewardGranted ? data.licenseKey : null,
     refCode: data.refCode || null,
-    referralUrl: data.refCode ? `https://patapim.ai/r/${data.refCode}` : null,
+    referralUrl: data.refCode ? `${siteUrl}/r/${data.refCode}` : null,
   }), { status: 200, headers });
 };

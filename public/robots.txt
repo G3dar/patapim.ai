@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://patapim.ai/sitemap.xml
+Sitemap: https://patapim.ai/sitemap-index.xml

@@ -1875,7 +1875,7 @@ if (!isAdmin(user)) {
             <tbody>
               ${data.users.map((u: any) => `<tr>
                 <td><div class="ucell">
-                  ${u.picture ? `<img src="${esc(u.picture)}" class="ucell-av" referrerpolicy="no-referrer" />` : `<span class="ucell-av ucell-av-letter">${(u.name || u.email || '?')[0].toUpperCase()}</span>`}
+                  ${u.picture ? `<img src="${esc(u.picture)}" class="ucell-av" alt="" referrerpolicy="no-referrer" />` : `<span class="ucell-av ucell-av-letter">${(u.name || u.email || '?')[0].toUpperCase()}</span>`}
                   <div class="ucell-info"><span class="ucell-name">${u.name ? esc(u.name) : `<span style="color:var(--gray-300);font-style:italic">Not signed up</span>`}</span><span class="ucell-email">${esc(u.email)}</span></div>
                 </div></td>
                 <td><span class="badge badge-${u.plan}">${u.plan === 'free' ? 'Free' : u.plan === 'pro' ? 'Pro' : 'Lifetime'}</span></td>

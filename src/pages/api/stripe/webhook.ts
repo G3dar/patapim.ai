@@ -5,6 +5,8 @@ import { createReferralAssociation, activateReferral } from '../../../lib/referr
 
 export const prerender = false;
 
+const maskEmail = (e: string) => { const [l, d] = e.split('@'); return d ? `${l[0]}***@${d}` : '***'; };
+
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
@@ -69,7 +71,7 @@ export const POST: APIRoute = async (context) => {
         const plan = (session.metadata?.plan as 'pro' | 'lifetime') || 'pro';
         const subscriptionId = session.subscription as string | null;
 
-        console.log('[webhook] checkout.session.completed', { email, customerId, plan, mode: session.mode });
+        console.log('[webhook] checkout.session.completed', { email: maskEmail(email), customerId, plan, mode: session.mode });
 
         const licenseKey = generateLicenseKey();
         const now = new Date().toISOString();
@@ -107,7 +109,7 @@ export const POST: APIRoute = async (context) => {
         }
 
         await Promise.all(writes);
-        console.log('[webhook] License created', { email, licenseKey, plan });
+        console.log('[webhook] License created', { email: maskEmail(email), licenseKey: licenseKey.slice(0, 4) + '...', plan });
 
         // Process referral from checkout metadata (Flow B: buyer entered referrer email)
         const referrerEmail = session.metadata?.referrerEmail;
@@ -135,7 +137,7 @@ export const POST: APIRoute = async (context) => {
 
         const raw = await kv.get(`license:${email}`);
         if (!raw) {
-          console.error(`[webhook] subscription.updated: no license for ${email}`);
+          console.error(`[webhook] subscription.updated: no license for ${maskEmail(email)}`);
           break;
         }
         const license: License = JSON.parse(raw);
@@ -159,7 +161,7 @@ export const POST: APIRoute = async (context) => {
           : null;
 
         await kv.put(`license:${email}`, JSON.stringify(license));
-        console.log(`[webhook] subscription.updated: ${email} → ${license.status}`);
+        console.log(`[webhook] subscription.updated: ${maskEmail(email)} → ${license.status}`);
         break;
       }
 
@@ -174,7 +176,7 @@ export const POST: APIRoute = async (context) => {
 
         const raw = await kv.get(`license:${email}`);
         if (!raw) {
-          console.error(`[webhook] subscription.deleted: no license for ${email}`);
+          console.error(`[webhook] subscription.deleted: no license for ${maskEmail(email)}`);
           break;
         }
         const license: License = JSON.parse(raw);
@@ -183,7 +185,7 @@ export const POST: APIRoute = async (context) => {
         license.expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
 
         await kv.put(`license:${email}`, JSON.stringify(license));
-        console.log(`[webhook] subscription.deleted: ${email} → expired`);
+        console.log(`[webhook] subscription.deleted: ${maskEmail(email)} → expired`);
         break;
       }
 
@@ -198,14 +200,14 @@ export const POST: APIRoute = async (context) => {
 
         const raw = await kv.get(`license:${email}`);
         if (!raw) {
-          console.error(`[webhook] payment_failed: no license for ${email}`);
+          console.error(`[webhook] payment_failed: no license for ${maskEmail(email)}`);
           break;
         }
         const license: License = JSON.parse(raw);
 
         license.status = 'payment_failed';
         await kv.put(`license:${email}`, JSON.stringify(license));
-        console.log(`[webhook] payment_failed: ${email}`);
+        console.log(`[webhook] payment_failed: ${maskEmail(email)}`);
         break;
       }
     }

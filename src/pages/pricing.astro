@@ -34,7 +34,7 @@ const faq = translations.pricing.faq;
       <!-- Pricing Cards -->
       <div class="pricing-cards">
         <div class="p-card">
-          <h3>{t(locale, 'pricing.freeTitle')}</h3>
+          <h2>{t(locale, 'pricing.freeTitle')}</h2>
           <div class="p-price"><span class="p-amount">{t(locale, 'pricing.freePrice')}</span> <span class="p-period">{t(locale, 'pricing.freePeriod')}</span></div>
           <p class="p-desc">{t(locale, 'pricing.freeDesc')}</p>
           <a href={lp('/download')} class="btn btn-secondary" style="width:100%; justify-content:center;">{t(locale, 'common.downloadFree')}</a>
@@ -49,7 +49,7 @@ const faq = translations.pricing.faq;
         </div>
 
         <div class="p-card featured">
-          <h3>{t(locale, 'pricing.proTitle')}</h3>
+          <h2>{t(locale, 'pricing.proTitle')}</h2>
           <div class="p-price">
             <span class="p-amount">{t(locale, 'pricing.proPrice')}</span>
             <span class="p-period">{t(locale, 'pricing.proPeriod')}</span>
@@ -71,7 +71,7 @@ const faq = translations.pricing.faq;
       <div class="unlock-section">
         <div class="unlock-card">
           <span class="unlock-badge">{t(locale, 'pricing.unlockBadge')}</span>
-          <h3 class="unlock-title">{t(locale, 'pricing.unlockTitle')}</h3>
+          <h2 class="unlock-title">{t(locale, 'pricing.unlockTitle')}</h2>
           <p class="unlock-desc" set:html={t(locale, 'pricing.unlockDesc').replace(/\n/g, '<br/>')} />
           <div class="unlock-price-row">
             <div class="unlock-price-area">
@@ -89,7 +89,7 @@ const faq = translations.pricing.faq;
         <div class="faq-grid">
           {faq.map((item) => (
             <div class="faq-item">
-              <h4>{item.q}</h4>
+              <h3>{item.q}</h3>
               <p set:html={item.a} />
             </div>
           ))}
@@ -141,7 +141,7 @@ const faq = translations.pricing.faq;
     white-space: nowrap;
   }
 
-  .p-card h3 {
+  .p-card h2 {
     font-size: 22px;
     font-weight: 600;
     margin-bottom: var(--space-sm);
@@ -265,7 +265,7 @@ const faq = translations.pricing.faq;
     margin-top: var(--space-2xl);
   }
 
-  .faq-item h4 {
+  .faq-item h3 {
     font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);

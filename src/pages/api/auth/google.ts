@@ -8,9 +8,13 @@ export const GET: APIRoute = async (context) => {
   const url = new URL(context.request.url);
   const state = crypto.randomUUID();
 
-  // Store state value — include beta code if present so it survives OAuth round-trip
+  // Store state value — include beta code and returnTo if present so they survive OAuth round-trip
   const betaCode = url.searchParams.get('beta') || '';
-  const stateValue = betaCode ? JSON.stringify({ beta: betaCode }) : 'true';
+  const returnTo = url.searchParams.get('returnTo') || '';
+  const stateData: Record<string, string> = {};
+  if (betaCode) stateData.beta = betaCode;
+  if (returnTo) stateData.returnTo = returnTo;
+  const stateValue = Object.keys(stateData).length > 0 ? JSON.stringify(stateData) : 'true';
   await env.SESSIONS.put(`oauth_state:${state}`, stateValue, { expirationTtl: STATE_TTL });
 
   const siteUrl = env.SITE_URL || 'https://patapim.ai';

@@ -33,12 +33,14 @@ export const GET: APIRoute = async (context) => {
   }
   await env.SESSIONS.delete(`oauth_state:${state}`);
 
-  // Extract beta code from OAuth state if present
+  // Extract beta code and returnTo from OAuth state if present
   let betaCodeFromState = '';
+  let returnToFromState = '';
   if (storedState !== 'true') {
     try {
       const stateData = JSON.parse(storedState);
       betaCodeFromState = stateData.beta || '';
+      returnToFromState = stateData.returnTo || '';
     } catch {
       // Not JSON — ignore
     }
@@ -263,6 +265,14 @@ export const GET: APIRoute = async (context) => {
     responseHeaders.append('Set-Cookie', '__patapim_pair=; Secure; SameSite=Lax; Path=/; Max-Age=0');
   }
 
-  responseHeaders.set('Location', `${siteUrl}/go${pairingSessionId ? '?paired=1' : ''}`);
+  // Redirect: preserve returnTo from native app, or default to /go
+  let finalRedirect = `${siteUrl}/go${pairingSessionId ? '?paired=1' : ''}`;
+  if (returnToFromState && !pairingSessionId) {
+    // Validate returnTo is a relative path (security: prevent open redirect)
+    if (returnToFromState.startsWith('/')) {
+      finalRedirect = `${siteUrl}${returnToFromState}`;
+    }
+  }
+  responseHeaders.set('Location', finalRedirect);
   return new Response(null, { status: 302, headers: responseHeaders });
 };
