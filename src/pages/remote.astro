@@ -838,18 +838,14 @@ Astro.response.headers.set('Expires', '0');
     /* Special keys toolbar (mobile) */
     .keys-bar {
       display: none;
+      flex-wrap: wrap;
       align-items: center;
-      height: 36px;
-      padding: 0 8px;
+      padding: 4px 8px;
       gap: 4px;
       background: var(--bg-surface);
       border-top: 1px solid var(--border);
-      overflow-x: auto;
-      scrollbar-width: none;
       flex-shrink: 0;
     }
-
-    .keys-bar::-webkit-scrollbar { display: none; }
 
     .key-btn {
       background: var(--bg-elevated);
@@ -1409,7 +1405,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" data-seq="\x0c">^L</button>
           <button class="key-btn" data-seq="\x1a">^Z</button>
           <button class="key-btn" id="key-mic" title="Dictado por voz">🎤</button>
-          <button class="key-btn" id="key-select" style="margin-left:auto; border-color:var(--accent); color:var(--accent);">Select</button>
+          <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
         </div>
       </div>
     </div>
