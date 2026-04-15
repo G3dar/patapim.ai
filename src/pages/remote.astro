@@ -1805,6 +1805,11 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
+    function isClaudeActive() {
+      const cur = terminals.find(t => t.id === currentTerminalId);
+      return cur && cur.isProcessing;
+    }
+
     function isClientFocused() {
       return !document.hidden && document.visibilityState === 'visible';
     }
@@ -2004,9 +2009,9 @@ Astro.response.headers.set('Expires', '0');
           terminalId: currentTerminalId,
           data: sendData,
         }));
-        // Enter/Return → reset to left immediately
+        // Enter/Return → reset to left immediately (only when Claude is idle)
         if (sendData === '\r' || sendData === '\n') {
-          setHOffset(0);
+          if (!isClaudeActive()) setHOffset(0);
           userIsTyping = false;
           if (typingTimer) clearTimeout(typingTimer);
         } else {
@@ -2039,13 +2044,16 @@ Astro.response.headers.set('Expires', '0');
       // Track scroll position
       term.onScroll(updateScrollButton);
       term.onRender(() => {
-        // Kill any browser/xterm auto-scroll
-        if (terminalWrap.scrollLeft !== 0) terminalWrap.scrollLeft = 0;
-        const vp = terminalWrap.querySelector('.xterm-viewport');
-        if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
+        // Don't adjust horizontal scrolling while Claude is active
+        if (!isClaudeActive()) {
+          // Kill any browser/xterm auto-scroll
+          if (terminalWrap.scrollLeft !== 0) terminalWrap.scrollLeft = 0;
+          const vp = terminalWrap.querySelector('.xterm-viewport');
+          if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
+        }
 
         // Auto-scroll: keep cursor visible when user is typing
-        if (userIsTyping && isMobileResizeMode()) {
+        if (userIsTyping && !isClaudeActive() && isMobileResizeMode()) {
           const cellWidth = getCellWidth();
           if (cellWidth) {
             const buf = term.buffer.active;
