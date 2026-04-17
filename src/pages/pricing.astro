@@ -83,6 +83,23 @@ const faq = translations.pricing.faq;
         </div>
       </div>
 
+      <!-- Enterprise / Business -->
+      <div class="enterprise-section">
+        <div class="enterprise-card">
+          <div class="enterprise-grid">
+            <div class="enterprise-copy">
+              <span class="enterprise-badge">{t(locale, 'pricing.enterpriseBadge')}</span>
+              <h2 class="enterprise-title">{t(locale, 'pricing.enterpriseTitle')}</h2>
+              <p class="enterprise-desc" set:html={t(locale, 'pricing.enterpriseDesc').replace(/\n/g, '<br/>')} />
+            </div>
+            <div class="enterprise-action">
+              <a href="mailto:info@patapim.ai?subject=PATAPIM%20for%20Business" class="btn btn-secondary enterprise-btn">{t(locale, 'pricing.enterpriseCta')}</a>
+              <span class="enterprise-note">{t(locale, 'pricing.enterpriseNote')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- FAQ -->
       <div class="faq-section section">
         <h2 class="section-title" style="font-size: 28px;">{t(locale, 'pricing.faqTitle')}</h2>
@@ -252,6 +269,78 @@ const faq = translations.pricing.faq;
     margin-top: 2px;
   }
 
+  /* Enterprise / Business */
+  .enterprise-section {
+    max-width: 800px;
+    margin: var(--space-xl) auto 0;
+  }
+
+  .enterprise-card {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary, var(--bg-secondary)));
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl) var(--space-2xl);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .enterprise-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, var(--accent-glow), transparent 60%);
+    pointer-events: none;
+  }
+
+  .enterprise-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-xl);
+    align-items: center;
+    position: relative;
+  }
+
+  .enterprise-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: var(--space-sm);
+    letter-spacing: 0.02em;
+  }
+
+  .enterprise-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .enterprise-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .enterprise-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .enterprise-btn {
+    white-space: nowrap;
+  }
+
+  .enterprise-note {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
   /* FAQ */
   .faq-section {
     max-width: 800px;
@@ -283,6 +372,13 @@ const faq = translations.pricing.faq;
     .unlock-price-row {
       flex-direction: column;
       gap: var(--space-lg);
+    }
+    .enterprise-grid {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .enterprise-action {
+      align-items: center;
     }
   }
 </style>

@@ -366,6 +366,10 @@ const en = {
     unlockPrice: '$29.99',
     unlockPeriod: 'one-time',
     unlockButton: 'Get Lifetime Access',
+    enterpriseBadge: 'For Teams',
+    enterpriseTitle: 'PATAPIM for Business',
+    enterpriseDesc: 'Help your company adopt AI the right way. Custom integrations, team onboarding, and dedicated support \u2014 tailored to your stack.',
+    enterpriseCta: 'Talk to us',
   },
   pricing: {
     label: 'Pricing',
@@ -385,6 +389,11 @@ const en = {
     unlockPrice: '$29.99',
     unlockNote: 'one-time payment',
     unlockButton: 'Get Lifetime Access',
+    enterpriseBadge: 'For Teams',
+    enterpriseTitle: 'PATAPIM for Business',
+    enterpriseDesc: 'Help your company adopt AI the right way. Custom integrations, team onboarding,\ndedicated support and on-site implementation \u2014 tailored to your stack.',
+    enterpriseCta: 'Talk to us',
+    enterpriseNote: 'Tailored to your team size & stack',
     featuresCompare: [
       { name: 'Terminals', free: 'Up to 9', pro: 'Unlimited' },
       { name: 'Active Projects', free: 'Up to 3', pro: 'Unlimited' },
