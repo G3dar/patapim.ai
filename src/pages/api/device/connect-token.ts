@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getUserFromRequest } from '../../../lib/auth';
+import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -7,8 +7,8 @@ export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
   const headers = { 'Content-Type': 'application/json' };
 
-  // Session auth (user must be logged in via cookie)
-  const user = await getUserFromRequest(env.SESSIONS, context.request);
+  // Auth via session cookie (web) or bearer device token (desktop)
+  const user = await getUserFromRequestOrDeviceToken(env.SESSIONS, env.LICENSES, context.request);
   if (!user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
@@ -25,13 +25,24 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'deviceToken required' }), { status: 400, headers });
   }
 
+  // Prevent self-targeting — a device cannot create a connect token for itself
+  const bearerToken = context.request.headers.get('authorization');
+  if (bearerToken && deviceToken === bearerToken.replace(/^Bearer\s+/i, '').trim()) {
+    return new Response(JSON.stringify({ error: 'Cannot target own device' }), { status: 400, headers });
+  }
+
   // Verify device exists and belongs to this user
   const raw = await env.LICENSES.get(`device:${deviceToken}`);
   if (!raw) {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  const device = JSON.parse(raw);
+  let device: Record<string, unknown>;
+  try {
+    device = JSON.parse(raw);
+  } catch {
+    return new Response(JSON.stringify({ error: 'Device data corrupted' }), { status: 500, headers });
+  }
   if (device.googleId !== user.googleId) {
     return new Response(JSON.stringify({ error: 'Device does not belong to this user' }), { status: 403, headers });
   }

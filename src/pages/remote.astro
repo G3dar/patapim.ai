@@ -2046,14 +2046,13 @@ Astro.response.headers.set('Expires', '0');
       term.onRender(() => {
         // Don't adjust horizontal scrolling while Claude is active
         if (!isClaudeActive()) {
-          // Kill any browser/xterm auto-scroll
+          // Kill any browser/xterm native auto-scroll (we manage scroll via CSS transform)
           if (terminalWrap.scrollLeft !== 0) terminalWrap.scrollLeft = 0;
           const vp = terminalWrap.querySelector('.xterm-viewport');
           if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
         }
 
-        // Auto-scroll: keep cursor visible when user is typing
-        if (userIsTyping && !isClaudeActive() && isMobileResizeMode()) {
+        if (isMobileResizeMode() && !isClaudeActive()) {
           const cellWidth = getCellWidth();
           if (cellWidth) {
             const buf = term.buffer.active;
@@ -2064,17 +2063,25 @@ Astro.response.headers.set('Expires', '0');
             // not a real typing position. The actual prompt is always above it.
             if (cursorY >= term.rows - 1) {
               // don't auto-scroll for this phantom position
-            } else {
+            } else if (userIsTyping) {
+              // Active typing: keep cursor visible with left/right margin thresholds
               const cursorPx = cursorX * cellWidth;
               const vw = terminalWrap.clientWidth;
               const visualPos = cursorPx - hOffset;
 
               if (visualPos > vw * 0.80) {
-                // Cursor past right edge → scroll right
                 setHOffset(Math.max(0, cursorPx - vw * 0.33));
               } else if (visualPos < vw * 0.15 && hOffset > 0) {
-                // Cursor past left edge while scrolled → scroll left
                 setHOffset(Math.max(0, cursorPx - vw * 0.33));
+              }
+            } else if (!isUserTouchScrolling && hOffset > 0) {
+              // Not typing, not touch-scrolling: if cursor fits in viewport, reset offset.
+              // This prevents stale hOffset from causing jumps when the prompt redraws
+              // or the cursor moves back to column 0 (e.g. after command finishes).
+              const cursorPx = cursorX * cellWidth;
+              const vw = terminalWrap.clientWidth;
+              if (cursorPx < vw * 0.85) {
+                setHOffset(0);
               }
             }
           }

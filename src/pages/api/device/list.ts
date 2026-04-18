@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getUserFromRequest } from '../../../lib/auth';
+import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -11,7 +11,7 @@ export const GET: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
   const headers = { 'Content-Type': 'application/json' };
 
-  const user = await getUserFromRequest(env.SESSIONS, context.request);
+  const user = await getUserFromRequestOrDeviceToken(env.SESSIONS, env.LICENSES, context.request);
   if (!user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
