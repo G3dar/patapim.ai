@@ -15,7 +15,12 @@ const lp = (path: string) => getLocalePath(locale, path);
 
     <div class="navbar-links">
       <a href={`${lp('/')}#why-patapim`} class="nav-link">{t(locale, 'nav.features')}</a>
-      <a href={lp('/download')} class="nav-link">{t(locale, 'nav.download')}</a>
+      <a href={lp('/download')} class="nav-link nav-link-download">
+        <svg class="nav-download-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {t(locale, 'nav.download')}
+      </a>
       <a href={lp('/docs/releases')} class="nav-link">{t(locale, 'nav.docs')}</a>
       <a href={lp('/about')} class="nav-link">{t(locale, 'nav.about')}</a>
     </div>
@@ -124,6 +129,29 @@ const lp = (path: string) => getLocalePath(locale, path);
   }
   .nav-link:hover {
     color: var(--text-primary);
+  }
+
+  .nav-link-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  }
+  .nav-link-download:hover {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+    transform: translateY(-1px);
+  }
+  .nav-download-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
   }
 
   .btn-nav {

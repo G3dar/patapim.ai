@@ -31,6 +31,20 @@ const lp = (path: string) => getLocalePath(locale, path);
       <video class="hero-video" muted loop playsinline autoplay preload="metadata" src="/hero-brainrot.mp4"></video>
     </div>
 
+    <!-- Prominent download CTA that echoes the video's green/amber palette -->
+    <div class="hero-download-wrapper">
+      <a href={lp('/download')} class="hero-download-btn" aria-label={t(locale, 'nav.download')}>
+        <span class="hdl-glow" aria-hidden="true"></span>
+        <span class="hdl-content">
+          <svg class="hdl-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M10 2.5v10m0 0l-4-4m4 4l4-4M3.75 16.25h12.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="hdl-text">{t(locale, 'nav.download')}</span>
+        </span>
+        <span class="hdl-shimmer" aria-hidden="true"></span>
+      </a>
+    </div>
+
     <!-- Three mini-demo animations -->
     <div class="hero-features">
       <div class="hero-feature-item">
@@ -231,6 +245,151 @@ const lp = (path: string) => getLocalePath(locale, path);
     display: block;
     width: 100%;
     border-radius: 16px;
+  }
+
+  /* Prominent download CTA — echoes the jungle-green + CRT-amber palette of the hero video */
+  .hero-download-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: calc(var(--space-2xl) * -1 + 4px) auto var(--space-3xl);
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-download-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 15px 34px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: #1a1208;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    background-image: linear-gradient(115deg, #e8a971 0%, #d4a574 30%, #b5bd5e 55%, #8bb04a 80%, #a8bd5a 100%);
+    background-size: 180% 100%;
+    background-position: 20% 50%;
+    border: 1px solid rgba(255, 220, 180, 0.4);
+    box-shadow:
+      0 0 0 1px rgba(212, 165, 116, 0.18),
+      0 14px 34px -8px rgba(212, 165, 116, 0.5),
+      0 8px 18px -4px rgba(139, 176, 74, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    overflow: hidden;
+    isolation: isolate;
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 260ms ease;
+    animation: hdl-breathe 3.2s ease-in-out infinite, hdl-drift 7s ease-in-out infinite;
+  }
+
+  .hero-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(212, 165, 116, 0.3),
+      0 20px 46px -8px rgba(224, 150, 96, 0.65),
+      0 12px 26px -6px rgba(139, 176, 74, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .hero-download-btn:active {
+    transform: translateY(0);
+  }
+
+  .hdl-content {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hdl-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    animation: hdl-bounce 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+
+  .hero-download-btn:hover .hdl-icon {
+    animation-duration: 1s;
+  }
+
+  .hdl-text {
+    line-height: 1;
+  }
+
+  /* Soft conic glow sitting behind the button */
+  .hdl-glow {
+    position: absolute;
+    inset: -40%;
+    z-index: 0;
+    background: conic-gradient(from 0deg, rgba(224, 150, 96, 0.55), rgba(139, 176, 74, 0.5), rgba(224, 150, 96, 0.55));
+    filter: blur(22px);
+    opacity: 0.55;
+    animation: hdl-spin 8s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Specular shimmer that sweeps across on hover and periodically */
+  .hdl-shimmer {
+    position: absolute;
+    top: 0;
+    left: -40%;
+    width: 40%;
+    height: 100%;
+    z-index: 1;
+    background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+    transform: skewX(-20deg);
+    animation: hdl-shimmer 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes hdl-drift {
+    0%, 100% { background-position: 20% 50%; }
+    50% { background-position: 80% 50%; }
+  }
+
+  @keyframes hdl-breathe {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(212, 165, 116, 0.15),
+        0 12px 32px -8px rgba(212, 165, 116, 0.45),
+        0 6px 16px -4px rgba(139, 176, 74, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(212, 165, 116, 0.25),
+        0 16px 38px -6px rgba(224, 150, 96, 0.55),
+        0 8px 20px -4px rgba(139, 176, 74, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+  }
+
+  @keyframes hdl-bounce {
+    0%, 75%, 100% { transform: translateY(0); }
+    10% { transform: translateY(-2px); }
+    25% { transform: translateY(3px); }
+    40% { transform: translateY(0); }
+  }
+
+  @keyframes hdl-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes hdl-shimmer {
+    0%, 40% { left: -40%; }
+    70%, 100% { left: 120%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-download-btn,
+    .hdl-icon,
+    .hdl-glow,
+    .hdl-shimmer {
+      animation: none;
+    }
   }
 
 
