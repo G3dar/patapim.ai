@@ -1491,6 +1491,7 @@ Astro.response.headers.set('Expires', '0');
     let fontManuallySet = false;
     let reconnectAttempts = 0;
     let reconnectTimer = null;
+    let wsConnectTimeout = null;
     let isAuthenticated = false;
     const modifiers = { ctrl: false, alt: false };
     let fabOpen = false;
@@ -1773,6 +1774,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     let isUserTouchScrolling = false;
+    let autoScrollDisabled = false;
     let userIsTyping = false;
     let typingTimer = null;
 
@@ -1808,6 +1810,28 @@ Astro.response.headers.set('Expires', '0');
     function isClaudeActive() {
       const cur = terminals.find(t => t.id === currentTerminalId);
       return cur && cur.isProcessing;
+    }
+
+    // Desktop: never auto-scroll while the user is reading scrollback.
+    // Snapshot writes (\x1b[2J\x1b[H + viewport-data) and cursor positioning
+    // in live output can yank viewportY back to baseY. We capture the scroll
+    // position before the write and restore it after xterm processes the data.
+    // Mobile uses native xterm-viewport scroll which xterm tracks natively, so
+    // pass through unchanged.
+    function writePreservingScroll(data) {
+      if (!term) return;
+      if (isMobileClient) { term.write(data); return; }
+      const buf = term.buffer.active;
+      const targetY = buf.viewportY;
+      const isScrolledUp = targetY < buf.baseY;
+      term.write(data);
+      if (!isScrolledUp) return;
+      requestAnimationFrame(() => {
+        const newBuf = term.buffer.active;
+        const clampedY = Math.min(targetY, newBuf.baseY);
+        const delta = clampedY - newBuf.viewportY;
+        if (delta !== 0) term.scrollLines(delta);
+      });
     }
 
     function isClientFocused() {
@@ -1988,6 +2012,9 @@ Astro.response.headers.set('Expires', '0');
       term.onData(data => {
         if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
 
+        // Any key press re-enables auto horizontal scroll (suspended by manual touch scroll)
+        autoScrollDisabled = false;
+
         // Apply modifiers
         let sendData = data;
         if (modifiers.ctrl && data.length === 1) {
@@ -2052,7 +2079,7 @@ Astro.response.headers.set('Expires', '0');
           if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
         }
 
-        if (isMobileResizeMode() && !isClaudeActive()) {
+        if (isMobileResizeMode() && !isClaudeActive() && !autoScrollDisabled) {
           const cellWidth = getCellWidth();
           if (cellWidth) {
             const buf = term.buffer.active;
@@ -2188,6 +2215,8 @@ Astro.response.headers.set('Expires', '0');
           if (Math.abs(hDelta) > 1) {
             setHOffsetImmediate(Math.max(0, hOffset + hDelta));
             isUserTouchScrolling = true;
+            // Suspend auto horizontal scroll until the next key press
+            autoScrollDisabled = true;
           }
           lastTouchX = t.clientX;
         }, { passive: true });
@@ -2199,6 +2228,25 @@ Astro.response.headers.set('Expires', '0');
           term.focus();
           syncTerminalFocus();
         }, { passive: true });
+
+        // Desktop: bypass xterm's mouse-mode wheel forwarding. TUIs like
+        // Claude enable mouse reporting, which makes xterm send wheel as
+        // mouse buttons to the PTY instead of scrolling the scrollback.
+        // We capture wheel before xterm sees it and call term.scrollLines()
+        // directly (xterm's own API for scrollback navigation).
+        terminalWrap.addEventListener('wheel', (e) => {
+          if (!term) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const dims = term._core && term._core._renderService && term._core._renderService.dimensions;
+          const cellHeight = (dims && dims.css && dims.css.cell && dims.css.cell.height) || 16;
+          const deltaPx = e.deltaMode === 1 ? e.deltaY * cellHeight : e.deltaY;
+          const lines = Math.round(deltaPx / cellHeight);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+            dbgLog('wheel scrollLines=' + lines + ' deltaY=' + e.deltaY);
+          }
+        }, { capture: true, passive: false });
       }
 
       // Log xterm-viewport scroll events for debugging ghost issue
@@ -2260,7 +2308,19 @@ Astro.response.headers.set('Expires', '0');
         return;
       }
 
+      // Guard against a zombie tunnel URL: if the WS handshake doesn't
+      // complete in ~8s the server's tunnel is likely dead and the browser
+      // would otherwise hang in "connecting" for minutes. Force-close and
+      // let onclose schedule a reconnect with a fresh token.
+      if (wsConnectTimeout) clearTimeout(wsConnectTimeout);
+      wsConnectTimeout = setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.CONNECTING) {
+          try { ws.close(); } catch {}
+        }
+      }, 8000);
+
       ws.onopen = () => {
+        if (wsConnectTimeout) { clearTimeout(wsConnectTimeout); wsConnectTimeout = null; }
         setStatus('connecting', 'Authenticating...');
         loadingText && (loadingText.textContent = 'Authenticating...');
         reconnectAttempts = 0;
@@ -2277,6 +2337,7 @@ Astro.response.headers.set('Expires', '0');
       };
 
       ws.onclose = () => {
+        if (wsConnectTimeout) { clearTimeout(wsConnectTimeout); wsConnectTimeout = null; }
         setStatus('disconnected', 'Disconnected');
         loadingEl.classList.remove('hidden');
         enableActions(false);
@@ -2284,23 +2345,35 @@ Astro.response.headers.set('Expires', '0');
         // Reset switch state so output isn't queued forever on reconnect
         isSwitching = false;
         switchOutputQueue = [];
-        if (isAuthenticated && reconnectAttempts < 10 && activeDeviceToken) {
-          reconnectTimer = setTimeout(async () => {
-            reconnectAttempts++;
-            setStatus('connecting', 'Reconnecting...');
-            const result = await fetchConnectToken(activeDeviceToken);
-            if (result.connectToken && result.tunnelUrl) {
-              activeConnectToken = result.connectToken;
-              activeTunnelUrl = result.tunnelUrl;
-              connect();
-            }
-          }, 2000);
-        }
+        scheduleReconnect();
       };
 
       ws.onerror = () => {
         setStatus('disconnected', 'Connection error');
       };
+    }
+
+    function scheduleReconnect() {
+      if (!isAuthenticated || !activeDeviceToken) return;
+      if (reconnectAttempts >= 10) return;
+      if (reconnectTimer) return;
+      // Exponential-ish backoff capped at 10s so a temporarily unavailable
+      // tunnel URL doesn't burn through all retries in 20s.
+      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 10000);
+      reconnectTimer = setTimeout(async () => {
+        reconnectTimer = null;
+        reconnectAttempts++;
+        setStatus('connecting', 'Reconnecting...');
+        const result = await fetchConnectToken(activeDeviceToken);
+        if (result.connectToken && result.tunnelUrl) {
+          activeConnectToken = result.connectToken;
+          activeTunnelUrl = result.tunnelUrl;
+          connect();
+        } else {
+          // Token/tunnel not ready yet — keep trying instead of silently giving up.
+          scheduleReconnect();
+        }
+      }, delay);
     }
 
     function handleMessage(msg) {
@@ -2370,7 +2443,7 @@ Astro.response.headers.set('Expires', '0');
             window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
             // Replace visible viewport: clear screen, home cursor, write snapshot.
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
-            term.write('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            writePreservingScroll('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
             if (window._dbgSnap) window._dbgSnap();
             debouncedUpdatePlanMode();
           }
@@ -2392,7 +2465,7 @@ Astro.response.headers.set('Expires', '0');
             break;
           }
           if (term && msg.terminalId === currentTerminalId) {
-            term.write(msg.data);
+            writePreservingScroll(msg.data);
             if (window._dbgOut) window._dbgOut();
             debouncedUpdatePlanMode();
           }
