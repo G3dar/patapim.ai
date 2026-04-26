@@ -16,7 +16,7 @@
  */
 
 import { DurableObject } from 'cloudflare:workers';
-import { sendMessage as tgSendMessage, type TelegramUpdate } from '../lib/telegram/bot-api';
+import { sendMessage as tgSendMessage, callBotApi as tgCallApi, type TelegramUpdate } from '../lib/telegram/bot-api';
 
 const PAIR_CODE_TTL_MS = 5 * 60 * 1000;
 const MAX_QUEUED = 100;
@@ -157,6 +157,24 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
         }
         case 'unlink': {
           await this.unlinkInternal();
+          if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
+          return;
+        }
+        case 'set_reaction': {
+          const state = await this.loadState();
+          if (!state.chat_id) throw new Error('Not paired — no chat_id to react in.');
+          const message_id = Number(msg.message_id);
+          if (!message_id) throw new Error('message_id is required');
+          const emoji = String(msg.emoji || '').trim();
+          // Empty string clears the reaction; otherwise wrap the single emoji
+          // in the expected ReactionType[] shape.
+          const reactions = emoji ? [{ type: 'emoji', emoji }] : [];
+          await tgCallApi(this.env.TELEGRAM_BOT_TOKEN, 'setMessageReaction', {
+            chat_id: state.chat_id,
+            message_id,
+            reaction: reactions,
+            is_big: false,
+          });
           if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
           return;
         }
