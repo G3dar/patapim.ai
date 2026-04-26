@@ -1,0 +1,569 @@
+---
+export const prerender = true;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PATAPIM × Telegram — Talk to your terminal from your phone</title>
+  <meta name="description" content="Reply to Claude from Telegram. No bots to create, no tokens to copy. One click, one paste, done." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <meta property="og:title" content="PATAPIM × Telegram" />
+  <meta property="og:description" content="Reply to Claude from Telegram. One click, one paste, done." />
+  <meta property="og:image" content="https://patapim.ai/og-image.png" />
+
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --bg-2: #17171a;
+      --bg-3: #1d1d21;
+      --ink: #e8e6e3;
+      --ink-soft: #a09b94;
+      --ink-mute: #6b6660;
+      --accent: #d4a574;
+      --accent-soft: #c9956a;
+      --accent-bg: rgba(212, 165, 116, 0.10);
+      --tg: #2aabee;
+      --tg-soft: rgba(42, 171, 238, 0.14);
+      --rule: rgba(255, 255, 255, 0.08);
+      --good: #7cb382;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 17px;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 36px 22px 80px;
+    }
+
+    /* === Header === */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: var(--ink-mute);
+      margin-bottom: 28px;
+    }
+    .topbar .brand { color: var(--accent); font-weight: 600; }
+    .topbar .x { opacity: 0.5; }
+    .topbar .tg { color: var(--tg); font-weight: 600; }
+
+    /* === Hero === */
+    h1 {
+      font-size: 36px;
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 16px;
+    }
+    h1 .tg-color { color: var(--tg); }
+    .lede {
+      font-size: 18px;
+      color: var(--ink-soft);
+      margin-bottom: 32px;
+      line-height: 1.55;
+    }
+
+    /* === Sections === */
+    section { margin: 48px 0; }
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+
+    /* === Big chat-bubble demo === */
+    .chat {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 18px;
+      padding: 18px 16px;
+      margin: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-head {
+      display: flex; align-items: center; gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 4px;
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--tg);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 14px;
+    }
+    .chat-head-name { font-weight: 600; font-size: 14px; }
+    .chat-head-sub { font-size: 11px; color: var(--ink-mute); }
+
+    .bubble {
+      padding: 9px 13px;
+      border-radius: 14px;
+      max-width: 78%;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .bubble.bot {
+      background: var(--bg-3);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .bubble.me {
+      background: var(--tg);
+      color: white;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    .bubble.bot small { color: var(--ink-mute); display: block; margin-top: 4px; font-size: 11px; }
+    .bubble code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: rgba(255,255,255,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* === Cards (what it does) === */
+    .cards { display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      padding: 18px 18px;
+    }
+    .card-emoji {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .card h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card p {
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    /* === Setup steps === */
+    .steps { counter-reset: s; }
+    .step {
+      counter-increment: s;
+      position: relative;
+      padding: 18px 18px 18px 60px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      margin-bottom: 10px;
+    }
+    .step::before {
+      content: counter(s);
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .step p {
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+    .step kbd {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--bg-3);
+      border: 1px solid var(--rule);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: var(--accent);
+    }
+
+    /* === Before/After === */
+    .vs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .vs-col {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      padding: 16px 14px;
+    }
+    .vs-col.bad { opacity: 0.65; }
+    .vs-col.good { border-color: var(--accent-bg); background: linear-gradient(180deg, var(--accent-bg), var(--bg-2)); }
+    .vs-tag {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .vs-col.good .vs-tag { color: var(--accent); }
+    .vs-col ol, .vs-col ul {
+      margin-left: 18px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+    .vs-col li { margin-bottom: 3px; }
+
+    /* === FAQ === */
+    .faq summary {
+      cursor: pointer;
+      padding: 14px 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 15px;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: '+';
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .faq[open] summary::after { content: '−'; }
+    .faq + .faq { margin-top: 8px; }
+    .faq-body {
+      padding: 14px 16px 4px;
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+
+    /* === CTA === */
+    .cta {
+      background: linear-gradient(160deg, var(--accent-bg), transparent 80%);
+      border: 1px solid var(--accent-bg);
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .cta h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .cta p {
+      color: var(--ink-soft);
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      font-size: 15px;
+      padding: 12px 22px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: transform 150ms ease, background 150ms ease;
+    }
+    .cta-btn:hover { background: var(--accent-soft); transform: translateY(-1px); }
+    .cta-sub {
+      display: block;
+      font-size: 12px;
+      color: var(--ink-mute);
+      margin-top: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* === Footer === */
+    footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      font-size: 12px;
+      color: var(--ink-mute);
+      text-align: center;
+    }
+    footer a { color: var(--ink-soft); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (min-width: 700px) {
+      h1 { font-size: 44px; }
+      .wrap { padding: 56px 22px 96px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <span class="brand">PATAPIM</span>
+      <span class="x">×</span>
+      <span class="tg">Telegram</span>
+    </div>
+
+    <h1>Talk to your terminal from <span class="tg-color">Telegram</span>. No setup.</h1>
+    <p class="lede">
+      PATAPIM pings you when Claude finishes. You reply from your phone.
+      Your reply lands in the terminal, like you typed it yourself.
+    </p>
+
+    <!-- Chat preview -->
+    <div class="chat">
+      <div class="chat-head">
+        <div class="avatar">🦆</div>
+        <div>
+          <div class="chat-head-name">@botpatapimbot</div>
+          <div class="chat-head-sub">PATAPIM remote control</div>
+        </div>
+      </div>
+      <div class="bubble bot">
+        ✅ Migration complete. 12 files changed, all tests pass.<br/>
+        Want me to push?
+        <small>from terminal · main</small>
+      </div>
+      <div class="bubble me">yes, and open the PR</div>
+      <div class="bubble bot">
+        Pushed <code>main</code>. PR opened: #842 — "feat: bidirectional telegram"
+        <small>2 sec ago</small>
+      </div>
+    </div>
+
+    <!-- What it does -->
+    <section>
+      <h2>What it does</h2>
+      <div class="cards">
+        <div class="card">
+          <span class="card-emoji">🔔</span>
+          <h3>Get pinged when Claude needs you</h3>
+          <p>
+            "Need approval to delete this." "Build done." "Tests failing — what now?"
+            Claude reaches you on Telegram, you don't have to babysit the terminal.
+          </p>
+        </div>
+        <div class="card">
+          <span class="card-emoji">↩️</span>
+          <h3>Reply from your phone, in real terminal</h3>
+          <p>
+            Type a reply in Telegram. It arrives in the active PATAPIM terminal as if you'd typed it.
+            No copy-paste, no menus. Just text.
+          </p>
+        </div>
+        <div class="card">
+          <span class="card-emoji">📦</span>
+          <h3>Goes both ways. Resilient.</h3>
+          <p>
+            If your laptop is closed, messages queue up. When PATAPIM comes back online, they flow through.
+            Up to 7 days of buffer.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it actually works -->
+    <section>
+      <h2>Three terminals open. One chat. How?</h2>
+      <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 18px;">
+        Most of us juggle more than one terminal. Here's how PATAPIM keeps it sane on the phone.
+      </p>
+
+      <div class="card" style="padding: 22px 18px;">
+        <span class="card-emoji">💬</span>
+        <h3>All your terminals share one chat</h3>
+        <p>
+          No separate chat per terminal. Everything lands in the same conversation — but every message is tagged with which terminal it came from, so you always know what you're looking at.
+        </p>
+        <div class="chat" style="margin-top: 14px;">
+          <div class="bubble bot">
+            ✅ build green
+            <small>terminal · patapim/main</small>
+          </div>
+          <div class="bubble bot">
+            ❌ tests failing on <code>auth.test.js</code>
+            <small>terminal · website/feature-auth</small>
+          </div>
+          <div class="bubble bot">
+            ⏳ migration running, ~3 min left
+            <small>terminal · backend/migrate-2026</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 22px 18px; margin-top: 12px;">
+        <span class="card-emoji">↪️</span>
+        <h3>Two ways to reply, two routings</h3>
+        <p style="margin-bottom: 10px;">
+          <strong style="color: var(--ink);">Reply to a specific message</strong> (long-press → Reply in Telegram) → your text goes to the terminal that <em>sent that message</em>, no matter which one is in focus on your laptop.
+        </p>
+        <p>
+          <strong style="color: var(--ink);">Just send a message</strong> (no reply) → it goes to the terminal you're currently focused on in PATAPIM. So if you're staring at tab 3 and type from your phone, tab 3 gets it.
+        </p>
+        <p style="margin-top: 10px; font-size: 13px; color: var(--ink-mute);">
+          The bot also tells you when there's no terminal to route to (e.g. you closed PATAPIM or replied to a message from a session that's gone).
+        </p>
+      </div>
+
+      <div class="card" style="padding: 22px 18px; margin-top: 12px;">
+        <span class="card-emoji">⌨️</span>
+        <h3>Slash commands? Yes. Shell commands? Also yes.</h3>
+        <p>
+          Whatever you type lands in the terminal exactly as if you'd typed it on your keyboard, then pressed Enter. There's no special parsing.
+        </p>
+        <ul style="margin: 12px 0 0 18px; color: var(--ink-soft); font-size: 14px; line-height: 1.8;">
+          <li><code>/clear</code> — clears Claude context</li>
+          <li><code>/compact</code> — Claude summary</li>
+          <li><code>/model opus</code> — switch model</li>
+          <li><code>git status</code> — runs in your shell</li>
+          <li><code>y</code> or <code>yes</code> — answers a Y/N prompt</li>
+        </ul>
+        <p style="margin-top: 12px; font-size: 13px; color: var(--ink-mute);">
+          It's literally remote-typing. If your keyboard would do it, Telegram will too.
+        </p>
+      </div>
+    </section>
+
+    <!-- Setup -->
+    <section>
+      <h2>Setup — 30 seconds</h2>
+      <div class="steps">
+        <div class="step">
+          <h3>Open PATAPIM Preferences</h3>
+          <p><kbd>⚙️ Preferences</kbd> → Notifications → Telegram</p>
+        </div>
+        <div class="step">
+          <h3>Click "Connect to Telegram"</h3>
+          <p>You'll get a 6-letter code like <kbd>K7P3MX</kbd>.</p>
+        </div>
+        <div class="step">
+          <h3>Open the bot, paste the code</h3>
+          <p>
+            <kbd>@botpatapimbot</kbd> opens. Press Start, send the code.
+            That's it — your phone is now wired to your dev machine.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why different -->
+    <section>
+      <h2>What changed</h2>
+      <p style="color: var(--ink-soft); font-size: 15px;">
+        Telegram bots used to mean "create a bot, copy the token, find your chat ID, paste it all in." That's a project, not a feature. The new flow is one click.
+      </p>
+      <div class="vs">
+        <div class="vs-col bad">
+          <div class="vs-tag">Old way</div>
+          <ol>
+            <li>Talk to BotFather</li>
+            <li>Create a bot</li>
+            <li>Copy the token</li>
+            <li>Find your chat_id</li>
+            <li>Paste both in PATAPIM</li>
+            <li>Hope it works</li>
+          </ol>
+        </div>
+        <div class="vs-col good">
+          <div class="vs-tag">New way</div>
+          <ol>
+            <li>Click "Connect"</li>
+            <li>Paste a 6-letter code</li>
+          </ol>
+          <p style="margin-top: 10px; font-size: 12px; color: var(--ink-mute);">
+            No tokens. No bots to manage. Nothing on your machine.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section>
+      <h2>Quick answers</h2>
+
+      <details class="faq">
+        <summary>Is my code/data going through your servers?</summary>
+        <div class="faq-body">
+          Only the Telegram messages — same as if you used any Telegram bot. PATAPIM's relay is just a thin bridge so you don't have to manage a bot yourself. Your terminal output stays on your machine until <em>you</em> send a reply.
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>What if I want my own bot instead?</summary>
+        <div class="faq-body">
+          Still supported. In the same panel, switch to "Custom bot" and paste your token + chat_id like before. Default is the PATAPIM bot because life's too short.
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>Multiple machines?</summary>
+        <div class="faq-body">
+          Each PATAPIM install pairs with one chat. You can pair the same chat with a different install by re-running the connect flow. The new pairing replaces the old.
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>Voice messages? Photos?</summary>
+        <div class="faq-body">
+          Coming. Right now text only. Voice and image are next on the list.
+        </div>
+      </details>
+    </section>
+
+    <!-- CTA -->
+    <div class="cta">
+      <h3>Update PATAPIM and try it</h3>
+      <p>Open Preferences → Notifications → Telegram. The button is right there.</p>
+      <a class="cta-btn" href="https://patapim.ai/download">Get the latest PATAPIM</a>
+      <span class="cta-sub">already installed? · just update</span>
+    </div>
+
+    <footer>
+      <a href="https://patapim.ai">patapim.ai</a> · made with 🦆 in Buenos Aires
+    </footer>
+
+  </div>
+</body>
+</html>

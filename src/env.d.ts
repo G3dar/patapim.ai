@@ -15,6 +15,12 @@ interface Env {
   SESSIONS: KVNamespace;
   RELEASES: R2Bucket;
   MKT_PUSH_SECRET: string;
+  DISCORD_BOT_TOKEN: string;
+  DISCORD_CHANNEL_ID: string;
+  TELEGRAM_BOT_TOKEN: string;
+  TELEGRAM_WEBHOOK_SECRET: string;
+  TELEGRAM_INSTANCE: DurableObjectNamespace;
+  AI: Ai;
 }
 
 declare namespace App {

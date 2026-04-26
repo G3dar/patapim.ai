@@ -5,7 +5,11 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://patapim.ai',
   output: 'static',
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    workerEntryPoint: {
+      path: 'src/worker.ts',
+    },
+  }),
   integrations: [sitemap()],
   build: {
     assets: '_assets'

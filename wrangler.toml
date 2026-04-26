@@ -37,3 +37,28 @@ bucket_name = "patapim-releases"
 #   wrangler secret put GOOGLE_CLIENT_ID
 #   wrangler secret put GOOGLE_CLIENT_SECRET
 # For local dev, create .dev.vars with GOOGLE_CLIENT_ID=... and GOOGLE_CLIENT_SECRET=...
+
+# Discord bot for auto-rotating the public invite link.
+# Secrets: wrangler secret put DISCORD_BOT_TOKEN  (and DISCORD_CHANNEL_ID)
+# Cron rotates the invite weekly so /discord always points to a fresh code.
+[triggers]
+crons = ["0 6 * * 1"]  # Mondays 06:00 UTC
+
+# Telegram official bot (@iampatapimbot) — zero-setup remote for PATAPIM.
+# Secrets:
+#   wrangler secret put TELEGRAM_BOT_TOKEN       (from @BotFather)
+#   wrangler secret put TELEGRAM_WEBHOOK_SECRET  (any random string; also passed to setWebhook as secret_token)
+# After deploy:
+#   curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://patapim.ai/api/telegram/webhook&secret_token=<SECRET>"
+[[durable_objects.bindings]]
+name = "TELEGRAM_INSTANCE"
+class_name = "TelegramInstance"
+
+[[migrations]]
+tag = "v1-telegram-instance"
+new_sqlite_classes = ["TelegramInstance"]
+
+# Workers AI binding — used to transcribe Telegram voice messages on the fly
+# (Whisper). Free tier covers ~10K voice msgs/day. No API key needed.
+[ai]
+binding = "AI"
