@@ -71,6 +71,17 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
       return;
     }
     await env.SESSIONS.delete(`tg:pair:${code}`);
+    // If this chat was already linked to a different instance, notify it
+    // first so it can drop its airplane toggles before we overwrite the KV.
+    const previousInstanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+    if (previousInstanceId && previousInstanceId !== instanceId) {
+      try {
+        const oldStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(previousInstanceId));
+        await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' });
+      } catch (err) {
+        console.warn('[telegram/webhook] active-lost cross-DO failed:', err);
+      }
+    }
     await env.SESSIONS.put(`tg:chat:${chatId}`, instanceId);
     const hint = msg.chat.username ? `@${msg.chat.username}` : (msg.chat.first_name || String(chatId));
     const doStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
@@ -86,14 +97,41 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     return;
   }
 
-  // Any other message: look up the chat's instance and forward.
-  const instanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  // Reply-to-bot-message: route to the originating instance/terminal even
+  // if it's not the current chat-active receiver. The DO that sent the
+  // original message wrote tg:msg:<chat>:<msg_id> → { instance_id, terminal_id }
+  // (30d TTL). When found, we override routing and inject the terminal hint.
+  let instanceId: string | null = null;
+  let originTerminalId = '';
+  const repliedTo = msg.reply_to_message;
+  if (repliedTo && repliedTo.message_id) {
+    try {
+      const raw = await env.SESSIONS.get(`tg:msg:${chatId}:${repliedTo.message_id}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { instance_id?: string; terminal_id?: string };
+        if (parsed.instance_id) {
+          instanceId = parsed.instance_id;
+          originTerminalId = parsed.terminal_id || '';
+        }
+      }
+    } catch (err) {
+      console.warn('[telegram/webhook] msg-map KV lookup failed:', err);
+    }
+  }
+
+  // Fallback: standard chat → active instance.
+  if (!instanceId) {
+    instanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  }
   if (!instanceId) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN, {
       chat_id: chatId,
       text: 'This chat is not linked. In PATAPIM go to Preferences → Notifications → Telegram and click "Connect to Telegram".',
     });
     return;
+  }
+  if (originTerminalId) {
+    (msg as any)._patapim_terminal_id = originTerminalId;
   }
 
   // Voice/audio: download the bytes here (only the relay has the bot token in

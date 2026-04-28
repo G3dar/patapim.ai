@@ -46,6 +46,8 @@ interface RelayEnv {
   SESSIONS: KVNamespace;
   SITE_URL: string;
   AI: Ai;
+  // Self-binding so a DO can call its peers (cross-instance active hand-off).
+  TELEGRAM_INSTANCE: DurableObjectNamespace;
 }
 
 const BOT_USERNAME = 'botpatapimbot';
@@ -83,6 +85,8 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
         return this.internalDeliverMessage(request);
       case '/__internal/status':
         return this.internalStatus();
+      case '/__internal/active-lost':
+        return this.internalActiveLost();
       default:
         return new Response('not found', { status: 404 });
     }
@@ -149,6 +153,21 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
             reply_to_message_id: msg.reply_to_message_id as number | undefined,
           };
           const sent = await tgSendMessage(this.env.TELEGRAM_BOT_TOKEN, params);
+          // Persist message → (instance, terminal) so cross-instance replies
+          // can route back to the originating terminal even after restart.
+          // 30d TTL covers the long tail of useful replies.
+          const terminalId = msg.terminal_id ? String(msg.terminal_id) : '';
+          if (sent.message_id && state.instance_id && terminalId) {
+            try {
+              await this.env.SESSIONS.put(
+                `tg:msg:${sent.chat.id}:${sent.message_id}`,
+                JSON.stringify({ instance_id: state.instance_id, terminal_id: terminalId }),
+                { expirationTtl: 30 * 24 * 3600 },
+              );
+            } catch (err) {
+              console.warn('[TelegramInstance] msg-map KV put failed:', err);
+            }
+          }
           if (id) ws.send(JSON.stringify({
             id, type: 'ack',
             result: { message_id: sent.message_id, chat_id: sent.chat.id },
@@ -158,6 +177,15 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
         case 'unlink': {
           await this.unlinkInternal();
           if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
+          return;
+        }
+        case 'claim_active': {
+          // Mark this instance as the active receiver for its chat. If another
+          // instance was previously active, notify it via cross-DO call so it
+          // can disable its airplane toggles. Idempotent — re-claiming the
+          // already-active role is a no-op aside from confirming the binding.
+          const result = await this.claimActiveInternal();
+          if (id) ws.send(JSON.stringify({ id, type: 'ack', result }));
           return;
         }
         case 'set_reaction': {
@@ -220,8 +248,44 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
     state.paired_at = new Date().toISOString();
     state.pairing = null;
     await this.ctx.storage.put('state', state);
+    // The webhook is responsible for setting tg:chat:<id> KV; if it just
+    // overwrote a previous binding, notify the old instance so it can drop
+    // its airplane toggles.
     this.broadcast({ type: 'paired', chat_id_hint: state.chat_id_hint });
     return new Response('ok');
+  }
+
+  private async internalActiveLost(): Promise<Response> {
+    this.broadcast({ type: 'active_lost' });
+    return new Response('ok');
+  }
+
+  /**
+   * Re-binds tg:chat:<chat_id> KV to this instance, notifying the previously
+   * active instance (if any and different) via cross-DO call so it can
+   * disable its airplane toggles. Idempotent.
+   */
+  private async claimActiveInternal(): Promise<{ ok: boolean; was_active: boolean; previous_instance: string | null }> {
+    const state = await this.loadState();
+    if (!state.chat_id || !state.instance_id) {
+      throw new Error('Not paired — cannot claim active.');
+    }
+    const key = `tg:chat:${state.chat_id}`;
+    const previous = await this.env.SESSIONS.get(key);
+    const myId = state.instance_id;
+    if (previous === myId) {
+      return { ok: true, was_active: true, previous_instance: previous };
+    }
+    await this.env.SESSIONS.put(key, myId);
+    if (previous && previous !== myId) {
+      try {
+        const oldStub = this.env.TELEGRAM_INSTANCE.get(this.env.TELEGRAM_INSTANCE.idFromName(previous));
+        await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' });
+      } catch (err) {
+        console.warn('[TelegramInstance] active-lost cross-DO failed:', err);
+      }
+    }
+    return { ok: true, was_active: false, previous_instance: previous || null };
   }
 
   private async internalDeliverMessage(request: Request): Promise<Response> {
