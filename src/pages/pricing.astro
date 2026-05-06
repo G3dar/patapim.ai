@@ -100,6 +100,35 @@ const faq = translations.pricing.faq;
         </div>
       </div>
 
+      <!-- Already purchased? Associate license key -->
+      <div class="claim-section">
+        <div class="claim-card">
+          <div class="claim-grid">
+            <div class="claim-copy">
+              <span class="claim-badge">Already purchased</span>
+              <h2 class="claim-title">Have a license key?</h2>
+              <p class="claim-desc">
+                Link an existing PATAPIM license to your account. You can associate the same key with up to <strong>2 accounts</strong> — handy if you bought with one email and use PATAPIM with another, or if you share a lifetime license with a partner.
+              </p>
+            </div>
+            <div class="claim-action">
+              <form id="claim-form" novalidate>
+                <input
+                  type="text"
+                  name="licenseKey"
+                  placeholder="License key"
+                  autocomplete="off"
+                  spellcheck="false"
+                  required
+                />
+                <button type="submit" class="btn btn-secondary claim-btn">Associate to my account</button>
+              </form>
+              <p id="claim-msg" class="claim-msg" hidden></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- FAQ -->
       <div class="faq-section section">
         <h2 class="section-title" style="font-size: 28px;">{t(locale, 'pricing.faqTitle')}</h2>
@@ -341,6 +370,98 @@ const faq = translations.pricing.faq;
     color: var(--text-tertiary);
   }
 
+  /* Already-purchased / claim license key */
+  .claim-section {
+    max-width: 800px;
+    margin: var(--space-xl) auto 0;
+  }
+  .claim-card {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary, var(--bg-secondary)));
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl) var(--space-2xl);
+    position: relative;
+    overflow: hidden;
+  }
+  .claim-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, var(--accent-glow), transparent 60%);
+    pointer-events: none;
+  }
+  .claim-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xl);
+    align-items: center;
+    position: relative;
+  }
+  .claim-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+    letter-spacing: 0.02em;
+  }
+  .claim-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+  .claim-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .claim-desc strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .claim-action { display: flex; flex-direction: column; gap: 10px; }
+  #claim-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #claim-form input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+    transition: border-color var(--transition-fast);
+  }
+  #claim-form input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+  }
+  .claim-btn { width: 100%; justify-content: center; }
+  .claim-msg {
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    margin: 0;
+  }
+  .claim-msg.success {
+    background: var(--success-subtle);
+    color: var(--success);
+    border: 1px solid var(--success);
+  }
+  .claim-msg.error {
+    background: var(--error-subtle);
+    color: var(--error);
+    border: 1px solid var(--error);
+  }
+
   /* FAQ */
   .faq-section {
     max-width: 800px;
@@ -368,6 +489,7 @@ const faq = translations.pricing.faq;
 
   @media (max-width: 640px) {
     .pricing-cards { grid-template-columns: 1fr; }
+    .claim-grid { grid-template-columns: 1fr; }
     .faq-grid { grid-template-columns: 1fr; }
     .unlock-price-row {
       flex-direction: column;
@@ -425,4 +547,83 @@ const faq = translations.pricing.faq;
     e.preventDefault();
     handleCheckout('lifetime');
   });
+
+  // Already-purchased license-key claim flow
+  const claimForm = document.getElementById('claim-form') as HTMLFormElement | null;
+  const claimMsg = document.getElementById('claim-msg') as HTMLParagraphElement | null;
+  if (claimForm && claimMsg) {
+    claimForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      claimMsg.hidden = true;
+      claimMsg.className = 'claim-msg';
+      const submitBtn = claimForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitBtn.disabled = true;
+
+      const licenseKey = String((new FormData(claimForm)).get('licenseKey') || '').trim();
+      if (!licenseKey) {
+        claimMsg.classList.add('error');
+        claimMsg.textContent = 'Enter your license key.';
+        claimMsg.hidden = false;
+        submitBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/license/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ licenseKey }),
+        });
+
+        if (res.status === 401) {
+          // Not signed in — bounce through /signin and come back to /pricing.
+          window.location.href = '/signin?returnTo=' + encodeURIComponent('/pricing#claim-section');
+          return;
+        }
+
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok) {
+          claimMsg.classList.add('success');
+          if (body.alreadyAssociated) {
+            claimMsg.textContent = 'This license is already linked to your account.';
+          } else if (body.remainingSlots === 0) {
+            claimMsg.textContent = 'License linked. This key is now at its 2-account limit.';
+          } else {
+            claimMsg.textContent = 'License linked to your account. You can also link it to one more email.';
+          }
+          claimMsg.hidden = false;
+          claimForm.reset();
+          return;
+        }
+
+        claimMsg.classList.add('error');
+        switch (body.error) {
+          case 'invalid_license_key':
+            claimMsg.textContent = 'Enter a valid license key.'; break;
+          case 'license_not_found':
+          case 'license_data_missing':
+          case 'license_mismatch':
+            claimMsg.textContent = 'License key not recognized. Double-check the value from your purchase email.'; break;
+          case 'license_inactive':
+            claimMsg.textContent = 'This license is inactive (' + (body.status || 'unknown') + '). Contact support if this is unexpected.'; break;
+          case 'max_accounts_reached':
+            claimMsg.textContent = 'This license is already linked to ' + (body.max || 2) + ' accounts. Each key can only be associated with up to 2.'; break;
+          default:
+            if (res.status === 429) {
+              claimMsg.textContent = 'Too many attempts. Try again in a bit.';
+            } else {
+              claimMsg.textContent = 'Could not link the license. Please try again.';
+            }
+        }
+        claimMsg.hidden = false;
+      } catch {
+        claimMsg.classList.add('error');
+        claimMsg.textContent = 'Network error. Please try again.';
+        claimMsg.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
 </script>
