@@ -151,6 +151,9 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
             parse_mode: (msg.parse_mode as 'HTML' | 'MarkdownV2' | undefined) || 'HTML',
             disable_notification: !!msg.disable_notification,
             reply_to_message_id: msg.reply_to_message_id as number | undefined,
+            // Pass through inline_keyboard / etc. for actionable notifications
+            // (e.g. plan-ready URL buttons that deep-link to patapim.ai/remote).
+            reply_markup: msg.reply_markup as unknown,
           };
           const sent = await tgSendMessage(this.env.TELEGRAM_BOT_TOKEN, params);
           // Persist message → (instance, terminal) so cross-instance replies

@@ -82,6 +82,7 @@ const scriptI18n = {
           </span>
         </div>
         <div class="dash-actions">
+          <a href={lp('/account')} class="btn-link">Account settings</a>
           {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
             <button class="btn-link" id="manage-billing-btn">{t(locale, 'common.manageBilling')}</button>
           )}
@@ -353,6 +354,7 @@ const scriptI18n = {
       justify-content: flex-end;
     }
   }
+
 </style>
 
 <!-- Dynamic content styles (injected by JS, can't be scoped) -->
@@ -919,4 +921,5 @@ const scriptI18n = {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
 </script>

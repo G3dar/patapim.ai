@@ -17,6 +17,9 @@ dist/
 .wrangler/
 .dev.vars
 
+# Temp scripts
+.discord-temp.mjs
+
 # OS
 .DS_Store
 Thumbs.db

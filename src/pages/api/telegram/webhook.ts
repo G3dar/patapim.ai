@@ -134,18 +134,25 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     (msg as any)._patapim_terminal_id = originTerminalId;
   }
 
-  // Voice/audio: download the bytes here (only the relay has the bot token in
-  // official mode) and forward inline to PATAPIM. PATAPIM transcribes locally
-  // with Parakeet first, falls back to Workers AI Whisper via the
-  // `transcribe_voice` WS handler if Parakeet decode/transcribe fails.
+  // Voice/audio: two paths depending on duration.
+  //   - dur <= SHORT: download bytes, ship inline as base64. PATAPIM transcribes
+  //     locally with Parakeet (good latency, free), falls back to Workers AI
+  //     Whisper via the `transcribe_voice` WS handler if Parakeet fails.
+  //   - SHORT < dur <= MAX: too big to ship inline reliably, so we transcribe
+  //     here with Workers AI Whisper-large-v3-turbo and forward the transcript
+  //     as msg.text (with a flag the listener picks up to mirror the voice
+  //     echo lifecycle — user still sees "🎤 <transcript>").
+  //   - dur > MAX: reject.
+  const VOICE_INLINE_MAX_SEC = 120;
+  const VOICE_HARD_MAX_SEC = 600; // 10 min — Workers AI input cap is 4 MiB,
+                                  // typical Telegram OGG/Opus is ~5 KB/sec so
+                                  // 10 min ≈ 3 MB, comfortably under the cap.
   if (msg.voice || msg.audio) {
     const file = msg.voice || msg.audio;
-    if (file && file.file_id && (file.duration || 0) <= 120) {
+    const dur = file?.duration || 0;
+    if (file && file.file_id && dur <= VOICE_INLINE_MAX_SEC) {
       try {
         const audioBuf = await downloadTelegramFile(env, file.file_id);
-        // Tunnel raw bytes inside the update — the listener picks them off.
-        // base64 keeps the wire format JSON-compatible; ~33% overhead is fine
-        // for voice <= 120s (typically <300KB raw).
         (msg as any).audio_b64 = arrayBufferToBase64(audioBuf);
         (msg as any).audio_mime = msg.voice ? 'audio/ogg' : (msg.audio?.mime_type || 'audio/ogg');
       } catch (err) {
@@ -158,13 +165,63 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
         });
         return;
       }
-    } else if (file && (file.duration || 0) > 120) {
+    } else if (file && file.file_id && dur <= VOICE_HARD_MAX_SEC) {
+      try {
+        const audioBuf = await downloadTelegramFile(env, file.file_id);
+        const aiResult = await env.AI.run(
+          '@cf/openai/whisper-large-v3-turbo',
+          { audio: [...new Uint8Array(audioBuf)] },
+        ) as { text?: string };
+        const transcript = (aiResult?.text || '').trim();
+        if (!transcript) {
+          await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+            chat_id: chatId,
+            reply_to_message_id: msg.message_id,
+            text: '🎤 Could not transcribe — Whisper returned empty.',
+          });
+          return;
+        }
+        (msg as any).text = transcript;
+        (msg as any)._patapim_voice_pretranscribed = true;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.warn('[telegram/webhook] long-voice transcribe failed:', errMsg);
+        await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+          chat_id: chatId,
+          reply_to_message_id: msg.message_id,
+          text: `🎤 Transcription failed: ${errMsg.slice(0, 200)}`,
+        });
+        return;
+      }
+    } else if (file && dur > VOICE_HARD_MAX_SEC) {
+      const minutes = Math.floor(VOICE_HARD_MAX_SEC / 60);
       await sendMessage(env.TELEGRAM_BOT_TOKEN, {
         chat_id: chatId,
         reply_to_message_id: msg.message_id,
-        text: '🎤 Voice messages over 2 min are not supported. Trim it down.',
+        text: `🎤 Voice messages over ${minutes} min are not supported. Trim it down.`,
       });
       return;
+    }
+  }
+
+  // If the user replied to a previous bot message and we have a stored
+  // (instance, terminal) binding for that message_id, attach the terminal_id
+  // directly on the inbound update. The PATAPIM listener consumes
+  // `_patapim_terminal_id` and routes home — survives client restarts and
+  // beats the route-toggle fallback. Binding is scoped by chat_id +
+  // instance_id to avoid cross-install/cross-chat leakage.
+  const replyTo = msg.reply_to_message;
+  if (replyTo && replyTo.message_id) {
+    try {
+      const stored = await env.SESSIONS.get(`tg:msg:${chatId}:${replyTo.message_id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { instance_id?: string; terminal_id?: string };
+        if (parsed.instance_id === instanceId && parsed.terminal_id) {
+          (msg as any)._patapim_terminal_id = parsed.terminal_id;
+        }
+      }
+    } catch {
+      // KV miss / parse error → fall through to client-side fallback routing.
     }
   }
 

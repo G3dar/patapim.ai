@@ -1,0 +1,1576 @@
+---
+export const prerender = true;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Open Core — Análisis estratégico de PATAPIM</title>
+  <meta name="description" content="Análisis interno: por qué PATAPIM debería ir open core y no open-source puro ni cerrado." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,500;1,9..144,700;1,9..144,900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <style>
+    :root {
+      --paper: #f4ede0;
+      --paper-deep: #ebe2d1;
+      --ink: #1a1814;
+      --ink-soft: #3a342c;
+      --muted: #6b6357;
+      --muted-light: #948a7a;
+      --accent: #8b2e1f;
+      --accent-soft: #a8493a;
+      --rule: #c9beac;
+      --highlight: #f0c674;
+
+      --serif: "Fraunces", "Iowan Old Style", "Apple Garamond", "Baskerville", Georgia, serif;
+      --body: "Source Serif 4", "Charter", "Iowan Old Style", "Apple Garamond", Georgia, serif;
+      --mono: "JetBrains Mono", "SFMono-Regular", "Menlo", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 18px;
+      line-height: 1.65;
+      font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Subtle paper grain */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.35;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .container-wide {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ============ MASTHEAD ============ */
+    .masthead {
+      border-bottom: 1px solid var(--rule);
+      padding: 28px 0 24px;
+      margin-bottom: 80px;
+    }
+
+    .masthead-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .masthead-brand {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .masthead-meta {
+      display: flex;
+      gap: 24px;
+    }
+
+    .masthead-meta span {
+      display: inline-block;
+    }
+
+    @media (max-width: 600px) {
+      .masthead-meta { display: none; }
+      .masthead { margin-bottom: 56px; }
+    }
+
+    /* ============ HERO ============ */
+    .hero {
+      padding: 0 0 100px;
+      animation: fadeUp 1.2s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hero-eyebrow::before {
+      content: "";
+      display: inline-block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero-title {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(42px, 8vw, 84px);
+      line-height: 0.98;
+      letter-spacing: -0.025em;
+      margin-bottom: 36px;
+      font-variation-settings: "opsz" 144, "SOFT" 30;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+      font-variation-settings: "opsz" 144, "SOFT" 80;
+    }
+
+    .hero-deck {
+      font-family: var(--body);
+      font-size: 22px;
+      line-height: 1.45;
+      color: var(--ink-soft);
+      max-width: 580px;
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    @media (max-width: 600px) {
+      .hero { padding-bottom: 64px; }
+      .hero-deck { font-size: 19px; }
+    }
+
+    /* ============ SECTIONS ============ */
+    section.essay {
+      padding: 56px 0;
+    }
+
+    .section-marker {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-marker-num {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      text-align: center;
+      line-height: 20px;
+      font-size: 10px;
+    }
+
+    h2.section-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(30px, 5vw, 44px);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin-bottom: 36px;
+      max-width: 580px;
+    }
+
+    h2.section-title em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    h3.subhead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin: 48px 0 20px;
+    }
+
+    p.lede {
+      font-family: var(--body);
+      font-size: 20px;
+      line-height: 1.55;
+      margin-bottom: 24px;
+      color: var(--ink-soft);
+    }
+
+    p {
+      margin-bottom: 22px;
+    }
+
+    p strong {
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    p em {
+      font-style: italic;
+    }
+
+    .accent-text {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* drop cap */
+    .drop-cap::first-letter {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 84px;
+      line-height: 0.85;
+      float: left;
+      padding: 8px 12px 0 0;
+      color: var(--accent);
+    }
+
+    /* ============ DIVIDER ============ */
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 64px 0;
+      gap: 18px;
+    }
+
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+      max-width: 120px;
+    }
+
+    .divider-glyph {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--accent);
+      font-size: 24px;
+      letter-spacing: 0.4em;
+      transform: translateY(-2px);
+    }
+
+    /* ============ PULL QUOTE ============ */
+    .pullquote {
+      margin: 56px -8px;
+      padding: 32px 0;
+      border-top: 1px solid var(--accent);
+      border-bottom: 1px solid var(--accent);
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(24px, 3.5vw, 32px);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      text-align: center;
+      color: var(--ink);
+      position: relative;
+    }
+
+    .pullquote::before {
+      content: "❝";
+      display: block;
+      color: var(--accent);
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-style: normal;
+    }
+
+    /* ============ CARDS (pros/cons) ============ */
+    .verdict-card {
+      background: var(--paper-deep);
+      border: 1px solid var(--rule);
+      padding: 32px 28px;
+      margin: 36px 0;
+      position: relative;
+    }
+
+    .verdict-card.bad {
+      border-left: 3px solid var(--accent);
+    }
+
+    .verdict-card.good {
+      border-left: 3px solid #2d5a3f;
+    }
+
+    .verdict-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      color: var(--accent);
+    }
+
+    .verdict-card.good .verdict-label {
+      color: #2d5a3f;
+    }
+
+    .verdict-card h4 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 1.2;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .verdict-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .verdict-card li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 12px;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .verdict-card li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .verdict-card.good li::before {
+      color: #2d5a3f;
+    }
+
+    /* ============ TABLE ============ */
+    .table-wrap {
+      margin: 48px -24px;
+      padding: 24px;
+      overflow-x: auto;
+      background: var(--paper-deep);
+      border-top: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .table-caption {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    table.opencore {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      line-height: 1.4;
+      min-width: 580px;
+    }
+
+    table.opencore thead th {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      text-align: left;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    table.opencore tbody td {
+      padding: 16px 14px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    table.opencore tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.opencore .layer {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      color: var(--ink);
+      width: 30%;
+    }
+
+    table.opencore .license {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      width: 22%;
+    }
+
+    table.opencore .reason {
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+
+    @media (max-width: 600px) {
+      .table-wrap {
+        margin: 36px -24px;
+        padding: 20px 16px;
+      }
+    }
+
+    /* ============ NUMBERED RECOMMENDATION ============ */
+    .step-list {
+      counter-reset: step;
+      list-style: none;
+      margin: 32px 0;
+    }
+
+    .step-list li {
+      counter-increment: step;
+      position: relative;
+      padding: 24px 0 24px 64px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .step-list li:last-child {
+      border-bottom: none;
+    }
+
+    .step-list li::before {
+      content: counter(step, decimal-leading-zero);
+      position: absolute;
+      left: 0;
+      top: 22px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 36px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .step-list h4 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .step-list p {
+      font-size: 17px;
+      color: var(--ink-soft);
+      margin-bottom: 0;
+    }
+
+    /* ============ FINAL VERDICT BANNER ============ */
+    .verdict-banner {
+      margin: 80px 0 0;
+      padding: 64px 32px;
+      background: var(--ink);
+      color: var(--paper);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .verdict-banner::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(244, 237, 224, 0.15);
+      pointer-events: none;
+    }
+
+    .verdict-banner-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--highlight);
+      margin-bottom: 18px;
+    }
+
+    .verdict-banner-headline {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(36px, 6vw, 60px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+
+    .verdict-banner-headline strong {
+      font-style: normal;
+      font-weight: 600;
+      color: var(--highlight);
+    }
+
+    .verdict-banner-meta {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(244, 237, 224, 0.55);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* ============ COLOPHON ============ */
+    .colophon {
+      padding: 80px 0 60px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-top: 1px solid var(--rule);
+      margin-top: 80px;
+    }
+
+    .colophon-glyph {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: normal;
+      text-transform: none;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    /* ============ ANIMATIONS ============ */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============ INLINE HIGHLIGHT ============ */
+    mark {
+      background: linear-gradient(180deg, transparent 60%, rgba(240, 198, 116, 0.5) 60%);
+      color: var(--ink);
+      padding: 0 2px;
+    }
+
+    /* numerical callout */
+    .stat {
+      display: inline-block;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    /* ============ CASE STUDY SECTION ============ */
+    .case-study {
+      background: var(--paper-deep);
+      padding: 80px 0;
+      margin: 80px 0;
+      position: relative;
+      border-top: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .case-study::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--ink);
+    }
+
+    .case-study::after {
+      content: "";
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--ink);
+    }
+
+    .case-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      margin-bottom: 28px;
+    }
+
+    .case-badge::before {
+      content: "▸";
+      color: var(--highlight);
+    }
+
+    .case-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(34px, 6vw, 54px);
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      margin-bottom: 28px;
+    }
+
+    .case-title em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    .case-deck {
+      font-family: var(--body);
+      font-size: 19px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      font-style: italic;
+      max-width: 580px;
+      margin-bottom: 48px;
+    }
+
+    /* timeline */
+    .timeline {
+      list-style: none;
+      padding: 0;
+      margin: 40px 0;
+      border-left: 2px solid var(--accent);
+      padding-left: 28px;
+    }
+
+    .timeline li {
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: -34px;
+      top: 8px;
+      width: 10px;
+      height: 10px;
+      background: var(--paper);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+    }
+
+    .timeline-date {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .timeline-event {
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .timeline-event strong {
+      color: var(--ink);
+    }
+
+    /* lesson cards */
+    .lessons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 40px 0;
+    }
+
+    @media (max-width: 600px) {
+      .lessons-grid { grid-template-columns: 1fr; }
+    }
+
+    .lesson-card {
+      background: var(--paper);
+      padding: 22px;
+      border: 1px solid var(--rule);
+      border-top: 3px solid var(--accent);
+    }
+
+    .lesson-card-num {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 28px;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .lesson-card h5 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 17px;
+      line-height: 1.25;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .lesson-card p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+
+    /* verdict-mini for "puede pasarte?" */
+    .answer-block {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 36px 32px;
+      margin: 48px 0;
+      position: relative;
+    }
+
+    .answer-block::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(244, 237, 224, 0.12);
+      pointer-events: none;
+    }
+
+    .answer-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--highlight);
+      margin-bottom: 14px;
+    }
+
+    .answer-headline {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(22px, 3.5vw, 30px);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+    }
+
+    .answer-body {
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.6;
+      color: rgba(244, 237, 224, 0.85);
+    }
+
+    .answer-body strong {
+      color: var(--highlight);
+      font-weight: 600;
+    }
+
+    /* ============ PILLARS (numbered vertical) ============ */
+    .pillars {
+      counter-reset: pillar;
+      list-style: none;
+      padding: 0;
+      margin: 40px 0 56px;
+    }
+
+    .pillar {
+      counter-increment: pillar;
+      display: grid;
+      grid-template-columns: 70px 1fr 130px;
+      gap: 24px;
+      padding: 28px 0;
+      border-top: 1px solid var(--rule);
+      align-items: start;
+    }
+
+    .pillar:last-child {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .pillar-num {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 48px;
+      color: var(--accent);
+      line-height: 0.9;
+    }
+
+    .pillar-num::before {
+      content: counter(pillar, decimal-leading-zero);
+    }
+
+    .pillar-body h4 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .pillar-body p {
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+
+    .pillar-status {
+      text-align: right;
+    }
+
+    @media (max-width: 600px) {
+      .pillar {
+        grid-template-columns: 56px 1fr;
+        gap: 16px;
+      }
+      .pillar-num { font-size: 38px; }
+      .pillar-status {
+        grid-column: 1 / -1;
+        text-align: left;
+        padding-left: 72px;
+        margin-top: -14px;
+      }
+    }
+
+    /* status pills */
+    .pill {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .pill.ok {
+      background: #dceedc;
+      color: #2d5a3f;
+      border: 1px solid #a8cdaf;
+    }
+
+    .pill.partial {
+      background: #f7e4c4;
+      color: #8a5a1a;
+      border: 1px solid #d9b577;
+    }
+
+    .pill.missing {
+      background: #f0d8d3;
+      color: var(--accent);
+      border: 1px solid #d8a89e;
+    }
+
+    /* ============ PRICING TABLE ============ */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin: 40px 0 24px;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+    }
+
+    @media (max-width: 720px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+      .pricing-tier:not(:last-child) {
+        border-bottom: 1px solid var(--rule);
+      }
+    }
+
+    .pricing-tier {
+      padding: 28px 22px;
+      position: relative;
+    }
+
+    .pricing-tier:not(:last-child) {
+      border-right: 1px solid var(--rule);
+    }
+
+    @media (max-width: 720px) {
+      .pricing-tier:not(:last-child) {
+        border-right: none;
+      }
+    }
+
+    .pricing-tier.featured {
+      background: var(--paper-deep);
+    }
+
+    .pricing-tier.featured::before {
+      content: "Recomendado";
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: var(--paper);
+      padding: 4px 10px;
+    }
+
+    .pricing-name {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+
+    .pricing-price {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 36px;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .pricing-price small {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0.04em;
+    }
+
+    .pricing-tagline {
+      font-family: var(--body);
+      font-size: 14px;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 18px;
+      min-height: 36px;
+    }
+
+    .pricing-features {
+      list-style: none;
+      padding: 0;
+      border-top: 1px solid var(--rule);
+      padding-top: 14px;
+    }
+
+    .pricing-features li {
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 6px 0 6px 18px;
+      position: relative;
+      color: var(--ink-soft);
+    }
+
+    .pricing-features li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 10px;
+      top: 8px;
+    }
+
+    .pricing-features li.no::before {
+      content: "✕";
+      color: var(--muted-light);
+    }
+
+    .pricing-features li.no {
+      color: var(--muted-light);
+      text-decoration: line-through;
+    }
+
+    .pricing-disclaimer {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div class="container-wide">
+      <div class="masthead-inner">
+        <div class="masthead-brand">PATAPIM ▸ Strategy Memo</div>
+        <div class="masthead-meta">
+          <span>Vol. 01 · No. 01</span>
+          <span>Abril · MMXXVI</span>
+          <span>Confidencial</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">Análisis a fondo</div>
+      <h1 class="hero-title">
+        ¿Open source<br/>
+        o producto<br/>
+        <em>cerrado?</em>
+      </h1>
+      <p class="hero-deck">
+        Ni lo uno ni lo otro. La pregunta correcta no es <em>abrir o cerrar</em> — es <em>qué abrir y qué cobrar</em>.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 1 -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">I</span> Lo que tenés en la mano</div>
+      <h2 class="section-title">PATAPIM <em>no es</em> un IDE más.</h2>
+
+      <p class="lede drop-cap">
+        Es un wrapper de Claude Code con piezas muy específicas — y, sobre todo, con piezas que <strong>no son código</strong>: son servicios corriendo en infraestructura tuya, con costo recurrente.
+      </p>
+
+      <p>El producto, mirado de cerca, son <strong>cinco capas distintas</strong>:</p>
+
+      <h3 class="subhead">1 · Capa de UX/IDE</h3>
+      <p>Electron + renderer. Replicable, sí — pero es donde está el <em>polish</em>. Es el envase, no el contenido.</p>
+
+      <h3 class="subhead">2 · Integraciones zero-setup</h3>
+      <p>Telegram, WhatsApp, email vía relay alojado en <span class="accent-text">patapim.ai</span>. <mark>Esto es servicio, no código.</mark> Requiere infraestructura corriendo, dominio, certificados, monitoreo.</p>
+
+      <h3 class="subhead">3 · Browser embebido + MCP tools</h3>
+      <p>Diferenciador técnico fuerte. El usuario corre acciones autenticadas (Cloudflare, Gmail, GitHub) sin moverse del IDE.</p>
+
+      <h3 class="subhead">4 · Remote mobile</h3>
+      <p><span class="accent-text">patapim.ai/remote</span>. Otra vez: infraestructura alojada, no binario.</p>
+
+      <h3 class="subhead">5 · Code signing pago</h3>
+      <p>Azure Trusted Signing, identidad Eggscape Entertainment. Inversión inequívoca de producto comercial.</p>
+
+      <div class="pullquote">
+        Gran parte del valor único ya vive en servicios que cuestan plata — no en el binario.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">II</span> El camino que no</div>
+      <h2 class="section-title">Open source <em>puro</em>: por qué no.</h2>
+
+      <p class="lede">El modelo OSS puro en este mercado <strong>no monetiza</strong> — salvo que tengas VC para quemar.</p>
+
+      <div class="verdict-card bad">
+        <div class="verdict-label">⚠ Contras decisivos</div>
+        <h4>Cinco razones para descartarlo de entrada.</h4>
+        <ul>
+          <li>Cursor lleva <span class="stat">+$300M ARR</span> siendo cerrado. Zed es OSS y vive de prometer un futuro plan paid. Continue.dev es básicamente regalado.</li>
+          <li><strong>El nicho OSS ya está tomado por OpenClaw</strong> (<span class="stat">247K stars</span>). Abrir PATAPIM hoy es entrar como #2 a una pelea ya decidida. <em>Ver caso de estudio §VI</em>.</li>
+          <li><strong>Anthropic puede comerte el almuerzo.</strong> Si sos OSS, cualquier feature buena la copian gratis. Si sos cerrado, al menos construís marca y lock-in de UX.</li>
+          <li>El <em>moat</em> está en el relay. Liberás el código, alguien forkea, apunta a su propio backend, y te quedaste sin negocio.</li>
+          <li>Code signing + dominio + R2 + Azure: ya estás gastando como producto. OSS sin monetización clara es <strong>subsidiar usuarios indefinidamente</strong>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">III</span> El otro extremo</div>
+      <h2 class="section-title">Cerrado <em>puro</em>: tampoco.</h2>
+
+      <div class="verdict-card bad">
+        <div class="verdict-label">⚠ Tres bloqueadores</div>
+        <h4>Te corta acceso al segmento que más te conviene.</h4>
+        <ul>
+          <li><strong>Trust issue.</strong> Corre con la API key del usuario y un browser embebido con sesiones reales. Devs paranoicos no instalan binarios cerrados que tocan eso — y son tus mejores early adopters.</li>
+          <li><strong>Distribución brutal.</strong> Sin GitHub stars, sin "Show HN", sin comunidad: arrancás desde cero contra Cursor (paid ads, marca) y Claude Code oficial (gratis, oficial).</li>
+          <li><strong>Velocidad.</strong> Las contribuciones externas en un nicho como "wrapper de Claude Code" suman features que vos no harías nunca.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider">
+    <span class="divider-glyph">§ § §</span>
+  </div>
+
+  <!-- SECTION 4 - THE RECOMMENDATION -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">IV</span> La recomendación</div>
+      <h2 class="section-title">El modelo es <em>open core.</em></h2>
+
+      <p class="lede">Sentry, GitLab, PostHog, Supabase. Para PATAPIM mapea casi sin fricción.</p>
+
+      <div class="table-wrap">
+        <div class="table-caption">▸ Distribución de licencias por capa</div>
+        <table class="opencore">
+          <thead>
+            <tr>
+              <th>Capa</th>
+              <th>Licencia</th>
+              <th>Razón</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="layer">Electron shell, renderer, MCP tools, browser panel</td>
+              <td class="license">MIT / Apache</td>
+              <td class="reason">Genera <em>trust</em>, stars, contribuciones, instalación manual.</td>
+            </tr>
+            <tr>
+              <td class="layer">Binarios firmados, <code>main.jsc</code> compilado</td>
+              <td class="license">Cerrado · Pago</td>
+              <td class="reason">El que quiera <em>instalar y andar</em> paga. El code signing tiene costo real.</td>
+            </tr>
+            <tr>
+              <td class="layer">Relay de notificaciones (<code>patapim.ai/notify</code>)</td>
+              <td class="license">SaaS · Free + Paid</td>
+              <td class="reason">Telegram / WhatsApp / email vía servicio tuyo = <em>recurring revenue</em>.</td>
+            </tr>
+            <tr>
+              <td class="layer">Remote mobile access</td>
+              <td class="license">SaaS · Paid</td>
+              <td class="reason">Hay infraestructura corriendo. Justifica suscripción.</td>
+            </tr>
+            <tr>
+              <td class="layer">Auto-update + soporte</td>
+              <td class="license">Paid tier</td>
+              <td class="reason">Modelo Sentry / GitLab clásico.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="subhead">Por qué funciona acá específicamente</h3>
+
+      <p>Cuatro razones que se sostienen entre sí:</p>
+
+      <p><strong>El moat queda donde está la plata</strong> (relay + remote), no en el código del IDE. Quien quiera autohostear, que se haga el laburo — los devs paranoicos lo agradecen, los demás pagan.</p>
+
+      <p><strong>Anthropic no puede copiarte los relays</strong> sin volverse una empresa de comms. Está fuera de su scope. Es la única defensa real contra el riesgo "Anthropic ships your feature next month".</p>
+
+      <p><strong>Devs paranoicos pueden auditar y self-hostear.</strong> Ganás a los early adopters técnicos sin perder revenue del mainstream.</p>
+
+      <p><strong>GitHub stars = marketing gratis.</strong> El repo OSS empuja al funnel paid. No tenés que pagar ads para que la gente sepa que existís.</p>
+
+      <div class="pullquote">
+        Open core no es <em>medio abrir</em>. Es ser quirúrgico sobre dónde está el negocio.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 - RIESGOS -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">V</span> Lo que hay que mitigar</div>
+      <h2 class="section-title">Cuatro <em>riesgos</em> del open core.</h2>
+
+      <h3 class="subhead">Fragmentación de forks</h3>
+      <p>Mitigación: publicar binarios oficiales <em>tan convenientes</em> que el fork sea siempre la peor opción. El code signing ya habilita esto.</p>
+
+      <h3 class="subhead">El "AGPL trap"</h3>
+      <p>Si vas OSS, <span class="accent-text">MIT o Apache</span>, no AGPL. AGPL espanta a empresas que podrían pagarte por una licencia comercial. La libertad atrae más que la viralidad legal.</p>
+
+      <h3 class="subhead">Definir qué queda cerrado</h3>
+      <p>El relay y el flow del <code>mcp-token</code> son <strong>no negociables</strong>. Documentarlo desde el día uno, no después.</p>
+
+      <h3 class="subhead">Comunicación honesta</h3>
+      <p>El README tiene que decir <em>"OSS app, paid hosted services"</em> sin ambigüedad. PostHog lo hace bien — modelo a copiar.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 6 - CASE STUDY: OpenClaw -->
+  <section class="case-study">
+    <div class="container">
+      <div class="case-badge">Caso de estudio · 2025–26</div>
+      <h2 class="case-title">El caso <em>OpenClaw</em><br/>(ex-<em>Clawdbot</em>).</h2>
+      <p class="case-deck">
+        Un solo dev austriaco hizo casi exactamente lo que vos estás haciendo — asistente AI local controlado por Telegram, WhatsApp, Discord — pero open source. En cuatro meses: 247.000 stars, dos cambios de nombre forzados, y el creador en OpenAI.
+      </p>
+
+      <h3 class="subhead">Qué pasó, en orden</h3>
+
+      <ul class="timeline">
+        <li>
+          <div class="timeline-date">▸ 24 nov 2025 · Origen</div>
+          <div class="timeline-event">
+            <strong>Peter Steinberger</strong> (austríaco, ex-fundador de PSPDFKit, "vibe coder") publica <em>Clawdbot</em>: agente AI autónomo que corre local, integra Claude/DeepSeek/GPT, y se controla desde Signal, Telegram, Discord o WhatsApp. Skills system con archivos <code>SKILL.md</code>. Open source, MIT-style.
+          </div>
+        </li>
+        <li>
+          <div class="timeline-date">▸ Diciembre · Viralización</div>
+          <div class="timeline-event">
+            El proyecto explota. Un hombre solo, un repo. Comunidad china empieza a forkear, salen guías, deployment scripts, directorios de skills. Clawdbot se convierte en <em>el</em> agente AI personal en OSS.
+          </div>
+        </li>
+        <li>
+          <div class="timeline-date">▸ 27 ene 2026 · Anthropic golpea</div>
+          <div class="timeline-event">
+            Anthropic envía <strong>trademark complaint</strong>: el nombre "Clawd" está demasiado cerca de "Claude". Steinberger renombra el proyecto a <em>Moltbot</em>.
+          </div>
+        </li>
+        <li>
+          <div class="timeline-date">▸ 30 ene 2026 · Segundo renombre</div>
+          <div class="timeline-event">
+            Tres días después, Steinberger renombra <em>otra vez</em> — esta vez por gusto: <em>"Moltbot never quite rolled off the tongue."</em> Pasa a llamarse <strong>OpenClaw</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="timeline-date">▸ 14 feb 2026 · La salida</div>
+          <div class="timeline-event">
+            Steinberger anuncia que <strong>se suma a OpenAI</strong>. Para evitar conflicto de interés, una <em>fundación non-profit</em> toma la stewardship del proyecto. El creador deja de ser el dueño operativo.
+          </div>
+        </li>
+        <li>
+          <div class="timeline-date">▸ Mar 2026 · El estado actual</div>
+          <div class="timeline-event">
+            <span class="stat">247.000 stars</span>, <span class="stat">47.700 forks</span>. Empresas chinas anuncian servicios basados en OpenClaw. El nicho "OSS Claude personal assistant" está <strong>tomado</strong>. Sin negocio detrás — solo una fundación.
+          </div>
+        </li>
+      </ul>
+
+      <div class="pullquote">
+        Steinberger ganó fama y un trabajo en OpenAI.<br/>El producto, como negocio propio, no existe.
+      </div>
+
+      <h3 class="subhead">¿Es esto exactamente PATAPIM?</h3>
+
+      <p>Es <strong>incómodamente parecido</strong>. Misma idea base: agente AI local + control desde apps de mensajería + skills + integraciones. Hasta los nombres riman: PATAPIM, OpenClaw — palabras inventadas, juguetonas, en torno a Claude.</p>
+
+      <p>Las diferencias importan, pero no son grandes:</p>
+
+      <div class="lessons-grid">
+        <div class="lesson-card">
+          <div class="lesson-card-num">i</div>
+          <h5>Vector de UX distinto</h5>
+          <p>OpenClaw es <em>chat-first</em>: vivís dentro de Telegram/WhatsApp. PATAPIM es <em>desktop-IDE-first</em>: vivís dentro de un IDE Electron y las notificaciones son canal secundario.</p>
+        </div>
+        <div class="lesson-card">
+          <div class="lesson-card-num">ii</div>
+          <h5>El nicho OSS ya está tomado</h5>
+          <p>Si abrís PATAPIM mañana, sos <strong>el #2</strong> contra un proyecto con 247K stars. La pelea por mindshare OSS ya se jugó — y la perdiste sin haber jugado.</p>
+        </div>
+        <div class="lesson-card">
+          <div class="lesson-card-num">iii</div>
+          <h5>Salida de Steinberger ≠ negocio</h5>
+          <p>OpenClaw no monetizó. Su autor ganó fama y un puesto en OpenAI. Eso es <em>una</em> salida — la del developer que quiere atención, no plata. ¿Es esa la que querés?</p>
+        </div>
+        <div class="lesson-card">
+          <div class="lesson-card-num">iv</div>
+          <h5>Anthropic puede tocarte la marca</h5>
+          <p>"Clawd" forzó renombre porque era muy cerca de "Claude". <em>PATAPIM</em> está limpio — palabra inventada, sin parecido fonético. Lección: no usés nombres que toquen marcas registradas de los labs.</p>
+        </div>
+      </div>
+
+      <h3 class="subhead">Lo que esto cambia en el análisis</h3>
+
+      <p>La conclusión original — <strong>open core</strong> — no se rompe, pero el <em>posicionamiento</em> tiene que ser más quirúrgico:</p>
+
+      <p><strong>1 · No competir contra OpenClaw en su terreno.</strong> No abrir PATAPIM como "otro asistente AI local". Ese terreno está cerrado. Si vas OSS, abrís otra cosa: el <em>shell de IDE de escritorio</em>, que OpenClaw no tiene.</p>
+
+      <p><strong>2 · El paid layer importa más que antes.</strong> OpenClaw demostró que con OSS solo, sin negocio, el camino es <em>fundación + acquihire</em>. Si no querés ese camino, tenés que tener servicios pagos reales — relays, mobile, code signing, soporte.</p>
+
+      <p><strong>3 · Posicionamiento honesto en el mercado.</strong> "OpenClaw es el agente OSS chat-first; PATAPIM es el IDE de escritorio comercial con polish profesional." Públicos distintos, no copia barata.</p>
+
+      <p><strong>4 · La marca está OK — los handles, no garantizado.</strong> El nombre PATAPIM no tiene riesgo de trademark con Anthropic. Pero los handles (npm, github org, dominio en otras TLDs) hay que asegurarlos antes de OpenClaw o cualquier otro le ponga el ojo.</p>
+
+      <div class="answer-block">
+        <div class="answer-eyebrow">▸ La respuesta directa</div>
+        <p class="answer-headline">
+          ¿Puede pasarte lo mismo? <strong>Una parte sí, otra no.</strong>
+        </p>
+        <p class="answer-body">
+          <strong>El renombre forzado por Anthropic</strong>, no — PATAPIM es lingüísticamente seguro. <strong>El "OSS viral sin negocio que termina en acquihire"</strong>, sí — y es el riesgo real si abrís sin paid layer estable. Lo que cambia es la pregunta de fondo: ya no es "¿abro o cierro?", es <strong>"¿quiero terminar como Steinberger en OpenAI, o quiero un negocio propio?"</strong> Esas son dos partidas distintas, con jugadas distintas.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7 - PAID LAYER ANATOMY -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">VII</span> Anatomía del paid layer</div>
+      <h2 class="section-title">¿Qué significa <em>"cerrar el paid layer"</em>?</h2>
+
+      <p class="lede">Cinco engranajes que tienen que girar al mismo tiempo. Si falta uno, no hay negocio — hay un <em>side project con cobro pegado con cinta</em>.</p>
+
+      <p>Estos son los pilares y el estado actual de cada uno:</p>
+
+      <ol class="pillars">
+        <li class="pillar">
+          <div class="pillar-num"></div>
+          <div class="pillar-body">
+            <h4>Binarios firmados</h4>
+            <p>Windows: Azure Trusted Signing con identidad <em>Eggscape Entertainment Inc.</em> verificada. Mac: Apple Developer ID + notarización. Sin firma, el SmartScreen / Gatekeeper espantan al 80% de los usuarios antes de instalar.</p>
+          </div>
+          <div class="pillar-status"><span class="pill partial">En curso</span></div>
+        </li>
+        <li class="pillar">
+          <div class="pillar-num"></div>
+          <div class="pillar-body">
+            <h4>Licencias y cobro</h4>
+            <p>Stripe + Cloudflare KV (<code>LICENSES</code>) + flujo de activación dentro de la app. El usuario paga, recibe license key, la app valida en el main process y desbloquea features. Hoy hay infra base; falta wirearlo end-to-end.</p>
+          </div>
+          <div class="pillar-status"><span class="pill partial">Parcial</span></div>
+        </li>
+        <li class="pillar">
+          <div class="pillar-num"></div>
+          <div class="pillar-body">
+            <h4>Relays gestionados</h4>
+            <p>Notificaciones que <em>simplemente funcionan</em> sin que el usuario configure tokens. Telegram ya está en modo "official" con instance pairing. WhatsApp y email todavía dependen de paneles embebidos con sesión del usuario — no son <em>servicios</em>, son automatización local.</p>
+          </div>
+          <div class="pillar-status"><span class="pill partial">1 de 3</span></div>
+        </li>
+        <li class="pillar">
+          <div class="pillar-num"></div>
+          <div class="pillar-body">
+            <h4>Remote mobile</h4>
+            <p><code>patapim.ai/remote</code> existe en producción. Falta endurecer la conexión phone → instancia local (TURN si hace falta para NAT traversal), gating por licencia, y onboarding claro.</p>
+          </div>
+          <div class="pillar-status"><span class="pill partial">Existe, no gated</span></div>
+        </li>
+        <li class="pillar">
+          <div class="pillar-num"></div>
+          <div class="pillar-body">
+            <h4>Auto-update verificado</h4>
+            <p>R2 (<code>patapim-releases</code>) + endpoints en <code>patapim.ai/api/download</code> + Gist con <code>patapim-version.json</code>. Funciona para dev installs; falta verificación de firma una vez que los binarios estén firmados.</p>
+          </div>
+          <div class="pillar-status"><span class="pill ok">Operativo</span></div>
+        </li>
+      </ol>
+
+      <div class="pullquote">
+        Tener "el paid layer cerrado" es poder mandarle el link de descarga<br/>
+        a un desconocido y que pague sin que <em>vos hagas nada</em>.
+      </div>
+
+      <h3 class="subhead">Estrategia en cuatro fases</h3>
+
+      <p>El orden no es arbitrario: cada fase desbloquea la siguiente. Saltarse una rompe la cadena.</p>
+
+      <ol class="step-list">
+        <li>
+          <h4>Fase 1 · Cerrar lo que ya casi está <span class="accent-text">(3–4 semanas)</span></h4>
+          <p>Finalizar el Certificate Profile en Azure linkeado a Eggscape. Configurar Apple Developer ID + notarización para Mac. Validar el flujo Stripe end-to-end con un usuario real. Wirear el license gating en el <code>main process</code>: qué features piden licencia válida, cómo se valida offline (signed JWT), cómo se invalida.</p>
+        </li>
+        <li>
+          <h4>Fase 2 · Construir los relays que faltan <span class="accent-text">(3–4 semanas)</span></h4>
+          <p>WhatsApp managed: WhatsApp Cloud API o un proveedor (Twilio, MessageBird) detrás de <code>patapim.ai/notify/wa</code>. Email managed: Resend o Postmark detrás de <code>patapim.ai/notify/mail</code>. Mantener el modo "BYO" (panel embebido) para Free tier; el modo gestionado va detrás de licencia.</p>
+        </li>
+        <li>
+          <h4>Fase 3 · Remote en producción real <span class="accent-text">(2 semanas)</span></h4>
+          <p>Endurecer <code>patapim.ai/remote</code>: TURN si hace falta, autenticación por token de licencia, rate-limiting, logs. Onboarding desde el celu: QR pairing con la instancia local. Gating por licencia.</p>
+        </li>
+        <li>
+          <h4>Fase 4 · Distribución y onboarding <span class="accent-text">(2 semanas)</span></h4>
+          <p>Polish a <code>download.astro</code>: detección de OS, instructivo claro, mostrar el certificado de firma. Trial de 14 días al primer instalar (sin pedir tarjeta). Flujo de "te queda 1 día" → upgrade. Página de pricing pública.</p>
+        </li>
+      </ol>
+
+      <p>Total razonable: <span class="stat">10 a 12 semanas</span> de trabajo real, con foco. Si te dispersás, son 6 meses.</p>
+
+      <h3 class="subhead">Pricing propuesto</h3>
+
+      <p>Tres tiers que mapean al schema que ya está declarado en el sitio (<code>$0 / $6.99 / $29.99</code>) — no inventar nuevos precios:</p>
+
+      <div class="pricing-grid">
+        <div class="pricing-tier">
+          <div class="pricing-name">Free</div>
+          <div class="pricing-price">$0</div>
+          <div class="pricing-tagline">Para devs que quieren autohostear y traen su propia infra.</div>
+          <ul class="pricing-features">
+            <li>Source build (MIT)</li>
+            <li>Bring your own API key</li>
+            <li>Telegram con bot propio</li>
+            <li>WhatsApp / email vía panel embebido</li>
+            <li class="no">Binario firmado</li>
+            <li class="no">Auto-update verificado</li>
+            <li class="no">Remote mobile</li>
+            <li class="no">Soporte</li>
+          </ul>
+        </div>
+        <div class="pricing-tier featured">
+          <div class="pricing-name">Pro</div>
+          <div class="pricing-price">$6.99<small> /mes</small></div>
+          <div class="pricing-tagline">El sweet spot. Todo lo que un dev solo necesita.</div>
+          <ul class="pricing-features">
+            <li>Binario firmado (Windows + Mac)</li>
+            <li>Auto-update verificado</li>
+            <li>Telegram / WhatsApp / email <em>managed</em></li>
+            <li>Remote mobile (patapim.ai/remote)</li>
+            <li>Soporte por email</li>
+            <li>Trial 14 días sin tarjeta</li>
+          </ul>
+        </div>
+        <div class="pricing-tier">
+          <div class="pricing-name">Studio</div>
+          <div class="pricing-price">$29.99<small> /mes</small></div>
+          <div class="pricing-tagline">Equipos chicos y power users.</div>
+          <ul class="pricing-features">
+            <li>Todo lo de Pro</li>
+            <li>Múltiples seats / dispositivos</li>
+            <li>Workspaces compartidos</li>
+            <li>Priority support</li>
+            <li>Acceso anticipado a features</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="pricing-disclaimer">— Precios coherentes con el schema.org ya declarado en BaseLayout.astro —</p>
+    </div>
+  </section>
+
+  <!-- SECTION 8 - PLAN -->
+  <section class="essay">
+    <div class="container">
+      <div class="section-marker"><span class="section-marker-num">VIII</span> Plan concreto</div>
+      <h2 class="section-title">El orden <em>importa.</em></h2>
+
+      <p class="lede">Open core funciona <strong>solo si el paid layer está estable antes de abrir</strong>. Abrirlo antes es regalar el producto.</p>
+
+      <ol class="step-list">
+        <li>
+          <h4>Ahora · Cerrar el paid layer <span class="accent-text">(ver §VII)</span></h4>
+          <p>Las cuatro fases descritas en la sección anterior: code signing, licencias, relays gestionados, remote, distribución. <span class="stat">10–12 semanas</span> con foco. Sin esto, cualquier movimiento OSS es prematuro.</p>
+        </li>
+        <li>
+          <h4>Después · Blindar la marca y el posicionamiento <span class="accent-text">(lección OpenClaw)</span></h4>
+          <p>Asegurar handles (npm, GitHub org, X, Discord), redactar gobernanza en el README, preparar CLA. Y definir el posicionamiento contra OpenClaw: <em>desktop IDE comercial</em>, no <em>otro asistente OSS chat-first</em>. Antes de abrir, no después.</p>
+        </li>
+        <li>
+          <h4>Recién entonces · Abrir el código del IDE</h4>
+          <p>Sacar <code>src/renderer/</code>, <code>src/main/</code> y <code>src/mcp/</code> a un repo público bajo MIT. README claro: app OSS + servicios alojados pagos en patapim.ai.</p>
+        </li>
+        <li>
+          <h4>Pricing tentativo</h4>
+          <p><strong>Free</strong> · self-hosted, traés tu API key, sin relays. <strong>Pro $X/mes</strong> · binario firmado + relays + remote + auto-update.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- VERDICT BANNER -->
+  <div class="container-wide">
+    <div class="verdict-banner">
+      <div class="verdict-banner-eyebrow">Verdict</div>
+      <p class="verdict-banner-headline">
+        Abrir el código <em>antes</em> de tener<br/>
+        el paid layer estable es <strong>regalar el producto.</strong><br/>
+        Abrirlo <em>después</em> es marketing gratis<br/>
+        con monetización <strong>intacta.</strong>
+      </p>
+      <div class="verdict-banner-meta">— Memo · Abril 2026 —</div>
+    </div>
+  </div>
+
+  <!-- COLOPHON -->
+  <footer class="colophon">
+    <div class="container">
+      <span class="colophon-glyph">§</span>
+      Documento interno · No indexado · PATAPIM
+    </div>
+  </footer>
+
+  <script>
+    // Reveal-on-scroll for sections
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+    document.querySelectorAll('section.essay, .verdict-banner, .pullquote').forEach((el, i) => {
+      el.classList.add('reveal');
+      el.style.transitionDelay = `${Math.min(i * 60, 240)}ms`;
+      io.observe(el);
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,535 @@
+---
+export const prerender = true;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Closing the paid layer — PATAPIM plan</title>
+  <meta name="description" content="What's left to ship the paid tier. Checkboxes for progress." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --bg-2: #17171a;
+      --bg-3: #1d1d21;
+      --ink: #e8e6e3;
+      --ink-soft: #a09b94;
+      --ink-mute: #6b6660;
+      --accent: #d4a574;
+      --accent-soft: #c9956a;
+      --accent-bg: rgba(212, 165, 116, 0.10);
+      --good: #7cb382;
+      --good-bg: rgba(124, 179, 130, 0.18);
+      --warn: #e0a458;
+      --rule: rgba(255, 255, 255, 0.08);
+      --rule-strong: rgba(255, 255, 255, 0.14);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 17px;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 36px 22px 80px;
+    }
+
+    /* === Header === */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: var(--ink-mute);
+      margin-bottom: 24px;
+    }
+    .topbar .brand { color: var(--accent); font-weight: 600; }
+    .topbar a { color: var(--ink-soft); text-decoration: none; }
+    .topbar a:hover { color: var(--accent); }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+    }
+    .lede {
+      font-size: 17px;
+      color: var(--ink-soft);
+      margin-bottom: 24px;
+    }
+
+    /* === Progress bar === */
+    .progress-card {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      padding: 18px 18px;
+      margin: 20px 0 36px;
+      position: sticky;
+      top: 12px;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      background: rgba(23, 23, 26, 0.92);
+    }
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+    .progress-label {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      font-weight: 600;
+    }
+    .progress-count {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-3);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--good));
+      border-radius: 999px;
+      transition: width 360ms cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+    .reset-btn {
+      background: none;
+      border: 1px solid var(--rule-strong);
+      color: var(--ink-mute);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      margin-top: 10px;
+      transition: color 150ms, border-color 150ms;
+    }
+    .reset-btn:hover { color: var(--ink); border-color: var(--ink-mute); }
+
+    /* === Sections === */
+    section { margin: 32px 0; }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+    .section-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+    .section-meta .pill {
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+    .section-meta .pill.now {
+      background: var(--good-bg);
+      color: var(--good);
+    }
+    .section-desc {
+      color: var(--ink-soft);
+      font-size: 15px;
+      margin-bottom: 14px;
+      line-height: 1.55;
+    }
+
+    /* === Checklist items === */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 14px 14px;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms;
+    }
+    .item:hover { border-color: var(--rule-strong); }
+    .item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      border: 2px solid var(--rule-strong);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      margin-top: 1px;
+      transition: all 150ms;
+    }
+    .item input[type="checkbox"]:hover { border-color: var(--accent); }
+    .item input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .item input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 7px;
+      height: 12px;
+      border: solid var(--bg);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .item-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .item-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.4;
+      transition: color 150ms;
+    }
+    .item-desc {
+      font-size: 13px;
+      color: var(--ink-mute);
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+    .item.done .item-title {
+      color: var(--ink-mute);
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: var(--ink-mute);
+    }
+    .item.done {
+      background: var(--bg);
+      border-color: var(--rule);
+      opacity: 0.78;
+    }
+    .item code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--bg-3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--accent);
+    }
+
+    /* === Section count chip === */
+    .sec-count {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink-mute);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    /* === Final note === */
+    .footnote {
+      margin-top: 48px;
+      padding: 18px 18px;
+      background: var(--bg-2);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .footnote strong { color: var(--ink); }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      font-size: 12px;
+      color: var(--ink-mute);
+      text-align: center;
+    }
+    footer a { color: var(--ink-soft); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (min-width: 700px) {
+      h1 { font-size: 42px; }
+      .wrap { padding: 56px 22px 96px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <span class="brand">PATAPIM</span>
+      <span>·</span>
+      <a href="/strategy">strategy</a>
+      <span>·</span>
+      <span>plan</span>
+    </div>
+
+    <h1>Closing the paid layer.</h1>
+    <p class="lede">
+      Five gears that have to turn together. Until then it's a side-project with payment glued on. Order matters — start where the user already wants to swipe a card.
+    </p>
+
+    <!-- Sticky progress bar -->
+    <div class="progress-card">
+      <div class="progress-row">
+        <span class="progress-label">Overall progress</span>
+        <span class="progress-count" id="progress-count">0 / 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <button class="reset-btn" id="reset-btn">Reset all</button>
+    </div>
+
+    <!-- ===================== TRACK 1: WhatsApp ===================== -->
+    <section data-track="whatsapp">
+      <h2>1 · WhatsApp managed relay</h2>
+      <div class="section-meta">
+        <span class="pill now">Start here</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        Same shape as the new Telegram flow: PATAPIM-hosted bot, zero token setup, instance pairing. Today WhatsApp lives as an <em>embedded browser panel</em> — that's local automation, not a service. Convert it to a real backend.
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="wa-decide-backend"><div class="item-body"><div class="item-title">Pick the backend: WhatsApp Cloud API vs Twilio</div><div class="item-desc">Cloud API is cheaper at scale but requires Meta Business verification. Twilio = faster MVP, ~5× cost. Decide based on time-to-launch.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-provision-number"><div class="item-body"><div class="item-title">Provision a phone number for the bot</div><div class="item-desc">Either a Meta-verified WABA number or a Twilio number. This is the public face of <code>@patapim</code> on WhatsApp.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-durable-object"><div class="item-body"><div class="item-title">Build the relay Durable Object on patapim.ai</div><div class="item-desc">Mirror <code>TelegramInstance.ts</code>: WS upgrade per install, hibernating socket, paired chat binding, offline queue.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-pairing-flow"><div class="item-body"><div class="item-title">Pairing flow — UX-symmetric to Telegram</div><div class="item-desc">"Connect to WhatsApp" button → 6-letter code → user sends code to the bot number → done.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-client-relay"><div class="item-body"><div class="item-title">PATAPIM client: <code>whatsappRelay.js</code> + <code>whatsappPairing.js</code></div><div class="item-desc">Refactor of the Telegram pair to be a generic <code>messagingRelay</code>. The diff is mostly in transport URLs and outbound message shape.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-deprecate-panel"><div class="item-body"><div class="item-title">Keep embedded panel as Free-tier fallback</div><div class="item-desc">"BYO WhatsApp Web session" stays for Free users. Managed relay is a Pro feature, license-gated.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="wa-e2e-test"><div class="item-body"><div class="item-title">End-to-end test from a real phone</div><div class="item-desc">Notification arrives, reply gets injected into the right terminal, multi-terminal routing works.</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ===================== TRACK 2: Email ===================== -->
+    <section data-track="email">
+      <h2>2 · Email managed relay</h2>
+      <div class="section-meta">
+        <span class="pill">Phase 2</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        Outbound-only at first (Claude pings you when something needs attention). Inbound reply parsing comes later — most people don't reply to bot emails anyway.
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="email-pick-provider"><div class="item-body"><div class="item-title">Pick the provider: Resend vs Postmark</div><div class="item-desc">Resend has better DX and pricing. Postmark has better deliverability reputation. Either works.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="email-dns"><div class="item-body"><div class="item-title">Set up DNS: SPF, DKIM, DMARC for <code>patapim.ai</code></div><div class="item-desc">Without these, our notification mails will hit spam. Cloudflare DNS makes this trivial.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="email-endpoint"><div class="item-body"><div class="item-title">Implement <code>/api/notify/email</code> on patapim.ai</div><div class="item-desc">Authenticated by license key. Rate-limit per install. Templates for "Claude finished", "Claude needs approval", "build failed".</div></div></li>
+        <li class="item"><input type="checkbox" data-id="email-client-wire"><div class="item-body"><div class="item-title">PATAPIM client: route email notifications through the relay</div><div class="item-desc">Replace the current direct-SMTP path. Keep the SMTP option for Free tier "BYO email".</div></div></li>
+        <li class="item"><input type="checkbox" data-id="email-license-gate"><div class="item-body"><div class="item-title">License-gate the managed mode</div><div class="item-desc">If license is valid → managed relay. If not → fall back to user-configured SMTP.</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ===================== TRACK 3: License flow ===================== -->
+    <section data-track="license">
+      <h2>3 · License + payment, end-to-end</h2>
+      <div class="section-meta">
+        <span class="pill">Phase 1 polish</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        Stripe + Cloudflare KV + main-process validation already exists in pieces. Stitch them so a stranger can pay and unlock without you touching a thing.
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="lic-stripe-checkout"><div class="item-body"><div class="item-title">Stripe checkout → license key issuance</div><div class="item-desc">Cloudflare Worker webhook reacts to <code>checkout.session.completed</code>, generates a signed JWT license, stores in <code>LICENSES</code> KV, emails it to the buyer.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="lic-validate"><div class="item-body"><div class="item-title">Main-process validation (offline-capable, signed JWT)</div><div class="item-desc">Public key in the binary. App boots, reads license, verifies signature offline. Periodic phone-home for revocation only.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="lic-feature-gates"><div class="item-body"><div class="item-title">Define and wire feature gates</div><div class="item-desc">Decide exactly which features are paid: managed relays (WA/email), remote mobile auth, multi-seat. Add gate checks at the entry points.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="lic-trial"><div class="item-body"><div class="item-title">14-day trial without card</div><div class="item-desc">First install → trial license auto-issued. Days remaining shown subtly in the UI. Day 13 → upgrade nudge.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="lic-revocation"><div class="item-body"><div class="item-title">Revocation + recovery flows</div><div class="item-desc">Lost key → email recovery via Stripe customer ID. Refund → invalidate. License moves between machines (deactivate / activate).</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ===================== TRACK 4: Code signing ===================== -->
+    <section data-track="signing">
+      <h2>4 · Signed binaries on both platforms</h2>
+      <div class="section-meta">
+        <span class="pill">Phase 1</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        Without signature: SmartScreen scares 80% of installs, Gatekeeper blocks Mac. Windows side is mid-flight (Eggscape identity verified ✓).
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="sig-azure-cert"><div class="item-body"><div class="item-title">Azure Trusted Signing — Certificate Profile linked to Eggscape</div><div class="item-desc">Identity is verified. Last step: create cert profile, plumb the new credential into <code>release.bat</code>.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="sig-windows-test"><div class="item-body"><div class="item-title">Test fresh-install on a clean Windows VM</div><div class="item-desc">SmartScreen should show "Verified publisher: Eggscape Entertainment Inc." with no scary warning.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="sig-apple-id"><div class="item-body"><div class="item-title">Apple Developer ID enrollment ($99/yr)</div><div class="item-desc">Personal or Eggscape business account? Business is cleaner long-term but adds D-U-N-S verification time.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="sig-mac-builder"><div class="item-body"><div class="item-title">electron-builder Mac signing + notarization</div><div class="item-desc">Configure <code>codeSign</code> + <code>notarize</code> in <code>build</code>. Hardened runtime + entitlements file.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="sig-mac-test"><div class="item-body"><div class="item-title">Test fresh-install on a clean Mac</div><div class="item-desc">No "unidentified developer" prompt. Stapled notarization ticket so it works offline.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="sig-update-verify"><div class="item-body"><div class="item-title">Auto-updater verifies signatures on download</div><div class="item-desc">electron-updater already does this when binaries are signed — just confirm and add a smoke test.</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ===================== TRACK 5: Remote mobile ===================== -->
+    <section data-track="remote">
+      <h2>5 · Remote mobile in production</h2>
+      <div class="section-meta">
+        <span class="pill">Phase 3</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        <code>patapim.ai/remote</code> already works for the dev. Make it work for a stranger on a hotel WiFi.
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="rem-license-auth"><div class="item-body"><div class="item-title">License-token auth for the remote endpoint</div><div class="item-desc">Today the device-token is generated locally; tie it to a valid license so Free tier doesn't get free remote.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="rem-qr-pairing"><div class="item-body"><div class="item-title">QR pairing onboarding</div><div class="item-desc">Phone scans a QR shown in PATAPIM, lands on <code>patapim.ai/remote</code> already authenticated. No login needed.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="rem-turn"><div class="item-body"><div class="item-title">TURN fallback for hostile NAT (only if needed)</div><div class="item-desc">Cloudflare TURN service is cheap; only wire it if real-world testing shows direct connect fails too often.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="rem-rate-limit"><div class="item-body"><div class="item-title">Rate limiting + abuse logging</div><div class="item-desc">Per-instance + per-IP. Anything that looks like brute force or scanning gets banned at the edge.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="rem-onboarding"><div class="item-body"><div class="item-title">First-time onboarding flow on the phone</div><div class="item-desc">"This is your terminal in your pocket" — short tutorial the first time someone lands on /remote.</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ===================== TRACK 6: Distribution ===================== -->
+    <section data-track="distro">
+      <h2>6 · Distribution &amp; onboarding polish</h2>
+      <div class="section-meta">
+        <span class="pill">Phase 4</span>
+        <span class="sec-count" data-count></span>
+      </div>
+      <p class="section-desc">
+        Make the buy flow boring and obvious. Today there's a download page; tomorrow there's a funnel.
+      </p>
+      <ul class="checklist">
+        <li class="item"><input type="checkbox" data-id="dist-os-detect"><div class="item-body"><div class="item-title">OS detection on <code>download.astro</code></div><div class="item-desc">Show the right installer first. "Windows installer" badge + signed cert chip ("Eggscape Entertainment Inc.").</div></div></li>
+        <li class="item"><input type="checkbox" data-id="dist-pricing-page"><div class="item-body"><div class="item-title">Public pricing page wired to Stripe</div><div class="item-desc">Free / Pro $6.99 / Studio $29.99. Clicking Pro/Studio → Stripe checkout → license email. Already declared in schema.org.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="dist-trial-nudge"><div class="item-body"><div class="item-title">"1 day left in trial" upgrade nudge</div><div class="item-desc">Soft banner inside the app, deep-link to checkout. Don't be obnoxious.</div></div></li>
+        <li class="item"><input type="checkbox" data-id="dist-upgrade-flow"><div class="item-body"><div class="item-title">In-app upgrade flow</div><div class="item-desc">Click Upgrade → checkout → return to app → license auto-applied (deep-link callback or polling).</div></div></li>
+        <li class="item"><input type="checkbox" data-id="dist-receipts"><div class="item-body"><div class="item-title">Receipts + invoice page</div><div class="item-desc">Stripe customer portal works out of the box; just expose it from the app menu.</div></div></li>
+      </ul>
+    </section>
+
+    <p class="footnote">
+      <strong>Order is deliberate.</strong> WhatsApp first because (a) the Telegram pattern is fresh, so the relay code is mostly copy-adapt, and (b) WA + email are <em>the</em> "managed services" that turn this from app into product. Without paid services, the license tier has nothing to gate.
+    </p>
+
+    <footer>
+      <a href="https://patapim.ai">patapim.ai</a> · plan as of <span id="today"></span>
+    </footer>
+
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'patapim-paid-layer-plan-v1';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+    function saveState(state) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    }
+
+    function refresh() {
+      const all = document.querySelectorAll('.item input[type="checkbox"]');
+      const total = all.length;
+      const done = Array.from(all).filter(cb => cb.checked).length;
+
+      // Overall
+      document.getElementById('progress-count').textContent = done + ' / ' + total;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      document.getElementById('progress-fill').style.width = pct + '%';
+
+      // Per-section counts
+      document.querySelectorAll('section[data-track]').forEach(sec => {
+        const items = sec.querySelectorAll('.item input[type="checkbox"]');
+        const sDone = Array.from(items).filter(cb => cb.checked).length;
+        const sTotal = items.length;
+        const countEl = sec.querySelector('[data-count]');
+        if (countEl) countEl.textContent = sDone + '/' + sTotal;
+      });
+    }
+
+    function applyState() {
+      const state = loadState();
+      document.querySelectorAll('.item input[type="checkbox"]').forEach(cb => {
+        const id = cb.getAttribute('data-id');
+        if (state[id]) {
+          cb.checked = true;
+          cb.closest('.item').classList.add('done');
+        }
+      });
+      refresh();
+    }
+
+    document.querySelectorAll('.item').forEach(item => {
+      const cb = item.querySelector('input[type="checkbox"]');
+      // Click anywhere on the row toggles the checkbox.
+      item.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          cb.checked = !cb.checked;
+        }
+        const id = cb.getAttribute('data-id');
+        const state = loadState();
+        if (cb.checked) {
+          state[id] = true;
+          item.classList.add('done');
+        } else {
+          delete state[id];
+          item.classList.remove('done');
+        }
+        saveState(state);
+        refresh();
+      });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      if (!confirm('Uncheck everything?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      document.querySelectorAll('.item input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.item').classList.remove('done');
+      });
+      refresh();
+    });
+
+    // Today's date in the footer.
+    document.getElementById('today').textContent = new Date().toISOString().slice(0, 10);
+
+    applyState();
+  </script>
+</body>
+</html>

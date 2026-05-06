@@ -1,90 +1,309 @@
 ---
 export const prerender = false;
 
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { getUserFromRequest } from '../lib/auth';
 import { createReferralAssociation, activateReferral } from '../lib/referral';
+import { completePairingIfPresent } from '../lib/pairing';
 
 const env = Astro.locals.runtime.env;
 const url = new URL(Astro.request.url);
 const pairingSessionId = url.searchParams.get('s');
+const errorParam = url.searchParams.get('error');
 
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
-if (!user) {
-  // Not authenticated — redirect to Google OAuth
-  // If there's a pairing session, store it in a cookie so the callback can use it
-  const headers: Record<string, string> = { Location: '/api/auth/google' };
-  if (pairingSessionId) {
-    headers['Set-Cookie'] = `__patapim_pair=${pairingSessionId}; Secure; SameSite=Lax; Path=/; Max-Age=600`;
-  }
-  return new Response(null, { status: 302, headers });
+// If pairing was just initiated, set the cookie so any sign-in path (Google
+// or email/password) can complete it via completePairingIfPresent.
+if (!user && pairingSessionId) {
+  Astro.response.headers.append(
+    'Set-Cookie',
+    `__patapim_pair=${pairingSessionId}; Secure; SameSite=Lax; Path=/; Max-Age=600`,
+  );
 }
 
-// Already authenticated — process referral cookie if present
-const cookies = Astro.request.headers.get('cookie') || '';
-const refCookieMatch = cookies.match(/(?:^|;\s*)__patapim_ref=([^;]+)/);
-if (refCookieMatch) {
-  try {
-    const referrerEmail = decodeURIComponent(refCookieMatch[1]);
-    await createReferralAssociation(env.LICENSES, referrerEmail, user.email);
-    await activateReferral(env.LICENSES, user.email);
-  } catch (e) {
-    console.error('Referral activation error (signin fast path):', e);
-  }
-}
-
-// Already authenticated — if pairing session, auto-create device token
-if (pairingSessionId) {
-  const deviceToken = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  // Store device record
-  await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify({
-    googleId: user.googleId,
-    email: user.email,
-    deviceName: 'PATAPIM Desktop',
-    machineId: 'auto-pair',
-    createdAt: now,
-    lastSeen: now,
-    tunnelUrl: null,
-    terminalCount: 0,
-  }));
-
-  // Append to device list
-  const devicesRaw = await env.LICENSES.get(`devices:${user.googleId}`);
-  const devices: Array<{ token: string; deviceName: string; createdAt: string }> = devicesRaw ? JSON.parse(devicesRaw) : [];
-  devices.push({ token: deviceToken, deviceName: 'PATAPIM Desktop', createdAt: now });
-  await env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(devices));
-
-  // Get license info
-  const licenseRaw = await env.LICENSES.get(`license:${user.email}`);
-  const license = licenseRaw ? JSON.parse(licenseRaw) : null;
-
-  // Store result for desktop polling
-  await env.SESSIONS.put(`pair-poll:${pairingSessionId}`, JSON.stringify({
-    deviceToken,
-    email: user.email,
-    plan: license?.plan || 'free',
-    licenseStatus: license?.status || null,
-    licenseKey: license?.licenseKey || null,
-  }), { expirationTtl: 600 });
-
-  const pairHeaders: Record<string, string> = { Location: '/go?paired=1' };
+if (user) {
+  // Already signed in — just complete pairing/referral and bounce away.
+  const cookies = Astro.request.headers.get('cookie') || '';
+  const refCookieMatch = cookies.match(/(?:^|;\s*)__patapim_ref=([^;]+)/);
   if (refCookieMatch) {
-    pairHeaders['Set-Cookie'] = '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0';
+    try {
+      const referrerEmail = decodeURIComponent(refCookieMatch[1]);
+      await createReferralAssociation(env.LICENSES, referrerEmail, user.email);
+      await activateReferral(env.LICENSES, user.email);
+    } catch (e) {
+      console.error('Referral activation error (signin fast path):', e);
+    }
   }
-  return new Response(null, { status: 302, headers: pairHeaders });
+
+  if (pairingSessionId) {
+    // Inject the pair cookie temporarily so completePairingIfPresent picks it
+    // up. We pass a synthetic Request that the helper can read.
+    const reqWithPair = new Request(Astro.request.url, {
+      headers: { cookie: `__patapim_pair=${pairingSessionId}` },
+    });
+    await completePairingIfPresent(env, reqWithPair, {
+      googleId: user.googleId,
+      email: user.email,
+    });
+
+    const headers = new Headers({ Location: '/go?paired=1' });
+    if (refCookieMatch) headers.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+    return new Response(null, { status: 302, headers });
+  }
+
+  if (refCookieMatch) {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: '/go',
+        'Set-Cookie': '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0',
+      },
+    });
+  }
+  return Astro.redirect('/go');
 }
 
-// Already authenticated, no pairing — just go to dashboard
-if (refCookieMatch) {
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: '/go',
-      'Set-Cookie': '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0',
-    },
-  });
-}
-return Astro.redirect('/go');
+const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}` : '';
 ---
+<BaseLayout title="Sign in — PATAPIM" description="Sign in to your PATAPIM account.">
+  <main class="auth-page">
+    <div class="auth-card">
+      <a href="/" class="brand">PATAPIM</a>
+      <h1>Sign in</h1>
+
+      {errorParam === 'google_only' && (
+        <div class="alert">This email was created with Google. Sign in with Google below — or use "Forgot password?" to set a password.</div>
+      )}
+
+      <a href={`/api/auth/google${sigParam}`} class="btn google primary-google">
+        <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.581C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+        </svg>
+        Sign in with Google
+      </a>
+
+      <div class="divider"><span>or sign in with email</span></div>
+
+      <form id="signin-form" novalidate>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" autocomplete="current-password" required minlength="10" />
+        </label>
+
+        <div class="row-end">
+          <a class="muted-link" href={`/reset-password${sigParam}`}>Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn secondary">Sign in</button>
+        <p id="signin-error" class="form-error" hidden></p>
+      </form>
+
+      <p class="signup-prompt">Don't have an account? <a href={`/signup${sigParam}`}>Sign up</a></p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(212,165,116,0.06), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(120,165,212,0.04), transparent 40%),
+      var(--bg-deep);
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: 36px 32px;
+    box-shadow: var(--shadow-lg);
+  }
+  .brand {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .brand:hover { color: var(--accent-primary); }
+  h1 {
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 24px;
+  }
+  .alert {
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-primary);
+    color: var(--text-primary);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 18px;
+  }
+  form { display: flex; flex-direction: column; gap: 14px; }
+  label { display: flex; flex-direction: column; gap: 6px; }
+  label > span {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    padding: 11px 14px;
+    font-size: 15px;
+    font-family: var(--font-sans);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: var(--bg-tertiary);
+  }
+  .row-end { display: flex; justify-content: flex-end; margin-top: -4px; }
+  .muted-link {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .muted-link:hover { color: var(--accent-primary); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+  .btn.secondary {
+    background: var(--bg-secondary);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+    margin-top: 6px;
+  }
+  .btn.secondary:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
+  .btn.secondary:disabled { opacity: 0.6; cursor: wait; }
+
+  /* Google button — primary, prominent. White background per Google brand
+     guidelines for dark surfaces; bigger padding/font to read as the
+     preferred path. */
+  .btn.google.primary-google {
+    background: #ffffff;
+    color: #1f1f1f;
+    display: flex;
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 24px rgba(212,165,116,0.10);
+  }
+  .btn.google.primary-google:hover {
+    background: #f7f7f7;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 12px 32px rgba(212,165,116,0.18);
+  }
+  .divider {
+    display: flex;
+    align-items: center;
+    margin: 22px 0 16px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border-default);
+  }
+  .divider span { padding: 0 12px; }
+  .form-error {
+    background: var(--error-subtle);
+    color: var(--error);
+    border: 1px solid var(--error);
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    margin: 4px 0 0;
+  }
+  .signup-prompt {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 22px;
+  }
+  .signup-prompt a { color: var(--accent-primary); text-decoration: none; font-weight: 500; }
+  .signup-prompt a:hover { text-decoration: underline; }
+</style>
+
+<script>
+  const form = document.getElementById('signin-form') as HTMLFormElement | null;
+  const errEl = document.getElementById('signin-error') as HTMLParagraphElement | null;
+  if (form && errEl) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.hidden = true;
+      errEl.textContent = '';
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitBtn.disabled = true;
+
+      const data = new FormData(form);
+      const email = String(data.get('email') || '').trim();
+      const password = String(data.get('password') || '');
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ email, password }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok) {
+          window.location.href = body.paired ? '/go?paired=1' : '/go';
+          return;
+        }
+        if (res.status === 429) {
+          errEl.textContent = `Too many attempts. Try again in ${body.retryAfter || 60}s.`;
+        } else if (body.hint === 'google_only') {
+          errEl.textContent = "We couldn't sign you in. This email may have been created with Google — try the Google button below.";
+        } else {
+          errEl.textContent = "Wrong email or password.";
+        }
+        errEl.hidden = false;
+      } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

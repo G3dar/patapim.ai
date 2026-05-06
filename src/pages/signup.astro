@@ -1,0 +1,206 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserFromRequest } from '../lib/auth';
+
+const env = Astro.locals.runtime.env;
+const url = new URL(Astro.request.url);
+const pairingSessionId = url.searchParams.get('s');
+
+// If signed in already, send to /go.
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+if (user) {
+  return Astro.redirect(pairingSessionId ? '/go?paired=1' : '/go');
+}
+
+// Set the pair cookie so signup can complete the desktop handoff.
+if (pairingSessionId) {
+  Astro.response.headers.append(
+    'Set-Cookie',
+    `__patapim_pair=${pairingSessionId}; Secure; SameSite=Lax; Path=/; Max-Age=600`,
+  );
+}
+
+const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}` : '';
+---
+<BaseLayout title="Sign up — PATAPIM" description="Create your PATAPIM account.">
+  <main class="auth-page">
+    <div class="auth-card">
+      <a href="/" class="brand">PATAPIM</a>
+      <h1>Create your account</h1>
+
+      <a href={`/api/auth/google${sigParam}`} class="btn google primary-google">
+        <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.581C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+        </svg>
+        Sign up with Google
+      </a>
+
+      <div class="divider"><span>or sign up with email</span></div>
+
+      <form id="signup-form" novalidate>
+        <label>
+          <span>Name <em>(optional)</em></span>
+          <input type="text" name="name" autocomplete="name" maxlength="80" />
+        </label>
+
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" autocomplete="new-password" required minlength="10" />
+          <small class="hint">At least 10 characters.</small>
+        </label>
+
+        <button type="submit" class="btn secondary">Create account</button>
+        <p id="signup-error" class="form-error" hidden></p>
+      </form>
+
+      <p class="signup-prompt">Already have an account? <a href={`/signin${sigParam}`}>Sign in</a></p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .auth-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 32px 16px;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(212,165,116,0.06), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(120,165,212,0.04), transparent 40%),
+      var(--bg-deep);
+  }
+  .auth-card {
+    width: 100%; max-width: 400px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    padding: 36px 32px;
+    box-shadow: var(--shadow-lg);
+  }
+  .brand {
+    display: block; font-family: var(--font-sans); font-weight: 700;
+    color: var(--text-secondary); letter-spacing: 1.5px; text-decoration: none;
+    font-size: 13px; margin-bottom: 24px;
+  }
+  .brand:hover { color: var(--accent-primary); }
+  h1 {
+    font-family: var(--font-sans); color: var(--text-primary);
+    font-size: 24px; font-weight: 600; margin: 0 0 24px;
+  }
+  form { display: flex; flex-direction: column; gap: 14px; }
+  label { display: flex; flex-direction: column; gap: 6px; }
+  label > span {
+    color: var(--text-secondary); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  label > span em { color: var(--text-tertiary); font-style: normal; font-weight: 400; text-transform: none; }
+  input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    padding: 11px 14px;
+    font-size: 15px;
+    font-family: var(--font-sans);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+  input:focus { outline: none; border-color: var(--accent-primary); background: var(--bg-tertiary); }
+  .hint { color: var(--text-tertiary); font-size: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 12px 16px; border-radius: var(--radius-md);
+    font-size: 15px; font-weight: 600; font-family: var(--font-sans);
+    cursor: pointer; border: 1px solid transparent; text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+  .btn.secondary { background: var(--bg-secondary); border-color: var(--border-default); color: var(--text-primary); margin-top: 6px; }
+  .btn.secondary:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
+  .btn.secondary:disabled { opacity: 0.6; cursor: wait; }
+  .btn.google.primary-google {
+    background: #ffffff;
+    color: #1f1f1f;
+    display: flex;
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 24px rgba(212,165,116,0.10);
+  }
+  .btn.google.primary-google:hover {
+    background: #f7f7f7;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 12px 32px rgba(212,165,116,0.18);
+  }
+  .divider { display: flex; align-items: center; margin: 22px 0 16px; color: var(--text-tertiary); font-size: 12px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border-default); }
+  .divider span { padding: 0 12px; }
+  .form-error {
+    background: var(--error-subtle); color: var(--error);
+    border: 1px solid var(--error); padding: 10px 12px;
+    border-radius: var(--radius-md); font-size: 13px; margin: 4px 0 0;
+  }
+  .signup-prompt { text-align: center; color: var(--text-secondary); font-size: 14px; margin-top: 22px; }
+  .signup-prompt a { color: var(--accent-primary); text-decoration: none; font-weight: 500; }
+  .signup-prompt a:hover { text-decoration: underline; }
+</style>
+
+<script>
+  const form = document.getElementById('signup-form') as HTMLFormElement | null;
+  const errEl = document.getElementById('signup-error') as HTMLParagraphElement | null;
+  if (form && errEl) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.hidden = true;
+      errEl.textContent = '';
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      btn.disabled = true;
+
+      const data = new FormData(form);
+      const payload = {
+        email: String(data.get('email') || '').trim(),
+        password: String(data.get('password') || ''),
+        name: String(data.get('name') || '').trim(),
+      };
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok) {
+          window.location.href = body.paired ? '/go?paired=1' : '/go';
+          return;
+        }
+        if (res.status === 429) {
+          errEl.textContent = `Too many attempts. Try again in ${body.retryAfter || 60}s.`;
+        } else if (body.error === 'email_in_use') {
+          errEl.textContent = body.hint === 'google_only'
+            ? "An account with this email already exists via Google. Sign in with Google instead."
+            : "An account with this email already exists. Try signing in.";
+        } else if (body.error === 'invalid_password' && Array.isArray(body.details)) {
+          errEl.textContent = body.details[0] || 'Password too weak.';
+        } else if (body.error === 'invalid_email') {
+          errEl.textContent = 'Please enter a valid email.';
+        } else {
+          errEl.textContent = "Something went wrong. Please try again.";
+        }
+        errEl.hidden = false;
+      } catch {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.hidden = false;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>

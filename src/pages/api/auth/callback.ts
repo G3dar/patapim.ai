@@ -1,7 +1,17 @@
 import type { APIRoute } from 'astro';
-import { createSession, buildSessionCookie } from '../../../lib/auth';
+import {
+  createSession,
+  buildSessionCookie,
+  loadUserById,
+  loadUserByEmail,
+  loadUserByGoogleId,
+  saveUser,
+  normalizeEmail,
+  type UserRecord,
+} from '../../../lib/auth';
 import { activateReferral, createReferralAssociation } from '../../../lib/referral';
 import { generateLicenseKey } from '../../../lib/license';
+import { completePairingIfPresent } from '../../../lib/pairing';
 
 export const prerender = false;
 
@@ -82,25 +92,59 @@ export const GET: APIRoute = async (context) => {
     picture: string;
   };
 
-  // Store/update user in LICENSES KV
   const now = new Date().toISOString();
-  const existingRaw = await env.LICENSES.get(`user:${profile.id}`);
-  const existing = existingRaw ? JSON.parse(existingRaw) : null;
+  const profileEmail = normalizeEmail(profile.email);
 
-  const userData = {
-    googleId: profile.id,
-    email: profile.email,
-    name: profile.name,
-    picture: profile.picture,
-    createdAt: existing?.createdAt || now,
-    lastLogin: now,
-  };
+  // Auto-link / lazy migration. Order matters:
+  //   1. user-google index (newly-linked or already-migrated)
+  //   2. legacy user:{googleId} (pre-migration Google users)
+  //   3. user-email (password-only user signing in with Google for the first
+  //      time — link the two accounts)
+  //   4. brand new
+  let user = await loadUserByGoogleId(env.LICENSES, profile.id);
+  let isNew = false;
 
-  await env.LICENSES.put(`user:${profile.id}`, JSON.stringify(userData));
-  await env.LICENSES.put(`user-email:${profile.email}`, profile.id);
+  if (!user) {
+    const byEmail = await loadUserByEmail(env.LICENSES, profileEmail);
+    if (byEmail) {
+      // Existing email-only or partially-set-up account — link Google to it.
+      user = byEmail;
+      user.linkedGoogleId = profile.id;
+      // Google sign-in proves email control.
+      if (!user.emailVerified) {
+        user.emailVerified = true;
+        user.emailVerifiedAt = now;
+      }
+    } else {
+      // First sign-in for this Google account, no matching email — fresh user.
+      // Use the Google sub as the primary id (legacy-compatible shape).
+      user = {
+        googleId: profile.id,
+        email: profileEmail,
+        name: profile.name,
+        picture: profile.picture,
+        createdAt: now,
+        lastLogin: now,
+        emailVerified: true,
+        emailVerifiedAt: now,
+      };
+      isNew = true;
+    }
+  }
 
-  // Track new signups (only for first-time users)
-  if (!existing) {
+  // Refresh fields that Google is authoritative for.
+  user.name = profile.name || user.name;
+  user.picture = profile.picture || user.picture;
+  user.lastLogin = now;
+  if (!user.emailVerified) {
+    user.emailVerified = true;
+    user.emailVerifiedAt = now;
+  }
+
+  await saveUser(env.LICENSES, user);
+
+  // Track new signups (only for first-time Google users with no prior account)
+  if (isNew) {
     const today = new Date().toISOString().slice(0, 10);
     context.locals.runtime.ctx.waitUntil((async () => {
       try {
@@ -113,15 +157,13 @@ export const GET: APIRoute = async (context) => {
   }
 
   // Create session
-  const sessionUser = {
-    googleId: profile.id,
-    email: profile.email,
-    name: profile.name,
-    picture: profile.picture,
-  };
-  const sessionId = await createSession(env.SESSIONS, sessionUser);
+  const sessionId = await createSession(env.SESSIONS, {
+    googleId: user.googleId,
+    email: user.email,
+    name: user.name,
+    picture: user.picture,
+  });
 
-  // Auto-pairing: if desktop app initiated this flow, create device token automatically
   const cookies = context.request.headers.get('cookie') || '';
 
   // Referral: read cookie-based referral and create association, then activate
@@ -129,12 +171,13 @@ export const GET: APIRoute = async (context) => {
     const refCookieMatch = cookies.match(/(?:^|;\s*)__patapim_ref=([^;]+)/);
     if (refCookieMatch) {
       const referrerEmail = decodeURIComponent(refCookieMatch[1]);
-      await createReferralAssociation(env.LICENSES, referrerEmail, profile.email);
+      await createReferralAssociation(env.LICENSES, referrerEmail, user.email);
     }
-    await activateReferral(env.LICENSES, profile.email);
+    await activateReferral(env.LICENSES, user.email);
   } catch (e) {
     console.error('Referral claim error:', e);
   }
+
   // Beta invite: check state or cookie for beta code
   const betaCookieMatch = cookies.match(/(?:^|;\s*)__patapim_beta=([^;]+)/);
   const betaCode = betaCodeFromState || (betaCookieMatch ? betaCookieMatch[1] : '');
@@ -147,15 +190,13 @@ export const GET: APIRoute = async (context) => {
         const isValid = !invite.claimedBy && new Date(invite.expiresAt) > new Date();
 
         if (isValid) {
-          // Check user doesn't already have an active license
-          const existingLicenseRaw = await env.LICENSES.get(`license:${profile.email}`);
+          const existingLicenseRaw = await env.LICENSES.get(`license:${user.email}`);
           const existingLicense = existingLicenseRaw ? JSON.parse(existingLicenseRaw) : null;
 
           if (!existingLicense || existingLicense.status !== 'active') {
-            // Generate license (same pattern as Stripe webhook / referral reward)
             const licenseKey = generateLicenseKey();
             const license = {
-              email: profile.email,
+              email: user.email,
               plan: 'lifetime',
               status: 'active',
               stripeCustomerId: 'beta-invite',
@@ -165,16 +206,14 @@ export const GET: APIRoute = async (context) => {
               licenseKey,
             };
 
-            // Mark invite as claimed
-            invite.claimedBy = profile.email;
+            invite.claimedBy = user.email;
             invite.claimedAt = now;
 
-            // Save all records in parallel
             await Promise.all([
-              env.LICENSES.put(`license:${profile.email}`, JSON.stringify(license)),
-              env.LICENSES.put(`key:${licenseKey}`, profile.email),
+              env.LICENSES.put(`license:${user.email}`, JSON.stringify(license)),
+              env.LICENSES.put(`key:${licenseKey}`, user.email),
               env.LICENSES.put(`beta-invite:${betaCode}`, JSON.stringify(invite)),
-              env.LICENSES.put(`beta-grant:${profile.email}`, JSON.stringify({
+              env.LICENSES.put(`beta-grant:${user.email}`, JSON.stringify({
                 code: betaCode,
                 ref: invite.ref || '',
                 grantedAt: now,
@@ -182,18 +221,16 @@ export const GET: APIRoute = async (context) => {
               })),
             ]);
 
-            // Increment claimed counter
             const claimedRaw = await env.LICENSES.get('beta:claimed');
             await env.LICENSES.put('beta:claimed', String((parseInt(claimedRaw || '0', 10) || 0) + 1));
 
-            // Update invites list with claimed status
             try {
               const listRaw = await env.LICENSES.get('beta:invites-list');
               if (listRaw) {
                 const list = JSON.parse(listRaw);
                 const entry = list.find((e: any) => e.code === betaCode);
                 if (entry) {
-                  entry.claimedBy = profile.email;
+                  entry.claimedBy = user.email;
                   entry.claimedAt = now;
                   await env.LICENSES.put('beta:invites-list', JSON.stringify(list));
                 }
@@ -202,7 +239,6 @@ export const GET: APIRoute = async (context) => {
               // Best-effort list update
             }
 
-            // Build response: redirect to beta success page
             const betaHeaders = new Headers();
             betaHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
             betaHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
@@ -217,58 +253,23 @@ export const GET: APIRoute = async (context) => {
     }
   }
 
-  const pairMatch = cookies.match(/(?:^|;\s*)__patapim_pair=([^;]+)/);
-  const pairingSessionId = pairMatch ? pairMatch[1] : null;
+  // Desktop pairing handoff (if a __patapim_pair cookie was set by /signin)
+  const pairClearCookie = await completePairingIfPresent(env, context.request, {
+    googleId: user.googleId,
+    email: user.email,
+  });
 
   const responseHeaders = new Headers();
   responseHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
-  // Clear referral cookie after processing
   responseHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
-  // Clear beta cookie after processing
   responseHeaders.append('Set-Cookie', '__patapim_beta=; Secure; SameSite=Lax; Path=/; Max-Age=0');
-
-  if (pairingSessionId) {
-    // Auto-create device token for the desktop app
-    const deviceToken = crypto.randomUUID();
-
-    await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify({
-      googleId: profile.id,
-      email: profile.email,
-      deviceName: 'PATAPIM Desktop',
-      machineId: 'auto-pair',
-      createdAt: now,
-      lastSeen: now,
-      tunnelUrl: null,
-      terminalCount: 0,
-    }));
-
-    // Append to user's device list
-    const devicesRaw = await env.LICENSES.get(`devices:${profile.id}`);
-    const devices: Array<{ token: string; deviceName: string; createdAt: string }> = devicesRaw ? JSON.parse(devicesRaw) : [];
-    devices.push({ token: deviceToken, deviceName: 'PATAPIM Desktop', createdAt: now });
-    await env.LICENSES.put(`devices:${profile.id}`, JSON.stringify(devices));
-
-    // Get license info
-    const licenseRaw = await env.LICENSES.get(`license:${profile.email}`);
-    const license = licenseRaw ? JSON.parse(licenseRaw) : null;
-
-    // Store result for desktop polling
-    await env.SESSIONS.put(`pair-poll:${pairingSessionId}`, JSON.stringify({
-      deviceToken,
-      email: profile.email,
-      plan: license?.plan || 'free',
-      licenseStatus: license?.status || null,
-      licenseKey: license?.licenseKey || null,
-    }), { expirationTtl: 600 });
-
-    // Clear the pairing cookie
-    responseHeaders.append('Set-Cookie', '__patapim_pair=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+  if (pairClearCookie) {
+    responseHeaders.append('Set-Cookie', pairClearCookie);
   }
 
   // Redirect: preserve returnTo from native app, or default to /go
-  let finalRedirect = `${siteUrl}/go${pairingSessionId ? '?paired=1' : ''}`;
-  if (returnToFromState && !pairingSessionId) {
-    // Validate returnTo is a relative path (security: prevent open redirect)
+  let finalRedirect = `${siteUrl}/go${pairClearCookie ? '?paired=1' : ''}`;
+  if (returnToFromState && !pairClearCookie) {
     if (returnToFromState.startsWith('/')) {
       finalRedirect = `${siteUrl}${returnToFromState}`;
     }
@@ -276,3 +277,6 @@ export const GET: APIRoute = async (context) => {
   responseHeaders.set('Location', finalRedirect);
   return new Response(null, { status: 302, headers: responseHeaders });
 };
+
+// Suppress unused-import warning (kept for potential future use)
+void loadUserById;

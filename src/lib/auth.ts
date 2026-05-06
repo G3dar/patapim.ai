@@ -2,11 +2,16 @@ export const COOKIE_NAME = '__patapim_session';
 export const SESSION_TTL = 604800; // 7 days
 export const STATE_TTL = 600; // 10 minutes
 
+// `googleId` is the user's primary identifier across the codebase. For users
+// who signed up via Google OAuth it's their real Google sub; for users who
+// signed up with email+password it's a UUID we mint at signup. Either way it
+// is opaque and stable.
 export interface SessionUser {
   googleId: string;
   email: string;
   name: string;
   picture: string;
+  issuedAt?: string;
 }
 
 export interface AuthenticatedUser {
@@ -16,9 +21,27 @@ export interface AuthenticatedUser {
   picture?: string;
 }
 
+export interface UserRecord {
+  googleId: string;
+  email: string;
+  name: string;
+  picture: string;
+  createdAt: string;
+  lastLogin: string;
+  emailVerified?: boolean;
+  emailVerifiedAt?: string;
+  passwordHash?: string;
+  passwordChangedAt?: string;
+  linkedGoogleId?: string;
+}
+
 export async function createSession(kv: KVNamespace, userData: SessionUser): Promise<string> {
   const sessionId = crypto.randomUUID();
-  await kv.put(sessionId, JSON.stringify(userData), { expirationTtl: SESSION_TTL });
+  const payload: SessionUser = {
+    ...userData,
+    issuedAt: userData.issuedAt || new Date().toISOString(),
+  };
+  await kv.put(sessionId, JSON.stringify(payload), { expirationTtl: SESSION_TTL });
   return sessionId;
 }
 
@@ -43,6 +66,27 @@ export async function getUserFromRequest(sessions: KVNamespace, request: Request
   const sessionId = parseCookie(request);
   if (!sessionId) return null;
   return getSession(sessions, sessionId);
+}
+
+// Returns the session user, but rejects sessions issued before the user's
+// passwordChangedAt timestamp (used to invalidate older sessions on password
+// reset/change without iterating KV).
+export async function getValidSession(
+  sessions: KVNamespace,
+  licenses: KVNamespace,
+  request: Request,
+): Promise<SessionUser | null> {
+  const session = await getUserFromRequest(sessions, request);
+  if (!session) return null;
+  if (!session.issuedAt) return session;
+
+  const user = await loadUserById(licenses, session.googleId);
+  if (!user || !user.passwordChangedAt) return session;
+
+  if (new Date(session.issuedAt).getTime() < new Date(user.passwordChangedAt).getTime()) {
+    return null;
+  }
+  return session;
 }
 
 export function parseBearerToken(request: Request): string | null {
@@ -94,4 +138,137 @@ export function buildSessionCookie(sessionId: string): string {
 
 export function buildClearCookie(): string {
   return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
+// ---------- User record CRUD ----------
+
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export async function loadUserById(licenses: KVNamespace, userId: string): Promise<UserRecord | null> {
+  const raw = await licenses.get(`user:${userId}`);
+  return raw ? (JSON.parse(raw) as UserRecord) : null;
+}
+
+export async function loadUserByEmail(licenses: KVNamespace, email: string): Promise<UserRecord | null> {
+  const userId = await licenses.get(`user-email:${normalizeEmail(email)}`);
+  if (!userId) return null;
+  return loadUserById(licenses, userId);
+}
+
+export async function loadUserByGoogleId(licenses: KVNamespace, googleId: string): Promise<UserRecord | null> {
+  // 1. Fast path: explicit index (set for newly-merged accounts)
+  const indexedUserId = await licenses.get(`user-google:${googleId}`);
+  if (indexedUserId) return loadUserById(licenses, indexedUserId);
+
+  // 2. Legacy path: user records keyed directly by googleId
+  return loadUserById(licenses, googleId);
+}
+
+export async function saveUser(licenses: KVNamespace, user: UserRecord): Promise<void> {
+  const email = normalizeEmail(user.email);
+  await Promise.all([
+    licenses.put(`user:${user.googleId}`, JSON.stringify(user)),
+    licenses.put(`user-email:${email}`, user.googleId),
+    user.linkedGoogleId
+      ? licenses.put(`user-google:${user.linkedGoogleId}`, user.googleId)
+      : Promise.resolve(),
+  ]);
+}
+
+// ---------- Password hashing (PBKDF2-SHA256, 600k, Web Crypto) ----------
+
+// Cloudflare Workers caps PBKDF2 iterations at 100k. This is below the OWASP
+// 2023 600k recommendation but still well above NIST's 10k floor, and is the
+// hard ceiling we have to live with on this runtime. The version-prefixed
+// hash format lets us bump this if Workers ever raises the cap, or migrate
+// to a different KDF without invalidating existing hashes.
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_KEYLEN = 32; // 256 bits
+const PBKDF2_SALT_LEN = 16;
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
+async function pbkdf2(password: string, salt: Uint8Array, iterations: number, keyLen: number): Promise<Uint8Array> {
+  const enc = new TextEncoder();
+  const keyMat = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations, hash: 'SHA-256' },
+    keyMat,
+    keyLen * 8,
+  );
+  return new Uint8Array(bits);
+}
+
+export async function pbkdf2Hash(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_LEN));
+  const hash = await pbkdf2(password, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN);
+  return `pbkdf2$sha256$${PBKDF2_ITERATIONS}$${bytesToBase64(salt)}$${bytesToBase64(hash)}`;
+}
+
+export async function pbkdf2Verify(stored: string, password: string): Promise<boolean> {
+  const parts = stored.split('$');
+  if (parts.length !== 5 || parts[0] !== 'pbkdf2' || parts[1] !== 'sha256') return false;
+  const iterations = parseInt(parts[2], 10);
+  if (!Number.isFinite(iterations) || iterations < 1000) return false;
+  const salt = base64ToBytes(parts[3]);
+  const expected = base64ToBytes(parts[4]);
+  const actual = await pbkdf2(password, salt, iterations, expected.length);
+  return timingSafeEqual(actual, expected);
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+// ---------- Tokens ----------
+
+// 32-byte cryptographically random base64url string. Used for password reset
+// and email verification links.
+export function randomToken(bytes = 32): string {
+  const buf = crypto.getRandomValues(new Uint8Array(bytes));
+  return bytesToBase64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// ---------- CSRF ----------
+
+// Verifies the request was initiated from our own origin. Combined with the
+// SameSite=Lax cookie this protects state-changing endpoints from CSRF.
+export function assertSameOrigin(request: Request, siteUrl: string): boolean {
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  const expected = new URL(siteUrl).origin;
+
+  if (origin) return origin === expected;
+  if (referer) {
+    try {
+      return new URL(referer).origin === expected;
+    } catch {
+      return false;
+    }
+  }
+  // No Origin/Referer means the request didn't come from a browser context.
+  // Reject — we don't expect bare programmatic POSTs to these endpoints.
+  return false;
 }

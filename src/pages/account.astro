@@ -1,0 +1,343 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { getUserFromRequest } from '../lib/auth';
+import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+
+const env = Astro.locals.runtime.env;
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+
+if (!user) {
+  const returnTo = Astro.url.search ? `/account${Astro.url.search}` : '/account';
+  return Astro.redirect(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+const userRaw = await env.LICENSES.get(`user:${user.googleId}`);
+const userData = userRaw ? JSON.parse(userRaw) : null;
+
+const hasPassword = !!userData?.passwordHash;
+const googleLinked = !!userData?.linkedGoogleId || (!!userData && !userData.passwordHash);
+const emailVerified = !!userData?.emailVerified;
+---
+
+<BaseLayout title="Account settings — PATAPIM" description="Manage your PATAPIM account: email, sign-in methods, and password.">
+  <Navbar />
+
+  <main class="account-page">
+    <div class="container">
+      <div class="account-header">
+        <a href={lp('/go')} class="back-link">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>{t(locale, 'common.goToDashboard')}</span>
+        </a>
+        <h1 class="page-title">Account settings</h1>
+      </div>
+
+      <div class="account-grid">
+        <div class="account-row">
+          <div>
+            <div class="account-row-title">Email</div>
+            <div class="account-row-value">{user.email}</div>
+          </div>
+          <div class="account-row-actions">
+            {emailVerified
+              ? <span class="badge badge-ok">Verified</span>
+              : <button type="button" class="btn-link btn-link-accent" id="resend-verify-btn">Verify email</button>}
+          </div>
+        </div>
+
+        <div class="account-row">
+          <div>
+            <div class="account-row-title">Sign-in methods</div>
+            <div class="account-row-value">
+              <span class={`method ${googleLinked ? 'on' : 'off'}`}>Google {googleLinked ? '✓' : '—'}</span>
+              <span class={`method ${hasPassword ? 'on' : 'off'}`}>Password {hasPassword ? '✓' : '—'}</span>
+            </div>
+          </div>
+          <div class="account-row-actions">
+            <button type="button" class="btn-link" id="toggle-password-form">
+              {hasPassword ? 'Change password' : 'Set a password'}
+            </button>
+          </div>
+        </div>
+
+        <form id="password-form" class="password-form" hidden>
+          {hasPassword && (
+            <label>
+              <span>Current password</span>
+              <input type="password" name="currentPassword" autocomplete="current-password" required />
+            </label>
+          )}
+          <label>
+            <span>New password</span>
+            <input type="password" name="newPassword" autocomplete="new-password" required minlength="10" />
+            <small class="hint">At least 10 characters.</small>
+          </label>
+          <div class="password-form-actions">
+            <button type="submit" class="btn-link btn-link-accent">{hasPassword ? 'Update password' : 'Save password'}</button>
+            <button type="button" class="btn-link" id="cancel-password-form">Cancel</button>
+          </div>
+          <p id="password-msg" class="form-msg" hidden></p>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .account-page {
+    min-height: 100vh;
+    padding-top: 96px;
+    padding-bottom: var(--space-4xl);
+  }
+
+  .account-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: var(--space-md);
+    transition: color var(--transition-fast);
+  }
+  .back-link svg { width: 14px; height: 14px; }
+  .back-link:hover { color: var(--text-primary); }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .account-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .account-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+  .account-row-title {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .account-row-value {
+    color: var(--text-primary);
+    font-size: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .account-row-actions { display: flex; gap: 12px; }
+  .method {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .method.on { background: var(--success-subtle); color: var(--success); }
+  .method.off { background: var(--bg-tertiary); color: var(--text-tertiary); }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-ok { background: var(--success-subtle); color: var(--success); }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition-fast);
+  }
+  .btn-link:hover { color: var(--text-primary); }
+  .btn-link-accent { color: var(--accent-primary); text-decoration: none; }
+  .btn-link-accent:hover { color: var(--text-primary); }
+
+  .password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+  }
+  .password-form label { display: flex; flex-direction: column; gap: 6px; }
+  .password-form label > span {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .password-form input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    transition: border-color var(--transition-fast);
+  }
+  .password-form input:focus { outline: none; border-color: var(--accent-primary); }
+  .password-form .hint { color: var(--text-tertiary); font-size: 12px; }
+  .password-form-actions { display: flex; gap: 16px; align-items: center; }
+  .form-msg {
+    padding: 8px 10px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    margin: 0;
+  }
+  .form-msg.success { background: var(--success-subtle); color: var(--success); border: 1px solid var(--success); }
+  .form-msg.error { background: var(--error-subtle); color: var(--error); border: 1px solid var(--error); }
+
+  @media (max-width: 600px) {
+    .account-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-md);
+    }
+  }
+</style>
+
+<script>
+  const toggleBtn = document.getElementById('toggle-password-form') as HTMLButtonElement | null;
+  const passwordForm = document.getElementById('password-form') as HTMLFormElement | null;
+  const cancelBtn = document.getElementById('cancel-password-form') as HTMLButtonElement | null;
+  const passwordMsg = document.getElementById('password-msg') as HTMLParagraphElement | null;
+  const resendVerifyBtn = document.getElementById('resend-verify-btn') as HTMLButtonElement | null;
+
+  if (toggleBtn && passwordForm) {
+    toggleBtn.addEventListener('click', () => {
+      passwordForm.hidden = !passwordForm.hidden;
+      if (!passwordForm.hidden) {
+        const firstInput = passwordForm.querySelector('input') as HTMLInputElement | null;
+        if (firstInput) firstInput.focus();
+      }
+    });
+  }
+  if (cancelBtn && passwordForm && passwordMsg) {
+    cancelBtn.addEventListener('click', () => {
+      passwordForm.hidden = true;
+      passwordMsg.hidden = true;
+      passwordForm.reset();
+    });
+  }
+  if (passwordForm && passwordMsg) {
+    passwordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      passwordMsg.hidden = true;
+      passwordMsg.className = 'form-msg';
+      const submitBtn = passwordForm.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+      if (submitBtn) submitBtn.disabled = true;
+
+      const data = new FormData(passwordForm);
+      const payload = {
+        currentPassword: String(data.get('currentPassword') || ''),
+        newPassword: String(data.get('newPassword') || ''),
+      };
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok) {
+          passwordMsg.classList.add('success');
+          passwordMsg.textContent = 'Password updated.';
+          passwordMsg.hidden = false;
+          passwordForm.reset();
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          passwordMsg.classList.add('error');
+          if (body.error === 'invalid_credentials') {
+            passwordMsg.textContent = 'Current password is incorrect.';
+          } else if (body.error === 'invalid_password' && Array.isArray(body.details)) {
+            passwordMsg.textContent = body.details[0] || 'Password too weak.';
+          } else if (res.status === 429) {
+            passwordMsg.textContent = 'Too many attempts. Try again later.';
+          } else {
+            passwordMsg.textContent = 'Could not update password. Please try again.';
+          }
+          passwordMsg.hidden = false;
+        }
+      } catch {
+        passwordMsg.classList.add('error');
+        passwordMsg.textContent = 'Network error. Please try again.';
+        passwordMsg.hidden = false;
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+
+  if (resendVerifyBtn) {
+    resendVerifyBtn.addEventListener('click', async () => {
+      resendVerifyBtn.disabled = true;
+      resendVerifyBtn.textContent = 'Sending…';
+      try {
+        const res = await fetch('/api/auth/request-email-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: '{}',
+        });
+        if (res.ok) {
+          resendVerifyBtn.textContent = 'Email sent — check your inbox';
+        } else if (res.status === 429) {
+          resendVerifyBtn.textContent = 'Too many attempts — try later';
+        } else {
+          resendVerifyBtn.textContent = 'Failed — try again later';
+          resendVerifyBtn.disabled = false;
+        }
+      } catch {
+        resendVerifyBtn.textContent = 'Network error';
+        resendVerifyBtn.disabled = false;
+      }
+    });
+  }
+</script>

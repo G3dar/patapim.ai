@@ -1,0 +1,821 @@
+---
+export const prerender = true;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One chat, 23 terminals — design plan</title>
+  <meta name="description" content="How to pick which PATAPIM terminal your Telegram message goes to. Five UX options with mockups." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --bg-2: #17171a;
+      --bg-3: #1d1d21;
+      --bg-4: #25252a;
+      --ink: #e8e6e3;
+      --ink-soft: #a09b94;
+      --ink-mute: #6b6660;
+      --accent: #d4a574;
+      --accent-soft: #c9956a;
+      --accent-bg: rgba(212, 165, 116, 0.10);
+      --tg: #2aabee;
+      --tg-soft: rgba(42, 171, 238, 0.14);
+      --tg-deep: #1f8acf;
+      --rule: rgba(255, 255, 255, 0.08);
+      --good: #7cb382;
+      --warn: #e0a458;
+      --bad: #d47878;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 17px;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 36px 22px 80px;
+    }
+
+    /* === Header === */
+    .topbar {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 32px;
+    }
+    .topbar .brand { color: var(--accent); font-weight: 600; }
+    .topbar .x { opacity: 0.5; }
+    .topbar .tg { color: var(--tg); font-weight: 600; }
+    .topbar .doc { color: var(--ink-soft); }
+
+    h1 {
+      font-size: 40px;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 18px;
+    }
+    h1 .tg-color { color: var(--tg); }
+    .lede {
+      font-size: 18px;
+      color: var(--ink-soft);
+      margin-bottom: 36px;
+    }
+
+    .tldr {
+      background: linear-gradient(160deg, var(--accent-bg), transparent 80%);
+      border: 1px solid var(--accent-bg);
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 48px;
+    }
+    .tldr-tag {
+      font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); font-weight: 600; margin-bottom: 6px;
+    }
+    .tldr p { font-size: 16px; color: var(--ink); }
+
+    h2 {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent);
+      margin: 56px 0 18px;
+    }
+    h3 {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.015em;
+      margin-bottom: 8px;
+    }
+    p { margin-bottom: 12px; }
+
+    /* === Option cards === */
+    .opt {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 18px;
+      padding: 28px 24px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .opt.recommended {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, var(--accent-bg) 0%, var(--bg-2) 40%);
+    }
+    .opt-num {
+      position: absolute;
+      top: 22px; right: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+      letter-spacing: 0.1em;
+    }
+    .opt-rec-badge {
+      display: inline-block;
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      background: var(--accent); color: var(--bg);
+      padding: 3px 10px; border-radius: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .opt-tagline {
+      font-size: 15px; color: var(--ink-soft);
+      margin-bottom: 18px; line-height: 1.5;
+    }
+
+    /* === Mock chat === */
+    .mock {
+      background: #0a0a0c;
+      border-radius: 14px;
+      padding: 14px 12px;
+      margin: 18px 0;
+      border: 1px solid var(--rule);
+    }
+    .mock-head {
+      display: flex; align-items: center; gap: 9px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 10px;
+    }
+    .mock-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--tg);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 14px; font-weight: 700;
+    }
+    .mock-name { font-size: 13px; font-weight: 600; }
+    .mock-sub { font-size: 10px; color: var(--ink-mute); }
+
+    .bubbles { display: flex; flex-direction: column; gap: 6px; }
+    .b {
+      padding: 8px 12px;
+      border-radius: 13px;
+      max-width: 80%;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .b-bot {
+      background: var(--bg-4);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .b-me {
+      background: var(--tg);
+      color: white;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    .b-meta {
+      display: block;
+      font-size: 10px;
+      color: var(--ink-mute);
+      margin-top: 4px;
+    }
+    .b-me .b-meta { color: rgba(255,255,255,0.65); }
+    .b code, .b .cmd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: rgba(255,255,255,0.10);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .b-bot .reactions {
+      display: inline-flex; gap: 4px;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+    .b-bot .reactions span {
+      background: rgba(42,171,238,0.18);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 11px;
+    }
+
+    /* Inline keyboard — Telegram bot button rows */
+    .ikb {
+      display: flex; flex-direction: column; gap: 4px;
+      margin-top: 8px;
+    }
+    .ikb-row {
+      display: flex; gap: 4px;
+    }
+    .ikb-btn {
+      flex: 1;
+      background: var(--tg-soft);
+      color: var(--tg);
+      border: 1px solid rgba(42,171,238,0.25);
+      padding: 7px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .ikb-btn:hover { background: rgba(42,171,238,0.25); }
+    .ikb-btn.dim { opacity: 0.6; }
+
+    .pinned {
+      position: relative;
+      background: rgba(42, 171, 238, 0.08);
+      border-left: 2px solid var(--tg);
+      padding: 6px 10px;
+      margin-bottom: 6px;
+      border-radius: 0 8px 8px 0;
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+    .pinned strong { color: var(--ink); font-weight: 600; }
+
+    .reply-quote {
+      border-left: 2px solid var(--tg);
+      padding-left: 8px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+    }
+    .reply-quote strong { color: white; }
+
+    /* === Pros/cons === */
+    .pc {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .pc-col {
+      background: var(--bg-3);
+      border-radius: 10px;
+      padding: 14px 14px;
+    }
+    .pc-tag {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .pc-pros .pc-tag { color: var(--good); }
+    .pc-cons .pc-tag { color: var(--bad); }
+    .pc-col ul { list-style: none; }
+    .pc-col li {
+      font-size: 13px;
+      color: var(--ink-soft);
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+    .pc-col li::before {
+      content: '';
+      position: absolute;
+      left: 4px; top: 9px;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+    }
+    .pc-pros li::before { background: var(--good); }
+    .pc-cons li::before { background: var(--bad); }
+
+    .effort {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: var(--bg-3);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .effort-tag {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      font-weight: 700;
+    }
+    .effort-bar {
+      display: inline-flex; gap: 2px;
+    }
+    .effort-bar i {
+      width: 12px; height: 4px;
+      background: var(--rule);
+      border-radius: 2px;
+    }
+    .effort-bar i.on { background: var(--accent); }
+
+    /* === Build plan === */
+    .plan {
+      background: var(--bg-2);
+      border: 1px solid var(--accent);
+      border-radius: 18px;
+      padding: 28px 24px;
+      margin: 32px 0;
+    }
+    .plan h3 { color: var(--accent); margin-bottom: 16px; }
+    .plan ol {
+      margin-left: 18px;
+      counter-reset: pl;
+      list-style: none;
+    }
+    .plan li {
+      counter-increment: pl;
+      padding-left: 36px;
+      position: relative;
+      font-size: 15px;
+      color: var(--ink);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+    .plan li::before {
+      content: counter(pl);
+      position: absolute;
+      left: 0; top: 1px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .plan li small {
+      display: block;
+      color: var(--ink-mute);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* === CTA === */
+    .cta {
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      padding: 22px 22px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .cta p { color: var(--ink-soft); font-size: 15px; margin-bottom: 6px; }
+    .cta strong { color: var(--ink); }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+      font-size: 11px;
+      color: var(--ink-mute);
+      text-align: center;
+    }
+
+    @media (min-width: 720px) {
+      h1 { font-size: 48px; }
+    }
+    @media (max-width: 480px) {
+      .pc { grid-template-columns: 1fr; }
+      .opt-num { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <span class="brand">PATAPIM</span>
+      <span class="x">×</span>
+      <span class="tg">Telegram</span>
+      <span class="x">·</span>
+      <span class="doc">Routing design</span>
+    </div>
+
+    <h1>One <span class="tg-color">chat</span>, 23 terminals.<br/>How to pick which one.</h1>
+    <p class="lede">
+      Right now you have a single Telegram chat tied to your PATAPIM install. Messages route to whatever terminal is focused, or to whichever one you reply-to. With 23 active terminals across 12 projects, that's not enough. Five ways to fix it — pick one and I build it.
+    </p>
+
+    <div class="tldr">
+      <div class="tldr-tag">My recommendation</div>
+      <p><strong>Combined approach: inline-keyboard menu (taps) + sticky routing (lasts 30 min) + reply-routing (already works).</strong> Best of all worlds — no commands to remember, no friction, and you can still alert-reply when notifications come in. ~3 hrs of work.</p>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OPTION 1 — Inline keyboard menu -->
+    <!-- ============================================ -->
+
+    <h2>The five options</h2>
+
+    <div class="opt recommended">
+      <div class="opt-num">01 / 05</div>
+      <span class="opt-rec-badge">Recommended core</span>
+      <h3>Inline keyboard menu</h3>
+      <p class="opt-tagline">
+        Send <code>/menu</code> (or tap a saved button). Telegram shows a list of projects → tap one → list of terminals → tap one. That terminal becomes your routing target. Native Telegram UX, no commands to memorize.
+      </p>
+
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-avatar">🦆</div>
+          <div>
+            <div class="mock-name">@botpatapimbot</div>
+            <div class="mock-sub">PATAPIM remote</div>
+          </div>
+        </div>
+        <div class="bubbles">
+          <div class="b b-me">/menu</div>
+          <div class="b b-bot">
+            📂 <strong>Pick a project</strong> (12 active)
+            <div class="ikb">
+              <div class="ikb-row">
+                <div class="ikb-btn">🔵 patapim · 4</div>
+                <div class="ikb-btn">🟠 3dar · 4</div>
+              </div>
+              <div class="ikb-row">
+                <div class="ikb-btn">🟢 appliedvr · 2</div>
+                <div class="ikb-btn">🟣 legal · 2</div>
+              </div>
+              <div class="ikb-row">
+                <div class="ikb-btn">🟡 IAmDictator · 2</div>
+                <div class="ikb-btn dim">… 7 más</div>
+              </div>
+            </div>
+          </div>
+          <div class="b b-me">[tap: patapim]</div>
+          <div class="b b-bot">
+            🔵 <strong>patapim</strong>
+            <div class="ikb">
+              <div class="ikb-row"><div class="ikb-btn">🟢 telegram-zero-setup [active]</div></div>
+              <div class="ikb-row"><div class="ikb-btn">OSS strategy</div></div>
+              <div class="ikb-row"><div class="ikb-btn">Coding session review</div></div>
+              <div class="ikb-row"><div class="ikb-btn">Debug device remote</div></div>
+              <div class="ikb-row"><div class="ikb-btn dim">← back</div></div>
+            </div>
+          </div>
+          <div class="b b-me">[tap: telegram-zero-setup]</div>
+          <div class="b b-bot">
+            🎯 Routing locked to <strong>patapim / telegram-zero-setup</strong>.<br/>
+            <span class="b-meta">Sticks for 30 min or until you /menu again.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pc-col pc-pros">
+          <div class="pc-tag">Pros</div>
+          <ul>
+            <li>Native Telegram UX (taps, no typing)</li>
+            <li>Discoverable — opens to a list</li>
+            <li>Group-by-project keeps it scannable</li>
+            <li>Mobile-first — easy with thumb</li>
+          </ul>
+        </div>
+        <div class="pc-col pc-cons">
+          <div class="pc-tag">Cons</div>
+          <ul>
+            <li>Two taps to get there (project → terminal)</li>
+            <li>Pagination for 12+ projects</li>
+            <li>Bot has to track per-chat state</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="effort">
+        <span class="effort-tag">Effort</span>
+        <span class="effort-bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+        <span style="color: var(--ink-soft); font-size: 13px;">~2 hours</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OPTION 2 — Sticky routing -->
+    <!-- ============================================ -->
+
+    <div class="opt recommended">
+      <div class="opt-num">02 / 05</div>
+      <span class="opt-rec-badge">Recommended companion</span>
+      <h3>Sticky routing — last terminal you used wins</h3>
+      <p class="opt-tagline">
+        After you pick a terminal (via menu, reply, or any other path), all your messages go there for the next 30 min. No need to re-pick for every message in the conversation. A pinned status row at the top shows where you're talking right now.
+      </p>
+
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-avatar">🦆</div>
+          <div>
+            <div class="mock-name">@botpatapimbot</div>
+            <div class="mock-sub">PATAPIM remote</div>
+          </div>
+        </div>
+        <div class="pinned">
+          📌 <strong>Routing to:</strong> patapim / telegram-zero-setup · expires 24 min
+        </div>
+        <div class="bubbles">
+          <div class="b b-me">arregla el typo en el README</div>
+          <div class="b b-bot">
+            🎯 <em>(routed to telegram-zero-setup)</em><br/>
+            Listo. Cambié "Tlegram" → "Telegram", commit local. Push?
+            <span class="b-meta">3 sec · 👀</span>
+          </div>
+          <div class="b b-me">si</div>
+          <div class="b b-bot">
+            ✅ Pushed.
+            <span class="b-meta">2 sec · 🎉</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pc-col pc-pros">
+          <div class="pc-tag">Pros</div>
+          <ul>
+            <li>Conversational — feels like chat with one terminal at a time</li>
+            <li>No re-picking for follow-ups</li>
+            <li>Pinned banner = always know where you are</li>
+            <li>Auto-expires so you don't accidentally talk to stale terminals</li>
+          </ul>
+        </div>
+        <div class="pc-col pc-cons">
+          <div class="pc-tag">Cons</div>
+          <ul>
+            <li>State per chat — needs persistence</li>
+            <li>30 min could be wrong duration for some workflows</li>
+            <li>Pinned banner takes vertical space</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="effort">
+        <span class="effort-tag">Effort</span>
+        <span class="effort-bar"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+        <span style="color: var(--ink-soft); font-size: 13px;">~1 hour</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OPTION 3 — Slash commands -->
+    <!-- ============================================ -->
+
+    <div class="opt">
+      <div class="opt-num">03 / 05</div>
+      <h3>Slash commands</h3>
+      <p class="opt-tagline">
+        Power-user mode. Type <code>/list</code> to see all terminals, <code>/use telegram</code> (substring match), <code>/here</code> to check current routing, <code>/clear</code> to drop sticky context. Fast for keyboard people, awkward for thumbs.
+      </p>
+
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-avatar">🦆</div>
+          <div>
+            <div class="mock-name">@botpatapimbot</div>
+            <div class="mock-sub">PATAPIM remote</div>
+          </div>
+        </div>
+        <div class="bubbles">
+          <div class="b b-me">/list</div>
+          <div class="b b-bot" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+            <strong>patapim</strong> (4)<br/>
+            &nbsp;&nbsp;t22 · telegram-zero-setup [⚡]<br/>
+            &nbsp;&nbsp;t23 · OSS strategy<br/>
+            &nbsp;&nbsp;t24 · coding review<br/>
+            &nbsp;&nbsp;t25 · device remote debug<br/>
+            <strong>3dar</strong> (4)<br/>
+            &nbsp;&nbsp;t15 · AWS audit<br/>
+            &nbsp;&nbsp;t16 · email verify<br/>
+            …<br/>
+            <span class="b-meta">/use &lt;id|substring&gt; to switch</span>
+          </div>
+          <div class="b b-me">/use t15</div>
+          <div class="b b-bot">🎯 → 3dar / AWS audit</div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pc-col pc-pros">
+          <div class="pc-tag">Pros</div>
+          <ul>
+            <li>Fast for keyboard typists</li>
+            <li>Substring matching is forgiving</li>
+            <li>Discoverable via /list</li>
+            <li>Cheap to implement</li>
+          </ul>
+        </div>
+        <div class="pc-col pc-cons">
+          <div class="pc-tag">Cons</div>
+          <ul>
+            <li>You have to memorize commands or check /list</li>
+            <li>Bad for one-handed mobile use</li>
+            <li>Long /list output is wall-of-text</li>
+            <li>Substring collisions with similar names</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="effort">
+        <span class="effort-tag">Effort</span>
+        <span class="effort-bar"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+        <span style="color: var(--ink-soft); font-size: 13px;">~1 hour — works as power-user supplement to menu</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OPTION 4 — Hashtag suffix -->
+    <!-- ============================================ -->
+
+    <div class="opt">
+      <div class="opt-num">04 / 05</div>
+      <h3>Hashtag suffix</h3>
+      <p class="opt-tagline">
+        Inline routing. Add <code>#patapim</code> or <code>#aws</code> to any message and it routes there. No menus, no state. Fastest path when you know exactly what you want — but you have to remember the tags.
+      </p>
+
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-avatar">🦆</div>
+          <div>
+            <div class="mock-name">@botpatapimbot</div>
+            <div class="mock-sub">PATAPIM remote</div>
+          </div>
+        </div>
+        <div class="bubbles">
+          <div class="b b-me">corre los tests <span style="background: rgba(42,171,238,0.3); padding: 1px 5px; border-radius: 3px;">#patapim</span></div>
+          <div class="b b-bot">
+            🎯 → patapim / telegram-zero-setup<br/>
+            Running tests…
+          </div>
+          <div class="b b-me">deploy a staging <span style="background: rgba(42,171,238,0.3); padding: 1px 5px; border-radius: 3px;">#aws</span></div>
+          <div class="b b-bot">
+            🎯 → 3dar / AWS audit<br/>
+            Deploying to staging…
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pc-col pc-pros">
+          <div class="pc-tag">Pros</div>
+          <ul>
+            <li>Zero state — every message is self-contained</li>
+            <li>Fastest for known targets</li>
+            <li>No mode-switching mental cost</li>
+          </ul>
+        </div>
+        <div class="pc-col pc-cons">
+          <div class="pc-tag">Cons</div>
+          <ul>
+            <li>You have to memorize tags</li>
+            <li>Tag collisions ("patapim" → which of 4?)</li>
+            <li>Verbose on every message</li>
+            <li>Voice messages can't easily include hashtags</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="effort">
+        <span class="effort-tag">Effort</span>
+        <span class="effort-bar"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+        <span style="color: var(--ink-soft); font-size: 13px;">~30 min — works as bonus, not primary</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OPTION 5 — Reply-routing (already works) -->
+    <!-- ============================================ -->
+
+    <div class="opt">
+      <div class="opt-num">05 / 05</div>
+      <h3>Reply-routing <em style="color: var(--good); font-style: normal; font-size: 13px; font-weight: 700;">— already shipped</em></h3>
+      <p class="opt-tagline">
+        When a terminal sends you a Telegram notification, you can long-press → Reply → your text goes to <em>that</em> terminal. Already works. Best for responding to alerts, useless when you want to <em>start</em> a conversation.
+      </p>
+
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-avatar">🦆</div>
+          <div>
+            <div class="mock-name">@botpatapimbot</div>
+            <div class="mock-sub">PATAPIM remote</div>
+          </div>
+        </div>
+        <div class="bubbles">
+          <div class="b b-bot">
+            ❌ Tests failed — auth.test.js line 42 timed out
+            <span class="b-meta">terminal · next.3dar.com / debug auth</span>
+          </div>
+          <div class="b b-me">
+            <div class="reply-quote">↪ <strong>@botpatapimbot</strong>: Tests failed — auth.test.js…</div>
+            mira el .env, capaz no tiene la JWT_SECRET
+          </div>
+          <div class="b b-bot">
+            🎯 → next.3dar.com / debug auth<br/>
+            Sí, falta JWT_SECRET. Lo agrego.
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pc-col pc-pros">
+          <div class="pc-tag">Pros</div>
+          <ul>
+            <li>Already works, zero new code</li>
+            <li>Native Telegram gesture (long-press)</li>
+            <li>Perfect for alert → action loops</li>
+            <li>Self-explanatory in the UI</li>
+          </ul>
+        </div>
+        <div class="pc-col pc-cons">
+          <div class="pc-tag">Cons</div>
+          <ul>
+            <li>Only works after a notification arrives</li>
+            <li>Can't initiate a conversation</li>
+            <li>Long thread → harder to scroll back to right msg</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="effort">
+        <span class="effort-tag">Effort</span>
+        <span class="effort-bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+        <span style="color: var(--good); font-size: 13px; font-weight: 600;">Done</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- BUILD PLAN -->
+    <!-- ============================================ -->
+
+    <h2>What I'd actually build</h2>
+
+    <div class="plan">
+      <h3>Combined plan — ~3 hours</h3>
+      <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 14px;">
+        Stack three of the options. Each handles a different mental mode without stepping on the others.
+      </p>
+      <ol>
+        <li>
+          <strong>Inline-keyboard menu (option 1).</strong>
+          <small>New <code>/menu</code> command on the bot. DO holds &#123;project, terminal&#125; options. Two-tap UX. Opens to project list, drills into terminal list. Auto-collapses unused projects.</small>
+        </li>
+        <li>
+          <strong>Sticky routing (option 2).</strong>
+          <small>Per-chat KV: <code>tg:routing:&lt;chat_id&gt;</code> → terminal_id, with TTL of 30 min. Pinned banner via Telegram's pinChatMessage API or just a header echo on each bot reply. Auto-clears.</small>
+        </li>
+        <li>
+          <strong>Slash <code>/here</code> + <code>/clear</code> (option 3, minimal).</strong>
+          <small>Just two commands: <code>/here</code> shows current routing, <code>/clear</code> drops the sticky lock. <code>/list</code> as a power-user fallback. No need for /use — the menu is faster.</small>
+        </li>
+        <li>
+          <strong>Reply-routing stays as-is (option 5).</strong>
+          <small>Already works. Reply to a notification → that terminal. Doesn't touch sticky routing — it's a one-shot override.</small>
+        </li>
+        <li>
+          <strong>Skip hashtags (option 4) for now.</strong>
+          <small>Adds parser complexity, collisions on common names. If you find yourself missing it after a week, we add it.</small>
+        </li>
+      </ol>
+    </div>
+
+    <h2>Where each piece lives</h2>
+    <p style="color: var(--ink-soft); font-size: 15px;">
+      The bot logic spans both repos. Here's the rough shape:
+    </p>
+
+    <div class="opt" style="padding: 22px;">
+      <ul style="list-style: none; font-size: 14px; line-height: 1.7;">
+        <li>📁 <code>patapim.ai/src/durable-objects/TelegramInstance.ts</code> — <span style="color: var(--ink-soft);">handle <code>callback_query</code> updates from menu taps; track per-chat routing state in DO storage</span></li>
+        <li>📁 <code>patapim.ai/src/pages/api/telegram/webhook.ts</code> — <span style="color: var(--ink-soft);">forward callback_query updates to the right DO (today only forwards <code>message</code> updates)</span></li>
+        <li>📁 <code>patapim/src/main/telegramListener.js</code> — <span style="color: var(--ink-soft);">honor <code>routing_target</code> on the inbound update before falling back to active-terminal/reply-to logic</span></li>
+        <li>📁 <code>patapim/src/main/telegramRelay.js</code> — <span style="color: var(--ink-soft);">new WS request types: <code>list_terminals</code> (PATAPIM → DO sends snapshot), <code>set_routing</code></span></li>
+        <li>📁 <code>patapim/src/main/index.js</code> — <span style="color: var(--ink-soft);">push terminal/project list to the relay on startup + on terminal create/destroy/rename</span></li>
+      </ul>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- CTA -->
+    <!-- ============================================ -->
+
+    <div class="cta">
+      <p><strong>Pick one and reply.</strong></p>
+      <p>Just say "1+2", "all of them", "let's just do option 3", whatever. I'll build it.</p>
+    </div>
+
+    <footer>
+      <a href="https://patapim.ai" style="color: var(--ink-soft); text-decoration: none;">patapim.ai</a> · routing design · 2026-04-26
+    </footer>
+
+  </div>
+</body>
+</html>

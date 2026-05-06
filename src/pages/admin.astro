@@ -59,6 +59,8 @@ if (!isAdmin(user)) {
         <button class="tab" data-tab="beta">Beta Invites</button>
         <button class="tab" data-tab="feedback">Feedback</button>
         <button class="tab" data-tab="bugs">Bug Reports</button>
+        <button class="tab" data-tab="ollama">Ollama Server</button>
+        <button class="tab" data-tab="discord">Discord</button>
       </nav>
 
       <!-- Overview -->
@@ -116,6 +118,128 @@ if (!isAdmin(user)) {
       <section class="pane" id="tab-bugs" style="display:none;">
         <div class="loader" id="bugs-loading">Loading...</div>
         <div id="bugs-content" style="display:none;"></div>
+      </section>
+
+      <!-- Ollama Server -->
+      <section class="pane" id="tab-ollama" style="display:none;">
+        <div class="loader" id="ollama-loading">Loading...</div>
+        <div id="ollama-content" style="display:none;">
+          <div class="ollama-grid">
+            <div class="ollama-card">
+              <h3 class="ollama-h3">Server location</h3>
+              <p class="ollama-desc">Where PATAPIM should reach your local Ollama instance. Stored in Cloudflare KV so any device linked to your account can read it.</p>
+
+              <div class="ollama-row">
+                <label>
+                  <span class="ollama-label">Enabled</span>
+                  <input type="checkbox" id="ollama-enabled" />
+                  <span class="ollama-hint">Off = desktop app falls back to localhost.</span>
+                </label>
+              </div>
+
+              <div class="ollama-row ollama-row-3">
+                <label>
+                  <span class="ollama-label">Protocol</span>
+                  <select id="ollama-protocol">
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="ollama-label">Host / IP</span>
+                  <input type="text" id="ollama-host" placeholder="localhost or 192.168.1.7" autocomplete="off" />
+                </label>
+                <label>
+                  <span class="ollama-label">Port</span>
+                  <input type="number" id="ollama-port" min="1" max="65535" placeholder="11434" />
+                </label>
+              </div>
+
+              <div class="ollama-row">
+                <label style="flex:1;">
+                  <span class="ollama-label">Public URL (optional, for remote access)</span>
+                  <input type="text" id="ollama-public-url" placeholder="https://ollama.patapim.ai" autocomplete="off" />
+                  <span class="ollama-hint">Used when you're away from the LAN. Leave empty to skip.</span>
+                </label>
+              </div>
+
+              <div class="ollama-row">
+                <label style="flex:1;">
+                  <span class="ollama-label">Default model</span>
+                  <input type="text" id="ollama-model" placeholder="qwen2.5:7b" autocomplete="off" />
+                </label>
+              </div>
+
+              <div class="ollama-row ollama-row-actions">
+                <button class="btn-gen" id="ollama-save-btn">Save</button>
+                <span class="ollama-status" id="ollama-status"></span>
+              </div>
+
+              <div class="ollama-meta" id="ollama-meta"></div>
+            </div>
+
+            <div class="ollama-card">
+              <h3 class="ollama-h3">Setup on a new machine</h3>
+              <p class="ollama-desc">Scripts to install Ollama, pull the default model, and open the firewall for LAN access. Run once per machine that will host the server.</p>
+
+              <h4 class="ollama-h4">Windows (PowerShell, elevated)</h4>
+              <pre class="ollama-code"><code>iwr -useb https://patapim.ai/ollama-setup/install-windows.ps1 | iex</code></pre>
+
+              <h4 class="ollama-h4">macOS / Linux</h4>
+              <pre class="ollama-code"><code>curl -fsSL https://patapim.ai/ollama-setup/install-unix.sh | bash</code></pre>
+
+              <p class="ollama-desc" style="margin-top:14px;">
+                Direct links:
+                <a href="/ollama-setup/install-windows.ps1" class="ollama-link" download>install-windows.ps1</a>
+                &middot;
+                <a href="/ollama-setup/install-unix.sh" class="ollama-link" download>install-unix.sh</a>
+                &middot;
+                <a href="/ollama-setup/README.md" class="ollama-link">README</a>
+              </p>
+            </div>
+
+            <div class="ollama-card">
+              <h3 class="ollama-h3">Tray monitor (Windows)</h3>
+              <p class="ollama-desc">Small Electron app that sits in the system tray and shows server status + recent requests. Already installed at <code>C:\Users\ghell\ollama-monitor</code>. Desktop shortcut: <code>Ollama Monitor.lnk</code>.</p>
+              <p class="ollama-desc" style="margin-top:10px;">To autostart on login, drop the shortcut into <code>shell:startup</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Discord -->
+      <section class="pane" id="tab-discord" style="display:none;">
+        <div class="loader" id="discord-loading">Loading...</div>
+        <div id="discord-content" style="display:none;">
+          <div class="ollama-grid">
+            <div class="ollama-card">
+              <h3 class="ollama-h3">Public invite link</h3>
+              <p class="ollama-desc"><code>https://patapim.ai/discord</code> redirects (302) to whatever URL is saved here. Update this whenever Discord rotates the invite — no redeploy needed.</p>
+
+              <div class="ollama-row">
+                <label style="flex:1;">
+                  <span class="ollama-label">Discord invite URL</span>
+                  <input type="text" id="discord-invite-url" placeholder="https://discord.gg/abc123" autocomplete="off" />
+                  <span class="ollama-hint">Must match <code>https://discord.gg/CODE</code>.</span>
+                </label>
+              </div>
+
+              <div class="ollama-row ollama-row-actions">
+                <button class="btn-gen" id="discord-save-btn">Save</button>
+                <button class="btn-gen" id="discord-rotate-btn">Rotate via bot</button>
+                <a class="ollama-link" id="discord-test-link" href="/discord" target="_blank" rel="noopener">Test /discord</a>
+                <span class="ollama-status" id="discord-status"></span>
+              </div>
+
+              <div class="ollama-meta" id="discord-meta"></div>
+            </div>
+
+            <div class="ollama-card">
+              <h3 class="ollama-h3">Why this exists</h3>
+              <p class="ollama-desc">Free Discord servers can have permanent invites (Server Settings → Invites → Edit → Expire: Never, Max uses: No limit). If yours still rotates, this redirect gives you a stable URL on patapim.ai that you can repoint without touching the site.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -1066,6 +1190,139 @@ if (!isAdmin(user)) {
     align-items: center;
   }
 
+  /* ── Ollama tab ────────────────────────── */
+  .ollama-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    max-width: 860px;
+  }
+  .ollama-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .ollama-h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0 0 6px 0;
+  }
+  .ollama-h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 14px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .ollama-desc {
+    color: var(--gray-600);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+  }
+  .ollama-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .ollama-row-3 {
+    display: grid;
+    grid-template-columns: 110px 1fr 120px;
+    gap: 12px;
+  }
+  .ollama-row-actions {
+    align-items: center;
+    margin-top: 18px;
+  }
+  .ollama-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ollama-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gray-600);
+  }
+  .ollama-hint {
+    font-size: 11px;
+    color: var(--gray-500);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2px;
+  }
+  .ollama-card input[type="text"],
+  .ollama-card input[type="number"],
+  .ollama-card select {
+    padding: 8px 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--gray-900);
+    background: var(--white);
+    width: 100%;
+  }
+  .ollama-card input[type="text"]:focus,
+  .ollama-card input[type="number"]:focus,
+  .ollama-card select:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px var(--blue-100);
+  }
+  .ollama-card input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--blue-600);
+    margin-right: 6px;
+    vertical-align: -3px;
+  }
+  .ollama-status {
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+  .ollama-status.ok { color: var(--green-600); }
+  .ollama-status.err { color: var(--red-600); }
+  .ollama-meta {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gray-200);
+    font-family: var(--mono);
+  }
+  .ollama-code {
+    background: var(--gray-900);
+    color: var(--gray-100);
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .ollama-link {
+    color: var(--blue-600);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .ollama-link:hover { text-decoration: underline; }
+  .ollama-card code {
+    font-family: var(--mono);
+    background: var(--gray-100);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--gray-800);
+  }
+
   .btn-gen {
     background: var(--blue-600);
     color: var(--white);
@@ -1425,6 +1682,8 @@ if (!isAdmin(user)) {
       else if (tab === 'beta') loadBeta();
       else if (tab === 'feedback') loadFeedback();
       else if (tab === 'bugs') loadBugs();
+      else if (tab === 'ollama') loadOllama();
+      else if (tab === 'discord') loadDiscord();
     }
   }
 
@@ -2163,6 +2422,160 @@ if (!isAdmin(user)) {
     ov.querySelector('#m-ok')!.addEventListener('click', () => { ov.remove(); onOk(); });
     ov.querySelector('#m-no')!.addEventListener('click', () => { ov.remove(); onNo(); });
   }
+
+  // ── Ollama ──
+  async function loadOllama() {
+    const loading = document.getElementById('ollama-loading')!;
+    const content = document.getElementById('ollama-content')!;
+    try {
+      const res = await fetch('/api/admin/ollama-config');
+      const cfg = await res.json();
+      loading.style.display = 'none';
+      content.style.display = 'block';
+
+      (document.getElementById('ollama-enabled') as HTMLInputElement).checked = !!cfg.enabled;
+      (document.getElementById('ollama-protocol') as HTMLSelectElement).value = cfg.protocol || 'http';
+      (document.getElementById('ollama-host') as HTMLInputElement).value = cfg.host || '';
+      (document.getElementById('ollama-port') as HTMLInputElement).value = String(cfg.port || 11434);
+      (document.getElementById('ollama-public-url') as HTMLInputElement).value = cfg.publicUrl || '';
+      (document.getElementById('ollama-model') as HTMLInputElement).value = cfg.defaultModel || 'qwen2.5:7b';
+
+      renderOllamaMeta(cfg);
+    } catch {
+      loading.textContent = 'Failed to load configuration.';
+    }
+  }
+
+  function renderOllamaMeta(cfg: any) {
+    const meta = document.getElementById('ollama-meta')!;
+    const url = cfg.enabled
+      ? `${cfg.protocol || 'http'}://${cfg.host}:${cfg.port}`
+      : '(disabled)';
+    const parts = [
+      `effective URL: ${url}`,
+      cfg.publicUrl ? `public: ${cfg.publicUrl}` : '',
+      cfg.updatedAt ? `updated: ${new Date(cfg.updatedAt).toLocaleString()}` : '',
+    ].filter(Boolean);
+    meta.textContent = parts.join('  ·  ');
+  }
+
+  document.getElementById('ollama-save-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('ollama-save-btn') as HTMLButtonElement;
+    const status = document.getElementById('ollama-status')!;
+    btn.disabled = true;
+    status.className = 'ollama-status';
+    status.textContent = 'Saving...';
+
+    const payload = {
+      enabled: (document.getElementById('ollama-enabled') as HTMLInputElement).checked,
+      protocol: (document.getElementById('ollama-protocol') as HTMLSelectElement).value,
+      host: (document.getElementById('ollama-host') as HTMLInputElement).value.trim(),
+      port: parseInt((document.getElementById('ollama-port') as HTMLInputElement).value, 10) || 11434,
+      publicUrl: (document.getElementById('ollama-public-url') as HTMLInputElement).value.trim(),
+      defaultModel: (document.getElementById('ollama-model') as HTMLInputElement).value.trim(),
+    };
+
+    try {
+      const res = await fetch('/api/admin/ollama-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        status.className = 'ollama-status err';
+        status.textContent = data.error || 'Save failed';
+      } else {
+        status.className = 'ollama-status ok';
+        status.textContent = 'Saved';
+        renderOllamaMeta(data.config);
+        setTimeout(() => { status.textContent = ''; status.className = 'ollama-status'; }, 2500);
+      }
+    } catch {
+      status.className = 'ollama-status err';
+      status.textContent = 'Network error';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── Discord ──
+  async function loadDiscord() {
+    const loading = document.getElementById('discord-loading')!;
+    const content = document.getElementById('discord-content')!;
+    try {
+      const res = await fetch('/api/admin/discord-invite');
+      const data = await res.json();
+      loading.style.display = 'none';
+      content.style.display = 'block';
+      (document.getElementById('discord-invite-url') as HTMLInputElement).value = data.url || '';
+      renderDiscordMeta(data.updatedAt);
+    } catch {
+      loading.textContent = 'Failed to load configuration.';
+    }
+  }
+
+  function renderDiscordMeta(updatedAt: string | null) {
+    const meta = document.getElementById('discord-meta')!;
+    meta.textContent = updatedAt ? `updated: ${new Date(updatedAt).toLocaleString()}` : '(never set)';
+  }
+
+  document.getElementById('discord-rotate-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('discord-rotate-btn') as HTMLButtonElement;
+    const status = document.getElementById('discord-status')!;
+    btn.disabled = true;
+    status.className = 'ollama-status';
+    status.textContent = 'Asking bot for fresh invite...';
+    try {
+      const res = await fetch('/api/admin/discord-rotate', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        status.className = 'ollama-status err';
+        status.textContent = data.error || 'Rotate failed';
+      } else {
+        status.className = 'ollama-status ok';
+        status.textContent = 'New invite: ' + data.url;
+        (document.getElementById('discord-invite-url') as HTMLInputElement).value = data.url;
+        renderDiscordMeta(new Date().toISOString());
+      }
+    } catch {
+      status.className = 'ollama-status err';
+      status.textContent = 'Network error';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('discord-save-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('discord-save-btn') as HTMLButtonElement;
+    const status = document.getElementById('discord-status')!;
+    const url = (document.getElementById('discord-invite-url') as HTMLInputElement).value.trim();
+    btn.disabled = true;
+    status.className = 'ollama-status';
+    status.textContent = 'Saving...';
+    try {
+      const res = await fetch('/api/admin/discord-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        status.className = 'ollama-status err';
+        status.textContent = data.error || 'Save failed';
+      } else {
+        status.className = 'ollama-status ok';
+        status.textContent = 'Saved';
+        renderDiscordMeta(data.updatedAt);
+        setTimeout(() => { status.textContent = ''; status.className = 'ollama-status'; }, 2500);
+      }
+    } catch {
+      status.className = 'ollama-status err';
+      status.textContent = 'Network error';
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // ── Boot ──
   switchTab('overview');
