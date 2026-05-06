@@ -10,6 +10,9 @@ const env = Astro.locals.runtime.env;
 const url = new URL(Astro.request.url);
 const pairingSessionId = url.searchParams.get('s');
 const errorParam = url.searchParams.get('error');
+const rawReturnTo = url.searchParams.get('returnTo') || '';
+// Only accept relative paths (open-redirect protection).
+const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '';
 
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
@@ -61,10 +64,15 @@ if (user) {
       },
     });
   }
-  return Astro.redirect('/go');
+  return Astro.redirect(returnTo || '/go');
 }
 
-const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}` : '';
+// Carry both pairing (?s) and returnTo across all sub-flows so signup,
+// forgot-password and Google sign-in all land back where the user started.
+const params = new URLSearchParams();
+if (pairingSessionId) params.set('s', pairingSessionId);
+if (returnTo) params.set('returnTo', returnTo);
+const sigParam = params.toString() ? `?${params.toString()}` : '';
 ---
 <BaseLayout title="Sign in — PATAPIM" description="Sign in to your PATAPIM account.">
   <main class="auth-page">
@@ -216,22 +224,26 @@ const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}`
   .btn.secondary:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
   .btn.secondary:disabled { opacity: 0.6; cursor: wait; }
 
-  /* Google button — primary, prominent. White background per Google brand
-     guidelines for dark surfaces; bigger padding/font to read as the
-     preferred path. */
+  /* Google button — primary, prominent. Dark variant (per Google brand
+     guidelines, dark surfaces are an official option) so it integrates with
+     the warm-dark palette instead of glaring against it. The amber-tinted
+     border + soft glow do the work of "this is the preferred path" without
+     a stark white fill. */
   .btn.google.primary-google {
-    background: #ffffff;
-    color: #1f1f1f;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-strong));
     display: flex;
     width: 100%;
     padding: 14px 18px;
     font-size: 16px;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 24px rgba(212,165,116,0.10);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px rgba(212,165,116,0.10);
   }
   .btn.google.primary-google:hover {
-    background: #f7f7f7;
+    background: var(--bg-hover);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-strong));
     transform: translateY(-1px);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 12px 32px rgba(212,165,116,0.18);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 32px rgba(212,165,116,0.18);
   }
   .divider {
     display: flex;
@@ -287,7 +299,10 @@ const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}`
         });
         const body = await res.json().catch(() => ({}));
         if (res.ok && body.ok) {
-          window.location.href = body.paired ? '/go?paired=1' : '/go';
+          const params = new URLSearchParams(window.location.search);
+          const rt = params.get('returnTo') || '';
+          const safeReturnTo = rt.startsWith('/') ? rt : '';
+          window.location.href = body.paired ? '/go?paired=1' : (safeReturnTo || '/go');
           return;
         }
         if (res.status === 429) {

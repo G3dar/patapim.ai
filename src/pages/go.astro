@@ -8,6 +8,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { getUserFromRequest } from '../lib/auth';
+import { avatarFor } from '../lib/avatar';
 import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -18,7 +19,7 @@ const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
 if (!user) {
   const returnTo = Astro.url.search ? `/go${Astro.url.search}` : '/go';
-  return Astro.redirect(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+  return Astro.redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
 }
 
 // Server-side data fetch
@@ -75,7 +76,7 @@ const scriptI18n = {
       <!-- Dashboard Header (compact) -->
       <div class="dash-header">
         <div class="dash-user">
-          <img src={user.picture} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
+          <img src={avatarFor(user.picture, user.email, user.name)} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
           <span class="dash-email">{user.email}</span>
           <span class={`plan-badge plan-${plan}`}>
             {plan === 'free' ? t(locale, 'dashboard.planFree') : plan === 'pro' ? t(locale, 'dashboard.planPro') : t(locale, 'dashboard.planLifetime')}

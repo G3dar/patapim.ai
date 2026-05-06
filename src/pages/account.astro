@@ -18,7 +18,7 @@ const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
 if (!user) {
   const returnTo = Astro.url.search ? `/account${Astro.url.search}` : '/account';
-  return Astro.redirect(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+  return Astro.redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
 }
 
 const userRaw = await env.LICENSES.get(`user:${user.googleId}`);

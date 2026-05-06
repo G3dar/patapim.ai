@@ -61,12 +61,38 @@ export function answerCallbackQuery(
   token: string,
   callback_query_id: string,
   text?: string,
+  show_alert?: boolean,
 ) {
   return callBotApi(token, 'answerCallbackQuery', {
     callback_query_id,
-    text,
-    show_alert: false,
+    text: text || '',
+    show_alert: !!show_alert,
   });
+}
+
+export interface EditMessageTextParams {
+  chat_id: number | string;
+  message_id: number;
+  text: string;
+  parse_mode?: 'HTML' | 'MarkdownV2' | 'Markdown';
+  reply_markup?: unknown;
+}
+
+export function editMessageText(token: string, params: EditMessageTextParams) {
+  return callBotApi(token, 'editMessageText', {
+    disable_web_page_preview: true,
+    ...params,
+  });
+}
+
+export interface EditMessageReplyMarkupParams {
+  chat_id: number | string;
+  message_id: number;
+  reply_markup: unknown;
+}
+
+export function editMessageReplyMarkup(token: string, params: EditMessageReplyMarkupParams) {
+  return callBotApi(token, 'editMessageReplyMarkup', { ...params });
 }
 
 export interface TelegramUpdate {

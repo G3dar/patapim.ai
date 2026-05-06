@@ -7,11 +7,13 @@ import { getUserFromRequest } from '../lib/auth';
 const env = Astro.locals.runtime.env;
 const url = new URL(Astro.request.url);
 const pairingSessionId = url.searchParams.get('s');
+const rawReturnTo = url.searchParams.get('returnTo') || '';
+const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '';
 
-// If signed in already, send to /go.
+// If signed in already, send to returnTo (or /go).
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 if (user) {
-  return Astro.redirect(pairingSessionId ? '/go?paired=1' : '/go');
+  return Astro.redirect(pairingSessionId ? '/go?paired=1' : (returnTo || '/go'));
 }
 
 // Set the pair cookie so signup can complete the desktop handoff.
@@ -22,7 +24,10 @@ if (pairingSessionId) {
   );
 }
 
-const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}` : '';
+const params = new URLSearchParams();
+if (pairingSessionId) params.set('s', pairingSessionId);
+if (returnTo) params.set('returnTo', returnTo);
+const sigParam = params.toString() ? `?${params.toString()}` : '';
 ---
 <BaseLayout title="Sign up — PATAPIM" description="Create your PATAPIM account.">
   <main class="auth-page">
@@ -125,18 +130,20 @@ const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}`
   .btn.secondary:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
   .btn.secondary:disabled { opacity: 0.6; cursor: wait; }
   .btn.google.primary-google {
-    background: #ffffff;
-    color: #1f1f1f;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-strong));
     display: flex;
     width: 100%;
     padding: 14px 18px;
     font-size: 16px;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 24px rgba(212,165,116,0.10);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px rgba(212,165,116,0.10);
   }
   .btn.google.primary-google:hover {
-    background: #f7f7f7;
+    background: var(--bg-hover);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-strong));
     transform: translateY(-1px);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 12px 32px rgba(212,165,116,0.18);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 32px rgba(212,165,116,0.18);
   }
   .divider { display: flex; align-items: center; margin: 22px 0 16px; color: var(--text-tertiary); font-size: 12px; }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border-default); }
@@ -178,7 +185,10 @@ const sigParam = pairingSessionId ? `?s=${encodeURIComponent(pairingSessionId)}`
         });
         const body = await res.json().catch(() => ({}));
         if (res.ok && body.ok) {
-          window.location.href = body.paired ? '/go?paired=1' : '/go';
+          const sp = new URLSearchParams(window.location.search);
+          const rt = sp.get('returnTo') || '';
+          const safeRt = rt.startsWith('/') ? rt : '';
+          window.location.href = body.paired ? '/go?paired=1' : (safeRt || '/go');
           return;
         }
         if (res.status === 429) {

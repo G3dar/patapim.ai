@@ -33,10 +33,6 @@ export const POST: APIRoute = async (context) => {
   const session = await getUserFromRequest(env.SESSIONS, context.request);
   if (!session) return jsonError('unauthenticated', 401);
 
-  const ip = clientIp(context.request);
-  const ipLimit = await rateLimit(env.SESSIONS, `change-pw:ip:${ip}`, { limit: 10, windowSeconds: 3600 });
-  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
-
   let body: RequestBody;
   try { body = (await context.request.json()) as RequestBody; } catch { return jsonError('invalid_body'); }
 
@@ -45,6 +41,12 @@ export const POST: APIRoute = async (context) => {
 
   const errors = await validatePassword(newPassword);
   if (errors.length) return jsonError('invalid_password', 400, { details: errors });
+
+  // Rate limit AFTER validation so iterating on a strong password doesn't
+  // burn budget on rejected attempts.
+  const ip = clientIp(context.request);
+  const ipLimit = await rateLimit(env.SESSIONS, `change-pw:ip:${ip}`, { limit: 10, windowSeconds: 3600 });
+  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
 
   const user = await loadUserById(env.LICENSES, session.googleId);
   if (!user) return jsonError('user_not_found', 404);

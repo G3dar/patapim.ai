@@ -40,10 +40,6 @@ export const POST: APIRoute = async (context) => {
     return jsonError('forbidden', 403);
   }
 
-  const ip = clientIp(context.request);
-  const ipLimit = await rateLimit(env.SESSIONS, `signup:ip:${ip}`, { limit: 3, windowSeconds: 3600 });
-  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
-
   let body: SignupBody;
   try {
     body = (await context.request.json()) as SignupBody;
@@ -58,6 +54,13 @@ export const POST: APIRoute = async (context) => {
   if (!email || !EMAIL_RE.test(email)) return jsonError('invalid_email');
   const passwordErrors = await validatePassword(password);
   if (passwordErrors.length) return jsonError('invalid_password', 400, { details: passwordErrors });
+
+  // Rate limit AFTER input validation so users iterating on a password (HIBP
+  // rejections, "too short", etc.) don't burn through their quota on
+  // attempts that never had a chance of creating an account.
+  const ip = clientIp(context.request);
+  const ipLimit = await rateLimit(env.SESSIONS, `signup:ip:${ip}`, { limit: 5, windowSeconds: 3600 });
+  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
 
   // Reject if email already has an account (whether Google-linked or not).
   const existing = await loadUserByEmail(env.LICENSES, email);

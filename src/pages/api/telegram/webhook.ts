@@ -11,7 +11,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { sendMessage } from '../../../lib/telegram/bot-api';
+import { sendMessage, answerCallbackQuery as tgAnswerCallback } from '../../../lib/telegram/bot-api';
 import type { TelegramUpdate } from '../../../lib/telegram/bot-api';
 
 export const prerender = false;
@@ -46,6 +46,14 @@ export const POST: APIRoute = async (context) => {
 };
 
 async function routeUpdate(update: TelegramUpdate, env: any) {
+  // Inline-button taps: PATAPIM uses callback_data on planReady prompts so a
+  // tap doesn't open a browser. We resolve the bound instance from chat_id,
+  // attach the tracked terminal_id (same `tg:msg:*` KV that handles message
+  // replies), and forward to the DO as a `callback_query` frame.
+  if (update.callback_query) {
+    await routeCallbackQuery(update.callback_query, env);
+    return;
+  }
   const msg = update.message;
   if (!msg) return;
   const chatId = msg.chat?.id;
@@ -230,6 +238,51 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ update }),
+  });
+}
+
+async function routeCallbackQuery(cq: NonNullable<TelegramUpdate['callback_query']>, env: any) {
+  const chatId = cq.message?.chat?.id;
+  const messageId = cq.message?.message_id;
+  if (!chatId) return;
+
+  // No binding for this chat → nothing to forward to. Ack so the spinner
+  // clears, but don't expose any UX detail.
+  const instanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  if (!instanceId) {
+    await tgAnswerCallback(env.TELEGRAM_BOT_TOKEN, cq.id, 'This chat is not linked.', true).catch(() => {});
+    return;
+  }
+
+  // Look up the per-message binding so the DO can attach _patapim_terminal_id
+  // before forwarding. The tap might be on a message older than the in-memory
+  // messageMap on the client; this KV (7-day TTL) is the source of truth.
+  let terminalId = '';
+  if (messageId) {
+    try {
+      const stored = await env.SESSIONS.get(`tg:msg:${chatId}:${messageId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { instance_id?: string; terminal_id?: string };
+        if (parsed.instance_id === instanceId && parsed.terminal_id) {
+          terminalId = parsed.terminal_id;
+        }
+      }
+    } catch {
+      // KV miss / parse error → forward without terminal_id; client will use
+      // the terminalId encoded in cq.data (`plan:<terminalId>:<N>`).
+    }
+  }
+
+  // Mutate a shallow copy of the update so the DO/client receive the binding.
+  const cqOut = terminalId
+    ? { ...cq, message: cq.message ? { ...cq.message, _patapim_terminal_id: terminalId } : cq.message }
+    : cq;
+
+  const doStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
+  await doStub.fetch('https://do/__internal/callback_query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query: cqOut }),
   });
 }
 

@@ -8,6 +8,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
 import { getUserFromRequest } from '../../lib/auth';
+import { avatarFor } from '../../lib/avatar';
 import { getLocaleFromUrl, t, getLocalePath } from '../../i18n';
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -17,7 +18,7 @@ const env = Astro.locals.runtime.env;
 const user = await getUserFromRequest(env.SESSIONS, Astro.request);
 
 if (!user) {
-  return Astro.redirect('/api/auth/google');
+  return Astro.redirect('/signin?returnTo=%2Fja%2Fgo');
 }
 
 // Server-side data fetch
@@ -74,7 +75,7 @@ const scriptI18n = {
       <!-- Dashboard Header -->
       <div class="dash-header">
         <div class="dash-user">
-          <img src={user.picture} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
+          <img src={avatarFor(user.picture, user.email, user.name)} alt="" class="dash-avatar" referrerpolicy="no-referrer" />
           <div class="dash-user-info">
             <div class="dash-name-row">
               <span class="dash-name">{user.name}</span>

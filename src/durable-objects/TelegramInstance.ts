@@ -16,7 +16,14 @@
  */
 
 import { DurableObject } from 'cloudflare:workers';
-import { sendMessage as tgSendMessage, callBotApi as tgCallApi, type TelegramUpdate } from '../lib/telegram/bot-api';
+import {
+  sendMessage as tgSendMessage,
+  callBotApi as tgCallApi,
+  answerCallbackQuery as tgAnswerCallback,
+  editMessageText as tgEditMessageText,
+  editMessageReplyMarkup as tgEditMessageReplyMarkup,
+  type TelegramUpdate,
+} from '../lib/telegram/bot-api';
 
 const PAIR_CODE_TTL_MS = 5 * 60 * 1000;
 const MAX_QUEUED = 100;
@@ -83,6 +90,8 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
         return this.internalPairComplete(request);
       case '/__internal/message':
         return this.internalDeliverMessage(request);
+      case '/__internal/callback_query':
+        return this.internalDeliverCallbackQuery(request);
       case '/__internal/status':
         return this.internalStatus();
       case '/__internal/active-lost':
@@ -209,6 +218,61 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
           if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
           return;
         }
+        case 'answer_callback_query': {
+          const callback_query_id = String(msg.callback_query_id || '');
+          if (!callback_query_id) throw new Error('callback_query_id is required');
+          await tgAnswerCallback(
+            this.env.TELEGRAM_BOT_TOKEN,
+            callback_query_id,
+            String(msg.text || ''),
+            !!msg.show_alert,
+          );
+          if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
+          return;
+        }
+        case 'edit_message_text': {
+          const state = await this.loadState();
+          // Allow either an explicit chat_id from the client OR fall back to
+          // the bound chat_id. PATAPIM passes chat_id explicitly because edits
+          // can target any tracked message; pin to the paired chat to avoid
+          // a malicious frame editing another chat by guessing IDs.
+          const requestedChatId = Number(msg.chat_id);
+          const chatId = state.chat_id;
+          if (!chatId) throw new Error('Not paired — no chat_id to edit in.');
+          if (!requestedChatId || requestedChatId !== chatId) {
+            throw new Error('chat_id must match the paired chat');
+          }
+          const message_id = Number(msg.message_id);
+          if (!message_id) throw new Error('message_id is required');
+          const text = String(msg.text || '').slice(0, 4000);
+          await tgEditMessageText(this.env.TELEGRAM_BOT_TOKEN, {
+            chat_id: chatId,
+            message_id,
+            text,
+            parse_mode: (msg.parse_mode as 'HTML' | 'MarkdownV2' | 'Markdown' | undefined) || 'HTML',
+            reply_markup: msg.reply_markup,
+          });
+          if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
+          return;
+        }
+        case 'edit_message_reply_markup': {
+          const state = await this.loadState();
+          const requestedChatId = Number(msg.chat_id);
+          const chatId = state.chat_id;
+          if (!chatId) throw new Error('Not paired — no chat_id to edit in.');
+          if (!requestedChatId || requestedChatId !== chatId) {
+            throw new Error('chat_id must match the paired chat');
+          }
+          const message_id = Number(msg.message_id);
+          if (!message_id) throw new Error('message_id is required');
+          await tgEditMessageReplyMarkup(this.env.TELEGRAM_BOT_TOKEN, {
+            chat_id: chatId,
+            message_id,
+            reply_markup: msg.reply_markup ?? { inline_keyboard: [] },
+          });
+          if (id) ws.send(JSON.stringify({ id, type: 'ack', result: { ok: true } }));
+          return;
+        }
         case 'transcribe_voice': {
           // PATAPIM's Whisper fallback when local Parakeet fails. Audio bytes
           // are sent base64 in `audio_b64`; we run Workers AI Whisper and
@@ -297,6 +361,24 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
     const delivered = this.broadcast({ type: 'message', update });
     if (!delivered) {
       await this.enqueue({ ts: Date.now(), update });
+    }
+    return new Response(JSON.stringify({ delivered }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Inline-button taps. Unlike messages we DON'T enqueue: a tap is only
+  // meaningful in the live moment — replaying it after PATAPIM reconnects
+  // hours later would press a stale plan option. If undelivered, we ack the
+  // callback ourselves so the user's button stops spinning and gets a
+  // visible "PATAPIM offline" toast.
+  private async internalDeliverCallbackQuery(request: Request): Promise<Response> {
+    const { callback_query } = await request.json() as { callback_query: NonNullable<TelegramUpdate['callback_query']> };
+    const delivered = this.broadcast({ type: 'callback_query', update: callback_query });
+    if (!delivered) {
+      try {
+        await tgAnswerCallback(this.env.TELEGRAM_BOT_TOKEN, callback_query.id, 'PATAPIM is offline — open the app and try again.', true);
+      } catch {}
     }
     return new Response(JSON.stringify({ delivered }), {
       headers: { 'Content-Type': 'application/json' },

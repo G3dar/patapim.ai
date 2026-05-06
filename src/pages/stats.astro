@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import { getUserFromRequest } from '../lib/auth';
+import { avatarFor } from '../lib/avatar';
 import { isAdmin } from '../lib/admin';
 
 const env = Astro.locals.runtime.env;
@@ -40,7 +41,7 @@ if (!isAdmin(user)) {
         <span class="topbar-label">Stats</span>
       </div>
       <div class="topbar-right">
-        <img src={user.picture} alt="" class="topbar-avatar" referrerpolicy="no-referrer" />
+        <img src={avatarFor(user.picture, user.email, user.name)} alt="" class="topbar-avatar" referrerpolicy="no-referrer" />
         <a href="/admin" class="topbar-link">Admin</a>
         <a href="/go" class="topbar-link">Dashboard</a>
       </div>

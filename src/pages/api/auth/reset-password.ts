@@ -28,10 +28,6 @@ export const POST: APIRoute = async (context) => {
 
   if (!assertSameOrigin(context.request, siteUrl)) return jsonError('forbidden', 403);
 
-  const ip = clientIp(context.request);
-  const ipLimit = await rateLimit(env.SESSIONS, `reset-confirm:ip:${ip}`, { limit: 20, windowSeconds: 3600 });
-  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
-
   let body: RequestBody;
   try {
     body = (await context.request.json()) as RequestBody;
@@ -45,6 +41,12 @@ export const POST: APIRoute = async (context) => {
 
   const errors = await validatePassword(newPassword);
   if (errors.length) return jsonError('invalid_password', 400, { details: errors });
+
+  // Rate limit AFTER validation so users iterating on a strong password
+  // don't burn budget on rejected attempts.
+  const ip = clientIp(context.request);
+  const ipLimit = await rateLimit(env.SESSIONS, `reset-confirm:ip:${ip}`, { limit: 20, windowSeconds: 3600 });
+  if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter);
 
   const raw = await env.SESSIONS.get(`pw-reset:${token}`);
   if (!raw) return jsonError('invalid_or_expired_token', 400);

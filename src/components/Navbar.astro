@@ -27,7 +27,7 @@ const lp = (path: string) => getLocalePath(locale, path);
 
     <div class="navbar-actions">
       <LanguageSwitcher />
-      <a href="/api/auth/google" class="nav-signin" id="nav-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+      <a href="/signin" class="nav-signin" id="nav-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
       <a href={lp('/go')} class="btn btn-primary btn-nav">{t(locale, 'nav.dashboard')}</a>
     </div>
 
@@ -45,7 +45,7 @@ const lp = (path: string) => getLocalePath(locale, path);
     <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
     <a href={lp('/docs/releases')}>{t(locale, 'nav.docs')}</a>
     <a href={lp('/about')}>{t(locale, 'nav.about')}</a>
-    <a href="/api/auth/google" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+    <a href="/signin" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
     <a href={lp('/go')} class="btn btn-primary" style="margin-top: 8px; justify-content: center;">{t(locale, 'nav.dashboard')}</a>
   </div>
 
