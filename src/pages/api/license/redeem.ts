@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
+import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -25,9 +26,30 @@ export const POST: APIRoute = async (context) => {
     });
   }
 
-  const { email, licenseKey } = body;
-  if (!email || !licenseKey) {
-    return new Response(JSON.stringify({ valid: false, error: 'Email and licenseKey are required' }), {
+  // SECURITY: require authentication and bind the redemption to the
+  // authenticated user. Previously this endpoint had no auth and took the
+  // target `email` from the body, so anyone holding a license key could
+  // transfer it to an arbitrary email and lock the real owner out. Now the
+  // license can only be claimed onto the *caller's own* account (session
+  // cookie on web, or device bearer token from the desktop app). The body
+  // `email` is ignored. (Fully closing key theft also requires stopping key
+  // leakage via session-info / referral/status — see SECURITY_FINDINGS.)
+  const authedUser = await getUserFromRequestOrDeviceToken(
+    env.SESSIONS,
+    env.LICENSES,
+    context.request,
+  );
+  if (!authedUser) {
+    return new Response(
+      JSON.stringify({ valid: false, error: 'Sign in before redeeming a license key' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...cors } },
+    );
+  }
+
+  const { licenseKey } = body;
+  const email = authedUser.email;
+  if (!licenseKey) {
+    return new Response(JSON.stringify({ valid: false, error: 'licenseKey is required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...cors },
     });

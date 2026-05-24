@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
+import { rateLimit, clientIp } from '../../../lib/rateLimit';
 
 export const prerender = false;
 
@@ -9,6 +10,21 @@ export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
   const cors = getCorsHeaders(context.request);
   const headers = { 'Content-Type': 'application/json', ...cors };
+
+  // SECURITY: rate-limit by IP. A pairing code is a short secret (6 chars);
+  // without throttling an attacker could brute-force live codes and mint a
+  // device token bound to the victim's account. Legit clients call this once.
+  const ip = clientIp(context.request);
+  const rl = await rateLimit(env.SESSIONS, `pair-exchange:ip:${ip}`, {
+    limit: 10,
+    windowSeconds: 600,
+  });
+  if (!rl.ok) {
+    return new Response(
+      JSON.stringify({ error: 'Too many pairing attempts, slow down' }),
+      { status: 429, headers: { ...headers, 'Retry-After': String(Math.max(1, rl.retryAfter)) } },
+    );
+  }
 
   let body: { code?: string; deviceName?: string; machineId?: string };
   try {

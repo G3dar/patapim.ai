@@ -8,9 +8,13 @@ const CODE_LENGTH = 6;
 const CODE_TTL = 600; // 10 minutes
 
 function generatePairCode(): string {
+  // CSPRNG, not Math.random(): pairing codes are an auth secret that
+  // pair-exchange consumes to mint a device token. CHARS.length is 32, which
+  // divides 256 evenly, so `byte % 32` is unbiased.
+  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CHARS[Math.floor(Math.random() * CHARS.length)];
+    code += CHARS[bytes[i] % CHARS.length];
   }
   return code;
 }

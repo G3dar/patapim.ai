@@ -37,12 +37,23 @@ export const POST: APIRoute = async (context) => {
     }
 
     const license = JSON.parse(raw);
+
+    // SECURITY: a Stripe checkout-session id is a capability that can leak
+    // (browser history, Referer header). Only hand back the licenseKey for a
+    // freshly-completed purchase — the success page calls this within seconds.
+    // On later replay we still return status/plan but withhold the key (the
+    // buyer can retrieve it by signing in / redeeming). Closes the indefinite
+    // "got a cs_ id -> harvest license key" leak that fed license/redeem theft.
+    const ageSeconds = Math.floor(Date.now() / 1000) - (session.created || 0);
+    const fresh = ageSeconds < 3600 && session.payment_status !== 'unpaid';
+
     return new Response(JSON.stringify({
       found: true,
       email,
-      licenseKey: license.licenseKey,
+      licenseKey: fresh ? license.licenseKey : null,
       plan: license.plan,
       status: license.status,
+      ...(fresh ? {} : { keyWithheld: true }),
     }), { status: 200, headers });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
