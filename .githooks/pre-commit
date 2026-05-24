@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# Pre-commit hook: secret scan staged changes with gitleaks.
+# This backend holds the most sensitive secrets (Stripe, Google OAuth,
+# Telegram) — they belong in `wrangler secret` / `.dev.vars`, never in git.
+#
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! gitleaks protect --staged --no-banner --redact; then
+        echo ""
+        echo "❌ gitleaks found a potential secret in your staged changes."
+        echo "   Use 'wrangler secret put' or .dev.vars (gitignored) — never commit secrets."
+        echo "   Emergency override: git commit --no-verify"
+        exit 1
+    fi
+else
+    echo "⚠️  gitleaks not installed — skipping secret scan (install: brew install gitleaks)."
+fi
+
+exit 0

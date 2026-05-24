@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
+import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -72,12 +73,29 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ success: false, error: 'Invalid JSON' }), { status: 400, headers });
   }
 
-  const { email, machineId, feedback } = body;
+  // SECURITY: require authentication and bind the trial to the authenticated
+  // user's email. Previously this endpoint had no auth and trusted the body
+  // `email`, so anyone could grant a 14-day pro trial to any email, or grief a
+  // victim by consuming their one-time extension. The body `email` is ignored.
+  const authedUser = await getUserFromRequestOrDeviceToken(
+    env.SESSIONS,
+    env.LICENSES,
+    context.request,
+  );
+  if (!authedUser) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Sign in to extend your trial' }),
+      { status: 401, headers },
+    );
+  }
 
-  if (!email || !machineId || !feedback) {
+  const { machineId, feedback } = body;
+  const email = authedUser.email;
+
+  if (!machineId || !feedback) {
     return new Response(JSON.stringify({
       success: false,
-      error: 'Missing required fields: email, machineId, feedback.',
+      error: 'Missing required fields: machineId, feedback.',
     }), { status: 400, headers });
   }
 

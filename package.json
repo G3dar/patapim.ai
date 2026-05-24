@@ -8,7 +8,8 @@
     "build": "astro build && node scripts/patch-worker-exports.mjs",
     "deploychecked": "node scripts/deploychecked.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.2.0",
