@@ -5,6 +5,20 @@ export const prerender = false;
 
 export const OPTIONS: APIRoute = ({ request }) => corsOptions(request);
 
+// SECURITY (N-7): tunnelUrl is fetched server-side later (device/list and
+// device/debug do `fetch(tunnelUrl + '/ping')`). Restrict it to https on the
+// known tunnel domains so a device can't point it at internal/arbitrary hosts
+// (SSRF oracle). The app only ever produces https://<sub>.trycloudflare.com.
+function isAllowedTunnelUrl(value: unknown): boolean {
+  if (typeof value !== 'string' || !value) return false;
+  let u: URL;
+  try { u = new URL(value); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const h = u.hostname.toLowerCase();
+  return h === 'trycloudflare.com' || h.endsWith('.trycloudflare.com')
+    || h === 'patapim.ai' || h.endsWith('.patapim.ai');
+}
+
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
   const cors = getCorsHeaders(context.request);
@@ -45,7 +59,7 @@ export const POST: APIRoute = async (context) => {
 
   // Always update lastSeen so stable (unchanged) devices don't fall offline
   device.lastSeen = new Date().toISOString();
-  if (body.tunnelUrl !== undefined) device.tunnelUrl = body.tunnelUrl;
+  if (body.tunnelUrl !== undefined) device.tunnelUrl = isAllowedTunnelUrl(body.tunnelUrl) ? body.tunnelUrl : null;
   if (body.terminalCount !== undefined) device.terminalCount = body.terminalCount;
   if (body.terminalCounts !== undefined) device.terminalCounts = body.terminalCounts;
   if (ip !== undefined) device.ip = ip;

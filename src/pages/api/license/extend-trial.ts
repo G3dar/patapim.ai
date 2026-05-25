@@ -99,6 +99,17 @@ export const POST: APIRoute = async (context) => {
     }), { status: 400, headers });
   }
 
+  // SECURITY (N-6): machineId is used directly in KV keys (`machine:${id}`,
+  // `trial:${id}`). The app sends a crypto.randomUUID(); enforce that format so
+  // a crafted value (e.g. an email) can't collide with the `trial:<email>`
+  // namespace or bloat keys.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(machineId)) {
+    return new Response(JSON.stringify({ success: false, error: 'Invalid machineId' }), {
+      status: 400,
+      headers,
+    });
+  }
+
   const validation = validateFeedback(feedback);
   if (!validation.valid) {
     return new Response(JSON.stringify({ success: false, error: validation.error }), { status: 400, headers });
