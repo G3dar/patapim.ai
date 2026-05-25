@@ -3666,8 +3666,8 @@ Astro.response.headers.set('Expires', '0');
             return;
           }
           const blob = new Blob(audioChunks, { type: recorderMimeType });
-          if (blob.size > 5 * 1024 * 1024) {
-            showToast('Recording too long (max 5 MB)');
+          if (blob.size > 20 * 1024 * 1024) {
+            showToast('Recording too long (max 5 min)');
             return;
           }
           // Convert audio to 16kHz mono Float32 PCM using Web Audio API (no ffmpeg needed server-side)
@@ -3706,7 +3706,7 @@ Astro.response.headers.set('Expires', '0');
               voiceText.value = '';
               voiceText.placeholder = 'Transcribing...';
               showVoicePreview();
-              // Timeout for transcription (45s)
+              // Timeout for transcription (120s — 5-min recordings produce larger audio)
               if (transcriptionTimeout) clearTimeout(transcriptionTimeout);
               transcriptionTimeout = setTimeout(() => {
                 if (voiceText.placeholder === 'Transcribing...') {
@@ -3714,7 +3714,7 @@ Astro.response.headers.set('Expires', '0');
                   hideVoicePreview();
                   showToast('Transcription timed out');
                 }
-              }, 45000);
+              }, 120000);
             } else {
               showToast('No active connection');
             }
@@ -3727,10 +3727,10 @@ Astro.response.headers.set('Expires', '0');
         isRecording = true;
         if (keyMic) keyMic.classList.add('recording');
         fabMic.classList.add('recording');
-        // Auto-stop after 60s
+        // Auto-stop after 5 minutes
         recordingTimeout = setTimeout(() => {
           if (isRecording) stopRecording();
-        }, 60000);
+        }, 300000);
       } catch (e) {
         if (e.name === 'NotAllowedError') showToast('Microphone permission denied');
         else showToast('Failed to start microphone');
