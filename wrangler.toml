@@ -56,9 +56,24 @@ crons = ["0 6 * * 1"]  # Mondays 06:00 UTC
 name = "TELEGRAM_INSTANCE"
 class_name = "TelegramInstance"
 
+# v2 per-account Telegram relay (keyed by email). Recovered from the deployed
+# worker; see src/durable-objects/TelegramAccount.ts.
+[[durable_objects.bindings]]
+name = "TELEGRAM_ACCOUNT"
+class_name = "TelegramAccount"
+
 [[migrations]]
 tag = "v1-telegram-instance"
 new_sqlite_classes = ["TelegramInstance"]
+
+# v2: introduced the per-account TelegramAccount DO. This migration was applied
+# to production from a wrangler.toml that never made it into git (the work was
+# recovered from the deployed bundle — see src/durable-objects/TelegramAccount.ts).
+# wrangler matches the live worker's tag here and applies nothing to existing DOs;
+# the new_sqlite_classes op only runs on a from-scratch deploy.
+[[migrations]]
+tag = "v2-telegram-account"
+new_sqlite_classes = ["TelegramAccount"]
 
 # Workers AI binding — used to transcribe Telegram voice messages on the fly
 # (Whisper). Free tier covers ~10K voice msgs/day. No API key needed.

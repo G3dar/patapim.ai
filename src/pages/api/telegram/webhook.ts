@@ -1,20 +1,29 @@
 /**
  * Telegram Webhook Receiver
  *
- * Telegram POSTs every update for @iampatapimbot here. We route by chat_id
- * to the right TelegramInstance Durable Object via a KV lookup maintained
- * on /start and /unlink.
+ * Telegram POSTs every update for @botpatapimbot here. We resolve each chat to
+ * a route — either the v2 per-account DO (TelegramAccount, keyed by email) or
+ * the legacy per-install DO (TelegramInstance, keyed by instance_id) — and
+ * forward the update there.
  *
  * Handshake: /start <pairing_code> is the only message we handle from a
- * not-yet-paired chat — it consumes the pairing code and binds
- * chat_id → instance_id permanently (until /unlink).
+ * not-yet-paired chat. A v2 code (tg:pair-v2:*) binds chat_id → email; a legacy
+ * code (tg:pair:*) binds chat_id → instance_id. Bindings persist until /unlink.
+ *
+ * NOTE: the v2 (account) routing in this file was recovered from the deployed
+ * Cloudflare Worker bundle — the original source was lost from version control.
+ * It is a faithful transcription of the live production handler.
  */
 
 import type { APIRoute } from 'astro';
-import { sendMessage, answerCallbackQuery as tgAnswerCallback } from '../../../lib/telegram/bot-api';
+import { sendMessage, answerCallbackQuery } from '../../../lib/telegram/bot-api';
 import type { TelegramUpdate } from '../../../lib/telegram/bot-api';
 
 export const prerender = false;
+
+type Route =
+  | { kind: 'v2'; email: string }
+  | { kind: 'legacy'; instance_id: string };
 
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
@@ -47,9 +56,8 @@ export const POST: APIRoute = async (context) => {
 
 async function routeUpdate(update: TelegramUpdate, env: any) {
   // Inline-button taps: PATAPIM uses callback_data on planReady prompts so a
-  // tap doesn't open a browser. We resolve the bound instance from chat_id,
-  // attach the tracked terminal_id (same `tg:msg:*` KV that handles message
-  // replies), and forward to the DO as a `callback_query` frame.
+  // tap doesn't open a browser. Resolve the chat's route, attach the tracked
+  // terminal_id, and forward to the DO as a `callback_query` frame.
   if (update.callback_query) {
     await routeCallbackQuery(update.callback_query, env);
     return;
@@ -59,7 +67,7 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
   const chatId = msg.chat?.id;
   if (!chatId) return;
 
-  // /start <code> handshake — unauthenticated path.
+  // /start <code> handshake — unauthenticated path. v2 codes take precedence.
   if (msg.text && msg.text.startsWith('/start')) {
     const parts = msg.text.split(/\s+/);
     const code = (parts[1] || '').toUpperCase();
@@ -70,68 +78,45 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
       });
       return;
     }
-    const instanceId = await env.SESSIONS.get(`tg:pair:${code}`);
-    if (!instanceId) {
-      await sendMessage(env.TELEGRAM_BOT_TOKEN, {
-        chat_id: chatId,
-        text: '❌ Pairing code invalid or expired. Open PATAPIM and request a new one.',
-      });
+    const v2Email = await env.SESSIONS.get(`tg:pair-v2:${code}`);
+    if (v2Email) {
+      await env.SESSIONS.delete(`tg:pair-v2:${code}`);
+      await completeV2Pair(env, chatId, msg.chat, v2Email);
       return;
     }
-    await env.SESSIONS.delete(`tg:pair:${code}`);
-    // If this chat was already linked to a different instance, notify it
-    // first so it can drop its airplane toggles before we overwrite the KV.
-    const previousInstanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
-    if (previousInstanceId && previousInstanceId !== instanceId) {
-      try {
-        const oldStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(previousInstanceId));
-        await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' });
-      } catch (err) {
-        console.warn('[telegram/webhook] active-lost cross-DO failed:', err);
-      }
+    const instanceId = await env.SESSIONS.get(`tg:pair:${code}`);
+    if (instanceId) {
+      await env.SESSIONS.delete(`tg:pair:${code}`);
+      await completeLegacyPair(env, chatId, msg.chat, instanceId);
+      return;
     }
-    await env.SESSIONS.put(`tg:chat:${chatId}`, instanceId);
-    const hint = msg.chat.username ? `@${msg.chat.username}` : (msg.chat.first_name || String(chatId));
-    const doStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
-    await doStub.fetch('https://do/__internal/pair-complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, chat_id_hint: hint }),
-    });
     await sendMessage(env.TELEGRAM_BOT_TOKEN, {
       chat_id: chatId,
-      text: `✅ Linked to PATAPIM.\n\nThis chat is now connected. Anything you send here will go to your active terminal; I'll reply with the output.`,
+      text: '❌ Pairing code invalid or expired. Open PATAPIM and request a new one.',
     });
     return;
   }
 
-  // Reply-to-bot-message: route to the originating instance/terminal even
-  // if it's not the current chat-active receiver. The DO that sent the
-  // original message wrote tg:msg:<chat>:<msg_id> → { instance_id, terminal_id }
-  // (30d TTL). When found, we override routing and inject the terminal hint.
-  let instanceId: string | null = null;
+  // Reply-to-bot-message: route to the originating account/instance + terminal
+  // even if it's not the current chat-active receiver. The DO that sent the
+  // original message wrote tg:msg-v2:<chat>:<msg_id> (or legacy tg:msg:*) with
+  // the route + terminal_id. When found, we override routing.
+  let route: Route | null = null;
   let originTerminalId = '';
   const repliedTo = msg.reply_to_message;
   if (repliedTo && repliedTo.message_id) {
-    try {
-      const raw = await env.SESSIONS.get(`tg:msg:${chatId}:${repliedTo.message_id}`);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { instance_id?: string; terminal_id?: string };
-        if (parsed.instance_id) {
-          instanceId = parsed.instance_id;
-          originTerminalId = parsed.terminal_id || '';
-        }
-      }
-    } catch (err) {
-      console.warn('[telegram/webhook] msg-map KV lookup failed:', err);
+    const overlay = await lookupMsgRoute(env, chatId, repliedTo.message_id);
+    if (overlay) {
+      route = overlay.route;
+      originTerminalId = overlay.terminal_id || '';
     }
   }
 
-  // Fallback: standard chat → active instance.
-  if (!instanceId) {
-    instanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  // Fallback: standard chat → bound route.
+  if (!route) {
+    route = await resolveChatRoute(env, chatId);
   }
-  if (!instanceId) {
+  if (!route) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN, {
       chat_id: chatId,
       text: 'This chat is not linked. In PATAPIM go to Preferences → Notifications → Telegram and click "Connect to Telegram".',
@@ -143,14 +128,13 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
   }
 
   // Voice/audio: two paths depending on duration.
-  //   - dur <= SHORT: download bytes, ship inline as base64. PATAPIM transcribes
-  //     locally with Parakeet (good latency, free), falls back to Workers AI
-  //     Whisper via the `transcribe_voice` WS handler if Parakeet fails.
-  //   - SHORT < dur <= MAX: too big to ship inline reliably, so we transcribe
+  //   - dur <= INLINE: download bytes, ship inline as base64. PATAPIM transcribes
+  //     locally with Parakeet, falls back to Workers AI Whisper via the
+  //     `transcribe_voice` WS handler if Parakeet fails.
+  //   - INLINE < dur <= HARD: too big to ship inline reliably, so we transcribe
   //     here with Workers AI Whisper-large-v3-turbo and forward the transcript
-  //     as msg.text (with a flag the listener picks up to mirror the voice
-  //     echo lifecycle — user still sees "🎤 <transcript>").
-  //   - dur > MAX: reject.
+  //     as msg.text (with a flag the listener picks up to mirror the voice echo).
+  //   - dur > HARD: reject.
   const VOICE_INLINE_MAX_SEC = 120;
   const VOICE_HARD_MAX_SEC = 600; // 10 min — Workers AI input cap is 4 MiB,
                                   // typical Telegram OGG/Opus is ~5 KB/sec so
@@ -212,28 +196,7 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     }
   }
 
-  // If the user replied to a previous bot message and we have a stored
-  // (instance, terminal) binding for that message_id, attach the terminal_id
-  // directly on the inbound update. The PATAPIM listener consumes
-  // `_patapim_terminal_id` and routes home — survives client restarts and
-  // beats the route-toggle fallback. Binding is scoped by chat_id +
-  // instance_id to avoid cross-install/cross-chat leakage.
-  const replyTo = msg.reply_to_message;
-  if (replyTo && replyTo.message_id) {
-    try {
-      const stored = await env.SESSIONS.get(`tg:msg:${chatId}:${replyTo.message_id}`);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { instance_id?: string; terminal_id?: string };
-        if (parsed.instance_id === instanceId && parsed.terminal_id) {
-          (msg as any)._patapim_terminal_id = parsed.terminal_id;
-        }
-      }
-    } catch {
-      // KV miss / parse error → fall through to client-side fallback routing.
-    }
-  }
-
-  const doStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
+  const doStub = getRouteStub(env, route);
   await doStub.fetch('https://do/__internal/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -248,28 +211,19 @@ async function routeCallbackQuery(cq: NonNullable<TelegramUpdate['callback_query
 
   // No binding for this chat → nothing to forward to. Ack so the spinner
   // clears, but don't expose any UX detail.
-  const instanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
-  if (!instanceId) {
-    await tgAnswerCallback(env.TELEGRAM_BOT_TOKEN, cq.id, 'This chat is not linked.', true).catch(() => {});
+  const route = await resolveChatRoute(env, chatId);
+  if (!route) {
+    await answerCallbackQuery(env.TELEGRAM_BOT_TOKEN, cq.id, 'This chat is not linked.', true).catch(() => {});
     return;
   }
 
   // Look up the per-message binding so the DO can attach _patapim_terminal_id
-  // before forwarding. The tap might be on a message older than the in-memory
-  // messageMap on the client; this KV (7-day TTL) is the source of truth.
+  // before forwarding. Only honor it if it routes to the same place as the chat.
   let terminalId = '';
   if (messageId) {
-    try {
-      const stored = await env.SESSIONS.get(`tg:msg:${chatId}:${messageId}`);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { instance_id?: string; terminal_id?: string };
-        if (parsed.instance_id === instanceId && parsed.terminal_id) {
-          terminalId = parsed.terminal_id;
-        }
-      }
-    } catch {
-      // KV miss / parse error → forward without terminal_id; client will use
-      // the terminalId encoded in cq.data (`plan:<terminalId>:<N>`).
+    const overlay = await lookupMsgRoute(env, chatId, messageId);
+    if (overlay && sameRoute(overlay.route, route)) {
+      terminalId = overlay.terminal_id || '';
     }
   }
 
@@ -278,11 +232,129 @@ async function routeCallbackQuery(cq: NonNullable<TelegramUpdate['callback_query
     ? { ...cq, message: cq.message ? { ...cq.message, _patapim_terminal_id: terminalId } : cq.message }
     : cq;
 
-  const doStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
+  const doStub = getRouteStub(env, route);
   await doStub.fetch('https://do/__internal/callback_query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ callback_query: cqOut }),
+  });
+}
+
+/** Resolve a chat's bound route, preferring the v2 (account) binding. */
+async function resolveChatRoute(env: any, chatId: number): Promise<Route | null> {
+  const v2 = await env.SESSIONS.get(`tg:chat-v2:${chatId}`);
+  if (v2) return { kind: 'v2', email: v2 };
+  const legacy = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  if (legacy) return { kind: 'legacy', instance_id: legacy };
+  return null;
+}
+
+/** Get the DO stub for a route (account DO for v2, instance DO for legacy). */
+function getRouteStub(env: any, route: Route) {
+  if (route.kind === 'v2') {
+    return env.TELEGRAM_ACCOUNT.get(env.TELEGRAM_ACCOUNT.idFromName(route.email));
+  }
+  return env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(route.instance_id));
+}
+
+function sameRoute(a: Route, b: Route): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === 'v2' && b.kind === 'v2') return a.email === b.email;
+  if (a.kind === 'legacy' && b.kind === 'legacy') return a.instance_id === b.instance_id;
+  return false;
+}
+
+/** Look up the per-message routing overlay (tg:msg-v2:* then legacy tg:msg:*). */
+async function lookupMsgRoute(
+  env: any,
+  chatId: number,
+  messageId: number,
+): Promise<{ route: Route; terminal_id: string } | null> {
+  try {
+    const raw = await env.SESSIONS.get(`tg:msg-v2:${chatId}:${messageId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw) as { email?: string; terminal_id?: string };
+      if (parsed.email) {
+        return { route: { kind: 'v2', email: parsed.email }, terminal_id: parsed.terminal_id || '' };
+      }
+    }
+  } catch (err) {
+    console.warn('[telegram/webhook] msg-v2 KV lookup failed:', err);
+  }
+  try {
+    const raw = await env.SESSIONS.get(`tg:msg:${chatId}:${messageId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw) as { instance_id?: string; terminal_id?: string };
+      if (parsed.instance_id) {
+        return {
+          route: { kind: 'legacy', instance_id: parsed.instance_id },
+          terminal_id: parsed.terminal_id || '',
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[telegram/webhook] msg KV lookup failed:', err);
+  }
+  return null;
+}
+
+async function completeV2Pair(env: any, chatId: number, chat: any, email: string) {
+  // If this chat was already linked, notify the previous owner so its toggles
+  // drop, then overwrite the binding.
+  const previous = await resolveChatRoute(env, chatId);
+  if (previous) {
+    if (previous.kind === 'v2' && previous.email !== email) {
+      try {
+        const oldStub = getRouteStub(env, previous);
+        await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' }).catch(() => {});
+      } catch (err) {
+        console.warn('[telegram/webhook] v2-handoff cross-DO failed:', err);
+      }
+    } else if (previous.kind === 'legacy') {
+      try {
+        const oldStub = getRouteStub(env, previous);
+        await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' }).catch(() => {});
+      } catch (err) {
+        console.warn('[telegram/webhook] legacy-handoff cross-DO failed:', err);
+      }
+      await env.SESSIONS.delete(`tg:chat:${chatId}`).catch(() => {});
+    }
+  }
+  await env.SESSIONS.put(`tg:chat-v2:${chatId}`, email);
+  const hint = chat.username ? `@${chat.username}` : (chat.first_name || String(chatId));
+  const stub = env.TELEGRAM_ACCOUNT.get(env.TELEGRAM_ACCOUNT.idFromName(email));
+  await stub.fetch('https://do/__internal/pair-complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, chat_id_hint: hint }),
+  });
+  await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+    chat_id: chatId,
+    text: `✅ Linked to PATAPIM.\n\nThis chat is now connected. Anything you send here will go to your active terminal; I'll reply with the output.`,
+  });
+}
+
+async function completeLegacyPair(env: any, chatId: number, chat: any, instanceId: string) {
+  const previousInstanceId = await env.SESSIONS.get(`tg:chat:${chatId}`);
+  if (previousInstanceId && previousInstanceId !== instanceId) {
+    try {
+      const oldStub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(previousInstanceId));
+      await oldStub.fetch('https://do/__internal/active-lost', { method: 'POST' });
+    } catch (err) {
+      console.warn('[telegram/webhook] active-lost cross-DO failed:', err);
+    }
+  }
+  await env.SESSIONS.put(`tg:chat:${chatId}`, instanceId);
+  const hint = chat.username ? `@${chat.username}` : (chat.first_name || String(chatId));
+  const stub = env.TELEGRAM_INSTANCE.get(env.TELEGRAM_INSTANCE.idFromName(instanceId));
+  await stub.fetch('https://do/__internal/pair-complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, chat_id_hint: hint }),
+  });
+  await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+    chat_id: chatId,
+    text: `✅ Linked to PATAPIM.\n\nThis chat is now connected. Anything you send here will go to your active terminal; I'll reply with the output.`,
   });
 }
 

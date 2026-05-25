@@ -3,6 +3,7 @@ import { handle } from '@astrojs/cloudflare/handler';
 import { rotateDiscordInvite } from './lib/discord';
 
 export { TelegramInstance } from './durable-objects/TelegramInstance';
+export { TelegramAccount } from './durable-objects/TelegramAccount';
 
 export function createExports(manifest: any) {
   const app = new App(manifest);

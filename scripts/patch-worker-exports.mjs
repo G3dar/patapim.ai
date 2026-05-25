@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const DO_CLASSES = ['TelegramInstance'];
+const DO_CLASSES = ['TelegramInstance', 'TelegramAccount'];
 const ENTRY = resolve('dist/_worker.js/index.js');
 const ADAPTER_RE_EXPORT_MODULE = './_@astrojs-ssr-adapter.mjs';
 
