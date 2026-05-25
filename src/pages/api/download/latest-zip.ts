@@ -23,14 +23,14 @@ export async function GET(ctx: APIContext) {
     });
   }
 
-  const fileObj = await bucket.get(manifest.zipFile);
-
-  if (!fileObj) {
-    return new Response(JSON.stringify({ error: 'ZIP file not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  // The Windows portable .zip is >300 MiB, which exceeds wrangler's R2 upload
+  // cap (`wrangler r2 object put` rejects files over 300 MiB), so the release
+  // pipeline can't mirror it to R2 and a bucket.get() here always missed -> 404.
+  // Serve it straight from the PUBLIC GitHub release (G3dar/patapim-releases)
+  // instead — the same place electron-updater already downloads from anonymously.
+  // The 302 keeps this URL stable and always points at the current version.
+  const RELEASES_REPO = 'G3dar/patapim-releases';
+  const githubUrl = `https://github.com/${RELEASES_REPO}/releases/download/v${manifest.version}/${manifest.zipFile}`;
 
   // Increment download counters without slowing the response
   const today = new Date().toISOString().slice(0, 10);
@@ -62,12 +62,11 @@ export async function GET(ctx: APIContext) {
     }
   })());
 
-  return new Response(fileObj.body, {
+  return new Response(null, {
+    status: 302,
     headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${manifest.zipFile}"`,
-      'Content-Length': String(fileObj.size),
-      'Cache-Control': 'public, max-age=3600',
+      Location: githubUrl,
+      'Cache-Control': 'public, max-age=300',
       'X-Patapim-Version': manifest.version,
     },
   });
