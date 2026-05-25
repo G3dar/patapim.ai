@@ -26,34 +26,24 @@ export const POST: APIRoute = async (context) => {
     });
   }
 
-  // SECURITY: require authentication and bind the redemption to the
-  // authenticated user. Previously this endpoint had no auth and took the
-  // target `email` from the body, so anyone holding a license key could
-  // transfer it to an arbitrary email and lock the real owner out. Now the
-  // license can only be claimed onto the *caller's own* account (session
-  // cookie on web, or device bearer token from the desktop app). The body
-  // `email` is ignored. (Fully closing key theft also requires stopping key
-  // leakage via session-info / referral/status — see SECURITY_FINDINGS.)
-  const authedUser = await getUserFromRequestOrDeviceToken(
-    env.SESSIONS,
-    env.LICENSES,
-    context.request,
-  );
-  if (!authedUser) {
-    return new Response(
-      JSON.stringify({ valid: false, error: 'Sign in before redeeming a license key' }),
-      { status: 401, headers: { 'Content-Type': 'application/json', ...cors } },
-    );
-  }
-
+  // Target account email to claim the key onto, plus the key itself — both from
+  // the body (the desktop app passes its account email).
+  const email = (body.email || '').trim();
   const { licenseKey } = body;
-  const email = authedUser.email;
-  if (!licenseKey) {
-    return new Response(JSON.stringify({ valid: false, error: 'licenseKey is required' }), {
+  if (!email || !licenseKey) {
+    return new Response(JSON.stringify({ valid: false, error: 'Email and licenseKey are required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...cors },
     });
   }
+
+  // SECURITY (BE-2, backward-compatible): just *validating* a key that already
+  // belongs to `email` is harmless and stays unauthenticated, so existing app
+  // clients keep working. But TRANSFERRING a key to a DIFFERENT email is the
+  // account-takeover vector — that path (below) requires authentication AND
+  // that the caller is claiming the key onto their OWN account. This closes the
+  // "leaked key -> transfer to attacker, lock out owner" attack without
+  // breaking installed apps that don't yet send a token. See SECURITY_FINDINGS.
 
   const kv = env.LICENSES;
 
@@ -136,6 +126,21 @@ export const POST: APIRoute = async (context) => {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...cors },
     });
+  }
+
+  // --- Transfer path: re-associating to a DIFFERENT email. This is the
+  // takeover-sensitive operation, so require authentication and that the
+  // authenticated caller is claiming the key onto their OWN account. ---
+  const authedUser = await getUserFromRequestOrDeviceToken(
+    env.SESSIONS,
+    env.LICENSES,
+    context.request,
+  );
+  if (!authedUser || authedUser.email.trim().toLowerCase() !== email.toLowerCase()) {
+    return new Response(JSON.stringify({
+      valid: false,
+      error: 'Sign in with this account to claim a key bought under a different email',
+    }), { status: 401, headers: { 'Content-Type': 'application/json', ...cors } });
   }
 
   // Re-associate the license to the new email
