@@ -148,8 +148,8 @@ function evaluateRemoteHtml(html) {
       ok: !html.includes('syncServer: !hasDims')
     },
     {
-      name: 'Contains touch-action pan-y',
-      ok: html.includes('touch-action: pan-y')
+      name: 'Contains touch-action pan-x pan-y',
+      ok: html.includes('touch-action: pan-x pan-y')
     }
   ];
 
