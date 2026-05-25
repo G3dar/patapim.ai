@@ -36,6 +36,19 @@ export const GET: APIRoute = async (context) => {
     return new Response('Missing code or state', { status: 400 });
   }
 
+  // SECURITY (N-3): the state must match the HttpOnly cookie set when THIS
+  // browser started the flow (auth/google). Defeats login-CSRF / session
+  // fixation where an attacker tricks a victim into completing the attacker's
+  // OAuth flow (which would log the victim into the attacker's account).
+  const stateCookie = (
+    (context.request.headers.get('cookie') || '').match(
+      /(?:^|;\s*)__patapim_oauth_state=([^;]+)/,
+    ) || []
+  )[1] || '';
+  if (!stateCookie || stateCookie !== state) {
+    return new Response('Invalid state (no matching browser session)', { status: 400 });
+  }
+
   // Validate and consume state (prevent reuse)
   const storedState = await env.SESSIONS.get(`oauth_state:${state}`);
   if (!storedState) {
@@ -243,6 +256,7 @@ export const GET: APIRoute = async (context) => {
             betaHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
             betaHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
             betaHeaders.append('Set-Cookie', '__patapim_beta=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+            betaHeaders.append('Set-Cookie', '__patapim_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
             betaHeaders.set('Location', `${siteUrl}/beta/success`);
             return new Response(null, { status: 302, headers: betaHeaders });
           }
@@ -263,6 +277,7 @@ export const GET: APIRoute = async (context) => {
   responseHeaders.append('Set-Cookie', buildSessionCookie(sessionId));
   responseHeaders.append('Set-Cookie', '__patapim_ref=; Secure; SameSite=Lax; Path=/; Max-Age=0');
   responseHeaders.append('Set-Cookie', '__patapim_beta=; Secure; SameSite=Lax; Path=/; Max-Age=0');
+  responseHeaders.append('Set-Cookie', '__patapim_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
   if (pairClearCookie) {
     responseHeaders.append('Set-Cookie', pairClearCookie);
   }

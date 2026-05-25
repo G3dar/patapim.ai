@@ -43,6 +43,19 @@ export const POST: APIRoute = async (context) => {
 
   console.log(`[webhook] Received: ${event.type} (${event.id})`);
 
+  // SECURITY (N-4): idempotency. Stripe retries deliveries on any non-2xx, and a
+  // captured signed body can be replayed. Without dedupe, a redelivered
+  // checkout.session.completed re-mints a NEW license key and overwrites the
+  // user's working one (locking them out). Skip events we've already processed.
+  const evtKey = `stripe-evt:${event.id}`;
+  if (await kv.get(evtKey)) {
+    console.log(`[webhook] duplicate event ${event.id} — skipping`);
+    return new Response(JSON.stringify({ received: true, duplicate: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -217,6 +230,14 @@ export const POST: APIRoute = async (context) => {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  // Mark processed only AFTER success, so an event that hit the 500 path above
+  // can still be retried by Stripe. TTL covers Stripe's retry window (~3 days).
+  try {
+    await kv.put(evtKey, '1', { expirationTtl: 7 * 24 * 3600 });
+  } catch (e) {
+    console.warn('[webhook] idempotency marker put failed:', e);
   }
 
   return new Response(JSON.stringify({ received: true }), {

@@ -29,8 +29,14 @@ export const GET: APIRoute = async (context) => {
     prompt: 'select_account',
   });
 
-  return new Response(null, {
-    status: 302,
-    headers: { Location: `https://accounts.google.com/o/oauth2/v2/auth?${params}` },
-  });
+  const headers = new Headers();
+  headers.set('Location', `https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+  // SECURITY (N-3): bind the OAuth state to THIS browser via an HttpOnly cookie.
+  // The callback requires this cookie to match the `state` query param, so an
+  // attacker can't complete a login-CSRF using a state they minted elsewhere.
+  headers.append(
+    'Set-Cookie',
+    `__patapim_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${STATE_TTL}`,
+  );
+  return new Response(null, { status: 302, headers });
 };

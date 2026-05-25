@@ -136,4 +136,6 @@ PBKDF2 + salt + compare constante; tokens reset/verify (CSPRNG, TTL, single-use)
 ### Estado de remediación (Ronda 2)
 - ✅ **N-1 — FIXED.** `instance/[id].ts` (legacy v1) ahora exige device token válido + bindea el UUID al owner email (TOFU); otra cuenta no puede engancharse a una instancia ajena. La app actual usa el path v2 autenticado; clientes v1 remanentes ya mandan el Bearer token, así que no se rompe nada.
 - ✅ **N-2 — FIXED.** Cap de tamaño (10 MB b64) en `transcribe_voice` de **ambos** DOs (`TelegramInstance` + `TelegramAccount`) → frena el OOM por `[...bytes]` y el abuso de Workers AI. Combinado con N-1, el path legacy ya no es invocable anónimamente. *(Mejora futura: rate-limit por instancia.)*
-- ⏳ N-3 (OAuth state cookie), N-4 (Stripe idempotency), N-6 (machineId), N-7 (tunnelUrl SSRF): pendientes.
+- ✅ **N-3 — FIXED.** `auth/google.ts` setea una cookie HttpOnly `__patapim_oauth_state` con el `state`; `auth/callback.ts` exige que coincida con el `state` del query (y la limpia). Cierra el login-CSRF / session-fixation. Todos los logins pasan por `/api/auth/google`, así que cubre todo.
+- ✅ **N-4 — FIXED.** `stripe/webhook.ts` ahora deduplica por `event.id` (`stripe-evt:${id}` en KV, TTL 7d): un redelivery/replay ya no re-mintea ni sobreescribe la license key. Se marca recién tras procesar OK, así un evento que falló (500) igual se reintenta.
+- ⏳ N-6 (machineId), N-7 (tunnelUrl SSRF): pendientes (MEDIUM).
