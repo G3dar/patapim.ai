@@ -1644,6 +1644,11 @@ Astro.response.headers.set('Expires', '0');
 
     const isMobileClient = detectMobileClient();
 
+    // Balanced default density on phones: a slightly smaller font fits ~55-60 cols
+    // on a typical handset while staying readable. Desktop browsers keep 14.
+    // The +/- font buttons remain the readability knob and recompute cols from here.
+    if (isMobileClient) fontSize = 12;
+
     // Sidebar state
     let sidebarData = { projects: [], currentProject: null, currentSubfolder: null };
     let laterExpanded = false;
@@ -1737,8 +1742,25 @@ Astro.response.headers.set('Expires', '0');
       return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
     }
 
+    // Push a mobile-driven resize to the server. The backend grants mobile
+    // clients ownership of the terminal (claimTerminalControl), resizes the PTY,
+    // and mirrors the width onto the desktop. Deduped against lastSentResize so an
+    // echoed pty_dimensions can't bounce back and loop us.
+    function sendMobileResize(cols, rows) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (!isAuthenticated || !currentTerminalId) return;
+      if (!(cols > 0) || !(rows > 0)) return;
+      if (isWritingBuffer) return;          // never resize mid buffer write (init/switch)
+      if (isApplyingServerResize) return;   // don't echo a server-driven resize back
+      if (lastSentResize.terminalId === currentTerminalId
+          && lastSentResize.cols === cols && lastSentResize.rows === rows) return;
+      ws.send(JSON.stringify({ type: 'resize', terminalId: currentTerminalId, cols, rows, mobile: true }));
+      lastSentResize = { terminalId: currentTerminalId, cols, rows };
+      dbgLog('sent mobile resize ' + cols + '×' + rows);
+    }
+
     // Apply terminal dimensions.
-    // Mobile: natural cols (text wraps at screen width) + resize PTY to match.
+    // Mobile: fit cols+rows to the phone at the readable font, resize PTY to match.
     // Desktop: force PTY cols for correct cursor positioning.
     function applyPtyDims(options = {}) {
       if (!fitAddon || !term) return;
@@ -1750,52 +1772,61 @@ Astro.response.headers.set('Expires', '0');
       if (isMobile) {
         const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
 
-        if (hasRemoteDims && !isCompactView) {
-          // Mobile viewer: scale font to a comfortable readable size.
-          // CRITICAL: we must NOT call fitAddon.fit() here because fit() resizes
-          // the terminal to narrow mobile cols (e.g. 45) BEFORE we can force
-          // ptyDims.cols. That intermediate resize causes xterm.js to reflow the
-          // entire scrollback buffer at the wrong width, corrupting TUI content.
-          // Instead, use proposeDimensions() to calculate row count without
-          // resizing, then do a single resize to (ptyDims.cols, fitRows).
+        if (isCompactView && hasRemoteDims) {
+          // OPT-OUT (compact view): show the full desktop width with the font
+          // shrunk to fit. Preserves the previous mobile behavior and never
+          // resizes the PTY.
+          // CRITICAL: do NOT call fitAddon.fit() here — fit() would resize to
+          // narrow mobile cols BEFORE we force ptyDims.cols, reflowing the whole
+          // scrollback at the wrong width and corrupting TUI content. Use
+          // proposeDimensions() to get the row count, then a single resize.
           if (!fontManuallySet) {
             const containerH = terminalWrap.clientHeight;
             if (containerH > 0 && ptyDims.rows > 0) {
-              const idealFont = Math.floor(containerH / ptyDims.rows);
-              const targetFont = Math.max(11, idealFont);
-              if (term.options.fontSize !== targetFont) {
-                term.options.fontSize = targetFont;
-              }
+              const targetFont = Math.max(11, Math.floor(containerH / ptyDims.rows));
+              if (term.options.fontSize !== targetFont) term.options.fontSize = targetFont;
             }
-          } else {
+          } else if (term.options.fontSize !== fontSize) {
             term.options.fontSize = fontSize;
           }
-          // proposeDimensions() reads the container and cell size to compute
-          // how many cols/rows fit — without actually resizing the terminal.
           const dims = fitAddon.proposeDimensions();
           const fitRows = (dims && dims.rows > 0) ? dims.rows : term.rows;
-          // Single resize: PTY cols + fitted rows. No intermediate narrow-col reflow.
           if (term.cols !== ptyDims.cols || term.rows !== fitRows) {
             term.resize(ptyDims.cols, fitRows);
           }
-          if (forceRefresh) {
-            term.refresh(0, term.rows - 1);
-          }
-          // Scroll to show the cursor (bottom of current content) after every layout change.
+          if (forceRefresh) term.refresh(0, term.rows - 1);
           requestAnimationFrame(() => term.scrollToBottom());
-          // Do not send resize — PTY stays at desktop dimensions
+          // Compact view never resizes the PTY.
         } else {
-          // No ptyDims yet (waiting for terminal_init). On mobile, do NOT send
-          // resize to the server — that would shrink the desktop PTY to narrow
-          // mobile cols and corrupt the desktop terminal's buffer.
-          // Just fit locally and wait for terminal_init to arrive with the real dims.
-          if (term.options.fontSize !== fontSize) {
-            term.options.fontSize = fontSize;
-          }
-          fitAddon.fit();
-
-          if (forceRefresh) {
-            term.refresh(0, term.rows - 1);
+          // PRIMARY mobile mode: the readable font is the knob; fit cols+rows to
+          // the phone and push that width to the PTY (and, via the backend, the PC).
+          if (term.options.fontSize !== fontSize) term.options.fontSize = fontSize;
+          // proposeDimensions() reads the container + cell size to compute the
+          // cols/rows that fit WITHOUT resizing. We resize exactly once to the
+          // final target — no intermediate narrow-col reflow that corrupts TUIs.
+          const dims = fitAddon.proposeDimensions();
+          if (dims && dims.cols > 0 && dims.rows > 0) {
+            if (term.cols !== dims.cols || term.rows !== dims.rows) {
+              term.resize(dims.cols, dims.rows);
+            }
+            if (forceRefresh) term.refresh(0, term.rows - 1);
+            requestAnimationFrame(() => term.scrollToBottom());
+            if (syncServer) {
+              // Width changes (orientation flip / font +/-) always propagate.
+              // While the soft keyboard is animating in/out, only the height
+              // changes — suppress those rows-only resizes so we don't churn the
+              // PTY/TUI mid-type. The local view still resizes either way.
+              const colsChanged = !(lastSentResize.terminalId === currentTerminalId
+                                    && lastSentResize.cols === dims.cols);
+              const inKbGrace = isMobileClient && keyboardOpenTime
+                                && (Date.now() - keyboardOpenTime < 1500);
+              if (colsChanged || !inKbGrace) sendMobileResize(dims.cols, dims.rows);
+            }
+          } else if (!hasRemoteDims) {
+            // Nothing measurable yet and no server dims — fit locally and wait
+            // for terminal_init. Do not send a resize.
+            fitAddon.fit();
+            if (forceRefresh) term.refresh(0, term.rows - 1);
           }
         }
       } else if (ptyDims) {
@@ -2734,6 +2765,10 @@ Astro.response.headers.set('Expires', '0');
               }
               updatePlanModeButtons();
               updateScrollButton();
+              // Push the phone's width to the newly-selected terminal AFTER the
+              // buffer drained (switchDone ran with syncServer:false to avoid a
+              // resize mid buffer-write). Deferred so it never races the write.
+              requestAnimationFrame(() => applyPtyDims({ syncServer: true }));
             };
             // Hard deadline: if drain isn't detected within 2s, proceed anyway.
             drainDeadline = Date.now() + 2000;
