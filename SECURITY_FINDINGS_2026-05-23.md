@@ -108,3 +108,32 @@ El objetivo B2B (multi-tenant, customización per-usuario/depto) requiere **redi
 6. **Modelo multi-tenant** (Fase 3, arquitectónico).
 
 > Casi todos los CRITICAL/HIGH son **"falta `getUserFromRequest()` + scopear al usuario de la sesión"** — patrón repetido en endpoints que hoy confían en datos del cliente. Fixes individualmente chicos, impacto grande.
+
+---
+
+## Ronda 2 (2026-05-23) — inyección / SSRF / auth-flow / DoS / Telegram DO
+
+> Otra lente, distinta al sweep de IDOR (BE-1..8). Hallazgos nuevos.
+
+### 🔴 CRITICAL
+- **N-1 — Telegram Durable Object: takeover de instancia sin auth.** `durable-objects/TelegramInstance.ts:106-115` + `pages/api/telegram/instance/[id].ts:42`. El upgrade del WebSocket no tiene auth de ownership — solo conocer el UUID de la instancia; el primer connect bindea `instance_id`. Quien filtre/obtenga el UUID puede `request_pairing`/`send_message`/`claim_active` → control del relay de Telegram de esa cuenta. (Profundiza BE-7.) UUID v4 = 122 bits (no adivinable); el riesgo es **filtración**. Fix: atar el WS a un device-token/owner autenticado.
+- **N-2 — `transcribe_voice` sin auth → abuso de Workers AI + DoS de memoria.** `TelegramInstance.ts:276-289`. Cualquier peer del WS (sin pairing) manda `transcribe_voice` con base64 arbitrario: sin cap de tamaño, sin rate limit; `[...bytes]` infla el buffer en un array gigante. Quema cuota/billing de Workers AI + CPU/mem. Fix: cap de tamaño + requerir `chat_id` paired + rate limit.
+
+### 🟠 HIGH
+- **N-3 — OAuth `state` no atado al browser → login-CSRF / session fixation.** `auth/google.ts:9-18` + `auth/callback.ts:40-44`. El `state` va a KV global sin cookie en el browser iniciador; el callback solo valida que exista. Un atacante puede hacer que la víctima quede logueada en la cuenta del atacante. Fix: cookie HttpOnly con el `state` (o su hash) + validar match en el callback.
+- **N-4 — Stripe webhook sin idempotencia → replay rota la license key.** `stripe/webhook.ts:46-126`. Firma OK, pero sin dedupe por `event.id`. Un redelivery (Stripe reintenta en 5xx) re-ejecuta el bloque → `generateLicenseKey()` de nuevo sobreescribe `license:${email}`/`key:${licenseKey}` con un key NUEVO → invalida el viejo y deja afuera al dueño (la app falla `license/verify`). Fix: dedupe `stripe-evt:${event.id}` con TTL antes de procesar.
+
+### 🟡 MEDIUM
+- **N-6 — `extend-trial`: `machineId` sin sanitizar en keys de KV.** `license/extend-trial.ts` (`machine:${machineId}`, `trial:${machineId}`). Ya pusimos auth (BE-6), pero `machineId` del body sigue sin validar → `machineId = "victima@x.com"` escribe `trial:victima@x.com` (key-injection cross-namespace). Fix: validar charset/longitud o hashear.
+- **N-7 — SSRF oracle vía `tunnelUrl`.** `device/debug.ts:42` + `device/list.ts:51` hacen `fetch(d.tunnelUrl + '/ping')`; `heartbeat.ts:48` lo setea sin validar. Un token holder apunta a URLs internas y lee `ok`/latencia/error. Fix: validar `tunnelUrl` https + dominio de tunnel allowlisted en heartbeat.
+
+### LOW
+- N-5 `request-email-verify` sin rate-limit por cuenta (self-targeted). N-8 `mkt/push` (admin-gated). Email templates: `name` sin escapar (self-inbox). `esc()` en admin.astro no escapa `'`.
+
+### ✅ Verificado SÓLIDO (no romper)
+PBKDF2 + salt + compare constante; tokens reset/verify (CSPRNG, TTL, single-use); change-password rota sesiones; account-linking sin confusión explotable; `assertSameOrigin`+SameSite consistente; firmas de webhooks (Stripe + Telegram); `returnTo` sin open-redirect; DO `edit_message_*` pinneado al chat paired; **v2/connect (path actual de la app) autenticado y owner-scoped por email**.
+
+### Estado de remediación (Ronda 2)
+- ✅ **N-1 — FIXED.** `instance/[id].ts` (legacy v1) ahora exige device token válido + bindea el UUID al owner email (TOFU); otra cuenta no puede engancharse a una instancia ajena. La app actual usa el path v2 autenticado; clientes v1 remanentes ya mandan el Bearer token, así que no se rompe nada.
+- ✅ **N-2 — FIXED.** Cap de tamaño (10 MB b64) en `transcribe_voice` de **ambos** DOs (`TelegramInstance` + `TelegramAccount`) → frena el OOM por `[...bytes]` y el abuso de Workers AI. Combinado con N-1, el path legacy ya no es invocable anónimamente. *(Mejora futura: rate-limit por instancia.)*
+- ⏳ N-3 (OAuth state cookie), N-4 (Stripe idempotency), N-6 (machineId), N-7 (tunnelUrl SSRF): pendientes.

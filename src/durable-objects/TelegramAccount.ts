@@ -291,6 +291,10 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
         case 'transcribe_voice': {
           const b64 = String(msg.audio_b64 || '');
           if (!b64) throw new Error('audio_b64 is required');
+          // Bound memory/cost: a voice clip is small. Reject oversized audio so
+          // a peer can't exhaust DO memory (the byte spread below allocates a
+          // number array) or burn Workers AI quota with huge payloads.
+          if (b64.length > 10 * 1024 * 1024) throw new Error('audio too large');
           const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
           const result = await this.env.AI.run(
             '@cf/openai/whisper-large-v3-turbo',
