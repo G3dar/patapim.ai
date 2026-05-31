@@ -145,6 +145,73 @@ Astro.response.headers.set('Expires', '0');
       background: rgba(212, 120, 120, 0.12);
     }
 
+    .status-dropdown-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .status-dropdown-label {
+      padding: 6px 12px 2px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .device-pick-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 6px 12px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+      text-align: left;
+    }
+    .device-pick-item:hover:not(.offline):not(.current) {
+      background: var(--bg-hover);
+    }
+    .device-pick-item.offline {
+      color: var(--text-dim);
+      cursor: default;
+    }
+    .device-pick-item.current {
+      cursor: default;
+      opacity: 0.85;
+    }
+    .device-pick-item .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--text-dim);
+    }
+    .device-pick-item.online .dot { background: #4ade80; }
+    .device-pick-item.heartbeat .dot { background: #fbbf24; }
+    .device-pick-item .name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .device-pick-item .badge {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .device-pick-empty {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
     #sidebar-toggle {
       display: none;
       background: none;
@@ -1328,6 +1395,11 @@ Astro.response.headers.set('Expires', '0');
           <button class="topbar-status connecting" id="status">Connecting...</button>
           <div class="status-dropdown" id="status-dropdown">
             <button class="status-dropdown-item" id="btn-disconnect">Disconnect</button>
+            <div class="status-dropdown-sep"></div>
+            <div class="status-dropdown-label">Switch device</div>
+            <div id="device-pick-list">
+              <div class="device-pick-empty">Loading…</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1666,6 +1738,86 @@ Astro.response.headers.set('Expires', '0');
       return res.json();
     }
 
+    // Device switcher (inside the status dropdown). Lists the account's
+    // other PATAPIMs so the user can hop between machines from the phone
+    // without going back to /go. Online devices are clickable; offline are
+    // shown greyed for context. The current device is labelled "this one".
+    let deviceListCache = null;
+    let deviceListLoadInFlight = null;
+    async function loadDeviceList(force = false) {
+      if (deviceListLoadInFlight) return deviceListLoadInFlight;
+      if (!force && deviceListCache) { renderDeviceList(deviceListCache); return deviceListCache; }
+      deviceListLoadInFlight = (async () => {
+        try {
+          const res = await fetch('/api/device/list', { credentials: 'same-origin' });
+          if (!res.ok) return [];
+          const data = await res.json();
+          deviceListCache = Array.isArray(data.devices) ? data.devices : [];
+          renderDeviceList(deviceListCache);
+          return deviceListCache;
+        } catch {
+          return [];
+        } finally {
+          deviceListLoadInFlight = null;
+        }
+      })();
+      return deviceListLoadInFlight;
+    }
+
+    function renderDeviceList(devices) {
+      const host = document.getElementById('device-pick-list');
+      if (!host) return;
+      if (!devices || devices.length === 0) {
+        host.innerHTML = '<div class="device-pick-empty">No other devices</div>';
+        return;
+      }
+      // Sort: current first, then online, then heartbeat, then offline.
+      const ranked = devices.slice().sort((a, b) => {
+        const ra = a.token === activeDeviceToken ? 0 : (a.status === 'online' ? 1 : (a.status === 'heartbeat' ? 2 : 3));
+        const rb = b.token === activeDeviceToken ? 0 : (b.status === 'online' ? 1 : (b.status === 'heartbeat' ? 2 : 3));
+        return ra - rb;
+      });
+      host.innerHTML = '';
+      for (const d of ranked) {
+        const isCurrent = d.token === activeDeviceToken;
+        const status = d.status || (d.online ? 'online' : 'offline');
+        const cls = ['device-pick-item', status];
+        if (isCurrent) cls.push('current');
+        if (status === 'offline') cls.push('offline');
+        const btn = document.createElement('button');
+        btn.className = cls.join(' ');
+        btn.dataset.token = d.token;
+        const safeName = (d.deviceName || 'Unnamed').replace(/[<>&]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
+        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : status);
+        btn.innerHTML = '<span class="dot"></span><span class="name">' + safeName + '</span>'
+          + (badge ? '<span class="badge">' + badge + '</span>' : '');
+        if (!isCurrent && status !== 'offline') {
+          btn.addEventListener('click', () => switchToDevice(d.token));
+        }
+        host.appendChild(btn);
+      }
+    }
+
+    async function switchToDevice(targetToken) {
+      const host = document.getElementById('device-pick-list');
+      if (host) {
+        // Visual feedback — disable buttons + show "switching"
+        host.querySelectorAll('.device-pick-item').forEach(b => { b.style.pointerEvents = 'none'; b.style.opacity = '0.5'; });
+      }
+      const r = await fetchConnectToken(targetToken);
+      if (!r || !r.connectToken || !r.tunnelUrl) {
+        if (host) host.innerHTML = '<div class="device-pick-empty">Failed to switch (' + ((r && r.error) || 'unknown') + ')</div>';
+        return;
+      }
+      // Persist target so auto-reconnect picks the right device after we land.
+      try {
+        localStorage.setItem('patapim_device', JSON.stringify({ deviceToken: targetToken, ts: Date.now() }));
+      } catch {}
+      // Navigate with the same URL shape the dashboard uses.
+      const qs = new URLSearchParams({ d: targetToken, t: r.connectToken, url: r.tunnelUrl });
+      window.location.href = '/remote?' + qs.toString();
+    }
+
     // Init: connect from URL params or auto-reconnect from localStorage
     if (activeConnectToken && activeTunnelUrl) {
       // Normal flow from dashboard — store deviceToken for future reconnects
@@ -1767,6 +1919,23 @@ Astro.response.headers.set('Expires', '0');
       if (isWritingBuffer) return;
       const { syncServer = true, forceRefresh = false } = options;
       const isMobile = isMobileResizeMode();
+      // Stick-to-bottom guard: only re-snap to the bottom after a relayout if the
+      // user was ALREADY at the bottom. applyPtyDims fires on every layout change
+      // (ResizeObserver, window resize, and the visualViewport resize that the
+      // mobile URL bar triggers while scrolling) — unconditionally scrolling here
+      // (explicitly via scrollToBottom OR implicitly via term.resize, which xterm
+      // snaps to ybase) yanked the user out of the scrollback every time they
+      // tried to read history.
+      const _buf = term.buffer.active;
+      const wasAtBottom = _buf.viewportY >= _buf.baseY;
+      const _linesFromBottom = wasAtBottom ? 0 : (_buf.baseY - _buf.viewportY);
+      const _restoreScrollAfterResize = () => {
+        if (wasAtBottom || _linesFromBottom <= 0) return;
+        const nb = term.buffer.active;
+        const targetY = Math.max(0, nb.baseY - _linesFromBottom);
+        const delta = targetY - nb.viewportY;
+        if (delta !== 0) term.scrollLines(delta);
+      };
       dbgLog('applyPtyDims isMobile=' + isMobile + ' ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null') + ' syncServer=' + syncServer);
 
       if (isMobile) {
@@ -1795,7 +1964,8 @@ Astro.response.headers.set('Expires', '0');
             term.resize(ptyDims.cols, fitRows);
           }
           if (forceRefresh) term.refresh(0, term.rows - 1);
-          requestAnimationFrame(() => term.scrollToBottom());
+          if (wasAtBottom) requestAnimationFrame(() => term.scrollToBottom());
+          else _restoreScrollAfterResize();
           // Compact view never resizes the PTY.
         } else {
           // PRIMARY mobile mode: the readable font is the knob; fit cols+rows to
@@ -1806,11 +1976,16 @@ Astro.response.headers.set('Expires', '0');
           // final target — no intermediate narrow-col reflow that corrupts TUIs.
           const dims = fitAddon.proposeDimensions();
           if (dims && dims.cols > 0 && dims.rows > 0) {
+            const _oldRows = term.rows, _oldCols = term.cols;
+            const _oldBase = term.buffer.active.baseY, _oldView = term.buffer.active.viewportY;
             if (term.cols !== dims.cols || term.rows !== dims.rows) {
               term.resize(dims.cols, dims.rows);
+              const _nb = term.buffer.active;
+              dbgLog('RESIZE ' + _oldCols + 'x' + _oldRows + '→' + dims.cols + 'x' + dims.rows + ' baseY ' + _oldBase + '→' + _nb.baseY + ' viewY ' + _oldView + '→' + _nb.viewportY + ' bufLen=' + _nb.length + ' wasBot=' + wasAtBottom);
             }
             if (forceRefresh) term.refresh(0, term.rows - 1);
-            requestAnimationFrame(() => term.scrollToBottom());
+            if (wasAtBottom) requestAnimationFrame(() => term.scrollToBottom());
+            else _restoreScrollAfterResize();
             if (syncServer) {
               // Width changes (orientation flip / font +/-) always propagate.
               // While the soft keyboard is animating in/out, only the height
@@ -1905,6 +2080,10 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function setHOffset(px) {
+      // Fit-to-width (primary mobile) mode sizes the terminal to the phone, so
+      // there is nothing to the right to reveal — any horizontal offset is just
+      // useless drift. Only the compact view (full desktop width) keeps it.
+      if (!isCompactView) px = 0;
       hOffset = px;
       const xtermEl = terminalWrap.querySelector('.xterm');
       if (xtermEl) {
@@ -1914,6 +2093,7 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function setHOffsetImmediate(px) {
+      if (!isCompactView) px = 0;
       hOffset = px;
       const xtermEl = terminalWrap.querySelector('.xterm');
       if (xtermEl) {
@@ -2325,13 +2505,18 @@ Astro.response.headers.set('Expires', '0');
               cancelLongPress();
             }
           }
-          // Manually apply horizontal scroll via transform
-          const hDelta = lastTouchX - t.clientX;
-          if (Math.abs(hDelta) > 1) {
-            setHOffsetImmediate(Math.max(0, hOffset + hDelta));
-            isUserTouchScrolling = true;
-            // Suspend auto horizontal scroll until the next key press
-            autoScrollDisabled = true;
+          // Manually apply horizontal scroll via transform — only in compact
+          // view, where the terminal is wider than the screen. In fit-to-width
+          // mode the terminal matches the phone width, so horizontal panning is
+          // useless drift and is disabled (vertical scroll only).
+          if (isCompactView) {
+            const hDelta = lastTouchX - t.clientX;
+            if (Math.abs(hDelta) > 1) {
+              setHOffsetImmediate(Math.max(0, hOffset + hDelta));
+              isUserTouchScrolling = true;
+              // Suspend auto horizontal scroll until the next key press
+              autoScrollDisabled = true;
+            }
           }
           lastTouchX = t.clientX;
         }, { passive: true });
@@ -2508,8 +2693,15 @@ Astro.response.headers.set('Expires', '0');
             loadingEl.classList.add('hidden');
             enableActions(true);
 
-            // Clear all URL params to prevent token reuse on refresh
-            history.replaceState(null, '', '/remote');
+            // Clear all URL params to prevent token reuse on refresh, but
+            // preserve `?debug` so the diagnostic overlay survives the post-auth
+            // URL scrub (otherwise turning on ?debug only buys you ~1 second of
+            // visibility before the param is wiped).
+            history.replaceState(null, '', '/remote' + (isDebugMode ? '?debug' : ''));
+
+            // Preload the device list so the switcher is ready the first
+            // time the user opens the status dropdown.
+            loadDeviceList();
 
             // Don't render tabs from auth_result — wait for sidebar_data + get_terminals
             // Request sidebar data first, which will trigger get_terminals with correct project
@@ -2558,7 +2750,15 @@ Astro.response.headers.set('Expires', '0');
             window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
             // Replace visible viewport: clear screen, home cursor, write snapshot.
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
+            const _sb0 = term.buffer.active;
+            const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
             writePreservingScroll('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            if (isDebugMode) requestAnimationFrame(() => {
+              const _sb1 = term.buffer.active;
+              if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
+                dbgLog('SNAP dataLen=' + (msg.data || '').length + ' baseY ' + _sbBase0 + '→' + _sb1.baseY + ' viewY ' + _sbView0 + '→' + _sb1.viewportY + ' bufLen ' + _sbLen0 + '→' + _sb1.length);
+              }
+            });
             if (window._dbgSnap) window._dbgSnap();
             debouncedUpdatePlanMode();
           }
@@ -2613,9 +2813,29 @@ Astro.response.headers.set('Expires', '0');
             // Do NOT call resetTerminalView() or applyPtyDims() before the write —
             // they queue writes/resizes that corrupt xterm's write processor.
             isWritingBuffer = true;
-            term.write('\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.data || '') + '\x1b[?2026l');
+            const _bA0 = term.buffer.active;
+            const _data = msg.data || '';
+            // Count \n and \r\n in the wire payload, and detect specific markers
+            // so we can tell the difference between "desktop sent scrollback that
+            // xterm refused to materialize" vs "desktop sent viewport only".
+            const _nlCount = (_data.match(/\n/g) || []).length;
+            const _crlfCount = (_data.match(/\r\n/g) || []).length;
+            const _hasScrollMark = /scrollback line|plain-shell-line/.test(_data) ? 'YES' : 'no';
+            dbgLog('INIT pre tid=' + msg.terminalId + ' dataLen=' + _data.length + ' nl=' + _nlCount + ' crlf=' + _crlfCount + ' rows=' + term.rows + ' hasMark=' + _hasScrollMark + ' baseY=' + _bA0.baseY);
+            // CRITICAL: exit alt-screen (`\x1b[?1049l`) BEFORE writing the new
+            // buffer. Without this, switching from a TUI tab (Claude, vim, etc.
+            // which puts xterm in the alt buffer) to a plain shell tab keeps
+            // xterm in the alt buffer — which has NO scrollback by xterm.js
+            // design — so the 200+ lines of plain-shell scrollback in the wire
+            // payload get scrolled past and immediately discarded, leaving only
+            // the last `rows` lines visible and zero vertical scroll. If the
+            // new buffer is itself a TUI, its data will re-enter alt mode via
+            // its own `\x1b[?1049h`, so this exit is a no-op visually.
+            term.write('\x1b[?1049l\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + _data + '\x1b[?2026l');
             const initDone = () => {
               if (!isWritingBuffer) return; // guard against double-fire
+              const _bA1 = term.buffer.active;
+              dbgLog('INIT post tid=' + msg.terminalId + ' rows=' + term.rows + ' baseY=' + _bA1.baseY + ' viewY=' + _bA1.viewportY + ' bufLen=' + _bA1.length);
               drainTimerId = null;
               isWritingBuffer = false;
               applyPtyDims({ syncServer: true, forceRefresh: true });
@@ -2725,7 +2945,8 @@ Astro.response.headers.set('Expires', '0');
             // Write buffer + cleanup. Do NOT use term.write(data, callback) —
             // xterm.js silently drops the callback for large writes.
             isWritingBuffer = true;
-            term.write('\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || '') + '\x1b[?2026l');
+            // Same alt-screen-exit fix as terminal_init — see comment above.
+            term.write('\x1b[?1049l\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || '') + '\x1b[?2026l');
             const switchDone = () => {
               if (!isWritingBuffer) return; // guard against double-fire
               drainTimerId = null;
@@ -3423,8 +3644,15 @@ Astro.response.headers.set('Expires', '0');
     statusEl.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!statusEl.classList.contains('connected')) return;
+      const willOpen = !statusDropdown.classList.contains('visible');
       statusDropdown.classList.toggle('visible');
+      // Refresh the device list each time the dropdown opens so online/offline
+      // status stays current without the user having to reload the page.
+      if (willOpen) loadDeviceList(true);
     });
+    // Don't let clicks inside the dropdown bubble up to the document handler
+    // (which would close the dropdown immediately).
+    statusDropdown.addEventListener('click', (e) => e.stopPropagation());
     document.addEventListener('click', closeStatusDropdown);
 
     // Disconnect (inside status dropdown)
