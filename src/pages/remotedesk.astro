@@ -31,6 +31,11 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
     .device .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; flex:0 0 auto; }
     .device .dot.heartbeat { background:#f59e0b; }
     .device .name { display:flex; align-items:center; gap:8px; font-weight:600; }
+    /* Full-screen frame that hosts the desktop UI without exposing the tunnel
+       URL in the address bar (stays on patapim.ai/remotedesk). */
+    #frame { position:fixed; inset:0; width:100%; height:100%; border:0; display:none; background:#0a0a0b; }
+    #frame.visible { display:block; }
+    body.framed .box { display:none; }
   </style>
 </head>
 <body>
@@ -39,6 +44,9 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
     <div id="msg" class="msg">Connecting…</div>
     <div id="picker"></div>
   </div>
+  <iframe id="frame"
+          allow="microphone; clipboard-read; clipboard-write; fullscreen; display-capture"
+          allowfullscreen></iframe>
   <script is:inline>
     (function () {
       var p = new URLSearchParams(location.search);
@@ -48,14 +56,18 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       function fail(text) { msg.textContent = text; msg.className = 'msg err'; }
       function set(text) { msg.textContent = text; }
 
-      // Redirect to the device's full desktop web UI, served by the user's own
-      // PATAPIM instance at <tunnelUrl>/desktop — the same view the desktop app
-      // opens from its share button.
+      // Open the device's full desktop web UI (served by the user's own PATAPIM
+      // at <tunnelUrl>/desktop) inside a full-screen iframe, so the address bar
+      // stays on patapim.ai/remotedesk instead of exposing the raw tunnel URL.
       function go(tunnel, ct, name) {
         var dest = tunnel.replace(/\/+$/, '') + '/desktop?connectToken=' + encodeURIComponent(ct);
         var host = name || n;
         if (host) dest += '&host=' + encodeURIComponent(host); // cosmetic device label
-        location.replace(dest);
+        var frame = document.getElementById('frame');
+        frame.src = dest;
+        frame.classList.add('visible');
+        document.body.classList.add('framed');
+        if (host) { try { document.title = 'PATAPIM · ' + host; } catch (e) {} }
       }
 
       // Mint a fresh one-time connect token for a device (session cookie auth),
