@@ -87,12 +87,12 @@ const en = {
     remoteControlDesc: 'Automatically access all your open processes. No remote commands or extra setup needed.',
     connectedTabs: 'Connected Tabs',
     connectedTabsDesc: 'Tabs talk to each other. Every tab knows what the others are doing — work across many tabs, fully in sync.',
+    connectedInstances: 'Connected Instances',
+    connectedInstancesDesc: 'A Patapim on your laptop can invoke and remote-control a terminal on your home computer — using its full context. Polish a draft, run a build, anything, from anywhere.',
     integratedBrowser: 'Integrated Browser',
     integratedBrowserDesc: 'Built-in Chrome with its own context and sessions. Secure, contained, no Mac Mini needed.',
     sessionRestore: 'Session Restore',
     sessionRestoreDesc: 'Close and reopen — everything comes back exactly as you left it. Your state is always preserved.',
-    multiAi: 'Multi-AI War Room',
-    multiAiDesc: 'Claude, Gemini & Codex side by side. They talk to each other — try the same task with multiple agents at once.',
     whatsappGmail: 'WhatsApp & Gmail',
     whatsappGmailDesc: 'Direct integration with WhatsApp and Gmail. Ask your AI to read, reply, and act — right from your terminal.',
     focusMode: 'Focus System',
@@ -128,34 +128,10 @@ const en = {
   secondaryFeatures: {
     label: 'Also Built In',
     title: 'More Power Out of the Box',
-    multiAiTitle: 'Claude, Codex & Gemini',
-    multiAiDesc: 'Run different AI agents in different terminals simultaneously. PATAPIM integrates all three major coding AIs.',
     browserTitle: 'Built-In Browser Panel',
     browserDesc: 'Test code visually without leaving PATAPIM. AI agents can test their own code and see results in a Chrome panel.',
     terminal1: 'Terminal 1',
     // Demo script strings
-    demoPrompts: [
-      'refactor the auth module to use JWT',
-      'write integration tests for the API',
-      'optimize the database queries',
-    ],
-    demoResponses: [
-      [
-        '\u25B7 Analyzing auth module...',
-        '\u2713 Refactored to JWT tokens',
-        '\u2713 Updated 3 middleware files',
-      ],
-      [
-        '\u25B7 Scanning API endpoints...',
-        '\u2713 12 test cases generated',
-        '\u2713 All tests passing',
-      ],
-      [
-        '\u25B7 Profiling slow queries...',
-        '\u2713 Added indexes to 4 tables',
-        '\u2713 Query time \u219393%',
-      ],
-    ],
     chromeCmd: 'npm run dev',
     chromeResponses: [
       '\u25B7 Starting dev server...',
@@ -615,6 +591,15 @@ const en = {
       paneBLines: ['Context from Tab A', 'Auth module updated', '\u2713 Dependencies resolved'],
       synced: 'SYNCED',
     },
+    miniConnectedInstances: {
+      windowTitle: 'Connected Instances',
+      laptopLabel: 'Laptop',
+      homeLabel: 'Home PC',
+      invoke: '@home polish draft.md',
+      received: 'polished copy back',
+      context: 'draft.md \u00b7 rough notes',
+      homeLines: ['reading context', 'polishing text', 'refined draft'],
+    },
     miniBrowser: {
       windowTitle: 'Integrated Browser',
       command: 'browse dashboard.app/login',
@@ -633,18 +618,6 @@ const en = {
       rightPane: ['$ npm run dev', 'Server on :3000', 'Watching files...'],
       statusBar: '3 tabs \u2022 2 tasks active',
       restored: 'Restored',
-    },
-    miniMultiAi: {
-      windowTitle: 'AI War Room',
-      agents: ['Claude', 'Gemini', 'Codex'],
-      task: 'Optimize database queries',
-      responses: [
-        'Use connection pooling + index on user_id',
-        'Batch queries, add Redis cache layer',
-        'Rewrite as single JOIN, add composite index',
-      ],
-      comparing: 'Comparing approaches...',
-      best: '\u2713 Best: Combined strategy applied',
     },
     miniWhatsappGmail: {
       windowTitle: 'Integrations',

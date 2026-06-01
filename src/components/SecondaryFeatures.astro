@@ -7,8 +7,6 @@ const locale = getLocaleFromUrl(Astro.url);
 const translations = locale === 'ja' ? ja : en;
 
 const scriptI18n = {
-  demoPrompts: translations.secondaryFeatures.demoPrompts,
-  demoResponses: translations.secondaryFeatures.demoResponses,
   chromeCmd: translations.secondaryFeatures.chromeCmd,
   chromeResponses: translations.secondaryFeatures.chromeResponses,
   chromeUrl: translations.secondaryFeatures.chromeUrl,
@@ -24,67 +22,7 @@ const scriptI18n = {
     </div>
 
     <div class="sf-grid">
-      <!-- Card 1: Multi-AI -->
-      <div class="sf-card glow-card">
-        <div class="sf-card-content">
-          <div class="sf-icon-row">
-            <span class="sf-ai-dot sf-dot-amber" title="Claude"></span>
-            <span class="sf-ai-dot sf-dot-blue" title="Codex"></span>
-            <span class="sf-ai-dot sf-dot-multi" title="Gemini"></span>
-          </div>
-          <h3 class="sf-title">{t(locale, 'secondaryFeatures.multiAiTitle')}</h3>
-          <p class="sf-desc">
-            {t(locale, 'secondaryFeatures.multiAiDesc')}
-          </p>
-        </div>
-        <div class="sf-card-visual">
-          <div class="sf-multi-demo" data-sf-multi data-i18n={JSON.stringify(scriptI18n)}>
-            <div class="sf-mw-chrome">
-              <div class="sf-mw-dots">
-                <span class="sf-mw-d sf-d-r"></span>
-                <span class="sf-mw-d sf-d-y"></span>
-                <span class="sf-mw-d sf-d-g"></span>
-              </div>
-              <div class="sf-mw-tabs">
-                <div class="sf-mw-tab active" data-sf-tab="0">
-                  <span class="sf-mw-tab-dot" style="background:var(--accent-primary)"></span>
-                  Claude
-                </div>
-                <div class="sf-mw-tab" data-sf-tab="1">
-                  <span class="sf-mw-tab-dot" style="background:var(--info)"></span>
-                  Codex
-                </div>
-                <div class="sf-mw-tab" data-sf-tab="2">
-                  <span class="sf-mw-tab-dot" style="background:#34a853"></span>
-                  Gemini
-                </div>
-              </div>
-            </div>
-            <div class="sf-mw-body">
-              <!-- Claude panel -->
-              <div class="sf-mw-panel active" data-sf-panel="0">
-                <div class="sf-mw-line"><span class="sf-p-accent">~/app $</span> claude</div>
-                <div class="sf-mw-line" data-sf-typed="0"></div>
-                <div class="sf-mw-out" data-sf-out="0"></div>
-              </div>
-              <!-- Codex panel -->
-              <div class="sf-mw-panel" data-sf-panel="1">
-                <div class="sf-mw-line"><span class="sf-p-info">~/app $</span> codex</div>
-                <div class="sf-mw-line" data-sf-typed="1"></div>
-                <div class="sf-mw-out" data-sf-out="1"></div>
-              </div>
-              <!-- Gemini panel -->
-              <div class="sf-mw-panel" data-sf-panel="2">
-                <div class="sf-mw-line"><span class="sf-p-green">~/app $</span> gemini</div>
-                <div class="sf-mw-line" data-sf-typed="2"></div>
-                <div class="sf-mw-out" data-sf-out="2"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2: Chrome Integration -->
+      <!-- Card: Chrome Integration -->
       <div class="sf-card glow-card">
         <div class="sf-card-content">
           <div class="sf-icon-row">
@@ -102,7 +40,7 @@ const scriptI18n = {
           </p>
         </div>
         <div class="sf-card-visual">
-          <div class="sf-chrome-demo" data-sf-chrome>
+          <div class="sf-chrome-demo" data-sf-chrome data-i18n={JSON.stringify(scriptI18n)}>
             <div class="sf-cd-window">
               <!-- Terminal side -->
               <div class="sf-cd-terminal">
@@ -172,7 +110,8 @@ const scriptI18n = {
 
   .sf-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 720px);
+    justify-content: center;
     gap: var(--space-xl);
   }
 
@@ -190,15 +129,6 @@ const scriptI18n = {
     margin-bottom: var(--space-sm);
   }
 
-  .sf-ai-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-  }
-  .sf-dot-amber { background: var(--accent-primary); }
-  .sf-dot-blue { background: var(--info); }
-  .sf-dot-multi { background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc04, #34a853); }
-
   .sf-title {
     font-size: 20px;
     font-weight: 600;
@@ -214,90 +144,13 @@ const scriptI18n = {
 
   .sf-browser-icon { flex-shrink: 0; }
 
-  /* ========================================
-     MULTI-AI DEMO
-     ======================================== */
-  .sf-multi-demo {
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-md);
-  }
-
-  .sf-mw-chrome {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    background: var(--bg-tertiary);
-    border-bottom: 1px solid var(--border-default);
-  }
-  .sf-mw-dots { display: flex; gap: 4px; }
+  /* Shared window dots (used by the browser demo chrome) */
   .sf-mw-d { width: 7px; height: 7px; border-radius: 50%; }
   .sf-d-r { background: #ff5f57; }
   .sf-d-y { background: #febc2e; }
   .sf-d-g { background: #28c840; }
 
-  .sf-mw-tabs {
-    display: flex;
-    gap: 2px;
-    margin-left: auto;
-  }
-  .sf-mw-tab {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-muted);
-    cursor: default;
-    transition: all var(--transition-fast);
-  }
-  .sf-mw-tab.active {
-    color: var(--text-primary);
-    background: var(--bg-elevated);
-  }
-  .sf-mw-tab-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .sf-mw-body {
-    background: var(--bg-deep);
-    min-height: 140px;
-    position: relative;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.6;
-  }
-  .sf-mw-panel {
-    display: none;
-    padding: 12px 14px;
-  }
-  .sf-mw-panel.active { display: block; }
-  .sf-mw-line { color: var(--text-secondary); min-height: 1.6em; }
-  .sf-mw-out { margin-top: 2px; }
-
   .sf-p-accent { color: var(--accent-primary); margin-right: 6px; }
-  .sf-p-info { color: var(--info); margin-right: 6px; }
-  .sf-p-green { color: #34a853; margin-right: 6px; }
-
-  /* Activity indicator on tabs */
-  .sf-mw-tab .sf-mw-tab-dot {
-    transition: box-shadow var(--transition-fast);
-  }
-  .sf-mw-tab.working .sf-mw-tab-dot {
-    box-shadow: 0 0 6px 2px currentColor;
-    animation: sfDotPulse 1s ease-in-out infinite;
-  }
-  @keyframes sfDotPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
 
   /* ========================================
      CHROME INTEGRATION DEMO
@@ -530,13 +383,11 @@ const scriptI18n = {
     .sf-grid {
       grid-template-columns: 1fr;
     }
-    .sf-mw-body { min-height: 120px; }
     .sf-cd-viewport { min-height: 130px; }
   }
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    .sf-mw-tab.working .sf-mw-tab-dot { animation: none; }
     .sf-cd-caret { animation: none; opacity: 1; }
     .sf-cd-refresh.spinning { animation: none; }
     .sf-cd-spinner { animation: none; }
@@ -547,224 +398,11 @@ const scriptI18n = {
 (function() {
 
   /* ==========================================
-     MULTI-AI DEMO
-     ========================================== */
-  const multiDemo = document.querySelector('[data-sf-multi]');
-  if (multiDemo) {
-    const i18n = JSON.parse((multiDemo as HTMLElement).dataset.i18n || '{}');
-
-    const tabs = multiDemo.querySelectorAll('[data-sf-tab]');
-    const panels = multiDemo.querySelectorAll('[data-sf-panel]');
-    const typedEls = [
-      multiDemo.querySelector('[data-sf-typed="0"]'),
-      multiDemo.querySelector('[data-sf-typed="1"]'),
-      multiDemo.querySelector('[data-sf-typed="2"]'),
-    ];
-    const outEls = [
-      multiDemo.querySelector('[data-sf-out="0"]'),
-      multiDemo.querySelector('[data-sf-out="1"]'),
-      multiDemo.querySelector('[data-sf-out="2"]'),
-    ];
-
-    const prompts = i18n.demoPrompts || [
-      'refactor the auth module to use JWT',
-      'write integration tests for the API',
-      'optimize the database queries',
-    ];
-    const rawResponses = i18n.demoResponses || [
-      [
-        '\u25B7 Analyzing auth module...',
-        '\u2714 Refactored to JWT tokens',
-        '\u2714 Updated 3 middleware files',
-      ],
-      [
-        '\u25B7 Scanning API endpoints...',
-        '\u2714 12 test cases generated',
-        '\u2714 All tests passing',
-      ],
-      [
-        '\u25B7 Profiling slow queries...',
-        '\u2714 Added indexes to 4 tables',
-        '\u2714 Query time \u221293%',
-      ],
-    ];
-    const responseTypes = [
-      ['accent', 'success', 'success'],
-      ['info', 'success', 'success'],
-      ['green', 'success', 'success'],
-    ];
-    const responses = rawResponses.map((group: string[], gi: number) =>
-      group.map((text: string, ri: number) => ({ t: responseTypes[gi]?.[ri] || 'accent', text }))
-    );
-
-    let mAnim = null;
-    let mRunning = false;
-
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      // Static state: show all 3 with Claude active, responses shown
-      typedEls[0]!.textContent = prompts[0];
-      addLine(outEls[0]!, responses[0][1].text, responses[0][1].t);
-      showTab(0);
-    }
-
-    function showTab(idx) {
-      tabs.forEach((t, i) => {
-        t.classList.toggle('active', i === idx);
-        t.classList.remove('working');
-      });
-      panels.forEach((p, i) => p.classList.toggle('active', i === idx));
-    }
-
-    function addLine(container, text, type) {
-      const line = document.createElement('div');
-      line.className = 'sf-mw-line';
-      const colorMap = {
-        accent: 'var(--accent-primary)',
-        info: 'var(--info)',
-        green: '#34a853',
-        success: 'var(--success)',
-      };
-      const icon = text.charAt(0);
-      const rest = text.slice(2);
-      line.innerHTML = `<span style="color:${colorMap[type] || colorMap.accent}">${icon}</span> ${escHtml(rest)}`;
-      line.style.opacity = '0';
-      container.appendChild(line);
-      void line.offsetWidth;
-      line.style.transition = 'opacity 0.3s';
-      line.style.opacity = '1';
-    }
-
-    function typeInto(el, text) {
-      return new Promise(resolve => {
-        let i = 0;
-        function next() {
-          if (!mRunning) return;
-          if (i < text.length) {
-            el.textContent += text.charAt(i);
-            i++;
-            mAnim = setTimeout(next, 40 + Math.random() * 30);
-          } else { resolve(); }
-        }
-        next();
-      });
-    }
-
-    function wait(ms) {
-      return new Promise(r => { mAnim = setTimeout(r, ms); });
-    }
-
-    function resetMulti() {
-      typedEls.forEach(el => { if (el) el.textContent = ''; });
-      outEls.forEach(el => { if (el) el.innerHTML = ''; });
-      tabs.forEach(t => t.classList.remove('working'));
-      showTab(0);
-    }
-
-    if (!reduced) {
-      const obs = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting && !mRunning) { mRunning = true; runMultiLoop(); }
-          else if (!e.isIntersecting && mRunning) { mRunning = false; if (mAnim) clearTimeout(mAnim); }
-        });
-      }, { threshold: 0.3 });
-      obs.observe(multiDemo);
-    }
-
-    async function runMultiLoop() {
-      while (mRunning) {
-        resetMulti();
-
-        // Phase 1: Type in Claude tab
-        await wait(800);
-        if (!mRunning) break;
-        await typeInto(typedEls[0]!, prompts[0]);
-        if (!mRunning) break;
-
-        // Claude starts working, switch to Codex
-        tabs[0].classList.add('working');
-        await wait(600);
-        if (!mRunning) break;
-        showTab(1);
-        await wait(400);
-        if (!mRunning) break;
-
-        // Type in Codex
-        await typeInto(typedEls[1]!, prompts[1]);
-        if (!mRunning) break;
-
-        // Codex working, switch to Gemini
-        tabs[1].classList.add('working');
-        await wait(600);
-        if (!mRunning) break;
-        showTab(2);
-        await wait(400);
-        if (!mRunning) break;
-
-        // Type in Gemini
-        await typeInto(typedEls[2]!, prompts[2]);
-        if (!mRunning) break;
-        tabs[2].classList.add('working');
-
-        // Phase 2: Show responses coming back
-        await wait(800);
-        if (!mRunning) break;
-
-        // Claude done - switch to see it
-        showTab(0);
-        tabs[0].classList.remove('working');
-        for (const r of responses[0]) {
-          addLine(outEls[0]!, r.text, r.t);
-          await wait(500);
-          if (!mRunning) break;
-        }
-        if (!mRunning) break;
-
-        // Codex done
-        await wait(400);
-        if (!mRunning) break;
-        showTab(1);
-        tabs[1].classList.remove('working');
-        for (const r of responses[1]) {
-          addLine(outEls[1]!, r.text, r.t);
-          await wait(500);
-          if (!mRunning) break;
-        }
-        if (!mRunning) break;
-
-        // Gemini done
-        await wait(400);
-        if (!mRunning) break;
-        showTab(2);
-        tabs[2].classList.remove('working');
-        for (const r of responses[2]) {
-          addLine(outEls[2]!, r.text, r.t);
-          await wait(500);
-          if (!mRunning) break;
-        }
-        if (!mRunning) break;
-
-        // Hold, then fade & restart
-        await wait(1500);
-        if (!mRunning) break;
-        multiDemo.style.transition = 'opacity 0.5s';
-        multiDemo.style.opacity = '0';
-        await wait(600);
-        if (!mRunning) break;
-        multiDemo.style.opacity = '1';
-        await wait(300);
-      }
-    }
-  }
-
-  /* ==========================================
      CHROME INTEGRATION DEMO
      ========================================== */
   const chromeDemo = document.querySelector('[data-sf-chrome]');
   if (chromeDemo) {
-    // Read i18n from the multi-demo element (shared data-i18n source)
-    const i18nSrc = document.querySelector('[data-sf-multi]');
-    const ci18n = i18nSrc ? JSON.parse((i18nSrc as HTMLElement).dataset.i18n || '{}') : {};
+    const ci18n = JSON.parse((chromeDemo as HTMLElement).dataset.i18n || '{}');
     const chromeCmd = ci18n.chromeCmd || 'npm run dev';
     const chromeResponses = ci18n.chromeResponses || [
       '\u25B7 Starting dev server...',

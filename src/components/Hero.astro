@@ -3,9 +3,9 @@ import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
 import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
 import HeroMiniConnectedTabs from './HeroMiniConnectedTabs.astro';
+import HeroMiniConnectedInstances from './HeroMiniConnectedInstances.astro';
 import HeroMiniIntegratedBrowser from './HeroMiniIntegratedBrowser.astro';
 import HeroMiniSessionRestore from './HeroMiniSessionRestore.astro';
-import HeroMiniMultiAi from './HeroMiniMultiAi.astro';
 import HeroMiniWhatsappGmail from './HeroMiniWhatsappGmail.astro';
 import HeroMiniFocusMode from './HeroMiniFocusMode.astro';
 import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
@@ -76,6 +76,13 @@ const lp = (path: string) => getLocalePath(locale, path);
         </div>
       </div>
       <div class="hero-feature-item">
+        <HeroMiniConnectedInstances />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.connectedInstances')}</span>
+          <p class="hf-desc">{t(locale, 'hero.connectedInstancesDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
         <HeroMiniIntegratedBrowser />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.integratedBrowser')}</span>
@@ -87,13 +94,6 @@ const lp = (path: string) => getLocalePath(locale, path);
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.sessionRestore')}</span>
           <p class="hf-desc">{t(locale, 'hero.sessionRestoreDesc')}</p>
-        </div>
-      </div>
-      <div class="hero-feature-item">
-        <HeroMiniMultiAi />
-        <div class="hf-text">
-          <span class="hf-label">{t(locale, 'hero.multiAi')}</span>
-          <p class="hf-desc">{t(locale, 'hero.multiAiDesc')}</p>
         </div>
       </div>
       <div class="hero-feature-item">
