@@ -18,7 +18,7 @@ Device-code OAuth flow via Google. Your account data is stored at `~/.patapim/ac
 |------|-------|----------|
 | **Free** | $0 | 9 terminals, 3 projects, 30 min dictation, LAN remote |
 | **Pro** | $6.99/month | Unlimited terminals, projects, dictation, Cloudflare tunnel |
-| **Lifetime** | $29.99 one-time | All Pro features permanently |
+| **Lifetime** | $59.99 one-time | All Pro features permanently |
 
 ## License Verification
 
