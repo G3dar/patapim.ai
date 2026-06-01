@@ -1,0 +1,95 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PATAPIM Desktop — connecting…</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style is:inline>
+    body { margin:0; background:#0a0a0b; color:#e4e4e7;
+           font-family: -apple-system, system-ui, sans-serif;
+           display:flex; align-items:center; justify-content:center; height:100vh; }
+    .box { text-align:center; }
+    .title { font-size:16px; font-weight:600; }
+    .msg { opacity:.7; font-size:14px; margin-top:8px; }
+    .err { color:#f87171; opacity:1; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="title">PATAPIM Desktop</div>
+    <div id="msg" class="msg">Connecting…</div>
+  </div>
+  <script is:inline>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var t = p.get('t'), url = p.get('url'), d = p.get('d'), n = p.get('n');
+      var msg = document.getElementById('msg');
+      function fail(text) { msg.textContent = text; msg.className = 'msg err'; }
+      function set(text) { msg.textContent = text; }
+
+      // Redirect to the device's full desktop web UI, served by the user's own
+      // PATAPIM instance at <tunnelUrl>/desktop — the same view the desktop app
+      // opens from its share button.
+      function go(tunnel, ct, name) {
+        var dest = tunnel.replace(/\/+$/, '') + '/desktop?connectToken=' + encodeURIComponent(ct);
+        var host = name || n;
+        if (host) dest += '&host=' + encodeURIComponent(host); // cosmetic device label
+        location.replace(dest);
+      }
+
+      // Mint a fresh one-time connect token for a device (session cookie auth),
+      // then redirect to its /desktop view. The token is consumed by /desktop.
+      function connectByToken(deviceToken, name) {
+        return fetch('/api/device/connect-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ deviceToken: deviceToken }),
+        })
+          .then(function (r) {
+            if (r.status === 401) { fail('Session expired — open patapim.ai/go and sign in.'); return null; }
+            return r.ok ? r.json() : null;
+          })
+          .then(function (j) {
+            if (j && j.connectToken && j.tunnelUrl) { go(j.tunnelUrl, j.connectToken, name); return true; }
+            if (j !== null) fail((j && j.error) || 'Device offline or not found.');
+            return false;
+          })
+          .catch(function () { fail('Failed to connect.'); return false; });
+      }
+
+      // 1. Direct: connectToken + tunnelUrl already supplied.
+      if (t && url) { go(url, t); return; }
+
+      // 2. Explicit device token supplied.
+      if (d) { connectByToken(d); return; }
+
+      // 3. Automatic: discover the account's devices and connect to the online
+      //    one — no params needed, same auto-pick as the native app.
+      set('Looking for your device…');
+      fetch('/api/device/list', { credentials: 'same-origin' })
+        .then(function (r) {
+          if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          if (!data) return;
+          var devices = (data && data.devices) || [];
+          if (!devices.length) { fail('No devices found. Open PATAPIM on your computer and sign in.'); return; }
+          // Prefer an online device with a tunnel; fall back to a recent (heartbeat) one.
+          var pick = devices.filter(function (x) { return x.status === 'online' && x.tunnelUrl; })[0]
+                  || devices.filter(function (x) { return x.status === 'heartbeat' && x.tunnelUrl; })[0];
+          if (!pick) { fail('No device is online right now. Open PATAPIM on your computer.'); return; }
+          set('Connecting to ' + (pick.deviceName || 'your device') + '…');
+          connectByToken(pick.token, pick.deviceName);
+        })
+        .catch(function () { fail('Failed to reach the server.'); });
+    })();
+  </script>
+</body>
+</html>
