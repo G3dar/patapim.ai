@@ -83,5 +83,76 @@ const siteUrl = 'https://patapim.ai';
 </head>
 <body>
   <slot />
+
+  <!-- SF geo beacon: records page opens + dwell time for SF visitors only.
+       The server drops non-SF traffic, and a tracked:false reply stops the
+       client from sending any further beacons. -->
+  <script is:inline>
+    (function () {
+      try {
+        var visitId = (crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+        var openedAt = Date.now();
+        var activeMs = 0;
+        var lastResume = document.visibilityState === 'visible' ? openedAt : 0;
+        var timer = null;
+        var stopped = false;
+
+        function dwell() {
+          // Accumulated visible time, plus the currently-open visible segment.
+          var live = lastResume ? (Date.now() - lastResume) : 0;
+          return activeMs + live;
+        }
+
+        function payload(event) {
+          return JSON.stringify({
+            visitId: visitId,
+            event: event,
+            path: location.pathname + location.search,
+            ref: document.referrer || '',
+            durationMs: dwell(),
+          });
+        }
+
+        function send(event, useBeacon) {
+          if (stopped && event !== 'open') return;
+          var body = payload(event);
+          if (useBeacon && navigator.sendBeacon) {
+            navigator.sendBeacon('/api/sf/track', new Blob([body], { type: 'application/json' }));
+            return;
+          }
+          fetch('/api/sf/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body,
+            keepalive: true,
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+              if (event === 'open' && (!res || !res.tracked)) {
+                stopped = true; // Not an SF visitor — stop beaconing.
+                if (timer) { clearInterval(timer); timer = null; }
+              }
+            })
+            .catch(function () {});
+        }
+
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') {
+            lastResume = Date.now();
+          } else {
+            if (lastResume) { activeMs += Date.now() - lastResume; lastResume = 0; }
+            send('ping', true);
+          }
+        });
+
+        window.addEventListener('pagehide', function () { send('close', true); });
+
+        send('open', false);
+        timer = setInterval(function () { send('ping', false); }, 20000);
+      } catch (e) { /* tracking is best-effort */ }
+    })();
+  </script>
 </body>
 </html>

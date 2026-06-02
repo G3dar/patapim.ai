@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIContext } from 'astro';
+import { logSfDownload } from '../../../lib/sf';
 
 export async function GET(ctx: APIContext) {
   const env = ctx.locals.runtime.env as any;
@@ -53,6 +54,7 @@ export async function GET(ctx: APIContext) {
       // Best-effort counter, don't fail the download
     }
   })());
+  ctx.locals.runtime.ctx.waitUntil(logSfDownload(env, ctx.request, 'windows'));
 
   return new Response(fileObj.body, {
     headers: {
