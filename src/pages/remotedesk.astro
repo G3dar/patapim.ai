@@ -56,6 +56,14 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       function fail(text) { msg.textContent = text; msg.className = 'msg err'; }
       function set(text) { msg.textContent = text; }
 
+      // Which device the embedded /desktop view is currently showing, and the
+      // origin it's served from. Tracked so the iframe's "Connected" dropdown
+      // can list the OTHER devices (the desktop view is cross-origin and can't
+      // reach our authenticated APIs itself — see the message broker below).
+      var currentDeviceToken = d || null;
+      var currentTunnelOrigin = null;
+      function originOf(u) { try { return new URL(u).origin; } catch (e) { return null; } }
+
       // Open the device's full desktop web UI (served by the user's own PATAPIM
       // at <tunnelUrl>/desktop) inside a full-screen iframe, so the address bar
       // stays on patapim.ai/remotedesk instead of exposing the raw tunnel URL.
@@ -63,6 +71,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         var dest = tunnel.replace(/\/+$/, '') + '/desktop?connectToken=' + encodeURIComponent(ct);
         var host = name || n;
         if (host) dest += '&host=' + encodeURIComponent(host); // cosmetic device label
+        currentTunnelOrigin = originOf(tunnel); // origin the iframe posts from
         var frame = document.getElementById('frame');
         frame.src = dest;
         frame.classList.add('visible');
@@ -73,6 +82,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       // Mint a fresh one-time connect token for a device (session cookie auth),
       // then redirect to its /desktop view. The token is consumed by /desktop.
       function connectByToken(deviceToken, name) {
+        currentDeviceToken = deviceToken;
         set('Connecting to ' + (name || 'your device') + '…');
         return fetch('/api/device/connect-token', {
           method: 'POST',
@@ -112,6 +122,53 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
           picker.appendChild(btn);
         });
       }
+
+      // Broker for the embedded /desktop view's "Connected" dropdown. That view
+      // is cross-origin (served from the device's tunnel), so it can't call our
+      // authenticated device APIs — it asks us via postMessage and we answer
+      // with the session cookie we hold.
+      window.addEventListener('message', function (event) {
+        // Only trust messages from the iframe we actually embedded.
+        if (!currentTunnelOrigin || event.origin !== currentTunnelOrigin) return;
+        var data = event.data;
+        if (!data || data.source !== 'patapim-desktop') return;
+        var frame = document.getElementById('frame');
+        function reply(payload) {
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage(payload, currentTunnelOrigin);
+          }
+        }
+
+        if (data.type === 'request-devices') {
+          fetch('/api/device/list', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) {
+              var devices = ((j && j.devices) || [])
+                .filter(function (x) {
+                  return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
+                })
+                .map(function (x) {
+                  return {
+                    token: x.token,
+                    deviceName: x.deviceName,
+                    status: x.status,
+                    current: x.token === currentDeviceToken,
+                  };
+                });
+              reply({ source: 'patapim-remotedesk', type: 'devices', devices: devices });
+            })
+            .catch(function () {
+              reply({ source: 'patapim-remotedesk', type: 'devices', devices: [] });
+            });
+        } else if (data.type === 'switch-device' && data.token) {
+          document.body.classList.remove('framed');
+          var f = document.getElementById('frame');
+          if (f) { f.classList.remove('visible'); f.src = 'about:blank'; }
+          connectByToken(data.token, data.name);
+        } else if (data.type === 'disconnect') {
+          location.href = '/go';
+        }
+      });
 
       // 1. Direct: connectToken + tunnelUrl already supplied.
       if (t && url) { go(url, t); return; }
