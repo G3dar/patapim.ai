@@ -997,6 +997,12 @@ Astro.response.headers.set('Expires', '0');
       background: var(--accent-dim);
     }
 
+    .key-btn.tg-active {
+      color: #fff;
+      border-color: #229ED9;
+      background: #229ED9;
+    }
+
     .key-btn.recording {
       color: var(--error);
       border-color: var(--error);
@@ -1535,6 +1541,7 @@ Astro.response.headers.set('Expires', '0');
           <button class="key-btn" id="key-zoom-in" title="Zoom in">A+</button>
           <button class="key-btn" id="key-kbd" title="Toggle keyboard" style="padding:4px 20px; font-size:16px;">⌨</button>
           <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
+          <button class="key-btn" id="key-telegram" title="Toggle Telegram notifications">✈ TG</button>
         </div>
       </div>
     </div>
@@ -4088,6 +4095,24 @@ Astro.response.headers.set('Expires', '0');
       if (selectMode) enterSelectionMode();
       else exitSelectionMode();
     });
+
+    // ── Telegram notifications toggle ──────────────────────────────
+    const keyTelegram = document.getElementById('key-telegram');
+    if (keyTelegram) {
+      // Restore last choice (default: on)
+      let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
+      const renderTelegram = () => keyTelegram.classList.toggle('tg-active', telegramOn);
+      renderTelegram();
+      keyTelegram.addEventListener('click', () => {
+        telegramOn = !telegramOn;
+        localStorage.setItem('patapim_telegram_notifs', telegramOn ? '1' : '0');
+        renderTelegram();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'set_telegram_notifications', enabled: telegramOn }));
+        }
+        showToast(telegramOn ? 'Telegram notifications on' : 'Telegram notifications off');
+      });
+    }
 
     function enterSelectionMode() {
       if (selectionOverlay) return;
