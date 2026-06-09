@@ -596,7 +596,11 @@ const scriptI18n = {
       document.getElementById('devices-loading').style.display = 'none';
       container.style.display = 'block';
 
-      const devices = data.devices || [];
+      // Only show currently-online sessions. Devices with stale heartbeats
+      // or offline are kept in the API response (other consumers may need
+      // them) but the dashboard shouldn't surface old, no-longer-running
+      // sessions.
+      const devices = (data.devices || []).filter(d => d.status === 'online');
 
       if (devices.length === 0) {
         container.innerHTML = `

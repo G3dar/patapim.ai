@@ -74,6 +74,86 @@ export async function sendEmailVerify(env: ResendEnv, to: string, name: string, 
   await send(env, { to, ...t });
 }
 
+// Generic transactional sender with optional reply-to + attachments. Used by
+// endpoints (e.g. bug reports) that build their own subject/body and need the
+// reporter set as reply-to and screenshots attached. Mirrors the private
+// send() but exposes the extra Resend fields (`reply_to`, `attachments`).
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64-encoded file content
+}
+
+interface SendEmailInput {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+  attachments?: EmailAttachment[];
+}
+
+export async function sendEmail(env: ResendEnv, input: SendEmailInput): Promise<void> {
+  if (!env.RESEND_API_KEY) {
+    // Local dev / misconfigured: log and skip. Never throw — email failures
+    // must not fail the user-facing API call.
+    console.warn('RESEND_API_KEY not set; skipping email to', input.to);
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    from: FROM,
+    to: [input.to],
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+  };
+  if (input.replyTo) payload.reply_to = input.replyTo;
+  if (input.attachments && input.attachments.length) {
+    payload.attachments = input.attachments.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+    }));
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    console.error('Resend send failed', res.status, body);
+  }
+}
+
+// Notify a team owner that someone requested a subdomain, with a one-click
+// link to review/approve it. Sent off the response path by the
+// subdomain-request endpoint.
+export async function sendSubdomainApproval(
+  env: ResendEnv,
+  to: string,
+  subdomain: string,
+  requesterName: string,
+  approveUrl: string,
+): Promise<void> {
+  const safeSub = escapeHtml(subdomain);
+  const safeName = escapeHtml(requesterName || 'Someone');
+  const safeUrl = escapeHtml(approveUrl);
+  const subject = `Approve subdomain request: ${subdomain}`;
+  const html = `<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;max-width:560px;color:#1a1a1a">
+    <h2 style="color:#c2410c;margin:0 0 12px">Subdomain request</h2>
+    <p><strong>${safeName}</strong> requested the subdomain <strong>${safeSub}</strong>.</p>
+    <p style="margin:18px 0"><a href="${safeUrl}" style="display:inline-block;background:#c2410c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600">Review &amp; approve</a></p>
+    <p style="color:#888;font-size:12px">Or paste this link into your browser:<br>${safeUrl}</p>
+  </div>`;
+  const text = `${requesterName || 'Someone'} requested the subdomain "${subdomain}".\n\nReview & approve: ${approveUrl}`;
+  await send(env, { to, subject, html, text });
+}
+
 // ── Admin notifications ───────────────────────────────────────────────
 // Fired when a user submits a bug report or trial feedback so the actual
 // content lands in the inbox instead of only in the admin KV.

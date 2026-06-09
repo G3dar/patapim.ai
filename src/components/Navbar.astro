@@ -22,6 +22,7 @@ const lp = (path: string) => getLocalePath(locale, path);
         {t(locale, 'nav.download')}
       </a>
       <a href={lp('/docs/releases')} class="nav-link">{t(locale, 'nav.docs')}</a>
+      <a href="/whats-new" class="nav-link">{t(locale, 'nav.whatsNew')}</a>
       <a href={lp('/about')} class="nav-link">{t(locale, 'nav.about')}</a>
     </div>
 
@@ -44,6 +45,7 @@ const lp = (path: string) => getLocalePath(locale, path);
     <a href={`${lp('/')}#why-patapim`}>{t(locale, 'nav.features')}</a>
     <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
     <a href={lp('/docs/releases')}>{t(locale, 'nav.docs')}</a>
+    <a href="/whats-new">{t(locale, 'nav.whatsNew')}</a>
     <a href={lp('/about')}>{t(locale, 'nav.about')}</a>
     <a href="/signin" class="mobile-signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
     <a href={lp('/go')} class="btn btn-primary" style="margin-top: 8px; justify-content: center;">{t(locale, 'nav.dashboard')}</a>

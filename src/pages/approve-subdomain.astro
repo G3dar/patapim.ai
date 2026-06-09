@@ -1,0 +1,475 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserFromRequest } from '../lib/auth';
+import { loadSubReq } from '../lib/subdomainRequests';
+
+const env = Astro.locals.runtime.env;
+
+// Auth gate — same pattern as account.astro. The email link lands here; an
+// unauthenticated visitor is bounced through sign-in and back.
+const user = await getUserFromRequest(env.SESSIONS, Astro.request);
+if (!user) {
+  const returnTo = Astro.url.search ? `/approve-subdomain${Astro.url.search}` : '/approve-subdomain';
+  return Astro.redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+const id = Astro.url.searchParams.get('id') || '';
+const subreq = await loadSubReq(env.LICENSES, id);
+
+// Distinguish the failure modes so the page can be specific without leaking
+// the subdomain to a non-owner.
+type PageState = 'missing' | 'forbidden' | 'ok';
+let pageState: PageState = 'ok';
+if (!subreq) pageState = 'missing';
+else if (subreq.ownerGoogleId !== user.googleId) pageState = 'forbidden';
+
+const fqdn = subreq ? `${subreq.subdomain}.3dar.com` : '';
+const requester = subreq?.requesterName || 'a 3DAR teammate';
+const requesterGithub = subreq?.requesterGithub || '';
+const existingRepo = subreq?.existingRepo || '';
+const createdAt = subreq?.createdAt || '';
+const initialStatus = subreq?.status || '';
+// What repo will the desktop attach to. Shown on the card so the owner sees
+// exactly what's being created/touched before approving.
+const repoTarget = existingRepo
+  ? { kind: 'existing' as const, label: existingRepo }
+  : { kind: 'new' as const, label: `G3dar/${subreq?.subdomain || ''}` };
+---
+
+<BaseLayout title="Approve subdomain — PATAPIM" description="Review and approve a 3DAR subdomain request.">
+  <main class="approve-page">
+    <div class="card" data-id={id} data-initial-status={initialStatus}>
+      {pageState === 'missing' && (
+        <>
+          <h1>Request not found</h1>
+          <p class="muted">This request has expired or doesn't exist. Subdomain requests are kept for 7 days.</p>
+        </>
+      )}
+
+      {pageState === 'forbidden' && (
+        <>
+          <h1>Not authorized</h1>
+          <p class="muted">This request belongs to a different account. Sign in as the 3DAR team owner to review it.</p>
+        </>
+      )}
+
+      {pageState === 'ok' && subreq && (
+        <>
+          <div class="eyebrow">Subdomain request</div>
+          <h1 class="fqdn">{fqdn}</h1>
+          <p class="meta">
+            Requested by <strong>{requester}</strong>
+            {createdAt && <span class="when"> · {new Date(createdAt).toLocaleString()}</span>}
+          </p>
+
+          <div class="detail-grid">
+            <div class="detail-row">
+              <span class="detail-label">Repo</span>
+              <span class="detail-value">
+                <code>{repoTarget.label}</code>
+                <span class={`pill pill-${repoTarget.kind}`}>{repoTarget.kind === 'existing' ? 'existing — attach' : 'new — create'}</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Collab</span>
+              <span class="detail-value">
+                {requesterGithub
+                  ? <><code>{requesterGithub}</code> <span class="pill pill-info">push invite</span></>
+                  : <span class="muted-inline">none — repo created without auto-collaborator</span>}
+              </span>
+            </div>
+          </div>
+
+          <div class="status-row">
+            <span class="status-label">Status</span>
+            <span class="badge" id="status-badge" data-status={initialStatus}>{initialStatus}</span>
+          </div>
+
+          <p class="explainer" id="explainer">
+            Approving runs <strong>deploy-sub.sh</strong> on your machine — the one with the
+            Cloudflare &amp; GitHub credentials.
+            {repoTarget.kind === 'new'
+              ? <> A new GitHub repo (<code>{repoTarget.label}</code>) and a Cloudflare Pages project are created, the domain is attached, and the requester is invited as a push collaborator.</>
+              : <> The existing repo (<code>{repoTarget.label}</code>) is cloned, a per-subdomain workflow is added, the Pages project is created and the domain attached.</>}
+          </p>
+
+          <div class="actions" id="actions" hidden={initialStatus !== 'pending'}>
+            <button class="btn btn-approve" id="approve-btn">Approve &amp; create</button>
+            <button class="btn btn-reject" id="reject-btn">Reject</button>
+          </div>
+
+          <div class="result" id="result" hidden>
+            <div class="result-line" id="result-domain" hidden>
+              <span class="result-label">Live at</span>
+              <a id="result-domain-link" href="#" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="result-line" id="result-repo" hidden>
+              <span class="result-label">Repo</span>
+              <a id="result-repo-link" href="#" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="result-line" id="result-pages" hidden>
+              <span class="result-label">Pages</span>
+              <a id="result-pages-link" href="#" target="_blank" rel="noopener"></a>
+            </div>
+            <pre class="result-log" id="result-log" hidden></pre>
+          </div>
+
+          <p class="form-msg" id="msg" hidden></p>
+        </>
+      )}
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .approve-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 96px 16px var(--space-4xl);
+  }
+  .card {
+    max-width: 520px;
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2xl);
+  }
+  .eyebrow {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .fqdn {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+    font-family: var(--font-mono, monospace);
+    word-break: break-all;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+  }
+  .meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 20px;
+  }
+  .meta .when { color: var(--text-tertiary); }
+  .muted { color: var(--text-tertiary); font-size: 14px; line-height: 1.5; }
+
+  .detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 0;
+    margin-bottom: 4px;
+    border-top: 1px solid var(--border-default);
+  }
+  .detail-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .detail-label {
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    min-width: 56px;
+  }
+  .detail-value {
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .detail-value code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .pill-new      { background: var(--success-subtle); color: var(--success); }
+  .pill-existing { background: #fdf0d5; color: #9a6b00; }
+  .pill-info     { background: var(--bg-tertiary); color: var(--text-secondary); }
+  .muted-inline  { color: var(--text-tertiary); font-size: 13px; }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: 18px;
+  }
+  .status-label {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+  .badge[data-status='pending'] { background: var(--bg-tertiary); color: var(--text-secondary); }
+  .badge[data-status='approved'],
+  .badge[data-status='running'] { background: #fdf0d5; color: #9a6b00; }
+  .badge[data-status='done'] { background: var(--success-subtle); color: var(--success); }
+  .badge[data-status='failed'],
+  .badge[data-status='rejected'] { background: var(--error-subtle); color: var(--error); }
+
+  .explainer {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 22px;
+  }
+
+  .actions { display: flex; gap: 12px; }
+  .btn {
+    flex: 1;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity var(--transition-fast);
+  }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn-approve { background: var(--text-primary); color: var(--bg-primary); }
+  .btn-reject {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-default);
+    flex: 0 0 auto;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .result { margin-top: 4px; }
+  .result-line {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 14px;
+  }
+  .result-label {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 64px;
+  }
+  .result-line a { color: var(--accent-primary); word-break: break-all; }
+  .result-log {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-height: 220px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .form-msg {
+    margin: 16px 0 0;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+  }
+  .form-msg.error { background: var(--error-subtle); color: var(--error); }
+  .form-msg.info { background: var(--bg-tertiary); color: var(--text-secondary); }
+</style>
+
+<script>
+  const card = document.querySelector('.card') as HTMLElement | null;
+  const id = card?.dataset.id || '';
+  const badge = document.getElementById('status-badge');
+  const actions = document.getElementById('actions');
+  const approveBtn = document.getElementById('approve-btn') as HTMLButtonElement | null;
+  const rejectBtn = document.getElementById('reject-btn') as HTMLButtonElement | null;
+  const explainer = document.getElementById('explainer');
+  const msg = document.getElementById('msg');
+  const resultBox = document.getElementById('result');
+
+  const TERMINAL = ['done', 'failed', 'rejected'];
+
+  function setMsg(text: string, kind: 'error' | 'info') {
+    if (!msg) return;
+    msg.textContent = text;
+    msg.className = `form-msg ${kind}`;
+    msg.hidden = false;
+  }
+
+  function setBadge(status: string) {
+    if (!badge) return;
+    badge.textContent = status;
+    badge.setAttribute('data-status', status);
+  }
+
+  function showResult(result: any) {
+    if (!resultBox) return;
+    let any = false;
+    const pairs: Array<[string, string | undefined]> = [
+      ['domain', result?.domainUrl],
+      ['repo', result?.repoUrl],
+      ['pages', result?.pagesUrl],
+    ];
+    for (const [key, url] of pairs) {
+      const line = document.getElementById(`result-${key}`);
+      const link = document.getElementById(`result-${key}-link`) as HTMLAnchorElement | null;
+      if (line && link && url) {
+        link.href = url;
+        link.textContent = url;
+        line.hidden = false;
+        any = true;
+      }
+    }
+    if (result?.log) {
+      const log = document.getElementById('result-log');
+      if (log) {
+        log.textContent = result.log;
+        log.hidden = false;
+        any = true;
+      }
+    }
+    if (any) resultBox.hidden = false;
+  }
+
+  // Reflect a status into the UI. Returns true once the status is terminal.
+  function render(status: string, data?: any): boolean {
+    setBadge(status);
+    if (status === 'pending') return false;
+
+    if (actions) actions.hidden = true;
+
+    if (status === 'approved') {
+      setMsg('Approved — waiting for your desktop to pick it up…', 'info');
+    } else if (status === 'running') {
+      setMsg('Running deploy-sub.sh on your machine…', 'info');
+    } else if (status === 'done') {
+      setMsg('Done — the subdomain is being deployed.', 'info');
+      if (explainer) explainer.hidden = true;
+      showResult(data?.result);
+    } else if (status === 'failed') {
+      setMsg(`Failed: ${data?.error || 'see the log below'}`, 'error');
+      showResult(data?.result);
+    } else if (status === 'rejected') {
+      setMsg('Rejected. No subdomain was created.', 'error');
+      if (explainer) explainer.hidden = true;
+    } else if (status === 'expired_or_unknown') {
+      setMsg('This request expired.', 'error');
+    }
+    return TERMINAL.includes(status);
+  }
+
+  let polling = false;
+  async function poll() {
+    if (polling || !id) return;
+    polling = true;
+    for (let i = 0; i < 80; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const res = await fetch(`/api/subdomain-request/${id}`, { credentials: 'same-origin' });
+        const data = await res.json().catch(() => ({}));
+        const status = data?.status || (res.status === 404 ? 'expired_or_unknown' : '');
+        if (status && render(status, data)) break;
+      } catch {
+        /* transient — keep polling */
+      }
+    }
+    polling = false;
+  }
+
+  async function decide(decision: 'approve' | 'reject') {
+    if (!id) return;
+    if (approveBtn) approveBtn.disabled = true;
+    if (rejectBtn) rejectBtn.disabled = true;
+    if (msg) msg.hidden = true;
+    try {
+      const res = await fetch(`/api/subdomain-request/${id}/decide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ decision }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg(
+          data?.error === 'forbidden'
+            ? 'You are not the owner of this request.'
+            : 'Could not submit your decision. Try again.',
+          'error',
+        );
+        if (approveBtn) approveBtn.disabled = false;
+        if (rejectBtn) rejectBtn.disabled = false;
+        return;
+      }
+      const terminal = render(data.status, data);
+      if (!terminal) poll();
+    } catch {
+      setMsg('Network error. Try again.', 'error');
+      if (approveBtn) approveBtn.disabled = false;
+      if (rejectBtn) rejectBtn.disabled = false;
+    }
+  }
+
+  approveBtn?.addEventListener('click', () => decide('approve'));
+  rejectBtn?.addEventListener('click', () => decide('reject'));
+
+  // If the page loaded already-decided (owner revisiting the link), reflect it
+  // and resume polling when it's still in flight.
+  const initial = card?.dataset.initialStatus || '';
+  if (initial && initial !== 'pending') {
+    // Pull fresh data so result links render on a revisit.
+    fetch(`/api/subdomain-request/${id}`, { credentials: 'same-origin' })
+      .then((r) => r.json().catch(() => ({})))
+      .then((data) => {
+        const status = data?.status || initial;
+        if (!render(status, data)) poll();
+      })
+      .catch(() => {
+        if (!render(initial)) poll();
+      });
+  }
+</script>

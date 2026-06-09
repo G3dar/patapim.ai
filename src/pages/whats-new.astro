@@ -1,0 +1,310 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+type Card = {
+  version: string;
+  title: string;
+  desc: string;
+};
+
+type Section = {
+  label: string;
+  title: string;
+  cards: Card[];
+};
+
+const sections: Section[] = [
+  {
+    label: 'Stability',
+    title: 'Reliability & infra',
+    cards: [
+      {
+        version: 'v1.2.106',
+        title: 'Sessions survive updates',
+        desc: 'Terminal state is now preserved across auto-updates, with anti-clobber logic and a safety net for edge cases.',
+      },
+      {
+        version: 'v1.2.94',
+        title: 'Security audit remediation',
+        desc: 'Tier 0/1/2 fixes from a 10-domain security review — about 30 hardening changes across the app.',
+      },
+      {
+        version: 'v1.2.89',
+        title: 'iOS connection recovery',
+        desc: 'Silent re-auth plus WebView reload on long background resume, so the mobile app reconnects cleanly after sleep.',
+      },
+    ],
+  },
+  {
+    label: 'Dev workflow',
+    title: 'Dev workflow',
+    cards: [
+      {
+        version: 'v1.2.91 / 92',
+        title: 'SSH remote projects',
+        desc: 'Connect, browse, and run terminals over SSH. Saved connection profiles and a dropdown mode picker on the project list.',
+      },
+      {
+        version: 'v1.2.96',
+        title: 'Layout presets & custom tab icons',
+        desc: 'Terminal grid presets (2×1, 2×2, 3×3), per-tab icon customization, dashboard redesign, detachable browser chrome.',
+      },
+      {
+        version: 'v1.2.105',
+        title: 'Customizable toolbar',
+        desc: 'Toolbar buttons are now hideable per user. New Terminal / Tasks / Toolbar / Remote / Report bug are off by default.',
+      },
+      {
+        version: 'v1.2.90',
+        title: 'MCP schedule_command',
+        desc: 'New MCP tool to queue terminal commands from external automations, with an in-app overlay while a scheduled run is active.',
+      },
+    ],
+  },
+  {
+    label: 'AI & voice',
+    title: 'AI & voice',
+    cards: [
+      {
+        version: 'v1.2.96',
+        title: 'Push-to-talk dictation',
+        desc: 'Hold Ctrl+Alt+Shift to dictate and auto-submit, system-wide — no need to focus the app window first.',
+      },
+      {
+        version: 'v1.2.94',
+        title: 'Preferences → Integrations',
+        desc: 'Unified settings panel for Telegram, Ollama, mic device selection, and audio mute.',
+      },
+      {
+        version: 'v1.2.90',
+        title: 'Local Ollama agent',
+        desc: 'Gemma runs locally via a tray-launched setup wizard. Focus is restored to your previous app when the dialog closes.',
+      },
+    ],
+  },
+  {
+    label: 'Terminals & UX',
+    title: 'Terminals & UX',
+    cards: [
+      {
+        version: 'v1.2.94',
+        title: 'Paste images into terminals',
+        desc: 'Cmd/Ctrl+V drops clipboard images straight into the active terminal, ready for Claude to read.',
+      },
+      {
+        version: 'v1.2.93',
+        title: 'Beginner-mode polish',
+        desc: 'Telegram /new launches Claude directly. Notifications can pop out into a detached window. Dev tutorial reworked.',
+      },
+      {
+        version: 'v1.2.89',
+        title: 'Beginner mode',
+        desc: 'Big new-terminal button on first launch. The Git panel only appears when you are inside a Git repository.',
+      },
+    ],
+  },
+  {
+    label: 'Mobile & remote',
+    title: 'Mobile & remote',
+    cards: [
+      {
+        version: 'v1.2.89',
+        title: 'iOS cloud/local toggle',
+        desc: 'The login screen now offers cloud or local UI mode. Session restore is faster and more reliable on resume.',
+      },
+      {
+        version: 'v1.2.89',
+        title: 'Tray, autostart, native installer',
+        desc: 'System tray with close-to-tray, autostart-on-login enabled by default, and a polished Windows installer flow.',
+      },
+    ],
+  },
+];
+
+const totalCards = sections.reduce((n, s) => n + s.cards.length, 0);
+---
+
+<BaseLayout
+  title="What's new — PATAPIM"
+  description="A changelog-style recap of PATAPIM features shipped in May 2026 (v1.2.85 → v1.2.106)."
+>
+  <Navbar />
+
+  <main class="recap-main">
+    <section class="recap-hero">
+      <div class="container">
+        <span class="recap-badge">May 2026 · v1.2.85 → v1.2.106</span>
+        <h1 class="recap-title">What's new in PATAPIM</h1>
+        <p class="recap-subtitle">
+          {totalCards} features shipped over 12 days. The objective list, grouped by area.
+        </p>
+      </div>
+    </section>
+
+    {sections.map((section) => (
+      <section class="recap-section">
+        <div class="container">
+          <div class="recap-section-header">
+            <span class="section-label">{section.label}</span>
+            <h2 class="recap-section-title">{section.title}</h2>
+          </div>
+          <div class="recap-grid">
+            {section.cards.map((card) => (
+              <article class="glow-card recap-card">
+                <span class="version-chip">{card.version}</span>
+                <h3 class="recap-card-title">{card.title}</h3>
+                <p class="recap-card-desc">{card.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <section class="recap-footer-cta">
+      <div class="container">
+        <p class="recap-footer-text">
+          Want the full commit-level changelog? See <a href="/docs/releases">documentation → releases</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .recap-main {
+    padding-top: 64px;
+  }
+
+  .recap-hero {
+    padding: var(--space-4xl) 0 var(--space-2xl);
+    text-align: center;
+  }
+
+  .recap-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: var(--space-xl);
+    letter-spacing: 0.5px;
+  }
+
+  .recap-title {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.15;
+    margin-bottom: var(--space-lg);
+    letter-spacing: -0.02em;
+  }
+
+  .recap-subtitle {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .recap-section {
+    padding: var(--space-3xl) 0;
+  }
+
+  .recap-section-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .recap-section-title {
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-md);
+    letter-spacing: -0.01em;
+  }
+
+  .recap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+  }
+
+  .recap-card {
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .version-chip {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent-primary);
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    padding: 3px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.3px;
+  }
+
+  .recap-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .recap-card-desc {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .recap-footer-cta {
+    padding: var(--space-3xl) 0 var(--space-5xl);
+    text-align: center;
+  }
+
+  .recap-footer-text {
+    color: var(--text-tertiary);
+    font-size: 14px;
+  }
+
+  .recap-footer-text a {
+    color: var(--accent-primary);
+  }
+  .recap-footer-text a:hover {
+    color: var(--accent-secondary);
+  }
+
+  @media (max-width: 960px) {
+    .recap-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .recap-grid {
+      grid-template-columns: 1fr;
+    }
+    .recap-hero {
+      padding: var(--space-3xl) 0 var(--space-xl);
+    }
+    .recap-section {
+      padding: var(--space-2xl) 0;
+    }
+  }
+</style>

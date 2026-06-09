@@ -61,8 +61,15 @@ export const GET: APIRoute = async (context) => {
         }
       }
 
-      // Determine status: online (ping OK), heartbeat (recent but ping failed), offline (stale)
-      const status = online ? 'online' : heartbeatOnline ? 'heartbeat' : 'offline';
+      // Reachability is decided by the live tunnel ping (`online`), NOT by
+      // heartbeat recency. Heartbeats are only every ~10 min, so a recent
+      // heartbeat does NOT mean the device is reachable — when the live ping
+      // fails, the tunnel is down (1033/530) and the device is effectively
+      // offline. We previously reported that in-between case as 'heartbeat',
+      // which clients painted yellow and still offered to connect to (the
+      // connection then failed). Collapse it to 'offline' and stop advertising a
+      // dead tunnelUrl so no client treats it as connectable.
+      const status = online ? 'online' : 'offline';
 
       return {
         token: entry.token,
@@ -70,7 +77,7 @@ export const GET: APIRoute = async (context) => {
         online,
         status,
         lastSeen: d.lastSeen,
-        tunnelUrl: d.tunnelUrl,
+        tunnelUrl: online ? d.tunnelUrl : null,
         terminalCount,
         terminalCounts,
         ip: d.ip,

@@ -119,7 +119,7 @@ export const GET: APIRoute = async (context) => {
 
   // Revenue estimate
   const mrr = proCount * 6.99;
-  const lifetimeRevenue = lifetimeCount * 29.99;
+  const lifetimeRevenue = lifetimeCount * 59.99;
 
   return new Response(JSON.stringify({
     users: {
