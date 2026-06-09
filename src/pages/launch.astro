@@ -1,12 +1,8 @@
 ---
 export const prerender = true;
 
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Navbar from '../components/Navbar.astro';
-import Footer from '../components/Footer.astro';
-
-// Internal launch command center. noindex + excluded from sitemap (astro.config.mjs filter).
-// Single source of truth for the June 30, 2026 launch. All copy is ready-to-ship.
+// Standalone internal launch command center — light theme, fully decoupled from the
+// main site chrome (no Navbar/Footer). noindex + excluded from sitemap (astro.config.mjs).
 
 const nav = [
   { id: 'overview', label: 'Overview' },
@@ -26,9 +22,20 @@ const nav = [
 ];
 ---
 
-<BaseLayout title="Launch Command Center — PATAPIM" description="Internal launch plan for June 30, 2026." noindex={true}>
-  <Navbar />
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launch Command Center — PATAPIM</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Internal launch plan for June 30, 2026." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
   <main class="launch">
     <!-- ============ HERO / COUNTDOWN ============ -->
     <header class="lc-hero" id="overview">
@@ -72,7 +79,7 @@ const nav = [
 
           <h3>Tagline options (pick one)</h3>
           <div class="opt-grid">
-            <div class="opt"><span class="opt-tag">A · recommended</span><p>"The home base for your AI coding agents."</p><small>Clear, ownable, not a category cliché. Works on every surface.</small></div>
+            <div class="opt rec"><span class="opt-tag">A · recommended</span><p>"<mark class="hl">The home base for your AI coding agents.</mark>"</p><small>Clear, ownable, not a category cliché. Works on every surface.</small></div>
             <div class="opt"><span class="opt-tag">B</span><p>"Run Claude Code like you mean it."</p><small>Punchy, audience-specific. Great for Twitter, risks alienating non-Claude users.</small></div>
             <div class="opt"><span class="opt-tag">C</span><p>"One window. Every agent. Every project."</p><small>Describes the product literally. Safe, slightly generic.</small></div>
           </div>
@@ -169,7 +176,7 @@ That's PATAPIM. It's been my daily driver for months. Today it's yours.</div>
               <tr><td>23:59</td><td>19:59</td><td>PH day closes at midnight PT. Last-hour rally to supporters if close to a rank cutoff.</td></tr>
             </tbody>
           </table>
-          <p class="callout">⚠️ Golden rule: comments &gt; upvotes. PH ranks on engagement quality. Ask supporters to leave a real comment, not just tap upvote. Never ask for upvotes publicly (against PH rules) — ask people to "check it out."</p>
+          <p class="callout">⚠️ Golden rule: <mark class="hl">comments &gt; upvotes</mark>. PH ranks on engagement quality. Ask supporters to leave a real comment, not just tap upvote. Never ask for upvotes publicly (against PH rules) — ask people to "check it out."</p>
         </section>
 
         <!-- ============ PRODUCT HUNT ============ -->
@@ -460,7 +467,7 @@ P.S. New here? 3-min tour: [TUTORIAL VIDEO LINK]</div></div>
           <h2>9 · Launch Offer <span class="decision">DECISION NEEDED</span></h2>
           <p class="lc-lead">A time-boxed deal creates urgency and is the #1 conversion driver on launch day. Recommendation below — confirm before configuring Stripe.</p>
           <div class="opt-grid">
-            <div class="opt"><span class="opt-tag">Recommended</span><p><strong>Launch-week Lifetime discount</strong></p><small>Lifetime $59.99 → <strong>$39.99</strong> for launch week only (PH code "PHLAUNCH"). Lifetime is your highest-intent buyer; a price floor + deadline converts fence-sitters and the headline reads great on PH.</small></div>
+            <div class="opt rec"><span class="opt-tag">Recommended</span><p><strong>Launch-week Lifetime discount</strong></p><small>Lifetime <mark class="hl">$59.99 → $39.99</mark> for launch week only (PH code "PHLAUNCH"). Lifetime is your highest-intent buyer; a price floor + deadline converts fence-sitters and the headline reads great on PH.</small></div>
             <div class="opt"><span class="opt-tag">Alt</span><p><strong>Free Pro for PH visitors</strong></p><small>30–90 days of Pro free with a PH code. Maximizes activation/word-of-mouth over immediate revenue. Good if the goal is users, not cash.</small></div>
             <div class="opt"><span class="opt-tag">Alt</span><p><strong>No discount</strong></p><small>Keep prices; lean on "free tier, no card." Simplest, protects price integrity, but leaves launch-day urgency on the table.</small></div>
           </div>
@@ -543,11 +550,37 @@ Tweet hook: "PATAPIM is live 🚀 Your AI agents can now actually USE your compu
       </div>
     </div>
   </main>
+</body>
+</html>
 
-  <Footer />
-</BaseLayout>
+<style is:global>
+  :root {
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #eef1f5;
+    --border-default: #d6dae1;
+    --border-subtle: #e7eaef;
+    --accent-primary: #b45309;
+    --accent-secondary: #d97706;
+    --text-primary: #14161a;
+    --text-secondary: #353b43;
+    --text-tertiary: #5a616b;
+    --text-muted: #878d98;
+    --success: #15803d;
+    --danger: #be123c;
+    --hl: #ffe98a;
+    --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f3f4f6; color: var(--text-primary); font-family: var(--font-sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: #1d4ed8; }
+  code { font-family: var(--font-mono); font-size: 0.88em; background: #eceff3; color: #b4530a; padding: 1px 6px; border-radius: 4px; }
+  strong { color: #0f1115; font-weight: 700; }
+  mark.hl { background: var(--hl); color: #1a1a1a; padding: 0 4px; border-radius: 3px; font-weight: 600; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .section-label { display: inline-block; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; font-weight: 700; color: var(--accent-primary); background: #fff3e0; border: 1px solid #f0d6b0; padding: 4px 12px; border-radius: 99px; }
 
-<style>
   .launch { min-height: 100vh; }
 
   /* Hero */
@@ -638,7 +671,32 @@ Tweet hook: "PATAPIM is live 🚀 Your AI agents can now actually USE your compu
     .lc-nav a { border-left: none; border: 1px solid var(--border-default); }
     .countdown { gap: 8px; }
     .cd-cell { min-width: 64px; padding: 10px 12px; }
+    .lc-hero { padding: 40px 0 30px; }
   }
+
+  /* ---- Light theme refinements + color highlights ---- */
+  .lc-hero { padding: 56px 0 40px; background: linear-gradient(180deg, #fffaf2, #f3f4f6); }
+  .lc-title { font-weight: 800; letter-spacing: -0.02em; color: #0f1115; }
+  .lc-sub { color: var(--text-secondary); }
+  .cd-cell { box-shadow: 0 1px 2px rgba(20,22,26,0.05); }
+  .lc-nav { top: 20px; }
+  .lc-nav a { font-weight: 500; border-left-width: 3px; }
+  .lc-nav a.active { font-weight: 700; }
+  .lc-section { scroll-margin-top: 20px; }
+  .lc-section h2 { color: #0f1115; font-weight: 800; display: inline-block; padding-bottom: 8px; border-bottom: 3px solid var(--accent-primary); }
+  .opt { box-shadow: 0 1px 2px rgba(20,22,26,0.04); }
+  .opt.rec { border-color: #8ccfa3; box-shadow: 0 0 0 1px #8ccfa3 inset; }
+  .opt.rec .opt-tag { color: var(--success); }
+  .decision { color: #fff; background: var(--danger); font-weight: 800; }
+  .copy-head span { font-weight: 700; }
+  .copy-btn { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; font-weight: 600; padding: 4px 14px; }
+  .copy-btn:hover { background: var(--accent-secondary); border-color: var(--accent-secondary); color: #fff; }
+  .copy-btn.copied { background: var(--success); border-color: var(--success); color: #fff; }
+  .copy-body { background: #fbfaf7; border-left: 3px solid var(--accent-secondary); color: #1f2430; }
+  .sched { background: #fff; border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; }
+  .sched thead tr { background: var(--bg-tertiary); }
+  .sched td:first-child, .sched td:nth-child(2) { font-weight: 600; }
+  .callout { background: #fff7e6; border: 1px solid #f3d9a4; border-left: 4px solid var(--accent-secondary); color: #5b4413; font-weight: 500; }
 </style>
 
 <script>
