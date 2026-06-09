@@ -36,7 +36,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; lastPrompt?: string } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; lastPrompt?: string; syncthingDeviceId?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -68,6 +68,14 @@ export const POST: APIRoute = async (context) => {
   if (nameChanged) device.deviceName = incomingName;
   if (body.platform) device.platform = body.platform;
   if (body.lastPrompt) device.lastPrompt = body.lastPrompt;
+  // Syncthing device ID for folder-sync mesh formation. A 56-char base32 ID in
+  // 7 dash-separated groups; validate loosely so a malformed value can't poison
+  // peers' Syncthing configs. Empty string clears it (device stopped syncing).
+  if (body.syncthingDeviceId !== undefined) {
+    const v = body.syncthingDeviceId;
+    if (v === '') device.syncthingDeviceId = null;
+    else if (typeof v === 'string' && /^[A-Z2-7-]{50,70}$/.test(v)) device.syncthingDeviceId = v;
+  }
   await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
 
   // Also update the device name in the user's device list (same pattern as rename.ts)

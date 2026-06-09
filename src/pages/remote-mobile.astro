@@ -2118,15 +2118,14 @@ Astro.response.headers.set('Expires', '0');
       return cur && cur.isProcessing;
     }
 
-    // Desktop: never auto-scroll while the user is reading scrollback.
+    // Never auto-scroll while the user is reading scrollback (desktop AND mobile).
     // Snapshot writes (\x1b[2J\x1b[H + viewport-data) and cursor positioning
     // in live output can yank viewportY back to baseY. We capture the scroll
     // position before the write and restore it after xterm processes the data.
-    // Mobile uses native xterm-viewport scroll which xterm tracks natively, so
-    // pass through unchanged.
+    // Mobile previously passed through unchanged, which forced the viewport back
+    // to the bottom every time new output arrived while the user was scrolled up.
     function writePreservingScroll(data) {
       if (!term) return;
-      if (isMobileClient) { term.write(data); return; }
       const buf = term.buffer.active;
       const targetY = buf.viewportY;
       const isScrolledUp = targetY < buf.baseY;

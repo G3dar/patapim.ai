@@ -10,10 +10,14 @@ export const GET: APIRoute = async (context) => {
 
   const feedbackKv = env.FEEDBACK;
 
+  // Show every user submission that has actual content: trial feedback
+  // (feedback:) and bug reports (bug:). Skip bookkeeping keys that carry no
+  // message body — admin-log:, and machine:/extension: which only store a date.
   const keys = await listAllKeys(feedbackKv, '');
-  // Filter out admin-log entries
-  const feedbackKeys = keys.filter(k => !k.name.startsWith('admin-log:'));
-  const values = await fetchAllValues(feedbackKv, feedbackKeys.map(k => k.name));
+  const contentKeys = keys.filter(
+    k => k.name.startsWith('feedback:') || k.name.startsWith('bug:'),
+  );
+  const values = await fetchAllValues(feedbackKv, contentKeys.map(k => k.name));
 
   const entries: Array<{
     key: string;
@@ -28,7 +32,7 @@ export const GET: APIRoute = async (context) => {
     const fb = val.feedback;
     const feedbackText = typeof fb === 'object' && fb !== null
       ? [fb.improvements, fb.missingFeatures].filter(Boolean).join(' | ')
-      : fb || val.text || val.message || '';
+      : fb || val.description || val.text || val.message || '';
     const rating = typeof fb === 'object' && fb !== null
       ? (fb.recommendScore ?? null)
       : (val.rating ?? null);

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
 import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
+import { sendFeedbackNotification } from '../../../lib/email';
 
 export const prerender = false;
 
@@ -149,6 +150,17 @@ export const POST: APIRoute = async (context) => {
   await env.FEEDBACK.put(`feedback:${email}:${Date.now()}`, JSON.stringify(feedbackData));
   await env.FEEDBACK.put(`extension:${email}`, trialEnd.toISOString());
   await env.FEEDBACK.put(`machine:${machineId}`, trialEnd.toISOString());
+
+  // Email the feedback content to the admin (fire-and-forget).
+  context.locals.runtime.ctx.waitUntil(
+    sendFeedbackNotification(env, {
+      email,
+      improvements: feedback?.improvements,
+      missingFeatures: feedback?.missingFeatures,
+      recommendScore: feedback?.recommendScore,
+      featuresUsed: feedback?.featuresUsed,
+    }).catch((e) => console.error('feedback notify failed', e)),
+  );
 
   const trialData = {
     plan: 'pro_trial',

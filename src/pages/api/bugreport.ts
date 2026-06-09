@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../lib/cors';
+import { sendBugReportNotification } from '../../lib/email';
 
 export const prerender = false;
 
@@ -42,6 +43,16 @@ export const POST: APIRoute = async (context) => {
   };
 
   await env.FEEDBACK.put(key, JSON.stringify(value));
+
+  // Email the bug content to the admin (fire-and-forget; never blocks the response).
+  context.locals.runtime.ctx.waitUntil(
+    sendBugReportNotification(env, {
+      email: value.email,
+      description: value.description,
+      appVersion: value.appVersion,
+      platform: value.platform,
+    }).catch((e) => console.error('bug report notify failed', e)),
+  );
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

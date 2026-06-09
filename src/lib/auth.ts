@@ -1,6 +1,11 @@
 export const COOKIE_NAME = '__patapim_session';
 export const SESSION_TTL = 604800; // 7 days
 export const STATE_TTL = 600; // 10 minutes
+// Long-lived bearer token minted for the native iOS app so it can call the
+// device APIs (list / connect-token) without the HttpOnly session cookie,
+// which JS cannot read and Swift cannot ferry out of ASWebAuthenticationSession.
+export const NATIVE_SESSION_PREFIX = 'nt_';
+export const NATIVE_SESSION_TTL = 90 * 24 * 60 * 60; // 90 days
 
 // `googleId` is the user's primary identifier across the codebase. For users
 // who signed up via Google OAuth it's their real Google sub; for users who
@@ -120,6 +125,36 @@ export async function getUserFromDeviceToken(licenses: KVNamespace, request: Req
   };
 }
 
+// Mint a long-lived bearer token for the native iOS app. Stored in SESSIONS
+// KV under `native-session:<token>`. The app stores it in the Keychain and
+// sends it as `Authorization: Bearer nt_...` to the device APIs.
+export async function createNativeSession(sessions: KVNamespace, user: SessionUser): Promise<string> {
+  const token = NATIVE_SESSION_PREFIX + crypto.randomUUID().replace(/-/g, '');
+  const payload: SessionUser = {
+    googleId: user.googleId,
+    email: user.email,
+    name: user.name,
+    picture: user.picture,
+    issuedAt: new Date().toISOString(),
+  };
+  await sessions.put(`native-session:${token}`, JSON.stringify(payload), { expirationTtl: NATIVE_SESSION_TTL });
+  return token;
+}
+
+export async function getUserFromNativeToken(sessions: KVNamespace, request: Request): Promise<AuthenticatedUser | null> {
+  const token = parseBearerToken(request);
+  if (!token || !token.startsWith(NATIVE_SESSION_PREFIX)) return null;
+  const raw = await sessions.get(`native-session:${token}`);
+  if (!raw) return null;
+  try {
+    const u = JSON.parse(raw) as SessionUser;
+    if (!u.googleId || !u.email) return null;
+    return { googleId: u.googleId, email: u.email, name: u.name, picture: u.picture };
+  } catch {
+    return null;
+  }
+}
+
 export async function getUserFromRequestOrDeviceToken(
   sessions: KVNamespace,
   licenses: KVNamespace,
@@ -128,6 +163,12 @@ export async function getUserFromRequestOrDeviceToken(
   const sessionUser = await getUserFromRequest(sessions, request);
   if (sessionUser) {
     return sessionUser;
+  }
+  // Native iOS bearer token (nt_...) — looked up in SESSIONS before falling
+  // back to a desktop device token (looked up in LICENSES).
+  const nativeUser = await getUserFromNativeToken(sessions, request);
+  if (nativeUser) {
+    return nativeUser;
   }
   return getUserFromDeviceToken(licenses, request);
 }

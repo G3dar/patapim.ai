@@ -633,12 +633,39 @@ const scriptI18n = {
   const i18n = i18nEl ? JSON.parse(i18nEl.dataset.i18n || '{}') : {};
 
   // Persist native app flag across OAuth redirects (sessionStorage survives within browser session)
-  const urlNative = new URLSearchParams(window.location.search).get('native');
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlNative = urlParams.get('native');
   if (urlNative) sessionStorage.setItem('patapim_native', urlNative);
+  const urlPicker = urlParams.get('picker');
+  if (urlPicker) sessionStorage.setItem('patapim_picker', urlPicker);
   const isNativeApp = sessionStorage.getItem('patapim_native') === 'ios';
+  // New native app (>= the version that ships the native computer picker):
+  // we don't select a device in the web page at all. We just mint a native
+  // session token and hand it back to the app, which renders its own picker.
+  const isNativePicker = isNativeApp && sessionStorage.getItem('patapim_picker') === 'native';
 
-  // Load devices immediately on page load
-  loadDevices();
+  if (isNativePicker) {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/native-session', { method: 'POST' });
+        const data = await res.json();
+        if (data.token) {
+          sessionStorage.removeItem('patapim_picker');
+          window.location.href =
+            'patapimremote://auth?nt=' + encodeURIComponent(data.token) +
+            '&email=' + encodeURIComponent(data.email || '');
+          return;
+        }
+      } catch (e) {
+        console.error('[native picker] token mint failed', e);
+      }
+      // Fall through to the web device list if minting failed.
+      loadDevices();
+    })();
+  } else {
+    // Load devices immediately on page load
+    loadDevices();
+  }
 
   // Manual refresh — useful from the iOS app to re-poll device status without a full reload
   const refreshBtn = document.getElementById('refresh-devices-btn');
