@@ -10,7 +10,7 @@ export default defineConfig({
       path: 'src/worker.ts',
     },
   }),
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !page.includes('/launch') })],
   build: {
     assets: '_assets'
   },

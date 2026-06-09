@@ -1,0 +1,721 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+// Internal launch command center. noindex + excluded from sitemap (astro.config.mjs filter).
+// Single source of truth for the June 30, 2026 launch. All copy is ready-to-ship.
+
+const nav = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'positioning', label: 'Positioning' },
+  { id: 'timeline', label: 'Timeline & Checklist' },
+  { id: 'launchday', label: 'Launch Day (hour by hour)' },
+  { id: 'producthunt', label: 'Product Hunt Kit' },
+  { id: 'twitter', label: 'Twitter / X' },
+  { id: 'video', label: 'Video Production' },
+  { id: 'website', label: 'Website Updates' },
+  { id: 'channels', label: 'Other Channels' },
+  { id: 'offer', label: 'Launch Offer' },
+  { id: 'assets', label: 'Asset Checklist' },
+  { id: 'computer', label: 'Computer Control Gate' },
+  { id: 'metrics', label: 'Metrics & Goals' },
+  { id: 'contingency', label: 'Contingency' },
+];
+---
+
+<BaseLayout title="Launch Command Center — PATAPIM" description="Internal launch plan for June 30, 2026." noindex={true}>
+  <Navbar />
+
+  <main class="launch">
+    <!-- ============ HERO / COUNTDOWN ============ -->
+    <header class="lc-hero" id="overview">
+      <div class="container">
+        <span class="section-label">Internal · do not share publicly</span>
+        <h1 class="lc-title">Launch Command Center</h1>
+        <p class="lc-sub">Everything that has to happen to make <strong>June 30, 2026</strong> the biggest day in PATAPIM's life. One page. All the copy. Check it off as you go.</p>
+
+        <div class="countdown" id="countdown" data-target="2026-06-30T07:01:00Z">
+          <div class="cd-cell"><span class="cd-num" data-cd="d">--</span><span class="cd-lbl">days</span></div>
+          <div class="cd-cell"><span class="cd-num" data-cd="h">--</span><span class="cd-lbl">hours</span></div>
+          <div class="cd-cell"><span class="cd-num" data-cd="m">--</span><span class="cd-lbl">min</span></div>
+          <div class="cd-cell"><span class="cd-num" data-cd="s">--</span><span class="cd-lbl">sec</span></div>
+        </div>
+        <p class="cd-note">Product Hunt goes live <strong>12:01 AM PT</strong> on launch day = <strong>4:01 AM Argentina (UTC-3)</strong>. Plan your sleep accordingly.</p>
+
+        <div class="lc-progress">
+          <div class="lc-progress-bar"><span id="progress-fill"></span></div>
+          <span class="lc-progress-txt"><span id="progress-count">0 / 0</span> tasks done</span>
+          <button class="lc-reset" id="reset-checklist">reset</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="lc-body container">
+      <!-- ============ STICKY NAV ============ -->
+      <aside class="lc-nav">
+        <nav>
+          <ul>
+            {nav.map((n) => (<li><a href={`#${n.id}`}>{n.label}</a></li>))}
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="lc-content">
+
+        <!-- ============ POSITIONING ============ -->
+        <section id="positioning" class="lc-section">
+          <h2>1 · Positioning &amp; Narrative</h2>
+          <p class="lc-lead">Pick <strong>one</strong> one-liner and use it everywhere — PH tagline, Twitter bio, homepage hero, video intro. Consistency &gt; cleverness.</p>
+
+          <h3>Tagline options (pick one)</h3>
+          <div class="opt-grid">
+            <div class="opt"><span class="opt-tag">A · recommended</span><p>"The home base for your AI coding agents."</p><small>Clear, ownable, not a category cliché. Works on every surface.</small></div>
+            <div class="opt"><span class="opt-tag">B</span><p>"Run Claude Code like you mean it."</p><small>Punchy, audience-specific. Great for Twitter, risks alienating non-Claude users.</small></div>
+            <div class="opt"><span class="opt-tag">C</span><p>"One window. Every agent. Every project."</p><small>Describes the product literally. Safe, slightly generic.</small></div>
+          </div>
+
+          <h3>The "why now" story (your maker narrative)</h3>
+          <p class="lc-lead">This is the emotional spine of the launch. Use it in the PH first comment, the founder tweet, and the video VO.</p>
+          <div class="copy-block">
+            <div class="copy-head"><span>Maker story — master version</span><button class="copy-btn">Copy</button></div>
+            <div class="copy-body">I live in the terminal with Claude Code. But "living in the terminal" meant 8 tabs, a notes app for tasks, a browser for localhost, GitHub in another window, and zero memory of what each agent was doing across my projects.
+
+So I built the thing I wanted: one window where every project gets its own AI agents, its own terminals, its own tasks — that syncs to my phone so I can check on a long-running agent from the couch. Real PTY terminals. A built-in browser. GitHub and tasks side by side. Offline voice dictation when I don't feel like typing.
+
+That's PATAPIM. It's been my daily driver for months. Today it's yours.</div>
+          </div>
+
+          <h3>Audiences (in priority order)</h3>
+          <ul class="lc-list">
+            <li><strong>Claude Code power users</strong> — they feel the multi-terminal pain immediately. Lead here. (r/ClaudeCode, r/ClaudeAI, Anthropic Discord.)</li>
+            <li><strong>Indie devs / solo builders</strong> — value the all-in-one + lifetime price. (PH, r/SideProject, Indie Hackers.)</li>
+            <li><strong>AI-agent orchestrators / "vibe coders"</strong> — multiple agents at once is the hook. (r/AI_Agents, r/vibecoding, X.)</li>
+          </ul>
+        </section>
+
+        <!-- ============ TIMELINE & CHECKLIST ============ -->
+        <section id="timeline" class="lc-section">
+          <h2>2 · Master Timeline &amp; Checklist</h2>
+          <p class="lc-lead">Today is ~T-21. Everything below is a live checkbox — your progress is saved in this browser.</p>
+
+          <h3>T-21 → T-14 (this week) · Foundation</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="t21-1"><span>Lock the v1.6 release scope. Decide Computer Control ship/hold (see §11).</span></label></li>
+            <li><label><input type="checkbox" data-id="t21-2"><span>Finalize the one-liner / positioning (pick A/B/C above).</span></label></li>
+            <li><label><input type="checkbox" data-id="t21-3"><span>Record all raw screen capture for videos while the app is stable (do this early — re-shoots hurt).</span></label></li>
+            <li><label><input type="checkbox" data-id="t21-4"><span>Reserve the Product Hunt "Coming Soon" / ship page (drives pre-launch followers who get notified at launch).</span></label></li>
+            <li><label><input type="checkbox" data-id="t21-5"><span>Line up a hunter OR confirm self-hunt (see PH kit). DM them now.</span></label></li>
+            <li><label><input type="checkbox" data-id="t21-6"><span>Build the "first 10 supporters" list (people who'll comment/upvote in the first hour).</span></label></li>
+          </ul>
+
+          <h3>T-14 → T-7 · Production</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="t14-1"><span>Cut the 60s hero video + 30s + 15s vertical (see §6). Export all aspect ratios.</span></label></li>
+            <li><label><input type="checkbox" data-id="t14-2"><span>Record + edit the 3–5 min tutorial. Upload to YouTube as unlisted.</span></label></li>
+            <li><label><input type="checkbox" data-id="t14-3"><span>Shoot the 5 PH gallery images + animated thumbnail GIF.</span></label></li>
+            <li><label><input type="checkbox" data-id="t14-4"><span>Write the launch-day blog/changelog post for the site.</span></label></li>
+            <li><label><input type="checkbox" data-id="t14-5"><span>Draft all platform copy (PH, X thread, Reddit, HN, email) — it's all on this page; review &amp; personalize.</span></label></li>
+            <li><label><input type="checkbox" data-id="t14-6"><span>Refresh og-image.png + homepage hero for launch (see §7).</span></label></li>
+          </ul>
+
+          <h3>T-7 → T-1 · Warm-up</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="t7-1"><span>Start the Twitter countdown teasers (T-7, T-5, T-3, T-2, T-1 — copy in §5).</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-2"><span>Email the beta list: "we launch on PH June 30 — would mean the world if you upvoted" (copy in §8).</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-3"><span>DM the first-10 supporters with the exact PH link (goes live at launch) + ask them to comment, not just upvote.</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-4"><span>Final QA: download flow on Win/macOS, license checkout, sign-up, remote login. Fix blockers.</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-5"><span>Pre-schedule nothing on X (manual only — bot detection). Pre-write everything instead.</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-6"><span>Stage all assets in a single folder: video files, images, GIFs, copy. One-click access on launch day.</span></label></li>
+            <li><label><input type="checkbox" data-id="t7-7"><span>Decide + configure the launch offer (see §9). Test the discount code/price in Stripe.</span></label></li>
+          </ul>
+
+          <h3>Launch Day (T-0) — see §3 for the hour-by-hour</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="t0-1"><span>Ship v1.6 release + confirm /download serves the new build.</span></label></li>
+            <li><label><input type="checkbox" data-id="t0-2"><span>PH live → post everywhere → work the comments all day.</span></label></li>
+          </ul>
+
+          <h3>T+1 → T+7 · Follow-through</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="tp-1"><span>Thank-you tweet + PH result recap (rank, upvotes, signups).</span></label></li>
+            <li><label><input type="checkbox" data-id="tp-2"><span>Add the "Featured on Product Hunt" badge to the homepage.</span></label></li>
+            <li><label><input type="checkbox" data-id="tp-3"><span>Reply to every PH comment within 24h. Triage bug reports fast.</span></label></li>
+            <li><label><input type="checkbox" data-id="tp-4"><span>Publish the Dev.to / Qiita / Zenn deep-dive articles (staggered, one per day).</span></label></li>
+            <li><label><input type="checkbox" data-id="tp-5"><span>Email new signups a "getting started" follow-up + the tutorial video.</span></label></li>
+            <li><label><input type="checkbox" data-id="tp-6"><span>Update engagement-dashboard.html + commit/push all logs.</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ LAUNCH DAY ============ -->
+        <section id="launchday" class="lc-section">
+          <h2>3 · Launch Day — Hour by Hour</h2>
+          <p class="lc-lead">Times in Argentina (UTC-3). PH resets at 12:01 AM PT = 04:01 ART. You don't have to be awake at 4am, but the first 2–3 hours matter for ranking — aim to be active by ~07:00 ART.</p>
+          <table class="sched">
+            <thead><tr><th>ART</th><th>PT</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>04:01</td><td>00:01</td><td>PH listing goes live (auto or by hunter). If self-posting, submit now.</td></tr>
+              <tr><td>07:00</td><td>03:00</td><td>Wake up. Confirm listing is live + correct. Post the PH first comment (maker story).</td></tr>
+              <tr><td>07:15</td><td>03:15</td><td>Fire the Twitter launch thread (§5). Pin it. DM the first-10 list the live link.</td></tr>
+              <tr><td>08:00</td><td>04:00</td><td>Post to r/SideProject + r/ClaudeCode (different angle each — §8). Show HN.</td></tr>
+              <tr><td>09:00–12:00</td><td>05:00–08:00</td><td>Reply to EVERY PH + Reddit comment. Upvote thoughtful comments. Post to Indie Hackers.</td></tr>
+              <tr><td>12:00</td><td>08:00</td><td>US morning wave begins — peak voting window. Re-share thread, quote-tweet a good comment.</td></tr>
+              <tr><td>13:00</td><td>09:00</td><td>Send the beta-list "we're live" email (§8). Post in relevant Discords/Slacks.</td></tr>
+              <tr><td>15:00–18:00</td><td>11:00–14:00</td><td>Keep working comments. Post to secondary subs (r/vibecoding, r/AI_Agents). Facebook groups.</td></tr>
+              <tr><td>18:00</td><td>14:00</td><td>Mid-day momentum tweet ("#X of the day, thank you" — only if doing well).</td></tr>
+              <tr><td>21:00</td><td>17:00</td><td>US afternoon push. Final comment sweep. Engage any press/influencer who noticed.</td></tr>
+              <tr><td>23:59</td><td>19:59</td><td>PH day closes at midnight PT. Last-hour rally to supporters if close to a rank cutoff.</td></tr>
+            </tbody>
+          </table>
+          <p class="callout">⚠️ Golden rule: comments &gt; upvotes. PH ranks on engagement quality. Ask supporters to leave a real comment, not just tap upvote. Never ask for upvotes publicly (against PH rules) — ask people to "check it out."</p>
+        </section>
+
+        <!-- ============ PRODUCT HUNT ============ -->
+        <section id="producthunt" class="lc-section">
+          <h2>4 · Product Hunt Kit</h2>
+
+          <h3>Name &amp; tagline</h3>
+          <div class="copy-block"><div class="copy-head"><span>Name</span><button class="copy-btn">Copy</button></div><div class="copy-body">PATAPIM</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tagline (60 char max) — option A</span><button class="copy-btn">Copy</button></div><div class="copy-body">The home base for your AI coding agents</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tagline — option B</span><button class="copy-btn">Copy</button></div><div class="copy-body">One window for Claude Code, terminals, tasks &amp; browser</div></div>
+
+          <h3>Description</h3>
+          <div class="copy-block"><div class="copy-head"><span>PH description</span><button class="copy-btn">Copy</button></div><div class="copy-body">PATAPIM is a desktop workspace built for developers who run AI coding agents like Claude Code.
+
+Instead of juggling a dozen terminal tabs, a notes app, a browser, and GitHub across windows, PATAPIM gives every project its own AI agents, real terminals (up to 9), tasks, a built-in browser, and a GitHub panel — in one place. It syncs to the cloud so you can check on a long-running agent from your phone, and includes offline multilingual voice dictation so you can talk to your agents instead of typing.
+
+Free to use (3 projects, 9 terminals, 30 min dictation, remote access). Pro is $6.99/mo or $59.99 lifetime for unlimited everything.
+
+Works on Windows, macOS (Apple Silicon + Intel), and Linux.</div></div>
+
+          <h3>First comment (post this the moment it's live)</h3>
+          <div class="copy-block"><div class="copy-head"><span>Maker's first comment</span><button class="copy-btn">Copy</button></div><div class="copy-body">Hey Product Hunt 👋 maker here.
+
+I live in the terminal with Claude Code. But that meant 8 tabs, a notes app for tasks, a browser for localhost, and GitHub in yet another window — with no memory of what each agent was doing across my projects.
+
+So I built the thing I wanted: one window where every project gets its own AI agents, its own real terminals, its own tasks — and it syncs to my phone so I can check on a long-running agent from the couch. Built-in browser, GitHub panel, and offline voice dictation when I don't feel like typing.
+
+It's been my daily driver for months. A few things I'd love your take on:
+• Does the "one home base per project" model click for how you work?
+• What would make you switch from raw terminal tabs?
+
+It's free to start (no card), and I'm here all day answering everything. AMA 🙏</div></div>
+
+          <h3>Topics / categories</h3>
+          <p class="lc-lead">Developer Tools · Productivity · Artificial Intelligence · GitHub · SaaS</p>
+
+          <h3>Gallery — shot list (1280×720+, first image is the thumbnail)</h3>
+          <ol class="lc-list">
+            <li><strong>Hero shot</strong> — full app, multi-terminal grid running Claude Code across 4 cells, project sidebar visible. Overlay text: "Every agent. Every project. One window."</li>
+            <li><strong>Remote on phone</strong> — split image: desktop + phone showing the same terminals live. Text: "Check your agents from anywhere."</li>
+            <li><strong>Tasks + GitHub</strong> — the task panel + GitHub PR panel. Text: "Tasks, PRs and issues — no context-switch."</li>
+            <li><strong>Built-in browser</strong> — localhost preview next to the terminal running the dev server. Text: "Test without leaving the app."</li>
+            <li><strong>Voice dictation</strong> — dictation overlay active. Text: "Talk to your agents. Offline. Multilingual."</li>
+          </ol>
+          <p class="lc-lead"><strong>Thumbnail GIF:</strong> 3–4s loop of the grid view with agents working (spinners) + a phone mirroring it. Under 3MB, autoplay-friendly.</p>
+
+          <h3>Hunter strategy</h3>
+          <ul class="lc-list">
+            <li><strong>Recommended: self-hunt.</strong> For a solo dev with an engaged audience, hunting it yourself is fine and you keep full control of timing. A big-name hunter only helps if they'll actively promote.</li>
+            <li>Use the PH "Coming Soon" page now to collect followers — they get auto-notified at launch (your single best ranking lever).</li>
+            <li>Launch on a <strong>Tuesday–Thursday</strong> if June 30 flexibility exists. June 30, 2026 is a <strong>Tuesday</strong> ✅ — good day.</li>
+          </ul>
+
+          <h3>Pre-written comment replies (paste &amp; tweak)</h3>
+          <div class="copy-block"><div class="copy-head"><span>"How is this different from VS Code / tmux / Warp?"</span><button class="copy-btn">Copy</button></div><div class="copy-body">Great question. PATAPIM isn't an editor — it's the layer above. VS Code edits files; tmux multiplexes one machine; PATAPIM orchestrates AI agents across projects with cloud sync, remote phone access, tasks, GitHub and a browser bundled in. You'll likely keep your editor open next to it.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>"Does it work without Claude / with other models?"</span><button class="copy-btn">Copy</button></div><div class="copy-body">Yes — it's just real terminals, so any CLI works (Codex, Antigravity, Ollama models, your own scripts). Claude Code is the default because it's what I use, but nothing's locked to it.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>"Is my data / API key safe?"</span><button class="copy-btn">Copy</button></div><div class="copy-body">Keys are stored encrypted (Keychain on macOS) and injected per-session as env vars. Sync is opt-in. Dictation runs fully offline on-device. We did a security audit before launch — happy to go deeper if useful.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>"Linux?"</span><button class="copy-btn">Copy</button></div><div class="copy-body">Yes — Windows, macOS (Apple Silicon + Intel) and Linux all supported.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>"What's the catch with free?"</span><button class="copy-btn">Copy</button></div><div class="copy-body">No catch. Free gives you 3 projects, up to 9 terminals, 30 min/mo dictation and remote access — genuinely usable forever. Pro just lifts the limits ($6.99/mo or $59.99 once). No card to start.</div></div>
+
+          <h3>First-10 supporters DM</h3>
+          <div class="copy-block"><div class="copy-head"><span>Supporter DM (send T-1, with link at launch)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Hey! PATAPIM goes live on Product Hunt tomorrow (~7am my time). If you've got 2 min in the morning, a short comment about what you think means way more than an upvote for the ranking. I'll send the exact link the moment it's live. No pressure at all — thank you 🙏</div></div>
+        </section>
+
+        <!-- ============ TWITTER ============ -->
+        <section id="twitter" class="lc-section">
+          <h2>5 · Twitter / X</h2>
+          <p class="callout">🛑 Manual only. No automation, no scheduling tools, no copy-paste of identical text. X bot detection is aggressive (see project memory). Type each one.</p>
+
+          <h3>Countdown teasers (one per day, T-7 → T-1)</h3>
+          <div class="copy-block"><div class="copy-head"><span>T-7</span><button class="copy-btn">Copy</button></div><div class="copy-body">7 days until I ship the thing I've been daily-driving for months.
+
+If you run Claude Code and your terminal looks like a browser with 14 tabs… this is for you.
+
+🗓️ June 30.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>T-5</span><button class="copy-btn">Copy</button></div><div class="copy-body">Building in one window:
+— every project gets its own AI agents
+— real terminals (not a fake shell)
+— tasks + GitHub + a browser
+— and it syncs to my phone
+
+5 days.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>T-3</span><button class="copy-btn">Copy</button></div><div class="copy-body">The feature that surprised people most in beta:
+
+I can leave an agent running on my laptop and watch its terminal from my phone on the couch.
+
+3 days until launch 👀</div></div>
+          <div class="copy-block"><div class="copy-head"><span>T-2</span><button class="copy-btn">Copy</button></div><div class="copy-body">2 days.
+
+It's free to start. No card. Win / macOS / Linux.
+
+Drop a 👀 if you want the link the second it's live.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>T-1</span><button class="copy-btn">Copy</button></div><div class="copy-body">Tomorrow.
+
+We launch on Product Hunt at 12:01am PT. I'll be up way too early refreshing it.
+
+If you've ever fought with 9 terminal tabs while babysitting an AI agent — see you there.</div></div>
+
+          <h3>Launch-day thread (post as a thread, then pin tweet 1)</h3>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 1 (hook)</span><button class="copy-btn">Copy</button></div><div class="copy-body">PATAPIM is live 🚀
+
+It's the home base for your AI coding agents — one window for every project's terminals, tasks, GitHub and browser, that syncs to your phone.
+
+Free to start. We're on Product Hunt today 👇
+[PH LINK]
+
+🧵</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 2 (problem)</span><button class="copy-btn">Copy</button></div><div class="copy-body">I live in the terminal with Claude Code.
+
+But that meant: 8 tabs, a notes app for tasks, a browser for localhost, GitHub in another window — and zero memory of what each agent was doing across projects.
+
+It was chaos. So I built the fix.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 3 (solution + video)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Every project gets its own workspace: its agents, its real terminals (up to 9), its tasks.
+
+Tab view or grid — watch 4 agents work at once.
+
+[ATTACH 30s HERO VIDEO]</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 4 (remote)</span><button class="copy-btn">Copy</button></div><div class="copy-body">The part beta users loved most:
+
+Start a long agent run on your laptop → watch its terminal live from your phone. Even rename terminals and the layout syncs.
+
+Babysit your agents from the couch.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 5 (all-in-one)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Also in the box:
+🌐 built-in browser (test localhost without leaving)
+✅ tasks + a cron scheduler
+🐙 GitHub PRs &amp; issues panel
+🎙️ offline, multilingual voice dictation
+🔘 one-click buttons for Codex, Ollama, your own CLIs</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 6 (pricing)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Free forever: 3 projects, 9 terminals, 30 min dictation, remote access. No card.
+
+Want unlimited? Pro is $6.99/mo — or $59.99 once for lifetime.
+
+Win / macOS (M-series + Intel) / Linux.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Tweet 7 (CTA)</span><button class="copy-btn">Copy</button></div><div class="copy-body">If this looks useful, the single biggest help today is a comment on our Product Hunt — what you'd want, what's missing, what you love:
+
+[PH LINK]
+
+I'm answering everything all day. Thank you 🙏</div></div>
+
+          <h3>Pinned bio + cadence</h3>
+          <ul class="lc-list">
+            <li><strong>Pin</strong> tweet 1 for launch week.</li>
+            <li><strong>Cadence:</strong> keep the 80/20 rule even today — between launch posts, reply to others' tweets with genuine value, quote-tweet good comments. Don't just broadcast.</li>
+            <li><strong>@-tag</strong> sparingly and only people genuinely relevant (don't mass-tag — flags as spam). Anthropic / Claude dev community accounts if there's a natural reason.</li>
+            <li><strong>Limit:</strong> respect the 2 PATAPIM-mention/day and 5 reply/hour guardrails from the playbook — launch day is the one day to lean toward the ceiling, not past it.</li>
+          </ul>
+        </section>
+
+        <!-- ============ VIDEO ============ -->
+        <section id="video" class="lc-section">
+          <h2>6 · Video Production</h2>
+          <p class="lc-lead">Record raw footage <strong>once</strong>, early, while the app is stable. Every cut below comes from the same capture session. Tooling available: <strong>Seedance MCP</strong> (text/image→video for B-roll/intros), <strong>After Effects MCP</strong> (assembly, text overlays, keyframes).</p>
+
+          <h3>A · Tutorial (3–5 min, YouTube — the "how it works")</h3>
+          <div class="copy-block"><div class="copy-head"><span>Tutorial script + on-screen actions</span><button class="copy-btn">Copy</button></div><div class="copy-body">[0:00 COLD OPEN] "If you use Claude Code, you've probably got 9 terminal tabs open right now. Let me show you a better home for all of it." — quick montage of the grid view working.
+
+[0:15 CH1 — Projects] Show the sidebar. Add a project. "Every project is its own workspace — its terminals, its agents, its tasks, color-coded."
+
+[0:45 CH2 — Terminals] Open Claude Code in a terminal. Split to grid (2x2). "Real PTY terminals — up to 9. Tab view, or grid to watch several agents at once." Rename a terminal by double-clicking.
+
+[1:30 CH3 — Tasks & GitHub] Open the task panel, add a task, hit "Send to Claude". Switch to GitHub panel, show PRs. "Tasks and GitHub live right here — no window-switching."
+
+[2:15 CH4 — Browser] Open the browser panel to localhost. "Test your dev server without leaving the app. Device emulation built in."
+
+[2:45 CH5 — Voice] Hold Ctrl+Alt, dictate a prompt. "Offline, multilingual dictation — talk to your agent."
+
+[3:15 CH6 — Remote] Show the phone mirroring the desktop terminals. "Sign in on your phone and watch a long agent run from anywhere."
+
+[3:45 OUTRO] "Free to start, no card. Link in the description. I'd love to hear what you build." — end card with logo + patapim.ai.</div></div>
+          <ul class="lc-list">
+            <li>Add YouTube chapters from the [CH] markers. Burn in captions (most watch muted).</li>
+            <li>Upload <strong>unlisted</strong> first, link it in the PH "first comment" and the email follow-up; make public on launch day.</li>
+          </ul>
+
+          <h3>B · 60s hero (PH gallery video + Twitter tweet 3)</h3>
+          <div class="copy-block"><div class="copy-head"><span>60s VO + shots</span><button class="copy-btn">Copy</button></div><div class="copy-body">VO: "You run AI coding agents. Your terminal is chaos."
+SHOT: messy 9-tab terminal, fast.
+VO: "PATAPIM gives every project one home."
+SHOT: sidebar → open project → grid of 4 agents working.
+VO: "Real terminals. Tasks. GitHub. A browser. All in one window."
+SHOT: quick pans across each panel.
+VO: "Start a run on your laptop—"
+SHOT: agent spinning on desktop.
+VO: "—and watch it from your phone."
+SHOT: phone mirroring the same terminal.
+VO: "Free to start. PATAPIM. The home base for your agents."
+SHOT: logo + patapim.ai + "Free · Win/Mac/Linux".</div></div>
+
+          <h3>C · 30s social cut</h3>
+          <p class="lc-lead">Same as the 60s but trim VO to: chaos → one window → grid of agents → phone remote → logo/CTA. 16:9 for Twitter, square 1:1 backup.</p>
+
+          <h3>D · 15s vertical teaser (Reels / Shorts / TikTok, 9:16)</h3>
+          <div class="copy-block"><div class="copy-head"><span>15s vertical (text-on-screen, no VO needed)</span><button class="copy-btn">Copy</button></div><div class="copy-body">0–3s: "POV: you have 9 terminals open for one AI agent" (over chaos shot)
+3–7s: "what if they all lived in one window" (cut to grid view)
+7–11s: "and you could watch them from your phone" (phone mirror shot)
+11–15s: "PATAPIM — free to start 🔗 patapim.ai" (logo end card)
+Trending-but-subtle audio. Big captions. Fast cuts.</div></div>
+
+          <h3>E · 6s bumper (pre-roll / loop)</h3>
+          <p class="lc-lead">Logo reveal → one-line "The home base for your AI coding agents" → patapim.ai. Use as PH thumbnail GIF source and ad bumper.</p>
+
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="vid-1"><span>Raw capture recorded (all panels, phone-mirror shot, dictation)</span></label></li>
+            <li><label><input type="checkbox" data-id="vid-2"><span>Tutorial edited + chapters + captions, uploaded unlisted</span></label></li>
+            <li><label><input type="checkbox" data-id="vid-3"><span>60s hero exported (16:9)</span></label></li>
+            <li><label><input type="checkbox" data-id="vid-4"><span>30s cut exported (16:9 + 1:1)</span></label></li>
+            <li><label><input type="checkbox" data-id="vid-5"><span>15s vertical exported (9:16)</span></label></li>
+            <li><label><input type="checkbox" data-id="vid-6"><span>6s bumper + PH thumbnail GIF exported (&lt;3MB)</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ WEBSITE ============ -->
+        <section id="website" class="lc-section">
+          <h2>7 · Website Updates (patapim.ai)</h2>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="web-1"><span>Refresh the homepage <strong>hero</strong> with the chosen one-liner + the 30s hero video (replace hero-brainrot.mp4 or add alongside).</span></label></li>
+            <li><label><input type="checkbox" data-id="web-2"><span>Add/refresh a <strong>feature highlight</strong> section for the headline new features (remote, tasks, GitHub, browser, dictation). Reuse existing SecondaryFeatures component pattern.</span></label></li>
+            <li><label><input type="checkbox" data-id="web-3"><span>Update <strong>og-image.png</strong> (1200×630) to the launch hero — this is what every shared link shows.</span></label></li>
+            <li><label><input type="checkbox" data-id="web-4"><span>Confirm <strong>/download</strong> serves the v1.6 build on all platforms (the /api/download/latest endpoints).</span></label></li>
+            <li><label><input type="checkbox" data-id="web-5"><span>Add a launch <strong>banner/ribbon</strong> ("🚀 We're live on Product Hunt → [link]") sitewide for launch day; remove T+2.</span></label></li>
+            <li><label><input type="checkbox" data-id="web-6"><span>Publish a <strong>changelog / release notes</strong> entry for v1.6.</span></label></li>
+            <li><label><input type="checkbox" data-id="web-7"><span>Verify pricing copy everywhere reads $6.99/mo · $59.99 lifetime (it does in en.ts — double-check ja.ts).</span></label></li>
+            <li><label><input type="checkbox" data-id="web-8"><span>T+1: add the <strong>"Featured on Product Hunt"</strong> badge to the homepage.</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ OTHER CHANNELS ============ -->
+        <section id="channels" class="lc-section">
+          <h2>8 · Other Channels</h2>
+
+          <h3>Reddit (follow reddit-playbook.md — 1 post/sub, value-first, disclose as maker where required)</h3>
+          <div class="copy-block"><div class="copy-head"><span>r/SideProject title + body</span><button class="copy-btn">Copy</button></div><div class="copy-body">Title: I built a desktop app that gives every project its own AI coding agents (terminals, tasks, GitHub, browser in one window)
+
+Body: I run Claude Code all day and was drowning in terminal tabs, so I built PATAPIM — one window where each project gets its own agents, real terminals, tasks, a GitHub panel and a browser, synced to my phone so I can watch long runs remotely. Free to start (no card), Win/Mac/Linux. It's launching on Product Hunt today — would genuinely love feedback from people who live in the terminal. Happy to answer anything.</div></div>
+          <div class="copy-block"><div class="copy-head"><span>r/ClaudeCode angle (more technical, no link-spam)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Title: How I stopped losing track of Claude Code across 5 projects
+
+Body: My problem wasn't Claude — it was me. 9 terminal tabs, no idea which agent was doing what, tasks in a separate app. I ended up building a workspace where each project holds its own terminals + tasks + GitHub, with grid view so I can watch several agents at once, and remote access to check a run from my phone. Sharing in case the workflow helps someone — happy to talk setup. (Maker, it's free to try; mods, removing if not allowed.)</div></div>
+
+          <h3>Hacker News — Show HN</h3>
+          <div class="copy-block"><div class="copy-head"><span>Show HN title</span><button class="copy-btn">Copy</button></div><div class="copy-body">Show HN: PATAPIM – A desktop home base for your AI coding agents</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Show HN text</span><button class="copy-btn">Copy</button></div><div class="copy-body">I run Claude Code constantly and kept drowning in terminal tabs, a separate task list, a browser for localhost, and GitHub in yet another window. PATAPIM puts it in one Electron app: each project gets its own real PTY terminals (up to 9, tab or grid), tasks with a cron scheduler, a GitHub panel, a built-in browser, and offline multilingual voice dictation. It syncs to the cloud so I can watch a long agent run from my phone.
+
+Stack: Electron 40, xterm.js, node-pty. Free tier is fully usable; Pro lifts limits. Win/macOS/Linux. Happy to answer questions about the architecture or the agent-orchestration side.</div></div>
+
+          <h3>Email to beta list (beta-tester-tracking.md)</h3>
+          <div class="copy-block"><div class="copy-head"><span>T-7 heads-up email</span><button class="copy-btn">Copy</button></div><div class="copy-body">Subject: We launch June 30 — and I need your 2 minutes
+
+Hey [NAME],
+
+You've been using PATAPIM early, and that means a lot. On June 30 we launch publicly on Product Hunt.
+
+The single biggest thing that helps a launch is a real comment in the first few hours — what you use it for, what you'd improve. I'll email you the exact link the morning it's live.
+
+No pressure at all. Just wanted you to be the first to know. Thank you for being here.
+
+— German</div></div>
+          <div class="copy-block"><div class="copy-head"><span>Launch-day "we're live" email</span><button class="copy-btn">Copy</button></div><div class="copy-body">Subject: 🚀 We're live on Product Hunt
+
+Hey [NAME],
+
+It's happening — PATAPIM is live on Product Hunt right now:
+👉 [PH LINK]
+
+If you've got two minutes, a short comment about how you actually use it would help more than anything. And if you've been on the fence about Pro, there's a launch deal today (details on the site).
+
+Thank you for being an early believer.
+
+— German
+P.S. New here? 3-min tour: [TUTORIAL VIDEO LINK]</div></div>
+
+          <h3>Dev.to / Qiita / Zenn (staggered T+1 → T+4, one per day)</h3>
+          <ul class="lc-list">
+            <li><strong>Dev.to (EN):</strong> "I built a workspace for orchestrating AI coding agents — here's the architecture" (technical, Electron + node-pty + sync).</li>
+            <li><strong>Qiita / Zenn (JP):</strong> translated workflow piece — use the @patapim accounts (see project memory). Japan market angle.</li>
+            <li>Each links back to patapim.ai + the PH listing (still good for residual traffic).</li>
+          </ul>
+
+          <h3>Communities / Facebook / Indie Hackers</h3>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="ch-1"><span>Indie Hackers launch post + milestone</span></label></li>
+            <li><label><input type="checkbox" data-id="ch-2"><span>Relevant Discords/Slacks (Claude/AI-agents communities) — value post, not a drop-and-run link</span></label></li>
+            <li><label><input type="checkbox" data-id="ch-3"><span>Facebook groups per facebook-playbook.md tiers (respect 3/group/week + disclosure rules)</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ OFFER ============ -->
+        <section id="offer" class="lc-section">
+          <h2>9 · Launch Offer <span class="decision">DECISION NEEDED</span></h2>
+          <p class="lc-lead">A time-boxed deal creates urgency and is the #1 conversion driver on launch day. Recommendation below — confirm before configuring Stripe.</p>
+          <div class="opt-grid">
+            <div class="opt"><span class="opt-tag">Recommended</span><p><strong>Launch-week Lifetime discount</strong></p><small>Lifetime $59.99 → <strong>$39.99</strong> for launch week only (PH code "PHLAUNCH"). Lifetime is your highest-intent buyer; a price floor + deadline converts fence-sitters and the headline reads great on PH.</small></div>
+            <div class="opt"><span class="opt-tag">Alt</span><p><strong>Free Pro for PH visitors</strong></p><small>30–90 days of Pro free with a PH code. Maximizes activation/word-of-mouth over immediate revenue. Good if the goal is users, not cash.</small></div>
+            <div class="opt"><span class="opt-tag">Alt</span><p><strong>No discount</strong></p><small>Keep prices; lean on "free tier, no card." Simplest, protects price integrity, but leaves launch-day urgency on the table.</small></div>
+          </div>
+          <div class="copy-block"><div class="copy-head"><span>Offer copy (if discount chosen)</span><button class="copy-btn">Copy</button></div><div class="copy-body">🚀 Launch week only: Lifetime access for $39.99 (normally $59.99). Pay once, unlimited everything, forever. Use code PHLAUNCH at checkout. Ends Sunday.</div></div>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="off-1"><span>Decide offer (founder)</span></label></li>
+            <li><label><input type="checkbox" data-id="off-2"><span>Configure code/price in Stripe + test a real checkout</span></label></li>
+            <li><label><input type="checkbox" data-id="off-3"><span>Add offer banner to /download + homepage for launch week</span></label></li>
+            <li><label><input type="checkbox" data-id="off-4"><span>Remove offer + revert prices after deadline</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ ASSETS ============ -->
+        <section id="assets" class="lc-section">
+          <h2>10 · Asset Checklist</h2>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="as-1"><span>og-image.png (1200×630) — launch version</span></label></li>
+            <li><label><input type="checkbox" data-id="as-2"><span>5 PH gallery images (1280×720+)</span></label></li>
+            <li><label><input type="checkbox" data-id="as-3"><span>PH thumbnail animated GIF (&lt;3MB)</span></label></li>
+            <li><label><input type="checkbox" data-id="as-4"><span>Demo GIFs for Twitter/Reddit (grid view, phone remote)</span></label></li>
+            <li><label><input type="checkbox" data-id="as-5"><span>Clean screenshots (light + dark) for press/articles</span></label></li>
+            <li><label><input type="checkbox" data-id="as-6"><span>Logo variants (light/dark, square, wordmark)</span></label></li>
+            <li><label><input type="checkbox" data-id="as-7"><span>One-page press kit (positioning, facts, links, contact)</span></label></li>
+            <li><label><input type="checkbox" data-id="as-8"><span>All videos exported in every aspect ratio (§6)</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ COMPUTER CONTROL ============ -->
+        <section id="computer" class="lc-section">
+          <h2>11 · Computer Control — Ship / Hold Gate <span class="decision">DECISION NEEDED</span></h2>
+          <p class="lc-lead">Computer Control (real mouse/keyboard via nut.js + offline OCR, <code>computer_*</code> MCP tools, kill-switch hotkey) is in QA (Windows DPI mapping). If it lands clean, it becomes the <strong>hero</strong> of the launch. If not, hold it — a broken flagship feature on launch day is worse than no feature.</p>
+          <h3>Ship criteria (all must pass)</h3>
+          <ul class="lc-list">
+            <li>Windows DPI coordinate mapping verified on at least 2 displays / scaling factors.</li>
+            <li>Kill-switch (Ctrl+Alt+Shift+Esc) reliably disables instantly.</li>
+            <li>Confirm-before-irreversible-action prompt works.</li>
+            <li>Default-deny gating (127.0.0.1 + token auth) confirmed.</li>
+            <li>No crashes in a 30-min real-task session.</li>
+          </ul>
+          <h3>If it SHIPS — hero alt-copy</h3>
+          <div class="copy-block"><div class="copy-head"><span>Hero tagline + tweet hook (Computer Control version)</span><button class="copy-btn">Copy</button></div><div class="copy-body">Tagline: "Give your AI agents a mouse and keyboard."
+
+Tweet hook: "PATAPIM is live 🚀 Your AI agents can now actually USE your computer — see the screen, click, type — with a hardware kill-switch you control. Plus terminals, tasks, GitHub & remote phone access, all in one window. Free to start 👇 [PH LINK]"</div></div>
+          <p class="lc-lead"><strong>If it HOLDS:</strong> ship v1.6 without it, keep the agent-orchestration narrative (§1), and tease Computer Control as "coming next" — turns a cut feature into a follow-up launch moment.</p>
+          <ul class="checklist">
+            <li><label><input type="checkbox" data-id="cc-1"><span>Ship/hold decision made by T-14</span></label></li>
+          </ul>
+        </section>
+
+        <!-- ============ METRICS ============ -->
+        <section id="metrics" class="lc-section">
+          <h2>12 · Metrics &amp; Goals</h2>
+          <table class="sched">
+            <thead><tr><th>Metric</th><th>Stretch goal</th><th>Track where</th></tr></thead>
+            <tbody>
+              <tr><td>PH rank (day)</td><td>Top 5 · stretch #1</td><td>producthunt.com</td></tr>
+              <tr><td>PH upvotes</td><td>400+</td><td>producthunt.com</td></tr>
+              <tr><td>Downloads (launch day)</td><td>500+</td><td>/api/download analytics</td></tr>
+              <tr><td>New accounts</td><td>300+</td><td>app backend / Stripe</td></tr>
+              <tr><td>Pro + Lifetime conversions</td><td>25+</td><td>Stripe dashboard</td></tr>
+              <tr><td>Twitter impressions</td><td>50k+</td><td>X analytics</td></tr>
+            </tbody>
+          </table>
+          <p class="lc-lead">Roll up daily numbers into <code>engagement-dashboard.html</code> and the live dashboard at <a href="http://localhost:31420">http://localhost:31420</a>. Commit + push logs each night per CLAUDE.md.</p>
+        </section>
+
+        <!-- ============ CONTINGENCY ============ -->
+        <section id="contingency" class="lc-section">
+          <h2>13 · Contingency</h2>
+          <ul class="lc-list">
+            <li><strong>Download / server load:</strong> releases are served from GitHub (G3dar/patapim-releases) — high capacity. Confirm Cloudflare in front of patapim.ai is caching static assets. Watch the auth/checkout endpoints under load.</li>
+            <li><strong>Support triage:</strong> a flood of "it crashed on X" is normal. Keep a pinned "known issues + fixes" note; reply fast and publicly — visible responsiveness wins trust on PH.</li>
+            <li><strong>Critical bug found live:</strong> hotfix path ready? Know how fast you can cut + sign a patch build. A v1.6.1 same-day is fine and looks responsive.</li>
+            <li><strong>Duplicate-post protocol:</strong> every public comment still goes through submit-guard.ps1 (see CLAUDE.md). Launch-day haste is exactly when double-posts happen — don't skip the ticket flow.</li>
+            <li><strong>Low traction:</strong> if PH is slow by midday, don't panic-spam. Double down on genuine comment replies + one well-placed community post. A "thank you, here's what I learned" recap salvages momentum even from a modest day.</li>
+          </ul>
+        </section>
+
+        <p class="lc-foot">Single source of truth for the June 30 launch. Edit this page (<code>src/pages/launch.astro</code>) as plans firm up. noindex + sitemap-excluded — safe to keep on the live site.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .launch { min-height: 100vh; }
+
+  /* Hero */
+  .lc-hero {
+    padding: 140px 0 48px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-subtle);
+    background: radial-gradient(ellipse at top, rgba(212,165,116,0.08), transparent 60%);
+  }
+  .lc-title { font-size: clamp(34px, 5vw, 56px); font-weight: 700; margin: 12px 0; }
+  .lc-sub { max-width: 680px; margin: 0 auto 32px; color: var(--text-secondary); font-size: 18px; line-height: 1.6; }
+
+  /* Countdown */
+  .countdown { display: inline-flex; gap: 16px; margin: 8px 0 12px; }
+  .cd-cell {
+    background: var(--bg-secondary); border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg); padding: 14px 18px; min-width: 78px;
+  }
+  .cd-num { display: block; font-family: var(--font-mono); font-size: 34px; font-weight: 700; color: var(--accent-primary); line-height: 1; }
+  .cd-lbl { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 6px; }
+  .cd-note { font-size: 13px; color: var(--text-tertiary); margin-bottom: 28px; }
+
+  /* Progress */
+  .lc-progress { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .lc-progress-bar { width: 240px; height: 8px; background: var(--bg-tertiary); border-radius: 99px; overflow: hidden; }
+  .lc-progress-bar span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary)); transition: width 250ms; }
+  .lc-progress-txt { font-size: 13px; color: var(--text-secondary); font-family: var(--font-mono); }
+  .lc-reset { background: none; border: 1px solid var(--border-default); color: var(--text-muted); font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; }
+  .lc-reset:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+  /* Layout: sticky nav + content */
+  .lc-body { display: grid; grid-template-columns: 230px 1fr; gap: 48px; padding-top: 48px; padding-bottom: 96px; align-items: start; }
+  .lc-nav { position: sticky; top: 88px; }
+  .lc-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+  .lc-nav a { display: block; padding: 7px 12px; font-size: 13px; color: var(--text-tertiary); border-radius: var(--radius-sm); border-left: 2px solid transparent; transition: all 150ms; text-decoration: none; }
+  .lc-nav a:hover { color: var(--text-primary); background: var(--bg-secondary); }
+  .lc-nav a.active { color: var(--accent-primary); border-left-color: var(--accent-primary); background: var(--bg-secondary); }
+
+  .lc-content { min-width: 0; }
+  .lc-section { padding: 28px 0 40px; border-bottom: 1px solid var(--border-subtle); scroll-margin-top: 88px; }
+  .lc-section h2 { font-size: 26px; font-weight: 700; margin: 0 0 16px; }
+  .lc-section h3 { font-size: 16px; font-weight: 600; color: var(--accent-primary); margin: 28px 0 10px; }
+  .lc-lead { color: var(--text-secondary); line-height: 1.65; margin: 0 0 16px; }
+  .lc-list { color: var(--text-secondary); line-height: 1.7; padding-left: 20px; margin: 0 0 16px; }
+  .lc-list li { margin-bottom: 8px; }
+
+  .decision { font-size: 11px; font-weight: 700; color: #111; background: var(--accent-primary); padding: 3px 8px; border-radius: 6px; vertical-align: middle; letter-spacing: 0.04em; }
+
+  /* Options grid */
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 0 0 16px; }
+  .opt { background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px; }
+  .opt-tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-primary); margin-bottom: 8px; font-weight: 600; }
+  .opt p { margin: 0 0 6px; font-size: 15px; color: var(--text-primary); }
+  .opt small { color: var(--text-tertiary); line-height: 1.5; display: block; }
+
+  /* Copy blocks */
+  .copy-block { background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: var(--radius-lg); margin: 0 0 14px; overflow: hidden; }
+  .copy-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-subtle); }
+  .copy-head span { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .copy-btn { background: none; border: 1px solid var(--border-default); color: var(--text-tertiary); font-size: 11px; padding: 3px 12px; border-radius: 6px; cursor: pointer; transition: all 150ms; flex-shrink: 0; }
+  .copy-btn:hover { color: var(--accent-primary); border-color: var(--accent-primary); }
+  .copy-btn.copied { color: var(--success); border-color: var(--success); }
+  .copy-body { padding: 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; margin: 0 0 16px; }
+  .checklist li { margin-bottom: 4px; }
+  .checklist label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: background 150ms; }
+  .checklist label:hover { background: var(--bg-secondary); }
+  .checklist input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent-primary); flex-shrink: 0; cursor: pointer; }
+  .checklist span { color: var(--text-secondary); line-height: 1.55; font-size: 14px; }
+  .checklist input:checked + span { color: var(--text-muted); text-decoration: line-through; }
+
+  /* Tables */
+  .sched { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 14px; }
+  .sched th, .sched td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); vertical-align: top; }
+  .sched th { color: var(--text-primary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sched td:first-child, .sched td:nth-child(2) { font-family: var(--font-mono); color: var(--accent-primary); white-space: nowrap; }
+
+  .callout { background: rgba(212,165,116,0.08); border: 1px solid rgba(212,165,116,0.25); border-radius: var(--radius-md); padding: 12px 16px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin: 0 0 16px; }
+
+  .lc-foot { color: var(--text-muted); font-size: 13px; margin-top: 28px; line-height: 1.6; }
+
+  @media (max-width: 900px) {
+    .lc-body { grid-template-columns: 1fr; }
+    .lc-nav { position: static; margin-bottom: 24px; }
+    .lc-nav ul { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .lc-nav a { border-left: none; border: 1px solid var(--border-default); }
+    .countdown { gap: 8px; }
+    .cd-cell { min-width: 64px; padding: 10px 12px; }
+  }
+</style>
+
+<script>
+  // ---- Countdown ----
+  const cd = document.getElementById('countdown');
+  if (cd) {
+    const target = new Date(cd.dataset.target as string).getTime();
+    const set = (k: string, v: number) => {
+      const el = cd.querySelector(`[data-cd="${k}"]`);
+      if (el) el.textContent = String(v).padStart(2, '0');
+    };
+    const tick = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) { set('d', 0); set('h', 0); set('m', 0); set('s', 0); return; }
+      set('d', Math.floor(diff / 86400000));
+      set('h', Math.floor((diff % 86400000) / 3600000));
+      set('m', Math.floor((diff % 3600000) / 60000));
+      set('s', Math.floor((diff % 60000) / 1000));
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // ---- Checklist persistence ----
+  const KEY = 'patapim-launch-checklist-v1';
+  const boxes = Array.from(document.querySelectorAll<HTMLInputElement>('.checklist input[type="checkbox"]'));
+  const load = (): Record<string, boolean> => {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; }
+  };
+  let state = load();
+  const fill = document.getElementById('progress-fill');
+  const count = document.getElementById('progress-count');
+  const updateProgress = () => {
+    const done = boxes.filter(b => b.checked).length;
+    if (fill) fill.style.width = boxes.length ? `${(done / boxes.length) * 100}%` : '0%';
+    if (count) count.textContent = `${done} / ${boxes.length}`;
+  };
+  boxes.forEach(b => {
+    const id = b.dataset.id as string;
+    if (state[id]) b.checked = true;
+    b.addEventListener('change', () => {
+      state[id] = b.checked;
+      localStorage.setItem(KEY, JSON.stringify(state));
+      updateProgress();
+    });
+  });
+  updateProgress();
+  document.getElementById('reset-checklist')?.addEventListener('click', () => {
+    state = {};
+    localStorage.removeItem(KEY);
+    boxes.forEach(b => { b.checked = false; });
+    updateProgress();
+  });
+
+  // ---- Copy buttons ----
+  document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const body = btn.closest('.copy-block')?.querySelector('.copy-body');
+      if (!body) return;
+      navigator.clipboard.writeText(body.textContent || '').then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+  });
+
+  // ---- Scrollspy nav ----
+  const navLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.lc-nav a'));
+  const sections = navLinks.map(a => document.querySelector(a.getAttribute('href') as string)).filter(Boolean) as Element[];
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
+      }
+    });
+  }, { rootMargin: '-30% 0px -65% 0px' });
+  sections.forEach(s => spy.observe(s));
+</script>

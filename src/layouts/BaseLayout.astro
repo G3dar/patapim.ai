@@ -5,13 +5,15 @@ interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
+  noindex?: boolean;
 }
 
 const locale = getLocaleFromUrl(Astro.url);
 const {
   title = t(locale, 'meta.defaultTitle'),
   description = t(locale, 'meta.defaultDescription'),
-  ogImage = '/og-image.png'
+  ogImage = '/og-image.png',
+  noindex = false
 } = Astro.props;
 
 // Build hreflang alternate URLs
@@ -28,6 +30,7 @@ const siteUrl = 'https://patapim.ai';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
   <meta name="description" content={description} />
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
 
   <!-- Open Graph -->
   <meta property="og:title" content={title} />
