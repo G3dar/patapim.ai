@@ -1,0 +1,6 @@
+---
+// The desktop app's account menu links to /dashboard, but the dashboard
+// page lives at /go. Redirect so older app builds land in the right place.
+export const prerender = false;
+return Astro.redirect('/go' + (Astro.url.search || ''));
+---
