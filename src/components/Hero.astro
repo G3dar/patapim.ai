@@ -1,4 +1,4 @@
----
+﻿---
 import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
 import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
@@ -51,63 +51,63 @@ const lp = (path: string) => getLocalePath(locale, path);
         <HeroMiniComputerControl />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.computerControl')}</span>
-          <p class="hf-desc">{t(locale, 'hero.computerControlDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.computerControlDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.multiProject')}</span>
-          <p class="hf-desc">{t(locale, 'hero.multiProjectDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.multiProjectDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniVoiceDictation />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.voiceDictation')}</span>
-          <p class="hf-desc">{t(locale, 'hero.voiceDictationDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.voiceDictationDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniRemoteAccess />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.remoteControl')}</span>
-          <p class="hf-desc">{t(locale, 'hero.remoteControlDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.remoteControlDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniConnectedTabs />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.connectedTabs')}</span>
-          <p class="hf-desc">{t(locale, 'hero.connectedTabsDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.connectedTabsDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniIntegratedBrowser />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.integratedBrowser')}</span>
-          <p class="hf-desc">{t(locale, 'hero.integratedBrowserDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.integratedBrowserDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniSessionRestore />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.sessionRestore')}</span>
-          <p class="hf-desc">{t(locale, 'hero.sessionRestoreDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.sessionRestoreDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniWhatsappGmail />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.whatsappGmail')}</span>
-          <p class="hf-desc">{t(locale, 'hero.whatsappGmailDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.whatsappGmailDesc')} />
         </div>
       </div>
       <div class="hero-feature-item">
         <HeroMiniFocusMode />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.focusMode')}</span>
-          <p class="hf-desc">{t(locale, 'hero.focusModeDesc')}</p>
+          <p class="hf-desc" set:html={t(locale, 'hero.focusModeDesc')} />
         </div>
       </div>
     </div>
@@ -247,7 +247,7 @@ const lp = (path: string) => getLocalePath(locale, path);
     border-radius: 16px;
   }
 
-  /* Prominent download CTA — echoes the jungle-green + CRT-amber palette of the hero video */
+  /* Prominent download CTA â€” echoes the jungle-green + CRT-amber palette of the hero video */
   .hero-download-wrapper {
     display: flex;
     justify-content: center;
@@ -550,19 +550,30 @@ const lp = (path: string) => getLocalePath(locale, path);
 
   .hf-label {
     font-family: var(--font-mono);
-    font-size: 15px;
-    color: var(--text-secondary);
+    font-size: 16px;
+    color: var(--text-primary);
     letter-spacing: 0.02em;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .hf-desc {
-    font-size: 13px;
-    color: var(--text-tertiary);
-    line-height: 1.5;
+    font-size: 13.5px;
+    color: #b9b4ac;
+    line-height: 1.65;
     text-align: center;
-    max-width: 300px;
+    max-width: 320px;
     margin: 0;
+  }
+
+  .hf-desc :global(strong) {
+    color: #e2b88a;
+    font-weight: 600;
+  }
+
+  .hf-desc :global(em) {
+    color: #9ec98f;
+    font-style: normal;
+    font-weight: 600;
   }
 
   @media (max-width: 768px) {
@@ -571,8 +582,8 @@ const lp = (path: string) => getLocalePath(locale, path);
     .hi-line { font-size: 11px; padding: 12px 14px; }
     .hi-tab { font-size: 11px; padding: 5px 14px; }
     .hero-features { grid-template-columns: repeat(2, 1fr); gap: var(--space-xl); }
-    .hf-label { font-size: 13px; }
-    .hf-desc { font-size: 12px; max-width: 280px; }
+    .hf-label { font-size: 14px; }
+    .hf-desc { font-size: 12.5px; max-width: 290px; }
     .hero-video-wrapper { max-width: 100%; }
     .hero-install-section { margin-top: var(--space-3xl); padding-top: var(--space-2xl); }
   }
