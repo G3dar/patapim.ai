@@ -3,7 +3,7 @@ import HeroMiniMultiTerminal from './HeroMiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from './HeroMiniVoiceDictation.astro';
 import HeroMiniRemoteAccess from './HeroMiniRemoteAccess.astro';
 import HeroMiniConnectedTabs from './HeroMiniConnectedTabs.astro';
-import HeroMiniMultiAi from './HeroMiniMultiAi.astro';
+import HeroMiniComputerControl from './HeroMiniComputerControl.astro';
 import HeroMiniIntegratedBrowser from './HeroMiniIntegratedBrowser.astro';
 import HeroMiniSessionRestore from './HeroMiniSessionRestore.astro';
 import HeroMiniWhatsappGmail from './HeroMiniWhatsappGmail.astro';
@@ -48,6 +48,13 @@ const lp = (path: string) => getLocalePath(locale, path);
     <!-- Three mini-demo animations -->
     <div class="hero-features">
       <div class="hero-feature-item">
+        <HeroMiniComputerControl />
+        <div class="hf-text">
+          <span class="hf-label">{t(locale, 'hero.computerControl')}</span>
+          <p class="hf-desc">{t(locale, 'hero.computerControlDesc')}</p>
+        </div>
+      </div>
+      <div class="hero-feature-item">
         <HeroMiniMultiTerminal />
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.multiProject')}</span>
@@ -73,13 +80,6 @@ const lp = (path: string) => getLocalePath(locale, path);
         <div class="hf-text">
           <span class="hf-label">{t(locale, 'hero.connectedTabs')}</span>
           <p class="hf-desc">{t(locale, 'hero.connectedTabsDesc')}</p>
-        </div>
-      </div>
-      <div class="hero-feature-item">
-        <HeroMiniMultiAi />
-        <div class="hf-text">
-          <span class="hf-label">{t(locale, 'hero.multiAi')}</span>
-          <p class="hf-desc">{t(locale, 'hero.multiAiDesc')}</p>
         </div>
       </div>
       <div class="hero-feature-item">
