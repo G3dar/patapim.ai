@@ -84,6 +84,7 @@ export const GET: APIRoute = async (context) => {
         city: d.city,
         country: d.country,
         platform: d.platform || null,
+        appVersion: d.appVersion || null,
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
       };

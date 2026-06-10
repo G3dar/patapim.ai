@@ -39,6 +39,7 @@ export const GET: APIRoute = async (context) => {
     city: string;
     country: string;
     platform: string;
+    appVersion: string;
     ownerName: string;
     ownerEmail: string;
     ownerPicture: string;
@@ -59,6 +60,7 @@ export const GET: APIRoute = async (context) => {
       city: d.city || '',
       country: d.country || '',
       platform: d.platform || '',
+      appVersion: d.appVersion || '',
       ownerName: owner?.name || '',
       ownerEmail: owner?.email || d.email || '',
       ownerPicture: owner?.picture || '',

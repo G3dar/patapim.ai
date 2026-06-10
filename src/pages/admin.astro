@@ -1760,6 +1760,8 @@ if (!isAdmin(user)) {
 
         ${buildBreakdown(s.licenses.statusBreakdown)}
 
+        ${buildVersionBreakdown(s.devices.versionBreakdown)}
+
         ${s.downloads.geo && Object.keys(s.downloads.geo).length > 0 ? `
         <div class="map-section">
           <div class="section-heading">Downloads by Country</div>
@@ -1852,7 +1854,8 @@ if (!isAdmin(user)) {
       function userRow(u: any, isOnline: boolean) {
         const name = u.ownerName || u.ownerEmail?.split('@')[0] || 'Unknown';
         const location = [u.city, u.country].filter(Boolean).join(', ');
-        const detail = location || u.deviceName || u.platform || '';
+        const baseDetail = location || u.deviceName || u.platform || '';
+        const detail = u.appVersion ? [baseDetail, 'v' + u.appVersion].filter(Boolean).join(' · ') : baseDetail;
         const hasPrompt = !!u.lastPrompt;
         const promptLabel = hasPrompt ? timeAgo(u.lastPrompt) : (u.lastSeen ? timeAgo(u.lastSeen) : '\u2014');
         const timeTooltip = hasPrompt
@@ -1860,7 +1863,7 @@ if (!isAdmin(user)) {
           : (u.lastSeen ? 'Last online: ' + new Date(u.lastSeen).toLocaleString() : '');
         const joined = joinedAgo(u.ownerCreatedAt);
         return `
-          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${location ? '&#10;' + esc(location) : ''}${timeTooltip ? '&#10;' + timeTooltip : ''}${joined ? '&#10;' + joined : ''}">
+          <div class="sidebar-user" title="${esc(u.ownerEmail)}&#10;${esc(u.deviceName)}${u.appVersion ? ' · v' + esc(u.appVersion) : ''}${location ? '&#10;' + esc(location) : ''}${timeTooltip ? '&#10;' + timeTooltip : ''}${joined ? '&#10;' + joined : ''}">
             <div class="sidebar-user-avatar">
               ${userAvatar(u)}
               <span class="sidebar-status-dot ${isOnline ? 'online' : 'offline'}"></span>
@@ -2085,6 +2088,17 @@ if (!isAdmin(user)) {
     if (!entries.length) return '';
     return `<div class="breakdown-row">${entries.map(([s, c]) =>
       `<span class="breakdown-chip"><span class="chip-dot ${s}"></span> <span class="chip-count">${c}</span> ${s}</span>`
+    ).join('')}</div>`;
+  }
+
+  function buildVersionBreakdown(bd: Record<string, number> | undefined) {
+    if (!bd) return '';
+    // Sort by count desc; "unknown" (pre-1.5.5 clients that don't report) last
+    const entries = Object.entries(bd).sort((a, b) =>
+      a[0] === 'unknown' ? 1 : b[0] === 'unknown' ? -1 : b[1] - a[1]);
+    if (!entries.length) return '';
+    return `<div class="breakdown-row" title="App versions of devices seen in the last 30 days">${entries.map(([v, c]) =>
+      `<span class="breakdown-chip"><span class="chip-count">${c}</span> ${v === 'unknown' ? 'unknown' : 'v' + esc(v)}</span>`
     ).join('')}</div>`;
   }
 

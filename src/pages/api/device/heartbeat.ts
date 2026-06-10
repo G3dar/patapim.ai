@@ -36,7 +36,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; lastPrompt?: string; syncthingDeviceId?: string } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -67,6 +67,9 @@ export const POST: APIRoute = async (context) => {
   if (country !== undefined) device.country = country;
   if (nameChanged) device.deviceName = incomingName;
   if (body.platform) device.platform = body.platform;
+  // App version from electron app.getVersion() — cap length so a hostile
+  // client can't bloat the KV record.
+  if (typeof body.appVersion === 'string' && body.appVersion.length <= 32) device.appVersion = body.appVersion;
   if (body.lastPrompt) device.lastPrompt = body.lastPrompt;
   // Syncthing device ID for folder-sync mesh formation. A 56-char base32 ID in
   // 7 dash-separated groups; validate loosely so a malformed value can't poison

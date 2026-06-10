@@ -59,8 +59,15 @@ export const GET: APIRoute = async (context) => {
   // Device stats
   let onlineNow = 0;
   const fifteenMinAgo = new Date(now.getTime() - 15 * 60 * 1000);
+  // Version distribution among devices seen in the last 30 days (older ones
+  // skew the picture toward versions nobody actually runs anymore)
+  const versionBreakdown: Record<string, number> = {};
   for (const [, d] of devices) {
     if (d.lastSeen && new Date(d.lastSeen) >= fifteenMinAgo) onlineNow++;
+    if (d.lastSeen && new Date(d.lastSeen) >= monthAgo) {
+      const v = d.appVersion || 'unknown';
+      versionBreakdown[v] = (versionBreakdown[v] || 0) + 1;
+    }
   }
 
   // Referral stats
@@ -138,6 +145,7 @@ export const GET: APIRoute = async (context) => {
       total: devices.size,
       onlineNow,
       avgPerUser: users.size > 0 ? +(devices.size / users.size).toFixed(1) : 0,
+      versionBreakdown,
     },
     referrals: {
       totalReferrers: referrals.size,
