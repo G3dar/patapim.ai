@@ -1,0 +1,128 @@
+---
+// Deep Test — reports archive (?id=<runId> renders one report).
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Reports — PATAPIM Deep Test</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/deep-test" class="brand">← Deep Test</a>
+      <span class="sep"></span>
+      <span class="label">Reports</span>
+    </div>
+  </header>
+
+  <main id="main"><p class="hint">Loading…</p></main>
+
+  <script is:inline>
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const id = new URLSearchParams(location.search).get('id');
+
+    // Minimal markdown renderer for our own report exports
+    // (headings, bold, inline code, lists, tables, blockquotes, paragraphs).
+    function md(src) {
+      const lines = esc(src).split('\n');
+      let html = '', listType = null, inTable = false;
+      const closeList = () => { if (listType) { html += `</${listType}>`; listType = null; } };
+      const closeTable = () => { if (inTable) { html += '</tbody></table>'; inTable = false; } };
+      const inline = (s) => s
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/_([^_]+)_/g, '<em>$1</em>');
+      for (const raw of lines) {
+        const line = raw.trimEnd();
+        if (/^\|.+\|$/.test(line)) {
+          const cells = line.slice(1, -1).split('|').map(c => c.trim());
+          if (cells.every(c => /^-{2,}$/.test(c))) continue; // separator row
+          if (!inTable) { closeList(); html += '<table><tbody>'; inTable = true;
+            html += '<tr>' + cells.map(c => `<th>${inline(c)}</th>`).join('') + '</tr>'; continue; }
+          html += '<tr>' + cells.map(c => `<td>${inline(c)}</td>`).join('') + '</tr>'; continue;
+        }
+        closeTable();
+        const h = line.match(/^(#{1,4})\s+(.*)/);
+        if (h) { closeList(); html += `<h${h[1].length + 1}>${inline(h[2])}</h${h[1].length + 1}>`; continue; }
+        if (/^[-*]\s+/.test(line)) { if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; } html += `<li>${inline(line.replace(/^[-*]\s+/, ''))}</li>`; continue; }
+        if (/^>\s?/.test(line)) { closeList(); html += `<blockquote>${inline(line.replace(/^>\s?/, ''))}</blockquote>`; continue; }
+        if (!line) { closeList(); continue; }
+        closeList(); html += `<p>${inline(line)}</p>`;
+      }
+      closeList(); closeTable();
+      return html;
+    }
+
+    async function showArchive() {
+      const r = await fetch('/api/deep-test/reports');
+      const { reports } = await r.json();
+      if (!reports.length) { $('#main').innerHTML = '<p class="hint">No reports yet.</p>'; return; }
+      $('#main').innerHTML = `<div class="card"><table>
+        <thead><tr><th>Tester</th><th>Environment</th><th>Result</th><th>Date</th></tr></thead>
+        <tbody>${reports.map(rep => `
+          <tr class="row" data-id="${esc(rep.runId)}">
+            <td><strong>${esc(rep.name)}</strong>${rep.kind === 'agent' ? ' 🤖' : ''}${rep.label ? `<div class="mini">${esc(rep.label)}</div>` : ''}</td>
+            <td>${esc(rep.environment || '')}</td>
+            <td class="mono">${rep.counts ? `✓${rep.counts.pass} ✗${rep.counts.fail} ⊘${rep.counts.blocked}` : ''}</td>
+            <td class="mini">${esc((rep.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
+          </tr>`).join('')}</tbody></table></div>`;
+      document.querySelectorAll('.row').forEach(row =>
+        row.addEventListener('click', () => location.href = '/deep-test/reports?id=' + row.dataset.id));
+    }
+
+    async function showReport(runId) {
+      const r = await fetch(`/api/deep-test/runs/${runId}/report`);
+      if (!r.ok) { $('#main').innerHTML = '<p class="hint">Report not found. <a href="/deep-test/reports">Archive</a></p>'; return; }
+      const rep = await r.json();
+      $('#main').innerHTML = `<div class="card report">
+        <div class="report-meta mini">By ${esc(rep.by || '?')} · ${esc((rep.createdAt || '').slice(0, 16).replace('T', ' '))} · plan ${esc(rep.planVersion || '?')}
+          · <a href="/deep-test/run?id=${esc(runId)}">open sheet</a></div>
+        ${md(rep.markdown)}</div>`;
+    }
+
+    id ? showReport(id) : showArchive();
+  </script>
+
+  <style is:global>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #e6edf3; --dim: #8b949e; --accent: #2f81f7;
+      --pass: #3fb950; --fail: #f85149; --blocked: #d29922; --skip: #6e7681;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+    code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.92em; }
+    a { color: var(--accent); text-decoration: none; }
+    .hint { color: var(--dim); padding: 20px; }
+    .mini { color: var(--dim); font-size: 12px; }
+    .topbar { background: var(--panel); border-bottom: 1px solid var(--border); }
+    .topbar-inner { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
+    .brand { color: var(--text); font-weight: 600; font-size: 14px; }
+    .sep { width: 1px; height: 16px; background: var(--border); }
+    .label { font-size: 14px; color: var(--dim); }
+    main { max-width: 980px; margin: 0 auto; padding: 24px 16px 80px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; color: var(--dim); font-weight: 500; font-size: 12px; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px; border-bottom: 1px solid var(--border); }
+    .row { cursor: pointer; } .row:hover { background: rgba(47,129,247,0.06); }
+    .report h2 { margin: 18px 0 10px; font-size: 20px; }
+    .report h3 { margin: 16px 0 8px; font-size: 16px; }
+    .report h4 { margin: 14px 0 6px; font-size: 14px; }
+    .report p { line-height: 1.6; margin: 6px 0; }
+    .report ul { padding-left: 22px; margin: 6px 0; } .report li { line-height: 1.6; }
+    .report blockquote { border-left: 3px solid var(--border); color: var(--dim); padding: 2px 12px; margin: 6px 0; }
+    .report table { margin: 10px 0; }
+    .report code { background: var(--bg); padding: 1px 6px; border-radius: 4px; }
+    .report-meta { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  </style>
+</body>
+</html>
