@@ -1,5 +1,5 @@
 {
-  "planVersion": "1.0.0",
+  "planVersion": "1.0.1",
   "generatedAt": "2026-06-12T13:15:16.683Z",
   "appVersion": "1.5.4",
   "appCommit": "2057477",
@@ -515,16 +515,16 @@
     {
       "section": "terminals",
       "subsection": "Keyboard shortcuts",
-      "title": "Close active terminal via Ctrl+Shift+W and check WhatsApp-panel double-binding",
+      "title": "Ctrl+Shift+W toggles the WhatsApp panel and does NOT close the terminal",
       "preconditions": [
         "≥2 terminal tabs open, a shell tab active and focused"
       ],
       "steps": [
+        "Open >=2 terminals; note the active one",
         "Press Ctrl+Shift+W",
-        "Verify tab count dropped by 1",
-        "Check whether the WhatsApp side panel ALSO toggled open (index.js binds the same combo to whatsappPanel.toggle)"
+        "Press Ctrl+Shift+W again"
       ],
-      "expected": "Active terminal closes (multiTerminalUI handler). Ideally the WhatsApp panel does NOT also open — both handlers are bound to Ctrl+Shift+W at document level, and the 2026-06-08 run observed a stray WhatsApp panel opening in this stretch; flag as a defect if both fire",
+      "expected": "WhatsApp panel toggles open then closed; the active terminal stays open (the old close-terminal binding was removed — closing is Ctrl+W / Ctrl+F4). Fixed 2026-06-12.",
       "mode": "agent",
       "destructive": false,
       "requiresExternal": [],
