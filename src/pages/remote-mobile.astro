@@ -3977,7 +3977,34 @@ Astro.response.headers.set('Expires', '0');
       sendAICommand('claude --dangerously-skip-permissions');
     });
 
-    // ── FAB: Paste from clipboard ─────────────────────────────────
+    // Base64-encode an image blob and stream it over the file_upload channel.
+    // The server writes it into the terminal's CWD and types the path in, so
+    // CLI tools (Claude Code, Codex) read the image from the remote disk.
+    function sendImageBlob(blob, fileName) {
+      if (blob.size > 10 * 1024 * 1024) {
+        showToast('Image too large (max 10 MB)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        ws.send(JSON.stringify({
+          type: 'file_upload',
+          terminalId: currentTerminalId,
+          fileName,
+          mimeType: blob.type || 'image/png',
+          size: blob.size,
+          data: base64,
+        }));
+        showToast('Sent: ' + fileName);
+        term.focus();
+        syncTerminalFocus();
+      };
+      reader.onerror = () => showToast('Failed to read image');
+      reader.readAsDataURL(blob);
+    }
+
+    // ── FAB: Paste from clipboard (text or image) ─────────────────
     fabPaste.addEventListener('click', async () => {
       closeFab();
       if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
@@ -3985,7 +4012,28 @@ Astro.response.headers.set('Expires', '0');
         return;
       }
       try {
-        const text = await navigator.clipboard.readText();
+        let text = null;
+        // clipboard.read() sees image items (copied screenshots, photos) that
+        // readText() can't. Grab the text from the same call when there's no
+        // image — a second clipboard call can lose Safari's user activation.
+        if (navigator.clipboard.read) {
+          try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+              const imgType = item.types.find((t) => t.startsWith('image/'));
+              if (imgType) {
+                const blob = await item.getType(imgType);
+                const ext = imgType === 'image/jpeg' ? 'jpg' : (imgType.split('/')[1] || 'png');
+                sendImageBlob(blob, 'clipboard-' + Date.now() + '.' + ext);
+                return;
+              }
+              if (!text && item.types.includes('text/plain')) {
+                text = await (await item.getType('text/plain')).text();
+              }
+            }
+          } catch (_) { /* permission/format quirk — fall through to readText */ }
+        }
+        if (!text) text = await navigator.clipboard.readText();
         if (!text) { showToast('Clipboard is empty'); return; }
         // Bracketed paste mode prevents auto-execution of multi-line pastes
         const data = '\x1b[200~' + text + '\x1b[201~';
@@ -4012,29 +4060,25 @@ Astro.response.headers.set('Expires', '0');
     imagePicker.addEventListener('change', () => {
       const file = imagePicker.files[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
-        showToast('Image too large (max 10 MB)');
-        imagePicker.value = '';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1];
-        ws.send(JSON.stringify({
-          type: 'file_upload',
-          terminalId: currentTerminalId,
-          fileName: file.name,
-          mimeType: file.type,
-          size: file.size,
-          data: base64,
-        }));
-        showToast('Sent: ' + file.name);
-        term.focus();
-        syncTerminalFocus();
-      };
-      reader.onerror = () => showToast('Failed to read file');
-      reader.readAsDataURL(file);
+      sendImageBlob(file, file.name);
       imagePicker.value = '';
+    });
+
+    // Native paste (Cmd/Ctrl+V on a desktop browser, iOS "Paste" callout):
+    // when the clipboard carries an image, upload it instead of letting the
+    // browser drop it — the terminal can't accept raw image data.
+    document.addEventListener('paste', (e) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) return;
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (blob) sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.png'));
+          return;
+        }
+      }
     });
 
     // ── Voice dictation (MediaRecorder → local transcription) ─────────────────
