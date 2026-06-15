@@ -1409,6 +1409,9 @@ Astro.response.headers.set('Expires', '0');
 
       .sidebar.open {
         transform: translateX(0);
+        /* Sit above the terminal's loading/error overlay (z-index:100) so the
+           full-screen panel stays usable while (re)connecting. */
+        z-index: 110;
       }
 
       /* No horizontal tab bar on mobile — terminal switching lives inside the
