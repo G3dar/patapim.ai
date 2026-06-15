@@ -607,6 +607,46 @@ Astro.response.headers.set('Expires', '0');
       flex-shrink: 0;
     }
 
+    /* Terminal list inside the panel — mobile only (hidden on desktop, which
+       uses the horizontal .tabs-bar instead). Shown via the mobile media query. */
+    #sidebar-terminals {
+      display: none;
+      flex-shrink: 0;
+      padding: 4px 8px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    #sidebar-terminals .sidebar-terms-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 8px 2px 6px;
+    }
+
+    /* Reuse .tab markup/state classes inside the panel, but lay them out as a
+       vertical full-width list instead of a horizontal bar. */
+    #sidebar-terminals .tab {
+      width: 100%;
+      height: auto;
+      padding: 9px 10px;
+      font-size: 13px;
+      margin-bottom: 3px;
+      border: 1px solid var(--border);
+    }
+
+    #sidebar-terminals .tab .tab-state { width: 7px; height: 7px; }
+
+    #sidebar-terminals .tab-close { opacity: 1; margin-left: auto; }
+
+    #sidebar-terminals .no-terms {
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 8px 4px;
+      font-style: italic;
+    }
+
     /* Sidebar actions */
     .sidebar-actions {
       flex-shrink: 0;
@@ -1358,7 +1398,11 @@ Astro.response.headers.set('Expires', '0');
         left: 0;
         bottom: 0;
         z-index: 30;
-        width: 260px;
+        /* Full phone width: the projects panel and the terminal are never
+           visible at the same time — you swipe between them. */
+        width: 100vw;
+        max-width: 100vw;
+        border-right: none;
         transform: translateX(-100%);
         transition: transform 0.2s ease;
       }
@@ -1367,6 +1411,12 @@ Astro.response.headers.set('Expires', '0');
         transform: translateX(0);
       }
 
+      /* No horizontal tab bar on mobile — terminal switching lives inside the
+         full-screen projects panel (#sidebar-terminals). */
+      .tabs-bar { display: none; }
+
+      /* Terminal list inside the panel (mobile only). */
+      #sidebar-terminals { display: block; }
     }
 
     @media (min-width: 769px) {
@@ -1425,6 +1475,10 @@ Astro.response.headers.set('Expires', '0');
         </div>
         <div id="projects-list">
           <div class="no-projects">Connecting...</div>
+        </div>
+        <div id="sidebar-terminals">
+          <div class="sidebar-terms-label">Terminals</div>
+          <div id="sidebar-terms-list"></div>
         </div>
         <div class="sidebar-actions">
           <button class="sidebar-btn btn-claude" id="btn-start-claude" disabled>
@@ -2575,6 +2629,9 @@ Astro.response.headers.set('Expires', '0');
 
       const viewportResize = debounce(() => {
         applyPtyDims({ forceRefresh: true });
+        // Crossing the mobile/desktop breakpoint flips where terminals are
+        // listed (panel vs. horizontal bar) — keep the panel list in sync.
+        renderSidebarTerminals();
       }, 80);
       window.addEventListener('resize', viewportResize);
       window.addEventListener('orientationchange', () => {
@@ -3522,10 +3579,42 @@ Astro.response.headers.set('Expires', '0');
         });
         tabsEl.appendChild(addBtn);
       }
+
+      // Mirror the same terminal list inside the full-screen projects panel
+      // (mobile only — desktop keeps the horizontal .tabs-bar above).
+      renderSidebarTerminals();
+    }
+
+    // Mobile: the horizontal tab bar is hidden, so the selected project's
+    // terminals are listed inside the panel. Reuses makeTabEl() so state/colors
+    // stay in sync with the desktop tabs — a single source of truth.
+    function renderSidebarTerminals() {
+      const list = document.getElementById('sidebar-terms-list');
+      if (!list) return;
+      if (!isMobileResizeMode()) { list.innerHTML = ''; return; }
+      list.innerHTML = '';
+      if (!terminals.length) {
+        const empty = document.createElement('div');
+        empty.className = 'no-terms';
+        empty.textContent = 'No terminals yet';
+        list.appendChild(empty);
+        return;
+      }
+      terminals.forEach(t => {
+        const el = makeTabEl(t);
+        // Any tap on the row (the × close button stops propagation) switches to
+        // the terminal and slides the panel away to reveal it full-screen.
+        el.addEventListener('click', closeSidebar);
+        list.appendChild(el);
+      });
     }
 
     function highlightTab(id) {
       tabsEl.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.terminalId === id);
+      });
+      const list = document.getElementById('sidebar-terms-list');
+      if (list) list.querySelectorAll('.tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.terminalId === id);
       });
     }
@@ -3560,6 +3649,42 @@ Astro.response.headers.set('Expires', '0');
 
     sidebarClose.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // -- Swipe gestures (mobile) --
+    // Swipe-right from the left edge opens the full-screen projects panel;
+    // swipe-left on the open panel closes it. Anchoring the open-gesture to the
+    // left edge keeps it from fighting the terminal's own horizontal pan in
+    // compact view (see the terminalWrap touch handlers above).
+    (function setupSwipeGestures() {
+      const EDGE = 24;       // px from the left edge that arms an open-swipe
+      const THRESHOLD = 50;  // min horizontal travel to trigger
+      let sx = 0, sy = 0, armedOpen = false, tracking = false;
+
+      document.addEventListener('touchstart', (e) => {
+        if (!isMobileResizeMode() || !e.touches[0]) { tracking = false; return; }
+        const t = e.touches[0];
+        sx = t.clientX; sy = t.clientY;
+        tracking = true;
+        // Arm an open-gesture only when the panel is closed and the touch began
+        // near the left edge; otherwise the gesture can only ever close.
+        armedOpen = !sidebarEl.classList.contains('open') && t.clientX <= EDGE;
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        if (!isMobileResizeMode()) return;
+        const t = (e.changedTouches && e.changedTouches[0]) || null;
+        if (!t) return;
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        // Ignore taps and mostly-vertical drags (those are scrolls/keyboard taps).
+        if (Math.abs(dx) < THRESHOLD || Math.abs(dy) > Math.abs(dx)) return;
+        const open = sidebarEl.classList.contains('open');
+        if (dx > 0 && armedOpen && !open) openSidebar();
+        else if (dx < 0 && open) closeSidebar();
+      }, { passive: true });
+    })();
 
     // -- Action buttons --
 
