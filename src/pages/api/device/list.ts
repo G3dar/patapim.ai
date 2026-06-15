@@ -74,6 +74,7 @@ export const GET: APIRoute = async (context) => {
       return {
         token: entry.token,
         deviceName: d.deviceName,
+        machineId: d.machineId || null,
         online,
         status,
         lastSeen: d.lastSeen,
@@ -97,7 +98,30 @@ export const GET: APIRoute = async (context) => {
     await env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(updated));
   }
 
+  // Collapse multiple registrations of the SAME machine. Re-pairing (or a
+  // re-install / sign-out-in) mints a brand-new device token each time — and
+  // historically a fresh random machineId too — so one physical machine can
+  // appear several times, e.g. "CASA" online plus two stale "CASA" entries from
+  // days ago. We group by (normalized) deviceName because the whole connect
+  // path already treats the name as a unique handle (resolveDeviceByName picks
+  // the first name match), so the token/machineId churn behind a name is not
+  // separately addressable anyway. Survivor per name: the online one wins, else
+  // the most recently seen.
+  const live = devices.filter(Boolean) as NonNullable<typeof devices[number]>[];
+  const seenMs = (d: { lastSeen?: string }) => {
+    const t = d.lastSeen ? new Date(d.lastSeen).getTime() : 0;
+    return isFinite(t) ? t : 0;
+  };
+  const isBetter = (a: typeof live[number], b: typeof live[number]) =>
+    a.online !== b.online ? a.online : seenMs(a) > seenMs(b);
+  const byName = new Map<string, typeof live[number]>();
+  for (const d of live) {
+    const key = (d.deviceName || '').trim().toLowerCase() || `token:${d.token}`;
+    const prev = byName.get(key);
+    if (!prev || isBetter(d, prev)) byName.set(key, d);
+  }
+
   return new Response(JSON.stringify({
-    devices: devices.filter(Boolean),
+    devices: Array.from(byName.values()),
   }), { status: 200, headers });
 };
