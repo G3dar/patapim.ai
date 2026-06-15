@@ -15,12 +15,13 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
            display:flex; align-items:center; justify-content:center; height:100vh; }
     .msg { opacity:.6; font-size:14px; }
   </style>
-  <!-- Smart entry point. Computers get the full desktop UI (/remotedesk →
-       the device's /desktop view); phones get the mobile terminal UI
-       (/remote-mobile). Go straight to either URL to force that one, or use
-       ?view=mobile / ?view=desktop to override. All query params (t/url/d/…)
-       are forwarded untouched so the one-time connect token is consumed once
-       by the final page. -->
+  <!-- Smart entry point. Everyone — phones and computers — gets the full
+       desktop UI (/remotedesk → the device's /desktop view), which now has a
+       built-in mobile mode (full-screen projects drawer + swipe) on touch
+       phones. The lean standalone client (/remote-mobile) is kept as a fallback,
+       reachable with ?view=mobile. Use ?view=desktop to force /remotedesk. All
+       query params (t/url/d/…) are forwarded untouched so the one-time connect
+       token is consumed once by the final page. -->
   <script is:inline>
     (function () {
       var p = new URLSearchParams(location.search);
@@ -28,19 +29,9 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       p.delete('view');
       var qs = p.toString();
 
-      function isMobile() {
-        var ua = navigator.userAgent || '';
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
-        if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean')
-          return navigator.userAgentData.mobile;
-        return window.matchMedia('(pointer: coarse)').matches
-            && window.matchMedia('(max-width: 1024px)').matches;
-      }
-
-      var target = view === 'mobile'  ? '/remote-mobile'
-                 : view === 'desktop' ? '/remotedesk'
-                 : isMobile()         ? '/remote-mobile'
-                 :                      '/remotedesk';
+      // Default everyone to the rich /desktop experience; ?view=mobile opts
+      // back into the legacy standalone client as a fallback.
+      var target = view === 'mobile' ? '/remote-mobile' : '/remotedesk';
 
       location.replace(target + (qs ? '?' + qs : ''));
     })();
