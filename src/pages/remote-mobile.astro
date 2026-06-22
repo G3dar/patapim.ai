@@ -8,7 +8,7 @@ Astro.response.headers.set('Expires', '0');
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
   <title>PATAPIM Remote</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -322,14 +322,33 @@ Astro.response.headers.set('Expires', '0');
       font-variant-numeric: tabular-nums;
     }
 
-    #topbar-project {
+    /* On mobile the terminal name doubles as the switcher trigger (tap it to
+       open the full-screen projects/terminals panel). The caret signals that. */
+    #topbar-switcher {
       display: none;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #topbar-switcher:active { background: var(--accent-dim); border-color: var(--accent); }
+    #topbar-project {
       font-size: 12px;
       color: var(--text-dim);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 140px;
+    }
+    #topbar-switcher-caret {
+      font-size: 8px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      line-height: 1;
     }
 
     .topbar-right {
@@ -1389,7 +1408,7 @@ Astro.response.headers.set('Expires', '0');
       .keys-bar { display: flex; }
 
       #sidebar-toggle { display: flex; }
-      #topbar-project { display: block; }
+      #topbar-switcher { display: inline-flex; }
       #sidebar-close { display: block; }
 
       .sidebar {
@@ -1450,7 +1469,10 @@ Astro.response.headers.set('Expires', '0');
           </div>
         </div>
         <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r55</span></a>
-        <span id="topbar-project"></span>
+        <div id="topbar-switcher" title="Switch terminal">
+          <span id="topbar-project"></span>
+          <span id="topbar-switcher-caret">&#9662;</span>
+        </div>
         <span id="dbg-state" style="display:none;font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
       </div>
       <div class="topbar-right">
@@ -1665,6 +1687,7 @@ Astro.response.headers.set('Expires', '0');
     const sidebarClose = document.getElementById('sidebar-close');
     const projectsList = document.getElementById('projects-list');
     const topbarProject = document.getElementById('topbar-project');
+    const topbarSwitcher = document.getElementById('topbar-switcher');
     const btnStartClaude = document.getElementById('btn-start-claude');
     const btnStartGemini = document.getElementById('btn-start-gemini');
     const btnStartCodex = document.getElementById('btn-start-codex');
@@ -1768,6 +1791,7 @@ Astro.response.headers.set('Expires', '0');
     let selectionOverlay = null;
     let mobileKeyboardOpen = false;
     let keyboardOpenTime = 0; // timestamp of last keyboard-open tap (grace period for snapshots)
+    let keyboardWasUp = false; // tracks the open→closed transition for the viewport pin
 
     function detectMobileClient() {
       const userAgent = navigator.userAgent || '';
@@ -2088,21 +2112,39 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
-    function scrollToBottomIfKeyboard(heightDelta) {
+    // Keep the app pinned to the space above the soft keyboard. iOS/WebKit
+    // animates the keyboard in, firing several incremental visualViewport resize
+    // events (~60-100px each) — so a per-event delta threshold misses the open
+    // entirely and the terminal stays hidden behind the keyboard. Instead we
+    // decide "keyboard up" from the ABSOLUTE gap between the layout viewport
+    // (window.innerHeight, which does NOT shrink for the keyboard on WebKit) and
+    // the visual viewport, and re-pin on every event so the animation converges.
+    function scrollToBottomIfKeyboard() {
       if (!isMobileResizeMode() || !term) return;
       const appEl = document.querySelector('.app');
-      if (heightDelta > 150) {
-        // Keyboard appeared — iOS dvh may lag behind, so pin to visual viewport
-        const vp = window.visualViewport;
-        if (vp) appEl.style.height = vp.height + 'px';
-        window.scrollTo(0, 0);
+      if (!appEl) return;
+      const vp = window.visualViewport;
+      if (!vp) return;
+      const layoutH = window.innerHeight || document.documentElement.clientHeight;
+      const keyboardUp = (layoutH - vp.height) > 120;
+      const justOpened = keyboardUp && !keyboardWasUp;
+      keyboardWasUp = keyboardUp;
+
+      if (keyboardUp) {
+        // Pin the app to the visible area; iOS dvh stays full-height so this is
+        // the only thing that lifts the terminal above the keyboard.
+        const h = Math.round(vp.height) + 'px';
+        if (appEl.style.height !== h) appEl.style.height = h;
+        if (vp.offsetTop > 0) window.scrollTo(0, 0);
         requestAnimationFrame(() => {
           applyPtyDims();
-          term.scrollToBottom();
+          // Only yank to the bottom on the open transition — re-doing it on every
+          // animation tick would fight a user scrolling back through scrollback.
+          if (justOpened) term.scrollToBottom();
         });
-      } else if (heightDelta < -150) {
+      } else {
         // Keyboard dismissed — restore dynamic viewport height and re-lock textarea
-        appEl.style.height = '';
+        if (appEl.style.height) appEl.style.height = '';
         if (isMobileClient && mobileKeyboardOpen) {
           const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
           // Skip re-lock if the textarea still has focus — visualViewport can
@@ -2644,20 +2686,20 @@ Astro.response.headers.set('Expires', '0');
         lastVisualViewportHeight = window.visualViewport.height;
 
         window.visualViewport.addEventListener('resize', debounce(() => {
-          const newHeight = window.visualViewport.height;
-          const heightDelta = lastVisualViewportHeight - newHeight;
-          lastVisualViewportHeight = newHeight;
-
+          lastVisualViewportHeight = window.visualViewport.height;
           applyPtyDims({ forceRefresh: true });
-          scrollToBottomIfKeyboard(heightDelta);
+          scrollToBottomIfKeyboard();
+          syncSidebarViewport();
         }, 80));
 
         window.visualViewport.addEventListener('scroll', debounce(() => {
-          // iOS pushes the page up when the keyboard opens — pin it back
+          // iOS pushes the page up when the keyboard opens — pin it back and
+          // re-sync the app height in case the reflow drifted it.
           if (isMobileResizeMode() && window.visualViewport.offsetTop > 0) {
             window.scrollTo(0, 0);
           }
-          applyPtyDims({ forceRefresh: true });
+          scrollToBottomIfKeyboard();
+          syncSidebarViewport();
         }, 80));
       }
     }
@@ -3653,29 +3695,60 @@ Astro.response.headers.set('Expires', '0');
         mobileKeyboardOpen = false;
         if (fabKbd) fabKbd.classList.remove('hidden');
       }
+      keyboardWasUp = false;
       // Restore the dynamic viewport height pinned when the keyboard opened.
       const appEl = document.querySelector('.app');
       if (appEl) appEl.style.height = '';
+    }
+
+    // The panel is position:fixed (top:40px; bottom:0), anchored to the LAYOUT
+    // viewport — which does not shrink for the soft keyboard on iOS. So even
+    // after dismissMobileKeyboard() runs, if the keyboard lingers a frame the
+    // bottom of the panel (the Terminals list + actions) sits behind it and you
+    // can't pick another terminal. Lift the panel's bottom above the keyboard
+    // so its whole content stays reachable. No-op once the keyboard is fully
+    // down (gap collapses to ~0).
+    function syncSidebarViewport() {
+      if (!sidebarEl.classList.contains('open') || !isMobileResizeMode()) {
+        sidebarEl.style.bottom = '';
+        return;
+      }
+      const vp = window.visualViewport;
+      if (!vp) return;
+      const layoutH = window.innerHeight || document.documentElement.clientHeight;
+      const kb = Math.max(0, layoutH - vp.height);
+      sidebarEl.style.bottom = kb > 120 ? kb + 'px' : '';
     }
 
     function openSidebar() {
       dismissMobileKeyboard();
       sidebarEl.classList.add('open');
       sidebarOverlay.classList.add('visible');
+      // Land at the top of the list, then keep the panel above the keyboard for
+      // the few frames iOS takes to animate it away.
+      if (projectsList) projectsList.scrollTop = 0;
+      syncSidebarViewport();
+      requestAnimationFrame(syncSidebarViewport);
     }
 
     function closeSidebar() {
       sidebarEl.classList.remove('open');
       sidebarOverlay.classList.remove('visible');
+      sidebarEl.style.bottom = '';
     }
 
-    sidebarToggle.addEventListener('click', () => {
+    function toggleSidebar() {
       if (sidebarEl.classList.contains('open')) {
         closeSidebar();
       } else {
         openSidebar();
       }
-    });
+    }
+
+    sidebarToggle.addEventListener('click', toggleSidebar);
+    // Tapping the terminal name in the topbar is the natural way to switch
+    // terminals — wire it to the same panel as the hamburger.
+    if (topbarSwitcher) topbarSwitcher.addEventListener('click', toggleSidebar);
 
     sidebarClose.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
