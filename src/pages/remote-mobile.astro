@@ -955,6 +955,20 @@ Astro.response.headers.set('Expires', '0');
     }
 
     @media (pointer: coarse) {
+      /* On touch devices the app is pinned to the VISUAL viewport via JS
+         (pinAppToVisualViewport) so the soft keyboard never overlays the
+         terminal/input — it shrinks the app instead. Must stay position:fixed
+         and MUST NOT gain transform/will-change/filter/contain/perspective:
+         those would make the position:fixed .xterm-helper-textarea below
+         re-anchor to .app and break keystroke capture. height:100dvh is the
+         no-JS fallback; JS overrides height+top while the keyboard is up. */
+      .app {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 100dvh;
+      }
       .terminal-wrap {
         overflow-x: hidden;
         overflow-y: hidden;
@@ -1772,7 +1786,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r55  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r56  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -2112,30 +2126,50 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
-    // Keep the app pinned to the space above the soft keyboard. iOS/WebKit
-    // animates the keyboard in, firing several incremental visualViewport resize
-    // events (~60-100px each) — so a per-event delta threshold misses the open
-    // entirely and the terminal stays hidden behind the keyboard. Instead we
-    // decide "keyboard up" from the ABSOLUTE gap between the layout viewport
-    // (window.innerHeight, which does NOT shrink for the keyboard on WebKit) and
-    // the visual viewport, and re-pin on every event so the animation converges.
+    // Pin .app to the VISUAL viewport so the soft keyboard shrinks the app
+    // instead of overlaying the terminal/input. On iOS/WebKit the layout
+    // viewport (and 100dvh) does NOT shrink for the keyboard, so this JS is the
+    // only mechanism. We track height AND top (visualViewport.offsetTop — the
+    // amount iOS pushes the page up to reveal a focused input). Runs
+    // UNCONDITIONALLY every frame: keyboard down → height==innerHeight, top==0
+    // (full screen); keyboard up → exactly the visible band. Use `top`, NEVER
+    // `transform`, or the position:fixed .xterm-helper-textarea would re-anchor.
+    let _vpRafScheduled = false;
+    function pinAppToVisualViewport() {
+      if (!isMobileResizeMode()) return;
+      const appEl = document.querySelector('.app');
+      const vp = window.visualViewport;
+      if (!appEl || !vp) return;
+      const h = Math.round(vp.height) + 'px';
+      const t = Math.round(vp.offsetTop) + 'px';
+      if (appEl.style.height !== h) appEl.style.height = h;
+      if (appEl.style.top !== t) appEl.style.top = t;
+      if (vp.offsetTop > 0) window.scrollTo(0, 0); // belt-and-suspenders reset
+    }
+
     function scrollToBottomIfKeyboard() {
       if (!isMobileResizeMode() || !term) return;
-      const appEl = document.querySelector('.app');
-      if (!appEl) return;
       const vp = window.visualViewport;
       if (!vp) return;
+
+      // Cheap per-frame layout pin (coalesced to one rAF per event burst) so
+      // .app follows the keyboard animation smoothly — no delta threshold to miss.
+      if (!_vpRafScheduled) {
+        _vpRafScheduled = true;
+        requestAnimationFrame(() => {
+          _vpRafScheduled = false;
+          pinAppToVisualViewport();
+        });
+      }
+
+      // Absolute keyboard up/down detection — used ONLY for the readonly/fab-kbd
+      // UX now, NOT for layout (layout is pinned unconditionally above).
       const layoutH = window.innerHeight || document.documentElement.clientHeight;
       const keyboardUp = (layoutH - vp.height) > 120;
       const justOpened = keyboardUp && !keyboardWasUp;
       keyboardWasUp = keyboardUp;
 
       if (keyboardUp) {
-        // Pin the app to the visible area; iOS dvh stays full-height so this is
-        // the only thing that lifts the terminal above the keyboard.
-        const h = Math.round(vp.height) + 'px';
-        if (appEl.style.height !== h) appEl.style.height = h;
-        if (vp.offsetTop > 0) window.scrollTo(0, 0);
         requestAnimationFrame(() => {
           applyPtyDims();
           // Only yank to the bottom on the open transition — re-doing it on every
@@ -2143,8 +2177,7 @@ Astro.response.headers.set('Expires', '0');
           if (justOpened) term.scrollToBottom();
         });
       } else {
-        // Keyboard dismissed — restore dynamic viewport height and re-lock textarea
-        if (appEl.style.height) appEl.style.height = '';
+        // Keyboard dismissed — re-lock textarea so taps reopen the keyboard.
         if (isMobileClient && mobileKeyboardOpen) {
           const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
           // Skip re-lock if the textarea still has focus — visualViewport can
@@ -2680,27 +2713,29 @@ Astro.response.headers.set('Expires', '0');
       }, 80);
       window.addEventListener('resize', viewportResize);
       window.addEventListener('orientationchange', () => {
-        setTimeout(() => applyPtyDims({ forceRefresh: true }), 120);
+        setTimeout(() => {
+          pinAppToVisualViewport();
+          applyPtyDims({ forceRefresh: true });
+        }, 120);
       });
       if (window.visualViewport) {
         lastVisualViewportHeight = window.visualViewport.height;
 
-        window.visualViewport.addEventListener('resize', debounce(() => {
+        // Undebounced: scrollToBottomIfKeyboard self-coalesces the layout pin to
+        // one rAF, so it tracks the keyboard animation frame-by-frame instead of
+        // landing once mid-animation (the old 80ms debounce missed the final state).
+        window.visualViewport.addEventListener('resize', () => {
           lastVisualViewportHeight = window.visualViewport.height;
-          applyPtyDims({ forceRefresh: true });
           scrollToBottomIfKeyboard();
           syncSidebarViewport();
-        }, 80));
+        });
 
-        window.visualViewport.addEventListener('scroll', debounce(() => {
-          // iOS pushes the page up when the keyboard opens — pin it back and
-          // re-sync the app height in case the reflow drifted it.
-          if (isMobileResizeMode() && window.visualViewport.offsetTop > 0) {
-            window.scrollTo(0, 0);
-          }
+        window.visualViewport.addEventListener('scroll', () => {
+          // iOS pushes the page up when the keyboard opens — pinAppToVisualViewport
+          // (inside scrollToBottomIfKeyboard) re-aligns top/height and resets scroll.
           scrollToBottomIfKeyboard();
           syncSidebarViewport();
-        }, 80));
+        });
       }
     }
 
@@ -3696,9 +3731,10 @@ Astro.response.headers.set('Expires', '0');
         if (fabKbd) fabKbd.classList.remove('hidden');
       }
       keyboardWasUp = false;
-      // Restore the dynamic viewport height pinned when the keyboard opened.
-      const appEl = document.querySelector('.app');
-      if (appEl) appEl.style.height = '';
+      // Re-pin to the full viewport (height back to full, top→0). A direct call
+      // (not just style.height='') guarantees restore even when the blur fires no
+      // visualViewport event, and keeps height/top managed by one code path.
+      requestAnimationFrame(pinAppToVisualViewport);
     }
 
     // The panel is position:fixed (top:40px; bottom:0), anchored to the LAYOUT

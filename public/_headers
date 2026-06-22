@@ -7,3 +7,13 @@
 
 /_assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Remote UIs ship their JS inline in the HTML document, so the HTML response IS
+# the cache surface. Force revalidation so deploys reach phones without a manual
+# hard-reload / cache-bust query.
+/remote
+  Cache-Control: no-cache
+/remote-mobile
+  Cache-Control: no-cache
+/remotedesk
+  Cache-Control: no-cache
