@@ -3632,7 +3632,34 @@ Astro.response.headers.set('Expires', '0');
 
     // -- Sidebar toggle (mobile) --
 
+    // Force the soft keyboard down. The full-screen projects panel is fixed to
+    // the layout viewport (top:40px; bottom:0); while the keyboard is up the
+    // visual viewport shrinks, so the bottom of the panel hides behind the
+    // keyboard and that part of the scroll region is unreachable. Blurring the
+    // xterm textarea + re-locking it (readonly) dismisses the keyboard and lets
+    // the project list scroll normally. Mirrors the dismiss path in
+    // scrollToBottomIfKeyboard().
+    function dismissMobileKeyboard() {
+      if (!isMobileClient) return;
+      const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
+      if (ta) {
+        ta.blur();
+        ta.setAttribute('readonly', 'readonly');
+      }
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      if (mobileKeyboardOpen) {
+        mobileKeyboardOpen = false;
+        if (fabKbd) fabKbd.classList.remove('hidden');
+      }
+      // Restore the dynamic viewport height pinned when the keyboard opened.
+      const appEl = document.querySelector('.app');
+      if (appEl) appEl.style.height = '';
+    }
+
     function openSidebar() {
+      dismissMobileKeyboard();
       sidebarEl.classList.add('open');
       sidebarOverlay.classList.add('visible');
     }
