@@ -32,8 +32,14 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
     .device .dot.heartbeat { background:#f59e0b; }
     .device .name { display:flex; align-items:center; gap:8px; font-weight:600; }
     /* Full-screen frame that hosts the desktop UI without exposing the tunnel
-       URL in the address bar (stays on patapim.ai/remotedesk). */
-    #frame { position:fixed; inset:0; width:100%; height:100%; border:0; display:none; background:#0a0a0b; }
+       URL in the address bar (stays on patapim.ai/remotedesk).
+       On touch phones its height is driven from window.visualViewport by JS
+       (fitFrameToViewport) so the soft keyboard shrinks the frame — the embedded
+       /desktop is cross-origin, so its OWN visualViewport never reacts to the
+       top-level keyboard; resizing the iframe element makes the inner document's
+       layout viewport (and visualViewport) shrink, which lets the desktop
+       renderer's keyboard handler refit the terminal above the keyboard. */
+    #frame { position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; border:0; display:none; background:#0a0a0b; }
     #frame.visible { display:block; }
     body.framed .box { display:none; }
   </style>
@@ -64,6 +70,45 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       var currentTunnelOrigin = null;
       function originOf(u) { try { return new URL(u).origin; } catch (e) { return null; } }
 
+      // ── Soft-keyboard fit (touch phones only) ──────────────────────────────
+      // The embedded /desktop is a CROSS-ORIGIN iframe: when the on-screen
+      // keyboard opens, only the TOP-LEVEL visualViewport shrinks — the iframe's
+      // own visualViewport does not react, so the desktop renderer inside never
+      // sees the keyboard and the terminal slides behind it. We drive the iframe
+      // ELEMENT height from the top-level visualViewport; shrinking the element
+      // shrinks the inner document's layout viewport (and its visualViewport),
+      // so the inner keyboard handler refits the terminal above the keyboard.
+      // Verified in the iOS 26.5 Simulator with a cross-origin iframe + real kb.
+      var _frameFitWired = false;
+      function fitFrameToViewport() {
+        var vp = window.visualViewport;
+        var frame = document.getElementById('frame');
+        if (!vp || !frame) return;
+        if (!window.matchMedia('(pointer: coarse)').matches) return; // desktop keeps full frame
+        var h = Math.round(vp.height);
+        var top = Math.round(vp.offsetTop) || 0;
+        frame.style.bottom = 'auto';          // free the height from the inset:0 bottom
+        frame.style.height = h + 'px';
+        frame.style.top = top + 'px';
+        if (vp.offsetTop > 0) { try { window.scrollTo(0, 0); } catch (e) {} }
+      }
+      function startFrameViewportFit() {
+        var vp = window.visualViewport;
+        if (!vp) return;
+        if (!_frameFitWired) {
+          _frameFitWired = true;
+          var raf = false;
+          var on = function () {
+            if (raf) return; raf = true;
+            requestAnimationFrame(function () { raf = false; fitFrameToViewport(); });
+          };
+          vp.addEventListener('resize', on);
+          vp.addEventListener('scroll', on);
+          window.addEventListener('orientationchange', function () { setTimeout(fitFrameToViewport, 150); });
+        }
+        fitFrameToViewport();
+      }
+
       // Open the device's full desktop web UI (served by the user's own PATAPIM
       // at <tunnelUrl>/desktop) inside a full-screen iframe, so the address bar
       // stays on patapim.ai/remotedesk instead of exposing the raw tunnel URL.
@@ -76,6 +121,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         frame.src = dest;
         frame.classList.add('visible');
         document.body.classList.add('framed');
+        startFrameViewportFit(); // keep the iframe sized above the soft keyboard
         if (host) { try { document.title = 'PATAPIM · ' + host; } catch (e) {} }
       }
 
