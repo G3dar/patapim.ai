@@ -9,7 +9,7 @@ const lp = (path: string) => getLocalePath(locale, path);
 <nav class="navbar">
   <div class="navbar-inner container">
     <a href={lp('/')} class="navbar-brand">
-      <span class="brand-icon">&#x276F;_</span>
+      <img class="brand-icon" src="/patapim-mark.png" width="28" height="28" alt="PATAPIM" />
       <span class="brand-text">{t(locale, 'nav.brand')}</span>
     </a>
 
@@ -84,12 +84,10 @@ const lp = (path: string) => getLocalePath(locale, path);
   }
 
   .brand-icon {
-    font-family: var(--font-mono);
-    color: var(--accent-primary);
-    font-size: 16px;
-    background: var(--accent-subtle);
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
+    display: block;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     animation: logo-icon-enter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 

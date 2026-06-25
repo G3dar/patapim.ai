@@ -1,4 +1,4 @@
-import { welcomeAndVerify, passwordReset, emailVerify } from './emailTemplates';
+import { welcomeAndVerify, passwordReset, emailVerify, purchaseWelcome } from './emailTemplates';
 
 // From address must use the apex domain (patapim.ai), which is what Resend
 // verified with the DKIM record at resend._domainkey.patapim.ai. The `send.`
@@ -62,6 +62,21 @@ async function send(env: ResendEnv, input: SendInput): Promise<void> {
 export async function sendWelcomeAndVerify(env: ResendEnv, to: string, name: string, verifyUrl: string): Promise<void> {
   const t = welcomeAndVerify(name, verifyUrl);
   await send(env, { to, ...t });
+}
+
+// Sent after a successful Stripe purchase. Delivers the license key (the system
+// does NOT store it anywhere the user can self-serve except the signed-in
+// dashboard, so this email is the customer's primary copy). Reply-to points at
+// support so customers can reply for help instead of hitting the noreply void.
+export async function sendPurchaseWelcome(
+  env: ResendEnv,
+  to: string,
+  name: string,
+  plan: 'pro' | 'lifetime',
+  licenseKey: string,
+): Promise<void> {
+  const t = purchaseWelcome(name, plan, licenseKey, 'https://patapim.ai/go', 'https://patapim.ai/download');
+  await sendEmail(env, { to, ...t, replyTo: env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL });
 }
 
 export async function sendPasswordReset(env: ResendEnv, to: string, name: string, resetUrl: string): Promise<void> {
