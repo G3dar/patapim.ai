@@ -88,6 +88,9 @@ export const GET: APIRoute = async (context) => {
         appVersion: d.appVersion || null,
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
+        // Per-machine mobile UI preference: 'simple' → /remote-mobile,
+        // else (default) → /remotedesk. /remote routes the phone by this.
+        remoteUI: d.remoteUI === 'simple' ? 'simple' : 'desktop',
       };
     })
   );

@@ -1,0 +1,4451 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+  <title>PATAPIM Remote</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+  <style is:inline>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-surface: #131316;
+      --bg-elevated: #1a1a1f;
+      --border: #2a2a30;
+      --border-active: #c9a227;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --text-muted: #52525b;
+      --accent: #c9a227;
+      --accent-dim: rgba(201, 162, 39, 0.15);
+      --success: #7cb382;
+      --success-dim: rgba(124, 179, 130, 0.12);
+      --error: #d47878;
+      --radius: 8px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* Full-page layout */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      padding: 0 12px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .topbar-logo {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .status-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .topbar-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-weight: 500;
+      flex-shrink: 0;
+      border: none;
+      font-family: inherit;
+      cursor: default;
+    }
+
+    .topbar-status.connecting {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .topbar-status.connected {
+      background: var(--success-dim);
+      color: var(--success);
+      cursor: pointer;
+    }
+
+    .topbar-status.disconnected {
+      background: rgba(212, 120, 120, 0.12);
+      color: var(--error);
+    }
+
+    .status-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px;
+      z-index: 100;
+      min-width: 110px;
+    }
+
+    .status-dropdown.visible { display: block; }
+
+    .status-dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 6px 12px;
+      background: none;
+      border: none;
+      color: var(--error);
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      text-align: left;
+    }
+
+    .status-dropdown-item:hover {
+      background: rgba(212, 120, 120, 0.12);
+    }
+
+    .status-dropdown-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .status-dropdown-label {
+      padding: 6px 12px 2px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .device-pick-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 6px 12px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+      text-align: left;
+    }
+    .device-pick-item:hover:not(.offline):not(.current) {
+      background: var(--bg-hover);
+    }
+    .device-pick-item.offline {
+      color: var(--text-dim);
+      cursor: default;
+    }
+    .device-pick-item.current {
+      cursor: default;
+      opacity: 0.85;
+    }
+    .device-pick-item .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--text-dim);
+    }
+    .device-pick-item.online .dot { background: #4ade80; }
+    .device-pick-item.heartbeat .dot { background: #fbbf24; }
+    .device-pick-item .name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .device-pick-item .badge {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .device-pick-empty {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    #sidebar-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 16px;
+      width: 30px;
+      height: 26px;
+      border-radius: 5px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    #sidebar-toggle:hover { color: var(--text); border-color: var(--text-dim); }
+
+    .settings-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    #settings-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 15px;
+      width: 30px;
+      height: 26px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    #settings-toggle:hover { color: var(--text); border-color: var(--text-dim); }
+
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      z-index: 100;
+      min-width: 160px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .settings-dropdown.visible { display: block; }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .settings-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .settings-font-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .settings-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      line-height: 1;
+    }
+
+    .settings-btn:hover {
+      border-color: var(--text-dim);
+      background: var(--accent-dim);
+    }
+
+    #settings-toggle,
+    .settings-btn {
+      touch-action: manipulation;
+    }
+
+    .settings-font-value {
+      font-size: 12px;
+      color: var(--text);
+      min-width: 20px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* On mobile the terminal name doubles as the switcher trigger (tap it to
+       open the full-screen projects/terminals panel). The caret signals that. */
+    #topbar-switcher {
+      display: none;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #topbar-switcher:active { background: var(--accent-dim); border-color: var(--accent); }
+    #topbar-project {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+    #topbar-switcher-caret {
+      font-size: 8px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Content area: sidebar + main */
+    .content-area {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px 8px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header span {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    #sidebar-close {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+    }
+
+    #sidebar-close:hover { color: var(--text); }
+
+    /* Projects list */
+    #projects-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .project-item {
+      padding: 7px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      color: var(--text-dim);
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .project-item:hover {
+      background: var(--bg-elevated);
+      color: var(--text);
+    }
+
+    .project-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .project-icon {
+      margin-right: 8px;
+      font-size: 13px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .project-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .project-badges {
+      display: flex;
+      gap: 3px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .tbadge {
+      font-size: 10px;
+      font-weight: 600;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      text-align: center;
+      border-radius: 8px;
+      padding: 0 4px;
+    }
+
+    .tbadge.attention {
+      background: rgba(124, 179, 130, 0.18);
+      color: var(--success);
+    }
+
+    .tbadge.busy {
+      background: rgba(212, 120, 120, 0.18);
+      color: var(--error);
+    }
+
+    .tbadge.plan {
+      background: rgba(0, 188, 212, 0.18);
+      color: #4dd0e1;
+    }
+
+    .tbadge.idle {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+    }
+
+    .no-projects {
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 16px 10px;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .later-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 10px 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      gap: 4px;
+      user-select: none;
+    }
+
+    .later-header:hover { color: var(--text-dim); }
+
+    .later-header .later-arrow {
+      font-size: 8px;
+      transition: transform 0.15s;
+    }
+
+    .later-header.expanded .later-arrow {
+      transform: rotate(90deg);
+    }
+
+    .later-header .later-count {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .later-projects { display: none; }
+    .later-projects.open { display: block; }
+
+    /* Archive/unarchive action button on project items */
+    .project-archive-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-left: 4px;
+      padding: 0;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+    }
+
+    .project-archive-btn:hover {
+      color: var(--text);
+      background: var(--bg-surface);
+    }
+
+    .project-item:hover .project-archive-btn,
+    .project-item .project-archive-btn:focus {
+      display: flex;
+    }
+
+    /* On touch devices, always show the button */
+    @media (pointer: coarse) {
+      .project-archive-btn { display: flex; }
+    }
+
+    /* Subfolders nested under a project item */
+    .subfolder-item {
+      padding: 5px 10px 5px 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .subfolder-item::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .subfolder-item:hover {
+      background: var(--bg-elevated);
+      color: var(--text-dim);
+    }
+
+    .subfolder-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .subfolder-icon {
+      margin-right: 6px;
+      font-size: 11px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .subfolder-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .subfolder-badges {
+      display: flex;
+      gap: 3px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* Terminal list inside the panel — mobile only (hidden on desktop, which
+       uses the horizontal .tabs-bar instead). Shown via the mobile media query. */
+    #sidebar-terminals {
+      display: none;
+      flex-shrink: 0;
+      padding: 4px 8px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    #sidebar-terminals .sidebar-terms-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 8px 2px 6px;
+    }
+
+    /* Reuse .tab markup/state classes inside the panel, but lay them out as a
+       vertical full-width list instead of a horizontal bar. */
+    #sidebar-terminals .tab {
+      width: 100%;
+      height: auto;
+      padding: 9px 10px;
+      font-size: 13px;
+      margin-bottom: 3px;
+      border: 1px solid var(--border);
+    }
+
+    #sidebar-terminals .tab .tab-state { width: 7px; height: 7px; }
+
+    #sidebar-terminals .tab-close { opacity: 1; margin-left: auto; }
+
+    #sidebar-terminals .no-terms {
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 8px 4px;
+      font-style: italic;
+    }
+
+    /* Sidebar actions */
+    .sidebar-actions {
+      flex-shrink: 0;
+      padding: 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .sidebar-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .btn-claude {
+      background: rgba(124, 179, 130, 0.1);
+      border-color: rgba(124, 179, 130, 0.3);
+      color: var(--success);
+    }
+
+    .btn-claude:hover:not(:disabled) {
+      background: rgba(124, 179, 130, 0.18);
+      border-color: var(--success);
+    }
+
+    .sidebar-btn-row {
+      display: flex;
+      gap: 4px;
+    }
+    .sidebar-btn-row .sidebar-btn {
+      flex: 1;
+      font-size: 11px;
+      padding: 5px 6px;
+    }
+
+    .btn-gemini {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+    }
+    .btn-gemini:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+    }
+
+    .btn-codex {
+      background: rgba(96, 165, 250, 0.08);
+      border-color: rgba(96, 165, 250, 0.25);
+      color: #60a5fa;
+    }
+    .btn-codex:hover:not(:disabled) {
+      background: rgba(96, 165, 250, 0.15);
+      border-color: #60a5fa;
+    }
+
+    .btn-new-term {
+      background: var(--bg-elevated);
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+
+    .btn-new-term:hover:not(:disabled) {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    /* Sidebar overlay (mobile) */
+    #sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 29;
+    }
+
+    #sidebar-overlay.visible { display: block; }
+
+    /* Main area */
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Terminal tabs */
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      height: 34px;
+      padding: 0 6px;
+      gap: 2px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+      contain: layout style paint; /* isolate DOM mutations from terminal compositing */
+    }
+
+    .tabs-bar::-webkit-scrollbar { display: none; }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      height: 26px;
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: 4px;
+      white-space: nowrap;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: var(--bg-elevated);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      background: var(--accent-dim);
+      border-color: rgba(201, 162, 39, 0.25);
+    }
+
+    /* Tab state indicator dot */
+    .tab-state {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: none;
+      will-change: opacity; /* own compositing layer — animation doesn't dirty terminal */
+    }
+
+    .tab.state-attention .tab-state {
+      display: block;
+      background: var(--success);
+    }
+
+    .tab.state-busy .tab-state {
+      display: block;
+      background: var(--error);
+      animation: tab-pulse 1.2s ease-in-out infinite;
+    }
+
+    .tab.state-plan .tab-state {
+      display: block;
+      background: #11a8cd;
+    }
+
+    @keyframes tab-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Tab text color when state active */
+    .tab.state-attention:not(.active) { color: var(--success); }
+    .tab.state-busy:not(.active) { color: var(--error); }
+    .tab.state-plan:not(.active) { color: #11a8cd; }
+
+    .tab-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      font-size: 13px;
+      line-height: 1;
+      border-radius: 3px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.1s, background 0.1s, color 0.1s;
+    }
+
+    .tab:hover .tab-close,
+    .tab.active .tab-close {
+      opacity: 1;
+    }
+
+    .tab-close:hover {
+      background: rgba(212, 120, 120, 0.2);
+      color: var(--error);
+    }
+
+    @media (pointer: coarse) {
+      .tab-close { opacity: 1; }
+    }
+
+    .tab-add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: none;
+      font-family: inherit;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tab-add:hover {
+      color: var(--text);
+      background: var(--bg-elevated);
+      border-color: var(--text-dim);
+    }
+
+    .tab-add-ai {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
+      color: var(--success);
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid var(--success);
+      background: none;
+      font-family: inherit;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tab-add-ai:hover {
+      background: rgba(124, 179, 130, 0.15);
+    }
+
+    /* Terminal area (non-scrolling wrapper for overlay) */
+    .terminal-area {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Terminal container */
+    .terminal-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+
+    /* Non-scrolling overlay for floating buttons */
+    .terminal-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .terminal-overlay > * {
+      pointer-events: auto;
+    }
+
+    @media (pointer: coarse) {
+      /* On touch devices the soft keyboard shrinks the app instead of overlaying
+         the terminal/input: JS (pinAppToVisualViewport) sets .app height to the
+         visual-viewport height on every visualViewport event. .app stays in
+         NORMAL FLOW (NOT position:fixed) — proven in the iOS Simulator to reliably
+         lift the bottom bar + prompt above the keyboard, and matches the known-good
+         local mobile UI. 100dvh is the no-JS fallback. */
+      .terminal-wrap {
+        overflow-x: hidden;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: auto;
+      }
+      .terminal-wrap .xterm {
+        width: max-content;
+        min-width: 100%;
+      }
+      /* Prevent the browser from auto-scrolling to the textarea when it's focused */
+      .terminal-wrap .xterm-helper-textarea {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+      }
+    }
+
+    .terminal-wrap .xterm {
+      height: 100%;
+      padding: 4px 0 0 4px;
+      touch-action: pan-x pan-y !important;
+    }
+
+    /* Mobile: let touches fall through the canvas to xterm-viewport so
+       iOS handles the pan natively. The viewport scrolls on the browser's
+       own compositor path — no JS scrollTop mutation, no layer desync. */
+    @media (pointer: coarse) {
+      .terminal-wrap .xterm-screen { pointer-events: none; }
+    }
+
+    .terminal-wrap .xterm-viewport {
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+      /* NO -webkit-overflow-scrolling: touch — that causes iOS GPU-compositor scroll
+         to move the DOM without xterm's canvas catching up → ghost/shadow terminal */
+      overscroll-behavior-y: contain;
+      touch-action: pan-x pan-y !important;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    @media (pointer: coarse) {
+      .terminal-wrap .xterm-viewport {
+        overflow-x: hidden !important;
+      }
+    }
+
+    .terminal-wrap .xterm-screen {
+      touch-action: pan-x pan-y !important;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar {
+      width: 8px;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .terminal-wrap .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: var(--text-dim);
+    }
+
+    /* Special keys toolbar (mobile) */
+    .keys-bar {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 4px 8px;
+      gap: 4px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .key-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .key-btn:hover, .key-btn:active {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .key-btn.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .key-btn.tg-active {
+      color: #fff;
+      border-color: #229ED9;
+      background: #229ED9;
+    }
+
+    .key-btn.recording {
+      color: var(--error);
+      border-color: var(--error);
+      background: rgba(212, 120, 120, 0.12);
+      animation: mic-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes mic-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Scroll to bottom */
+    .scroll-bottom {
+      display: none;
+      position: absolute;
+      bottom: 16px;
+      right: 34px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      z-index: 19;
+      transition: all 0.15s;
+    }
+
+    .scroll-bottom:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .scroll-bottom svg {
+      transition: transform 0.15s;
+    }
+
+    .scroll-bottom.visible { display: flex; }
+
+    /* Floating action button (mobile) */
+    .fab-actions {
+      display: none;
+      position: relative;
+      align-items: center;
+    }
+
+    .fab-trigger {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, color 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .fab-trigger:active { transform: scale(0.92); color: var(--text); }
+    .fab-trigger.open { border-color: var(--text-dim); color: var(--text); }
+
+    .fab-menu {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      min-width: 160px;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+    }
+
+    .fab-menu.visible { display: flex; }
+
+    .fab-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+
+    .fab-menu-item:active,
+    .fab-menu-item:hover {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .fab-menu-item svg { flex-shrink: 0; opacity: 0.7; }
+
+    .fab-menu-item.plan-active,
+    .fab-menu-item.compact-active {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Floating button stack: bottom-right */
+    .fab-stack {
+      position: absolute;
+      bottom: 60px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .fab-mic {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-elevated);
+      color: #f57c20;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .fab-mic:active { transform: scale(0.92); }
+
+    .fab-mic.recording {
+      border-color: #e74c3c;
+      animation: mic-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes mic-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+    }
+
+    .fab-kbd {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-dim);
+      font-size: 16px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .fab-kbd:active { transform: scale(0.92); }
+
+    @media (max-width: 768px) {
+      .fab-stack { bottom: 100px; right: 16px; }
+    }
+
+    /* Selection overlay */
+    .selection-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      background: rgba(10, 10, 11, 0.92);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre;
+      overflow: auto;
+      padding: 4px 0 0 4px;
+      -webkit-user-select: text;
+      user-select: text;
+      cursor: text;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Toast notification */
+    .fab-toast {
+      position: absolute;
+      bottom: 110px;
+      right: 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      z-index: 15;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+
+    .fab-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Voice dictation preview */
+    .voice-preview {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .voice-preview.visible {
+      display: flex;
+    }
+
+    .voice-text {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px;
+      border-radius: var(--radius);
+      resize: none;
+      line-height: 1.4;
+    }
+
+    .voice-text:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .voice-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .voice-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.15s;
+    }
+
+    .voice-cancel {
+      background: none;
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+
+    .voice-cancel:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
+
+    .voice-send {
+      background: rgba(124, 179, 130, 0.12);
+      border-color: rgba(124, 179, 130, 0.4);
+      color: var(--success);
+    }
+
+    .voice-send:hover {
+      background: rgba(124, 179, 130, 0.2);
+      border-color: var(--success);
+    }
+
+    @media (max-width: 768px) {
+      .fab-actions { display: flex; }
+    }
+
+    /* Loading screen */
+    .loading-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      z-index: 100;
+      gap: 12px;
+    }
+
+    .loading-screen.hidden { display: none; }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .loading-error {
+      font-size: 13px;
+      color: var(--error);
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .loading-error a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .keys-bar { display: flex; }
+
+      #sidebar-toggle { display: flex; }
+      #topbar-switcher { display: inline-flex; }
+      #sidebar-close { display: block; }
+
+      .sidebar {
+        position: fixed;
+        top: 40px;
+        left: 0;
+        bottom: 0;
+        z-index: 30;
+        /* Full phone width: the projects panel and the terminal are never
+           visible at the same time — you swipe between them. */
+        width: 100vw;
+        max-width: 100vw;
+        border-right: none;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+        /* Sit above the terminal's loading/error overlay (z-index:100) so the
+           full-screen panel stays usable while (re)connecting. */
+        z-index: 110;
+      }
+
+      /* No horizontal tab bar on mobile — terminal switching lives inside the
+         full-screen projects panel (#sidebar-terminals). */
+      .tabs-bar { display: none; }
+
+      /* Terminal list inside the panel (mobile only). */
+      #sidebar-terminals { display: block; }
+    }
+
+    @media (min-width: 769px) {
+      .voice-preview { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button id="sidebar-toggle" title="Toggle projects">&#9776;</button>
+        <div class="settings-wrap">
+          <button id="settings-toggle" title="Settings">&#9881;</button>
+          <div class="settings-dropdown" id="settings-dropdown">
+            <div class="settings-row">
+              <span class="settings-label">Font size</span>
+              <div class="settings-font-controls">
+                <button class="settings-btn" id="settings-font-dec">&minus;</button>
+                <span class="settings-font-value" id="settings-font-value">14</span>
+                <button class="settings-btn" id="settings-font-inc">+</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">View</span>
+              <a id="switch-to-desktop" href="/remotedesk" style="color:var(--accent);text-decoration:none;font-size:12px;font-weight:600">Desktop &#8599;</a>
+            </div>
+          </div>
+        </div>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r55</span></a>
+        <div id="topbar-switcher" title="Switch terminal">
+          <span id="topbar-project"></span>
+          <span id="topbar-switcher-caret">&#9662;</span>
+        </div>
+        <span id="dbg-state" style="display:none;font-size:9px;opacity:0.7;margin-left:4px;font-family:monospace"></span>
+      </div>
+      <div class="topbar-right">
+        <div class="status-wrap" id="status-wrap">
+          <button class="topbar-status connecting" id="status">Connecting...</button>
+          <div class="status-dropdown" id="status-dropdown">
+            <button class="status-dropdown-item" id="btn-disconnect">Disconnect</button>
+            <div class="status-dropdown-sep"></div>
+            <div class="status-dropdown-label">Switch device</div>
+            <div id="device-pick-list">
+              <div class="device-pick-empty">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sidebar-overlay"></div>
+
+    <div class="content-area">
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <span>Projects</span>
+          <button id="sidebar-close">&times;</button>
+        </div>
+        <div id="projects-list">
+          <div class="no-projects">Connecting...</div>
+        </div>
+        <div id="sidebar-terminals">
+          <div class="sidebar-terms-label">Terminals</div>
+          <div id="sidebar-terms-list"></div>
+        </div>
+        <div class="sidebar-actions">
+          <button class="sidebar-btn btn-claude" id="btn-start-claude" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Start Claude Code
+          </button>
+          <div class="sidebar-btn-row">
+            <button class="sidebar-btn btn-gemini" id="btn-start-gemini" disabled>Start Gemini</button>
+            <button class="sidebar-btn btn-codex" id="btn-start-codex" disabled>Start Codex</button>
+          </div>
+          <button class="sidebar-btn btn-new-term" id="btn-new-terminal" disabled>
+            + New Terminal
+          </button>
+        </div>
+      </div>
+
+      <div class="main-area">
+        <div class="tabs-bar" id="tabs"></div>
+
+        <div class="terminal-area">
+          <div class="terminal-wrap" id="terminal-wrap">
+            <div class="loading-screen hidden" id="loading">
+              <div class="loading-spinner"></div>
+              <div class="loading-text" id="loading-text">Connecting to device...</div>
+            </div>
+
+            <div class="fab-toast" id="fab-toast"></div>
+            <input type="file" id="image-picker" accept="image/*" style="display:none" />
+          </div>
+
+          <!-- Non-scrolling overlay for floating buttons -->
+          <div class="terminal-overlay">
+            <!-- Floating button stack: bottom-right corner -->
+            <div class="fab-stack" id="fab-stack">
+              <div class="fab-actions" id="fab-actions">
+                <div class="fab-menu" id="fab-menu">
+                  <button class="fab-menu-item" id="fab-plan-mode">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                      <path d="M2 17l10 5 10-5"/>
+                      <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>Toggle Plan Mode</span>
+                  </button>
+                  <button class="fab-menu-item" id="fab-skip-perms">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start Claude (skip perms)
+                  </button>
+                  <button class="fab-menu-item" id="fab-paste">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                    </svg>
+                    Paste from clipboard
+                  </button>
+                  <button class="fab-menu-item" id="fab-image">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Insert image file
+                  </button>
+                  <button class="fab-menu-item" id="fab-compact">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="4 14 10 14 10 20"/>
+                      <polyline points="20 10 14 10 14 4"/>
+                      <line x1="14" y1="10" x2="21" y2="3"/>
+                      <line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                    <span>Compact View</span>
+                  </button>
+                </div>
+                <button class="fab-trigger" id="fab-trigger" title="Actions">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
+              <button class="fab-kbd" id="fab-kbd" title="Show keyboard">⌨</button>
+              <button class="fab-mic" id="fab-mic" title="Dictado por voz">🎤</button>
+            </div>
+            <button class="scroll-bottom" id="scroll-bottom" title="Scroll to bottom">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Voice dictation preview -->
+        <div class="voice-preview" id="voice-preview">
+          <textarea class="voice-text" id="voice-text" rows="3" placeholder="Speak now..."></textarea>
+          <div class="voice-actions">
+            <button class="voice-btn voice-cancel" id="voice-cancel">✕ Cancel</button>
+            <button class="voice-btn voice-send" id="voice-send">↵ Send</button>
+          </div>
+        </div>
+        <div class="keys-bar" id="keys-bar">
+          <button class="key-btn" id="key-shift-tab" style="border-color:var(--warning-dim, #b8860b); color:#e0a832;">⇧Tab</button>
+          <button class="key-btn" data-modifier="ctrl">Ctrl</button>
+          <button class="key-btn" data-modifier="alt">Alt</button>
+          <button class="key-btn" data-key="Tab">Tab</button>
+          <button class="key-btn" data-key="Escape">Esc</button>
+          <button class="key-btn" data-key="ArrowUp">&uarr;</button>
+          <button class="key-btn" data-key="ArrowDown">&darr;</button>
+          <button class="key-btn" data-key="ArrowLeft">&larr;</button>
+          <button class="key-btn" data-key="ArrowRight">&rarr;</button>
+          <button class="key-btn" data-key="Enter">↵</button>
+          <button class="key-btn" id="key-zoom-out" title="Zoom out">A−</button>
+          <button class="key-btn" id="key-zoom-in" title="Zoom in">A+</button>
+          <button class="key-btn" id="key-kbd" title="Toggle keyboard" style="padding:4px 20px; font-size:16px;">⌨</button>
+          <button class="key-btn" id="key-select" style="border-color:var(--accent); color:var(--accent);">Select</button>
+          <button class="key-btn" id="key-telegram" title="Toggle Telegram notifications">✈ TG</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug overlay: activate with ?debug=1 in URL -->
+  <div id="dbg-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.92);color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:45vh;overflow-y:auto;border-top:2px solid #0f0;touch-action:pan-y;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <strong style="color:#d4a574;">PATAPIM debug</strong>
+      <span>
+        <button id="dbg-copy" style="font-family:monospace;font-size:10px;background:#1a1918;color:#0f0;border:1px solid #0f0;padding:2px 8px;cursor:pointer;margin-right:4px;">COPY</button>
+        <button id="dbg-clear" style="font-family:monospace;font-size:10px;background:#1a1918;color:#888;border:1px solid #444;padding:2px 8px;cursor:pointer;margin-right:4px;">CLEAR</button>
+        <button id="dbg-close" style="font-family:monospace;font-size:10px;background:#1a1918;color:#e05252;border:1px solid #e05252;padding:2px 8px;cursor:pointer;">X</button>
+      </span>
+    </div>
+    <div id="dbg-state" style="color:#adf;margin-bottom:6px;line-height:1.6;"></div>
+    <div id="dbg-log" style="line-height:1.5;"></div>
+  </div>
+
+  <script is:inline type="module">
+    import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
+    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+
+    // Parse URL params
+    const params = new URLSearchParams(location.search);
+    const deviceToken = params.get('d');
+
+    // Active connection variables (mutable — refreshed on reconnect)
+    let activeConnectToken = params.get('t');
+    let activeTunnelUrl = params.get('url');
+    let activeDeviceToken = deviceToken;
+
+    // Deep-link from a Telegram notification: open this terminal and (if
+    // `keys` is set) auto-press the chosen menu option. Cleared the moment
+    // we successfully fire so a refresh doesn't re-trigger.
+    let pendingTerminalId = params.get('terminal');
+    let pendingProject = params.get('project');
+    let pendingKeys = params.get('keys');
+    if (pendingTerminalId || pendingProject || pendingKeys) {
+      // Strip the deep-link params from the URL bar immediately. Connection
+      // params (d/t/url) are preserved.
+      const keep = new URLSearchParams();
+      for (const k of ['d', 't', 'url']) {
+        const v = params.get(k);
+        if (v) keep.set(k, v);
+      }
+      const qs = keep.toString();
+      try {
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+      } catch {}
+    }
+
+    // DOM
+    const statusEl = document.getElementById('status');
+    const statusDropdown = document.getElementById('status-dropdown');
+    const tabsEl = document.getElementById('tabs');
+    const loadingEl = document.getElementById('loading');
+    const loadingText = document.getElementById('loading-text');
+    const terminalWrap = document.getElementById('terminal-wrap');
+    const scrollBottomBtn = document.getElementById('scroll-bottom');
+    const sidebarEl = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarClose = document.getElementById('sidebar-close');
+    const projectsList = document.getElementById('projects-list');
+    const topbarProject = document.getElementById('topbar-project');
+    const topbarSwitcher = document.getElementById('topbar-switcher');
+    const btnStartClaude = document.getElementById('btn-start-claude');
+    const btnStartGemini = document.getElementById('btn-start-gemini');
+    const btnStartCodex = document.getElementById('btn-start-codex');
+    const btnNewTerminal = document.getElementById('btn-new-terminal');
+    const fabTrigger = document.getElementById('fab-trigger');
+    const fabMenu = document.getElementById('fab-menu');
+    const fabPlanMode = document.getElementById('fab-plan-mode');
+    const fabSkipPerms = document.getElementById('fab-skip-perms');
+    const fabPaste = document.getElementById('fab-paste');
+    const fabImage = document.getElementById('fab-image');
+    const fabCompact = document.getElementById('fab-compact');
+    const fabToast = document.getElementById('fab-toast');
+    const fabMic = document.getElementById('fab-mic');
+    const fabKbd = document.getElementById('fab-kbd');
+    const imagePicker = document.getElementById('image-picker');
+    const keySelect = document.getElementById('key-select');
+    const keyShiftTab = document.getElementById('key-shift-tab');
+    const keyMic = document.getElementById('key-mic');
+    const voicePreview = document.getElementById('voice-preview');
+    const voiceText = document.getElementById('voice-text');
+    const voiceSend = document.getElementById('voice-send');
+    const voiceCancel = document.getElementById('voice-cancel');
+
+    // State
+    let ws = null;
+    let term = null;
+    let fitAddon = null;
+    let currentTerminalId = null;
+    let terminals = [];
+    let isSwitching = false;
+    let switchOutputQueue = [];
+    let ptyDims = null;
+    let isWritingBuffer = false;
+    let drainTimerId = null;   // current checkDrain setTimeout id
+    let drainDeadline = 0;     // hard fallback: fire initDone/switchDone after this timestamp
+    let lastBufferSeq = 0;
+    let isApplyingServerResize = false;
+    let lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+    let lastFocusSync = { terminalId: null, focused: null };
+    let lastVisualViewportHeight = 0;
+    let fontSize = 14;
+    let fontManuallySet = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+    let wsConnectTimeout = null;
+    let isAuthenticated = false;
+    const modifiers = { ctrl: false, alt: false };
+    let fabOpen = false;
+    let isPlanMode = false;
+    let isCompactView = false;
+    let selectMode = false;
+    let pendingAIStart = false;
+
+    // ---- DEBUG OVERLAY ----
+    const dbgPanel = document.getElementById('dbg-panel');
+    const dbgState = document.getElementById('dbg-state');
+    const dbgLogEl = document.getElementById('dbg-log');
+    const dbgEvents = [];
+    const isDebugMode = new URLSearchParams(location.search).has('debug');
+    if (isDebugMode && dbgPanel) {
+      dbgPanel.style.display = 'block';
+      document.getElementById('dbg-close')?.addEventListener('click', () => dbgPanel.style.display = 'none');
+      document.getElementById('dbg-clear')?.addEventListener('click', () => { dbgEvents.length = 0; if(dbgLogEl) dbgLogEl.innerHTML=''; });
+      document.getElementById('dbg-copy')?.addEventListener('click', () => {
+        const state = dbgState ? dbgState.textContent : '';
+        const log = dbgEvents.join('\n');
+        navigator.clipboard?.writeText(state + '\n---\n' + log).then(() => alert('Copiado!')).catch(() => alert('Error al copiar'));
+      });
+    }
+    function dbgLog(msg) {
+      if (!isDebugMode) return;
+      const t = new Date().toISOString().slice(11,23);
+      dbgEvents.push(t + ' ' + msg);
+      if (dbgEvents.length > 40) dbgEvents.shift();
+      if (dbgLogEl) dbgLogEl.innerHTML = dbgEvents.map(e => '<div>' + e + '</div>').join('');
+    }
+    function dbgUpdate() {
+      if (!isDebugMode || !dbgState) return;
+      const wrap = terminalWrap;
+      const screen = wrap ? wrap.querySelector('.xterm-screen') : null;
+      const viewport = wrap ? wrap.querySelector('.xterm-viewport') : null;
+      const xtermEls = document.querySelectorAll('.xterm').length;
+      const canvases = document.querySelectorAll('.xterm canvas').length;
+      dbgState.innerHTML = [
+        'build=r57  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
+        'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
+        'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
+        'vp.scrollTop=' + (viewport ? Math.round(viewport.scrollTop) : '?') + ' vp.scrollH=' + (viewport ? viewport.scrollHeight : '?'),
+        'xterm elements=' + xtermEls + '  canvases=' + canvases,
+        'ws.state=' + (ws ? ['CONNECTING','OPEN','CLOSING','CLOSED'][ws.readyState] : 'null'),
+      ].join('<br>');
+    }
+    if (isDebugMode) setInterval(dbgUpdate, 500);
+    // ---- END DEBUG OVERLAY ----
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingTimeout = null;
+    let transcriptionTimeout = null;
+    let isRecording = false;
+    let selectionOverlay = null;
+    let mobileKeyboardOpen = false;
+    let keyboardOpenTime = 0; // timestamp of last keyboard-open tap (grace period for snapshots)
+    let keyboardWasUp = false; // tracks the open→closed transition for the viewport pin
+
+    function detectMobileClient() {
+      const userAgent = navigator.userAgent || '';
+      const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(userAgent);
+      // Check UA string first — userAgentData.mobile can be wrong under device emulation
+      if (uaMobile) return true;
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+        return navigator.userAgentData.mobile;
+      }
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const narrowViewport = window.matchMedia('(max-width: 1024px)').matches;
+      return coarsePointer && narrowViewport;
+    }
+
+    const isMobileClient = detectMobileClient();
+
+    // Balanced default density on phones: a slightly smaller font fits ~55-60 cols
+    // on a typical handset while staying readable. Desktop browsers keep 14.
+    // The +/- font buttons remain the readability knob and recompute cols from here.
+    if (isMobileClient) fontSize = 12;
+
+    // Sidebar state
+    let sidebarData = { projects: [], currentProject: null, currentSubfolder: null };
+    let laterExpanded = false;
+
+    // Helper to fetch a fresh connectToken from the server
+    async function fetchConnectToken(devToken) {
+      const res = await fetch('/api/device/connect-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ deviceToken: devToken }),
+      });
+      if (res.status === 401) return { error: 'session_expired' };
+      if (!res.ok) return { error: 'fetch_failed' };
+      return res.json();
+    }
+
+    // Device switcher (inside the status dropdown). Lists the account's
+    // other PATAPIMs so the user can hop between machines from the phone
+    // without going back to /go. Online devices are clickable; offline are
+    // shown greyed for context. The current device is labelled "this one".
+    let deviceListCache = null;
+    let deviceListLoadInFlight = null;
+    async function loadDeviceList(force = false) {
+      if (deviceListLoadInFlight) return deviceListLoadInFlight;
+      if (!force && deviceListCache) { renderDeviceList(deviceListCache); return deviceListCache; }
+      deviceListLoadInFlight = (async () => {
+        try {
+          const res = await fetch('/api/device/list', { credentials: 'same-origin' });
+          if (!res.ok) return [];
+          const data = await res.json();
+          deviceListCache = Array.isArray(data.devices) ? data.devices : [];
+          renderDeviceList(deviceListCache);
+          return deviceListCache;
+        } catch {
+          return [];
+        } finally {
+          deviceListLoadInFlight = null;
+        }
+      })();
+      return deviceListLoadInFlight;
+    }
+
+    function renderDeviceList(devices) {
+      const host = document.getElementById('device-pick-list');
+      if (!host) return;
+      if (!devices || devices.length === 0) {
+        host.innerHTML = '<div class="device-pick-empty">No other devices</div>';
+        return;
+      }
+      // Sort: current first, then online, then heartbeat, then offline.
+      const ranked = devices.slice().sort((a, b) => {
+        const ra = a.token === activeDeviceToken ? 0 : (a.status === 'online' ? 1 : (a.status === 'heartbeat' ? 2 : 3));
+        const rb = b.token === activeDeviceToken ? 0 : (b.status === 'online' ? 1 : (b.status === 'heartbeat' ? 2 : 3));
+        return ra - rb;
+      });
+      host.innerHTML = '';
+      for (const d of ranked) {
+        const isCurrent = d.token === activeDeviceToken;
+        const status = d.status || (d.online ? 'online' : 'offline');
+        const cls = ['device-pick-item', status];
+        if (isCurrent) cls.push('current');
+        if (status === 'offline') cls.push('offline');
+        const btn = document.createElement('button');
+        btn.className = cls.join(' ');
+        btn.dataset.token = d.token;
+        const safeName = (d.deviceName || 'Unnamed').replace(/[<>&]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
+        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : status);
+        btn.innerHTML = '<span class="dot"></span><span class="name">' + safeName + '</span>'
+          + (badge ? '<span class="badge">' + badge + '</span>' : '');
+        if (!isCurrent && status !== 'offline') {
+          btn.addEventListener('click', () => switchToDevice(d.token));
+        }
+        host.appendChild(btn);
+      }
+    }
+
+    async function switchToDevice(targetToken) {
+      const host = document.getElementById('device-pick-list');
+      if (host) {
+        // Visual feedback — disable buttons + show "switching"
+        host.querySelectorAll('.device-pick-item').forEach(b => { b.style.pointerEvents = 'none'; b.style.opacity = '0.5'; });
+      }
+      const r = await fetchConnectToken(targetToken);
+      if (!r || !r.connectToken || !r.tunnelUrl) {
+        if (host) host.innerHTML = '<div class="device-pick-empty">Failed to switch (' + ((r && r.error) || 'unknown') + ')</div>';
+        return;
+      }
+      // Persist target so auto-reconnect picks the right device after we land.
+      try {
+        localStorage.setItem('patapim_device', JSON.stringify({ deviceToken: targetToken, ts: Date.now() }));
+      } catch {}
+      // Navigate with the same URL shape the dashboard uses.
+      const qs = new URLSearchParams({ d: targetToken, t: r.connectToken, url: r.tunnelUrl });
+      window.location.href = '/remote-mobile?' + qs.toString();
+    }
+
+    // Init: connect from URL params or auto-reconnect from localStorage
+    if (activeConnectToken && activeTunnelUrl) {
+      // Normal flow from dashboard — store deviceToken for future reconnects
+      if (activeDeviceToken) {
+        localStorage.setItem('patapim_device', JSON.stringify({
+          deviceToken: activeDeviceToken, ts: Date.now()
+        }));
+      }
+      initTerminal();
+      connect();
+    } else {
+      // Try auto-reconnect from localStorage
+      tryAutoReconnect();
+    }
+
+    async function tryAutoReconnect() {
+      const stored = JSON.parse(localStorage.getItem('patapim_device') || 'null');
+      if (!stored?.deviceToken) {
+        showError('Missing connection parameters. <a href="/go">Go back to dashboard</a>');
+        return;
+      }
+      loadingText && (loadingText.textContent = 'Reconnecting...');
+      const result = await fetchConnectToken(stored.deviceToken);
+      if (result.error === 'session_expired') {
+        localStorage.removeItem('patapim_device');
+        window.location.href = '/go';
+        return;
+      }
+      if (!result.connectToken || !result.tunnelUrl) {
+        showError((result.error || 'Device offline') + '. <a href="/go">Go back to dashboard</a>');
+        return;
+      }
+      activeConnectToken = result.connectToken;
+      activeTunnelUrl = result.tunnelUrl;
+      activeDeviceToken = stored.deviceToken;
+      initTerminal();
+      connect();
+    }
+
+    function showError(html) {
+      loadingEl.classList.remove('hidden');
+      loadingText.remove();
+      const spinner = loadingEl.querySelector('.loading-spinner');
+      if (spinner) spinner.remove();
+      const err = document.createElement('div');
+      err.className = 'loading-error';
+      err.innerHTML = html;
+      loadingEl.appendChild(err);
+    }
+
+    function setStatus(state, text) {
+      statusEl.textContent = text;
+      statusEl.className = 'topbar-status ' + state;
+    }
+
+    function isMobileResizeMode() {
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const narrowViewport = window.matchMedia('(max-width: 1024px)').matches;
+      const hasTouch = typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 0;
+      return isMobileClient || (coarsePointer && narrowViewport) || (hasTouch && narrowViewport);
+    }
+
+    function getVisualViewportWidthRatio() {
+      const vp = window.visualViewport;
+      if (!vp) return 1;
+
+      const visualWidth = Math.round(Number(vp.width) || 0);
+      const layoutWidth = Math.round(Number(window.innerWidth || document.documentElement.clientWidth) || 0);
+      if (!visualWidth || !layoutWidth || visualWidth >= layoutWidth) {
+        return 1;
+      }
+
+      const ratio = visualWidth / layoutWidth;
+      return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+    }
+
+    // Push a mobile-driven resize to the server. The backend grants mobile
+    // clients ownership of the terminal (claimTerminalControl), resizes the PTY,
+    // and mirrors the width onto the desktop. Deduped against lastSentResize so an
+    // echoed pty_dimensions can't bounce back and loop us.
+    function sendMobileResize(cols, rows) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (!isAuthenticated || !currentTerminalId) return;
+      if (!(cols > 0) || !(rows > 0)) return;
+      if (isWritingBuffer) return;          // never resize mid buffer write (init/switch)
+      if (isApplyingServerResize) return;   // don't echo a server-driven resize back
+      if (lastSentResize.terminalId === currentTerminalId
+          && lastSentResize.cols === cols && lastSentResize.rows === rows) return;
+      ws.send(JSON.stringify({ type: 'resize', terminalId: currentTerminalId, cols, rows, mobile: true }));
+      lastSentResize = { terminalId: currentTerminalId, cols, rows };
+      dbgLog('sent mobile resize ' + cols + '×' + rows);
+    }
+
+    // Apply terminal dimensions.
+    // Mobile: fit cols+rows to the phone at the readable font, resize PTY to match.
+    // Desktop: force PTY cols for correct cursor positioning.
+    function applyPtyDims(options = {}) {
+      if (!fitAddon || !term) return;
+      if (isWritingBuffer) return;
+      const { syncServer = true, forceRefresh = false } = options;
+      const isMobile = isMobileResizeMode();
+      // Stick-to-bottom guard: only re-snap to the bottom after a relayout if the
+      // user was ALREADY at the bottom. applyPtyDims fires on every layout change
+      // (ResizeObserver, window resize, and the visualViewport resize that the
+      // mobile URL bar triggers while scrolling) — unconditionally scrolling here
+      // (explicitly via scrollToBottom OR implicitly via term.resize, which xterm
+      // snaps to ybase) yanked the user out of the scrollback every time they
+      // tried to read history.
+      const _buf = term.buffer.active;
+      const wasAtBottom = _buf.viewportY >= _buf.baseY;
+      const _linesFromBottom = wasAtBottom ? 0 : (_buf.baseY - _buf.viewportY);
+      const _restoreScrollAfterResize = () => {
+        if (wasAtBottom || _linesFromBottom <= 0) return;
+        const nb = term.buffer.active;
+        const targetY = Math.max(0, nb.baseY - _linesFromBottom);
+        const delta = targetY - nb.viewportY;
+        if (delta !== 0) term.scrollLines(delta);
+      };
+      dbgLog('applyPtyDims isMobile=' + isMobile + ' ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null') + ' syncServer=' + syncServer);
+
+      if (isMobile) {
+        const hasRemoteDims = ptyDims && Number.isFinite(ptyDims.cols) && Number.isFinite(ptyDims.rows);
+
+        if (isCompactView && hasRemoteDims) {
+          // OPT-OUT (compact view): show the full desktop width with the font
+          // shrunk to fit. Preserves the previous mobile behavior and never
+          // resizes the PTY.
+          // CRITICAL: do NOT call fitAddon.fit() here — fit() would resize to
+          // narrow mobile cols BEFORE we force ptyDims.cols, reflowing the whole
+          // scrollback at the wrong width and corrupting TUI content. Use
+          // proposeDimensions() to get the row count, then a single resize.
+          if (!fontManuallySet) {
+            const containerH = terminalWrap.clientHeight;
+            if (containerH > 0 && ptyDims.rows > 0) {
+              const targetFont = Math.max(11, Math.floor(containerH / ptyDims.rows));
+              if (term.options.fontSize !== targetFont) term.options.fontSize = targetFont;
+            }
+          } else if (term.options.fontSize !== fontSize) {
+            term.options.fontSize = fontSize;
+          }
+          const dims = fitAddon.proposeDimensions();
+          const fitRows = (dims && dims.rows > 0) ? dims.rows : term.rows;
+          if (term.cols !== ptyDims.cols || term.rows !== fitRows) {
+            term.resize(ptyDims.cols, fitRows);
+          }
+          if (forceRefresh) term.refresh(0, term.rows - 1);
+          if (wasAtBottom) requestAnimationFrame(() => term.scrollToBottom());
+          else _restoreScrollAfterResize();
+          // Compact view never resizes the PTY.
+        } else {
+          // PRIMARY mobile mode: the readable font is the knob; fit cols+rows to
+          // the phone and push that width to the PTY (and, via the backend, the PC).
+          if (term.options.fontSize !== fontSize) term.options.fontSize = fontSize;
+          // proposeDimensions() reads the container + cell size to compute the
+          // cols/rows that fit WITHOUT resizing. We resize exactly once to the
+          // final target — no intermediate narrow-col reflow that corrupts TUIs.
+          const dims = fitAddon.proposeDimensions();
+          if (dims && dims.cols > 0 && dims.rows > 0) {
+            const _oldRows = term.rows, _oldCols = term.cols;
+            const _oldBase = term.buffer.active.baseY, _oldView = term.buffer.active.viewportY;
+            if (term.cols !== dims.cols || term.rows !== dims.rows) {
+              term.resize(dims.cols, dims.rows);
+              const _nb = term.buffer.active;
+              dbgLog('RESIZE ' + _oldCols + 'x' + _oldRows + '→' + dims.cols + 'x' + dims.rows + ' baseY ' + _oldBase + '→' + _nb.baseY + ' viewY ' + _oldView + '→' + _nb.viewportY + ' bufLen=' + _nb.length + ' wasBot=' + wasAtBottom);
+            }
+            if (forceRefresh) term.refresh(0, term.rows - 1);
+            if (wasAtBottom) requestAnimationFrame(() => term.scrollToBottom());
+            else _restoreScrollAfterResize();
+            if (syncServer) {
+              // Width changes (orientation flip / font +/-) always propagate.
+              // While the soft keyboard is animating in/out, only the height
+              // changes — suppress those rows-only resizes so we don't churn the
+              // PTY/TUI mid-type. The local view still resizes either way.
+              const colsChanged = !(lastSentResize.terminalId === currentTerminalId
+                                    && lastSentResize.cols === dims.cols);
+              const inKbGrace = isMobileClient && keyboardOpenTime
+                                && (Date.now() - keyboardOpenTime < 1500);
+              if (colsChanged || !inKbGrace) sendMobileResize(dims.cols, dims.rows);
+            }
+          } else if (!hasRemoteDims) {
+            // Nothing measurable yet and no server dims — fit locally and wait
+            // for terminal_init. Do not send a resize.
+            fitAddon.fit();
+            if (forceRefresh) term.refresh(0, term.rows - 1);
+          }
+        }
+      } else if (ptyDims) {
+        const dims = fitAddon.proposeDimensions();
+        if (dims && dims.rows > 0) {
+          term.resize(ptyDims.cols, dims.rows);
+          if (forceRefresh) {
+            term.refresh(0, term.rows - 1);
+          }
+        }
+      } else {
+        fitAddon.fit();
+        if (forceRefresh) {
+          term.refresh(0, term.rows - 1);
+        }
+      }
+    }
+
+    // Pin .app to the VISUAL viewport so the soft keyboard shrinks the app
+    // instead of overlaying the terminal/input. On iOS/WebKit the layout viewport
+    // (and 100dvh) does NOT shrink for the keyboard, so this JS is the only
+    // mechanism. .app is a normal-flow flex column, so setting its height to the
+    // visual-viewport height lets the flex chain reflow and lift the bottom bar +
+    // prompt above the keyboard. Verified in the iOS 26.5 Simulator (real soft
+    // keyboard): app 714→377, keys-bar + prompt stay visible above the keyboard.
+    // Deliberately does NOT depend on `term` — layout must pin even mid-(re)connect.
+    function pinAppToVisualViewport() {
+      if (!isMobileResizeMode()) return;
+      const appEl = document.querySelector('.app');
+      const vp = window.visualViewport;
+      if (!appEl || !vp) return;
+      const h = Math.round(vp.height) + 'px';
+      if (appEl.style.height !== h) appEl.style.height = h;
+      if (vp.offsetTop > 0) window.scrollTo(0, 0); // keep page from panning under kb
+    }
+
+    function scrollToBottomIfKeyboard() {
+      // Layout pin already ran (called directly from the listeners, term-independent).
+      if (!isMobileResizeMode() || !term) return;
+      const vp = window.visualViewport;
+      if (!vp) return;
+
+      // Absolute keyboard up/down detection — used ONLY for the readonly/fab-kbd
+      // UX and prompt scroll, NOT for layout (layout is pinned unconditionally).
+      const layoutH = window.innerHeight || document.documentElement.clientHeight;
+      const keyboardUp = (layoutH - vp.height) > 120;
+      const justOpened = keyboardUp && !keyboardWasUp;
+      keyboardWasUp = keyboardUp;
+
+      if (keyboardUp) {
+        requestAnimationFrame(() => {
+          applyPtyDims();
+          // Only yank to the bottom on the open transition — re-doing it on every
+          // animation tick would fight a user scrolling back through scrollback.
+          if (justOpened) term.scrollToBottom();
+        });
+      } else {
+        // Keyboard dismissed — re-lock textarea so taps reopen the keyboard.
+        if (isMobileClient && mobileKeyboardOpen) {
+          const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
+          // Skip re-lock if the textarea still has focus — visualViewport can
+          // fire spurious shrink events (orientation, status bar) while the
+          // keyboard is genuinely still up. Re-applying readonly mid-type
+          // makes space/keys scroll the page instead of typing.
+          if (ta && document.activeElement !== ta) {
+            mobileKeyboardOpen = false;
+            ta.setAttribute('readonly', 'readonly');
+            fabKbd.classList.remove('hidden');
+          }
+        }
+        requestAnimationFrame(() => {
+          applyPtyDims();
+        });
+      }
+    }
+
+    function getCellWidth() {
+      try {
+        return term._core._renderService.dimensions.css.cell.width;
+      } catch (e) {
+        const screen = terminalWrap.querySelector('.xterm-screen');
+        if (screen && term.cols > 0) return screen.offsetWidth / term.cols;
+        return 0;
+      }
+    }
+
+    let isUserTouchScrolling = false;
+    let autoScrollDisabled = false;
+    let userIsTyping = false;
+    let typingTimer = null;
+
+    // Horizontal offset via CSS transform
+    let hOffset = 0;
+
+    function markTyping() {
+      userIsTyping = true;
+      if (typingTimer) clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        userIsTyping = false;
+      }, 2000);
+    }
+
+    function setHOffset(px) {
+      // Fit-to-width (primary mobile) mode sizes the terminal to the phone, so
+      // there is nothing to the right to reveal — any horizontal offset is just
+      // useless drift. Only the compact view (full desktop width) keeps it.
+      if (!isCompactView) px = 0;
+      hOffset = px;
+      const xtermEl = terminalWrap.querySelector('.xterm');
+      if (xtermEl) {
+        xtermEl.style.transition = 'transform 120ms ease-out';
+        xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
+      }
+    }
+
+    function setHOffsetImmediate(px) {
+      if (!isCompactView) px = 0;
+      hOffset = px;
+      const xtermEl = terminalWrap.querySelector('.xterm');
+      if (xtermEl) {
+        xtermEl.style.transition = 'none';
+        xtermEl.style.transform = px ? `translateX(-${px}px)` : '';
+      }
+    }
+
+    function isClaudeActive() {
+      const cur = terminals.find(t => t.id === currentTerminalId);
+      return cur && cur.isProcessing;
+    }
+
+    // Never auto-scroll while the user is reading scrollback (desktop AND mobile).
+    // Snapshot writes (\x1b[2J\x1b[H + viewport-data) and cursor positioning
+    // in live output can yank viewportY back to baseY. We capture the scroll
+    // position before the write and restore it after xterm processes the data.
+    // Mobile previously passed through unchanged, which forced the viewport back
+    // to the bottom every time new output arrived while the user was scrolled up.
+    function writePreservingScroll(data) {
+      if (!term) return;
+      const buf = term.buffer.active;
+      const targetY = buf.viewportY;
+      const isScrolledUp = targetY < buf.baseY;
+      term.write(data);
+      if (!isScrolledUp) return;
+      requestAnimationFrame(() => {
+        const newBuf = term.buffer.active;
+        const clampedY = Math.min(targetY, newBuf.baseY);
+        const delta = clampedY - newBuf.viewportY;
+        if (delta !== 0) term.scrollLines(delta);
+      });
+    }
+
+    function isClientFocused() {
+      return !document.hidden && document.visibilityState === 'visible';
+    }
+
+    function sendTerminalFocus(focused, terminalId = currentTerminalId) {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !terminalId) return;
+      const normalized = !!focused;
+      if (lastFocusSync.terminalId === terminalId && lastFocusSync.focused === normalized) return;
+
+      ws.send(JSON.stringify({
+        type: 'terminal_focus',
+        terminalId,
+        focused: normalized,
+        mobile: isMobileResizeMode(),
+      }));
+      lastFocusSync = { terminalId, focused: normalized };
+    }
+
+    function syncTerminalFocus(terminalId = currentTerminalId) {
+      if (!terminalId) return;
+      sendTerminalFocus(isClientFocused(), terminalId);
+    }
+
+    function resetTerminalView() {
+      if (!term) return;
+      term.clear();
+      term.write('\x1b[2J\x1b[3J\x1b[H');
+    }
+
+    function debounce(fn, delay) {
+      let timer = null;
+      return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    // ── Plan Mode detection & toggle ──────────────────────────────
+
+    function detectPlanMode() {
+      if (!term) return false;
+      const buffer = term.buffer.active;
+      const start = Math.max(0, buffer.length - 15);
+      let text = '';
+      for (let i = start; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        if (line) text += line.translateToString(false) + '\n';
+      }
+      return /plan\s*mode/i.test(text);
+    }
+
+    function updatePlanModeButtons() {
+      applyPlanModeUI(detectPlanMode());
+    }
+
+    const debouncedUpdatePlanMode = debounce(updatePlanModeButtons, 500);
+
+    function togglePlanMode() {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
+
+      // Send exactly one Shift+Tab — it's a toggle at the Claude Code level
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: '\x1b[Z' }));
+
+      // Optimistically flip local state so the button responds immediately
+      const targetState = !isPlanMode;
+      isPlanMode = targetState;
+      fabPlanMode.classList.toggle('plan-active', isPlanMode);
+      const fabLabel = fabPlanMode.querySelector('span');
+      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', isPlanMode);
+
+      // Reconcile with actual terminal state after snapshots arrive.
+      // Use multiple checks: remote snapshots have variable latency.
+      // Keep optimistic state for at least 2s before allowing revert.
+      const toggledAt = Date.now();
+      const reconcile = () => {
+        const detected = detectPlanMode();
+        // Within the grace window, only update if detection CONFIRMS the target state.
+        // After the grace window, always reconcile with actual state.
+        if (Date.now() - toggledAt < 2000) {
+          if (detected === targetState) applyPlanModeUI(detected);
+          // else: keep optimistic state, wait for next check
+        } else {
+          applyPlanModeUI(detected);
+        }
+      };
+      setTimeout(reconcile, 800);
+      setTimeout(reconcile, 1500);
+      setTimeout(reconcile, 3000);
+
+      term.focus();
+      syncTerminalFocus();
+    }
+
+    function applyPlanModeUI(mode) {
+      isPlanMode = mode;
+      fabPlanMode.classList.toggle('plan-active', isPlanMode);
+      const fabLabel = fabPlanMode.querySelector('span');
+      if (fabLabel) fabLabel.textContent = isPlanMode ? 'Exit Plan Mode' : 'Toggle Plan Mode';
+      keyShiftTab.classList.toggle('active', isPlanMode);
+    }
+
+    function initTerminal() {
+      if (term) {
+        term.dispose();
+        term = null;
+      }
+      // Debug: expose key variables for live inspection
+      window._d = () => ({ term, ws, currentTerminalId, isSwitching, isWritingBuffer, ptyDims, lastBufferSeq, switchOutputQueue, mobileKeyboardOpen, keyboardOpenTime });
+      window._switchLog = [];
+      // Debug state indicator — shows live flags in the topbar
+      let _dbgSnapCount = 0;
+      let _dbgOutCount = 0;
+      window._dbgSnap = () => _dbgSnapCount++;
+      window._dbgOut = () => _dbgOutCount++;
+      const _dbgEl = document.getElementById('dbg-state');
+      if (_dbgEl) {
+        setInterval(() => {
+          const grace = keyboardOpenTime ? Math.max(0, 600 - (Date.now() - keyboardOpenTime)) : 0;
+          _dbgEl.textContent = (isSwitching ? 'SW ' : '') + (isWritingBuffer ? 'WB ' : '') + (mobileKeyboardOpen ? 'KB ' : '') + (grace > 0 ? 'G' + grace + ' ' : '') + 'S' + _dbgSnapCount + ' O' + _dbgOutCount;
+        }, 200);
+      }
+      term = new Terminal({
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize,
+        theme: {
+          background: '#0a0a0b',
+          foreground: '#e4e4e7',
+          cursor: '#c9a227',
+          cursorAccent: '#0a0a0b',
+          selectionBackground: 'rgba(201, 162, 39, 0.3)',
+          black: '#27272a',
+          red: '#d47878',
+          green: '#7cb382',
+          yellow: '#c9a227',
+          blue: '#6b9bd2',
+          magenta: '#b07eb5',
+          cyan: '#6bbfb8',
+          white: '#e4e4e7',
+          brightBlack: '#52525b',
+          brightRed: '#e89090',
+          brightGreen: '#96c99b',
+          brightYellow: '#d4b84a',
+          brightBlue: '#87b3e0',
+          brightMagenta: '#c89bcb',
+          brightCyan: '#88d3cd',
+          brightWhite: '#fafafa',
+        },
+        cursorBlink: true,
+        scrollback: 5000,
+        allowProposedApi: true,
+      });
+
+      fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(terminalWrap);
+
+      // On mobile, prevent the keyboard from appearing on every touch.
+      // We mark the xterm textarea readonly so taps don't auto-open the keyboard;
+      // our touchend handler removes readonly on quick taps to show the keyboard,
+      // and we re-apply it only when the keyboard is dismissed (detected via visualViewport).
+      const xtermTextarea = terminalWrap.querySelector('.xterm-helper-textarea');
+      if (isMobileClient && xtermTextarea) {
+        xtermTextarea.setAttribute('readonly', 'readonly');
+        // Prevent iOS keyboard-switch from triggering xterm text selection.
+        // iOS fires a `select` event on the textarea when switching keyboard
+        // layouts (e.g. letters → numbers); clear the unwanted selection.
+        xtermTextarea.addEventListener('select', () => {
+          if (!selectMode) term.clearSelection();
+        });
+      }
+
+      fitAddon.fit();
+
+      // Handle user input
+      term.onData(data => {
+        if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
+
+        // Any key press re-enables auto horizontal scroll (suspended by manual touch scroll)
+        autoScrollDisabled = false;
+
+        // Apply modifiers
+        let sendData = data;
+        if (modifiers.ctrl && data.length === 1) {
+          const code = data.toUpperCase().charCodeAt(0) - 64;
+          if (code > 0 && code < 32) {
+            sendData = String.fromCharCode(code);
+          }
+          modifiers.ctrl = false;
+          updateModifierButtons();
+        }
+        if (modifiers.alt) {
+          sendData = '\x1b' + data;
+          modifiers.alt = false;
+          updateModifierButtons();
+        }
+
+        ws.send(JSON.stringify({
+          type: 'input',
+          terminalId: currentTerminalId,
+          data: sendData,
+        }));
+        // Enter/Return → reset to left immediately (only when Claude is idle)
+        if (sendData === '\r' || sendData === '\n') {
+          if (!isClaudeActive()) setHOffset(0);
+          userIsTyping = false;
+          if (typingTimer) clearTimeout(typingTimer);
+        } else {
+          markTyping();
+        }
+      });
+
+      const updateScrollButton = () => {
+        const viewport = terminalWrap.querySelector('.xterm-viewport');
+        if (!viewport) return;
+        const distanceFromBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+        const isAtBottom = distanceFromBottom < 10;
+        const hasScrollback = viewport.scrollHeight > viewport.clientHeight + 10;
+        const isScrolledUp = !isAtBottom && hasScrollback;
+        const isScrolledRight = hOffset > 10;
+        scrollBottomBtn.classList.toggle('visible', isScrolledUp || isScrolledRight);
+
+        const svg = scrollBottomBtn.querySelector('svg');
+        if (svg) {
+          if (isScrolledUp && isScrolledRight) {
+            svg.style.transform = 'rotate(45deg)';
+          } else if (isScrolledRight) {
+            svg.style.transform = 'rotate(90deg)';
+          } else {
+            svg.style.transform = 'rotate(0deg)';
+          }
+        }
+      };
+
+      // Track scroll position
+      term.onScroll(updateScrollButton);
+      term.onRender(() => {
+        // Don't adjust horizontal scrolling while Claude is active
+        if (!isClaudeActive()) {
+          // Kill any browser/xterm native auto-scroll (we manage scroll via CSS transform)
+          if (terminalWrap.scrollLeft !== 0) terminalWrap.scrollLeft = 0;
+          const vp = terminalWrap.querySelector('.xterm-viewport');
+          if (vp && vp.scrollLeft !== 0) vp.scrollLeft = 0;
+        }
+
+        if (isMobileResizeMode() && !isClaudeActive() && !autoScrollDisabled) {
+          const cellWidth = getCellWidth();
+          if (cellWidth) {
+            const buf = term.buffer.active;
+            const cursorX = buf.cursorX;
+            const cursorY = buf.cursorY;
+
+            // Skip phantom cursor on the last row — that's Claude's footer/status bar,
+            // not a real typing position. The actual prompt is always above it.
+            if (cursorY >= term.rows - 1) {
+              // don't auto-scroll for this phantom position
+            } else if (userIsTyping) {
+              // Active typing: keep cursor visible with left/right margin thresholds
+              const cursorPx = cursorX * cellWidth;
+              const vw = terminalWrap.clientWidth;
+              const visualPos = cursorPx - hOffset;
+
+              if (visualPos > vw * 0.80) {
+                setHOffset(Math.max(0, cursorPx - vw * 0.33));
+              } else if (visualPos < vw * 0.15 && hOffset > 0) {
+                setHOffset(Math.max(0, cursorPx - vw * 0.33));
+              }
+            } else if (!isUserTouchScrolling && hOffset > 0) {
+              // Not typing, not touch-scrolling: if cursor fits in viewport, reset offset.
+              // This prevents stale hOffset from causing jumps when the prompt redraws
+              // or the cursor moves back to column 0 (e.g. after command finishes).
+              const cursorPx = cursorX * cellWidth;
+              const vw = terminalWrap.clientWidth;
+              if (cursorPx < vw * 0.85) {
+                setHOffset(0);
+              }
+            }
+          }
+        }
+        setTimeout(updateScrollButton, 50);
+      });
+
+      const viewport = terminalWrap.querySelector('.xterm-viewport');
+      if (viewport) {
+        viewport.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
+      }
+      terminalWrap.addEventListener('scroll', debounce(updateScrollButton, 16), { passive: true });
+
+      // overflow-x: hidden prevents xterm auto-scroll. Touch-drag uses transform.
+
+      terminalWrap.addEventListener('click', () => {
+        term.focus();
+        syncTerminalFocus();
+      });
+      // Mobile: only show keyboard on quick tap, not on hold/drag (which should scroll)
+      if (isMobileClient) {
+        let touchInfo = null;
+        let longPressTimer = null;
+
+        const cancelLongPress = () => {
+          if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+        };
+
+        terminalWrap.addEventListener('touchstart', (e) => {
+          const t = e.touches[0];
+          touchInfo = { x: t.clientX, y: t.clientY, time: Date.now() };
+          // Long-press: hold ~500ms without moving → enter selection mode
+          longPressTimer = setTimeout(() => {
+            longPressTimer = null;
+            touchInfo = null; // prevent tap-to-keyboard on touchend
+            if (navigator.vibrate) navigator.vibrate(40);
+            if (!selectMode) {
+              selectMode = true;
+              keySelect.classList.add('active');
+              enterSelectionMode();
+            }
+          }, 500);
+        }, { passive: true });
+
+        terminalWrap.addEventListener('touchend', () => {
+          cancelLongPress();
+          if (!touchInfo) {
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'touchend-no-info' });
+            return;
+          }
+          const elapsed = Date.now() - touchInfo.time;
+          if (elapsed < 300) {
+            // Quick tap — remove readonly so the keyboard opens.
+            // readonly is re-applied when the keyboard is dismissed (visualViewport resize).
+            // Blur first: if the textarea already has focus (e.g. from selectProject),
+            // iOS treats focus() as a no-op and won't show the keyboard. Blurring
+            // first ensures a fresh focus event that iOS honors.
+            if (xtermTextarea) {
+              xtermTextarea.blur();
+              xtermTextarea.removeAttribute('readonly');
+              // Force synchronous reflow so the attribute removal is committed
+              // to the DOM before we re-focus. Without this, the browser may
+              // still see the element as readonly when processing focus().
+              void xtermTextarea.offsetHeight;
+            }
+            mobileKeyboardOpen = true;
+            keyboardOpenTime = Date.now();
+            fabKbd.classList.add('hidden');
+            term.focus();
+            syncTerminalFocus();
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'tap-focus', elapsed, hadFocus: document.activeElement === xtermTextarea, readonly: xtermTextarea?.hasAttribute('readonly') });
+          } else {
+            window._kbLog = window._kbLog || [];
+            window._kbLog.push({ t: Date.now(), ev: 'tap-too-slow', elapsed });
+          }
+          touchInfo = null;
+        });
+        terminalWrap.addEventListener('touchcancel', () => {
+          cancelLongPress();
+          touchInfo = null;
+        }, { passive: true });
+        // Track last touch X for manual horizontal scroll
+        // (xterm-viewport captures vertical scroll, blocking terminal-wrap's horizontal scroll)
+        let lastTouchX = 0;
+        terminalWrap.addEventListener('touchstart', (e2) => {
+          lastTouchX = e2.touches[0].clientX;
+        }, { passive: true, capture: true });
+
+        terminalWrap.addEventListener('touchmove', (e) => {
+          const t = e.touches[0];
+          // Cancel tap/long-press if dragged
+          if (touchInfo) {
+            const dx = Math.abs(t.clientX - touchInfo.x);
+            const dy = Math.abs(t.clientY - touchInfo.y);
+            if (dx > 10 || dy > 10) {
+              touchInfo = null;
+              cancelLongPress();
+            }
+          }
+          // Manually apply horizontal scroll via transform — only in compact
+          // view, where the terminal is wider than the screen. In fit-to-width
+          // mode the terminal matches the phone width, so horizontal panning is
+          // useless drift and is disabled (vertical scroll only).
+          if (isCompactView) {
+            const hDelta = lastTouchX - t.clientX;
+            if (Math.abs(hDelta) > 1) {
+              setHOffsetImmediate(Math.max(0, hOffset + hDelta));
+              isUserTouchScrolling = true;
+              // Suspend auto horizontal scroll until the next key press
+              autoScrollDisabled = true;
+            }
+          }
+          lastTouchX = t.clientX;
+        }, { passive: true });
+        terminalWrap.addEventListener('touchend', () => {
+          setTimeout(() => { isUserTouchScrolling = false; }, 300);
+        }, { passive: true });
+      } else {
+        terminalWrap.addEventListener('touchstart', () => {
+          term.focus();
+          syncTerminalFocus();
+        }, { passive: true });
+
+        // Desktop: bypass xterm's mouse-mode wheel forwarding. TUIs like
+        // Claude enable mouse reporting, which makes xterm send wheel as
+        // mouse buttons to the PTY instead of scrolling the scrollback.
+        // We capture wheel before xterm sees it and call term.scrollLines()
+        // directly (xterm's own API for scrollback navigation).
+        terminalWrap.addEventListener('wheel', (e) => {
+          if (!term) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const dims = term._core && term._core._renderService && term._core._renderService.dimensions;
+          const cellHeight = (dims && dims.css && dims.css.cell && dims.css.cell.height) || 16;
+          const deltaPx = e.deltaMode === 1 ? e.deltaY * cellHeight : e.deltaY;
+          const lines = Math.round(deltaPx / cellHeight);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+            dbgLog('wheel scrollLines=' + lines + ' deltaY=' + e.deltaY);
+          }
+        }, { capture: true, passive: false });
+      }
+
+      // Log xterm-viewport scroll events for debugging ghost issue
+      const xtermVP = terminalWrap.querySelector('.xterm-viewport');
+      if (xtermVP) {
+        xtermVP.addEventListener('scroll', () => {
+          dbgLog('vp.scroll scrollTop=' + Math.round(xtermVP.scrollTop) + ' scrollH=' + xtermVP.scrollHeight + ' clientH=' + xtermVP.clientHeight);
+        }, { passive: true });
+      }
+
+      // Resize delegates to applyPtyDims
+      const ro = new ResizeObserver(debounce(() => {
+        applyPtyDims({ forceRefresh: true });
+      }, 80));
+      ro.observe(terminalWrap);
+
+      const viewportResize = debounce(() => {
+        applyPtyDims({ forceRefresh: true });
+        // Crossing the mobile/desktop breakpoint flips where terminals are
+        // listed (panel vs. horizontal bar) — keep the panel list in sync.
+        renderSidebarTerminals();
+      }, 80);
+      window.addEventListener('resize', viewportResize);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          pinAppToVisualViewport();
+          applyPtyDims({ forceRefresh: true });
+        }, 120);
+      });
+      if (window.visualViewport) {
+        lastVisualViewportHeight = window.visualViewport.height;
+
+        // The layout pin runs FIRST and UNCONDITIONALLY (term-independent), coalesced
+        // to one rAF per event burst so .app tracks the keyboard animation smoothly.
+        // Undebounced — the old 80ms debounce could land mid-animation and miss the
+        // final viewport height. scrollToBottomIfKeyboard handles only the term-side UX.
+        let vpRafScheduled = false;
+        const onViewportChange = () => {
+          if (!vpRafScheduled) {
+            vpRafScheduled = true;
+            requestAnimationFrame(() => { vpRafScheduled = false; pinAppToVisualViewport(); });
+          }
+          scrollToBottomIfKeyboard();
+          syncSidebarViewport();
+        };
+        window.visualViewport.addEventListener('resize', () => {
+          lastVisualViewportHeight = window.visualViewport.height;
+          onViewportChange();
+        });
+        window.visualViewport.addEventListener('scroll', onViewportChange);
+      }
+    }
+
+    function connect() {
+      if (!activeTunnelUrl) return;
+
+      // Build WebSocket URL from tunnel URL
+      const wsUrl = activeTunnelUrl.replace(/^https?:/, 'wss:');
+      setStatus('connecting', 'Connecting...');
+      loadingEl.classList.remove('hidden');
+      loadingText && (loadingText.textContent = 'Connecting to device...');
+
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch (e) {
+        showError('Failed to connect. <a href="/go">Go back</a>');
+        return;
+      }
+
+      // Guard against a zombie tunnel URL: if the WS handshake doesn't
+      // complete in ~8s the server's tunnel is likely dead and the browser
+      // would otherwise hang in "connecting" for minutes. Force-close and
+      // let onclose schedule a reconnect with a fresh token.
+      if (wsConnectTimeout) clearTimeout(wsConnectTimeout);
+      wsConnectTimeout = setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.CONNECTING) {
+          try { ws.close(); } catch {}
+        }
+      }, 8000);
+
+      ws.onopen = () => {
+        if (wsConnectTimeout) { clearTimeout(wsConnectTimeout); wsConnectTimeout = null; }
+        setStatus('connecting', 'Authenticating...');
+        loadingText && (loadingText.textContent = 'Authenticating...');
+        reconnectAttempts = 0;
+        lastFocusSync = { terminalId: null, focused: null };
+        // Auth is sent after receiving 'welcome' message to avoid double-auth
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          handleMessage(JSON.parse(e.data));
+        } catch (err) {
+          console.error('[WS] Parse error:', err);
+        }
+      };
+
+      ws.onclose = () => {
+        if (wsConnectTimeout) { clearTimeout(wsConnectTimeout); wsConnectTimeout = null; }
+        setStatus('disconnected', 'Disconnected');
+        loadingEl.classList.remove('hidden');
+        enableActions(false);
+        lastFocusSync = { terminalId: null, focused: null };
+        // Reset switch state so output isn't queued forever on reconnect
+        isSwitching = false;
+        switchOutputQueue = [];
+        scheduleReconnect();
+      };
+
+      ws.onerror = () => {
+        setStatus('disconnected', 'Connection error');
+      };
+    }
+
+    function scheduleReconnect() {
+      if (!isAuthenticated || !activeDeviceToken) return;
+      if (reconnectAttempts >= 10) return;
+      if (reconnectTimer) return;
+      // Exponential-ish backoff capped at 10s so a temporarily unavailable
+      // tunnel URL doesn't burn through all retries in 20s.
+      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 10000);
+      reconnectTimer = setTimeout(async () => {
+        reconnectTimer = null;
+        reconnectAttempts++;
+        setStatus('connecting', 'Reconnecting...');
+        const result = await fetchConnectToken(activeDeviceToken);
+        if (result.connectToken && result.tunnelUrl) {
+          activeConnectToken = result.connectToken;
+          activeTunnelUrl = result.tunnelUrl;
+          connect();
+        } else {
+          // Token/tunnel not ready yet — keep trying instead of silently giving up.
+          scheduleReconnect();
+        }
+      }, delay);
+    }
+
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case 'welcome':
+          // Server sent welcome, now authenticate with connect token
+          ws.send(JSON.stringify({
+            type: 'auth',
+            connectToken: activeConnectToken,
+          }));
+          break;
+
+        case 'auth_result':
+          if (msg.success) {
+            isAuthenticated = true;
+            setStatus('connected', 'Connected');
+            loadingEl.classList.add('hidden');
+            enableActions(true);
+
+            // Clear all URL params to prevent token reuse on refresh, but
+            // preserve `?debug` so the diagnostic overlay survives the post-auth
+            // URL scrub (otherwise turning on ?debug only buys you ~1 second of
+            // visibility before the param is wiped).
+            history.replaceState(null, '', '/remote-mobile' + (isDebugMode ? '?debug' : ''));
+
+            // Preload the device list so the switcher is ready the first
+            // time the user opens the status dropdown.
+            loadDeviceList();
+
+            // Don't render tabs from auth_result — wait for sidebar_data + get_terminals
+            // Request sidebar data first, which will trigger get_terminals with correct project
+            ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
+
+            term.focus();
+            syncTerminalFocus();
+            // Re-apply dims after reconnect so terminal cols match PTY
+            if (term && ptyDims) {
+              applyPtyDims({ forceRefresh: true });
+            }
+          } else {
+            showError(
+              'Authentication failed: ' + (msg.error || 'Unknown error') +
+              '<br><br><a href="/go">Go back to dashboard</a>'
+            );
+          }
+          break;
+
+        case 'snapshot':
+          // Server sends periodic serialized viewport state instead of raw PTY chunks.
+          // This guarantees correct rendering regardless of dimension differences.
+          if (isSwitching || isWritingBuffer) {
+            // Safety: auto-reset stuck flags after 8 seconds
+            if (!window._switchStuckSince) window._switchStuckSince = Date.now();
+            if (Date.now() - window._switchStuckSince > 8000) {
+              console.warn('[patapim] force-resetting stuck flags', { isSwitching, isWritingBuffer });
+              isSwitching = false;
+              isWritingBuffer = false;
+              switchOutputQueue = [];
+              window._switchStuckSince = 0;
+            } else {
+              window._switchLog.push({ t: Date.now(), ev: 'snapshot-BLOCKED', tid: msg.terminalId, dataLen: (msg.data||'').length, isSwitching, isWritingBuffer });
+              break;
+            }
+          } else {
+            window._switchStuckSince = 0;
+          }
+          // Grace period after keyboard-open tap: snapshot DOM churn can prevent
+          // mobile browsers from showing the keyboard. Skip snapshots briefly.
+          if (isMobileClient && keyboardOpenTime && (Date.now() - keyboardOpenTime < 600)) {
+            break;
+          }
+          if (term && msg.terminalId === currentTerminalId) {
+            if (msg.seq) lastBufferSeq = msg.seq;
+            window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
+            // Replace visible viewport: clear screen, home cursor, write snapshot.
+            // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
+            const _sb0 = term.buffer.active;
+            const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
+            writePreservingScroll('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            if (isDebugMode) requestAnimationFrame(() => {
+              const _sb1 = term.buffer.active;
+              if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
+                dbgLog('SNAP dataLen=' + (msg.data || '').length + ' baseY ' + _sbBase0 + '→' + _sb1.baseY + ' viewY ' + _sbView0 + '→' + _sb1.viewportY + ' bufLen ' + _sbLen0 + '→' + _sb1.length);
+              }
+            });
+            if (window._dbgSnap) window._dbgSnap();
+            debouncedUpdatePlanMode();
+          }
+          break;
+
+        case 'output':
+          if (isSwitching) {
+            switchOutputQueue.push(msg);
+            break;
+          }
+          // Skip output already covered by a snapshot
+          if (msg.seq && msg.seq <= lastBufferSeq) break;
+          // Queue output while the terminal_init buffer is being written.
+          // term.write() is async — writes queue internally. If we write live
+          // output while the buffer is still being processed, ANSI cursor
+          // positions interleave and corrupt the display.
+          if (isWritingBuffer) {
+            switchOutputQueue.push(msg);
+            break;
+          }
+          if (term && msg.terminalId === currentTerminalId) {
+            writePreservingScroll(msg.data);
+            if (window._dbgOut) window._dbgOut();
+            debouncedUpdatePlanMode();
+          }
+          break;
+
+        case 'pty_dimensions':
+          if (currentTerminalId && msg.terminalId && msg.terminalId !== currentTerminalId) {
+            break;
+          }
+          ptyDims = { cols: msg.cols, rows: msg.rows };
+          if (msg.terminalId === currentTerminalId) {
+            lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
+          }
+          isApplyingServerResize = true;
+          applyPtyDims({ syncServer: false });
+          isApplyingServerResize = false;
+          break;
+
+        case 'terminal_init':
+          if (term && msg.terminalId === currentTerminalId) {
+            // Cancel any previous drain poll (e.g. from a duplicate terminal_init)
+            if (drainTimerId) { clearTimeout(drainTimerId); drainTimerId = null; }
+            if (msg.bufferSeq) lastBufferSeq = msg.bufferSeq;
+            if (msg.cols && msg.rows) {
+              ptyDims = { cols: msg.cols, rows: msg.rows };
+              lastSentResize = { terminalId: msg.terminalId, cols: msg.cols, rows: msg.rows };
+            }
+            // Write buffer with clear. Do NOT use term.write(data, callback) —
+            // xterm.js silently drops the callback for large writes.
+            // Do NOT call resetTerminalView() or applyPtyDims() before the write —
+            // they queue writes/resizes that corrupt xterm's write processor.
+            isWritingBuffer = true;
+            const _bA0 = term.buffer.active;
+            const _data = msg.data || '';
+            // Count \n and \r\n in the wire payload, and detect specific markers
+            // so we can tell the difference between "desktop sent scrollback that
+            // xterm refused to materialize" vs "desktop sent viewport only".
+            const _nlCount = (_data.match(/\n/g) || []).length;
+            const _crlfCount = (_data.match(/\r\n/g) || []).length;
+            const _hasScrollMark = /scrollback line|plain-shell-line/.test(_data) ? 'YES' : 'no';
+            dbgLog('INIT pre tid=' + msg.terminalId + ' dataLen=' + _data.length + ' nl=' + _nlCount + ' crlf=' + _crlfCount + ' rows=' + term.rows + ' hasMark=' + _hasScrollMark + ' baseY=' + _bA0.baseY);
+            // CRITICAL: exit alt-screen (`\x1b[?1049l`) BEFORE writing the new
+            // buffer. Without this, switching from a TUI tab (Claude, vim, etc.
+            // which puts xterm in the alt buffer) to a plain shell tab keeps
+            // xterm in the alt buffer — which has NO scrollback by xterm.js
+            // design — so the 200+ lines of plain-shell scrollback in the wire
+            // payload get scrolled past and immediately discarded, leaving only
+            // the last `rows` lines visible and zero vertical scroll. If the
+            // new buffer is itself a TUI, its data will re-enter alt mode via
+            // its own `\x1b[?1049h`, so this exit is a no-op visually.
+            term.write('\x1b[?1049l\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + _data + '\x1b[?2026l');
+            const initDone = () => {
+              if (!isWritingBuffer) return; // guard against double-fire
+              const _bA1 = term.buffer.active;
+              dbgLog('INIT post tid=' + msg.terminalId + ' rows=' + term.rows + ' baseY=' + _bA1.baseY + ' viewY=' + _bA1.viewportY + ' bufLen=' + _bA1.length);
+              drainTimerId = null;
+              isWritingBuffer = false;
+              applyPtyDims({ syncServer: true, forceRefresh: true });
+              requestAnimationFrame(() => term.scrollToBottom());
+              // Suspend horizontal auto-scroll until the user types. Without this,
+              // the first render after load can land userIsTyping=true (carried
+              // from a prior terminal) and yank hOffset to wherever the cursor
+              // happens to be in the loaded buffer — usually the far right.
+              userIsTyping = false;
+              autoScrollDisabled = true;
+              setHOffset(0);
+              updatePlanModeButtons();
+              // Re-lock textarea on mobile so the next tap gets a clean
+              // blur → removeAttribute → focus cycle (same as switchDone).
+              // Skip if user just tapped the keyboard button (grace period)
+              // OR is actively typing — yanking readonly mid-type makes the
+              // soft keyboard's spacebar scroll the page instead of typing.
+              if (isMobileClient && xtermTextarea
+                  && !(keyboardOpenTime && Date.now() - keyboardOpenTime < 1200)
+                  && document.activeElement !== xtermTextarea) {
+                mobileKeyboardOpen = false;
+                xtermTextarea.setAttribute('readonly', 'readonly');
+                fabKbd.classList.remove('hidden');
+              }
+              // Drain any output queued during buffer write or project switch
+              const queue = switchOutputQueue;
+              switchOutputQueue = [];
+              isSwitching = false;
+              for (const q of queue) {
+                if (q.terminalId === currentTerminalId && q.data) {
+                  term.write(q.data);
+                }
+              }
+            };
+            if (msg.data) {
+              // Hard deadline: if drain isn't detected within 2s, proceed anyway.
+              // Better to show the terminal slightly early than stay stuck forever.
+              drainDeadline = Date.now() + 2000;
+              // Poll xterm's internal write buffer until drained.
+              // Use setTimeout (not rAF) — rAF doesn't fire when tab/panel is hidden.
+              const checkDrain = () => {
+                const wb = term._core && term._core._writeBuffer;
+                const drained = wb && wb._pendingData === 0 && wb._writeBuffer.length === 0;
+                if (drained || Date.now() >= drainDeadline) {
+                  initDone();
+                } else {
+                  drainTimerId = setTimeout(checkDrain, 50);
+                }
+              };
+              drainTimerId = setTimeout(checkDrain, 50);
+            } else {
+              initDone();
+            }
+          }
+          break;
+
+        case 'terminals':
+        case 'switched':
+          if (msg.terminals) {
+            terminals = msg.terminals;
+            renderTabs();
+            // Deep-link target arrived with the list — switch to it. Project
+            // mismatch (terminal belongs to another project) is handled below
+            // in the sidebar_data branch where we kick off project selection.
+            if (msg.type === 'terminals' && pendingTerminalId) {
+              const found = terminals.find(t => t.id === pendingTerminalId);
+              if (found) {
+                const target = pendingTerminalId;
+                pendingTerminalId = null;
+                if (target !== currentTerminalId) {
+                  switchTerminal(target);
+                } else if (pendingKeys) {
+                  // Already on the right terminal — fire the keys now.
+                  ws.send(JSON.stringify({ type: 'input', terminalId: target, data: pendingKeys + '\r' }));
+                  pendingKeys = null;
+                }
+              }
+            }
+          }
+          if (msg.currentTerminal || msg.terminalId) {
+            const previousTerminalId = currentTerminalId;
+            const newId = msg.currentTerminal || msg.terminalId;
+            if (newId !== currentTerminalId && term) {
+              ptyDims = null;
+              lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+              if (previousTerminalId) {
+                sendTerminalFocus(false, previousTerminalId);
+              }
+              // Don't resetTerminalView here — the 'switched' block below
+              // will clear and write. Calling reset here queues a write, and
+              // the subsequent resize() in applyPtyDims kills xterm's write
+              // processor, causing the buffer write to never complete.
+            }
+            currentTerminalId = newId;
+            syncTerminalFocus(currentTerminalId);
+            highlightTab(currentTerminalId);
+          }
+          if (msg.type === 'switched' && term) {
+            // Cancel any previous drain poll (from terminal_init or prior switch)
+            if (drainTimerId) { clearTimeout(drainTimerId); drainTimerId = null; }
+            // Update seq watermark so stale snapshots are dropped
+            if (msg.bufferSeq) lastBufferSeq = msg.bufferSeq;
+            if (msg.cols && msg.rows) {
+              ptyDims = { cols: msg.cols, rows: msg.rows };
+              lastSentResize = { terminalId: currentTerminalId, cols: msg.cols, rows: msg.rows };
+            }
+            // Write buffer + cleanup. Do NOT use term.write(data, callback) —
+            // xterm.js silently drops the callback for large writes.
+            isWritingBuffer = true;
+            // Same alt-screen-exit fix as terminal_init — see comment above.
+            term.write('\x1b[?1049l\x1b[?2026h\x1b[0m\x1b[2J\x1b[3J\x1b[H' + (msg.buffer || '') + '\x1b[?2026l');
+            const switchDone = () => {
+              if (!isWritingBuffer) return; // guard against double-fire
+              drainTimerId = null;
+              isWritingBuffer = false;
+              applyPtyDims({ syncServer: false, forceRefresh: true });
+              requestAnimationFrame(() => term.scrollToBottom());
+              isSwitching = false;
+              // Telegram deep-link: now that the target terminal is rendered
+              // and active, fire the queued option key once and clear it.
+              if (pendingKeys && currentTerminalId) {
+                const data = pendingKeys + '\r';
+                pendingKeys = null;
+                ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data }));
+              }
+              // Suspend horizontal auto-scroll until the user types — same
+              // reason as initDone above. Re-enabled on first keypress in
+              // term.onData (autoScrollDisabled = false).
+              userIsTyping = false;
+              autoScrollDisabled = true;
+              setHOffset(0);
+              // Skip re-lock if user just tapped the keyboard button (grace period)
+              // OR is actively typing — yanking readonly mid-type makes the
+              // soft keyboard's spacebar scroll the page instead of typing.
+              if (isMobileClient && xtermTextarea
+                  && !(keyboardOpenTime && Date.now() - keyboardOpenTime < 1200)
+                  && document.activeElement !== xtermTextarea) {
+                mobileKeyboardOpen = false;
+                xtermTextarea.setAttribute('readonly', 'readonly');
+                fabKbd.classList.remove('hidden');
+              }
+              const queue = switchOutputQueue;
+              switchOutputQueue = [];
+              for (const q of queue) {
+                if (q.terminalId === currentTerminalId && q.data) {
+                  term.write(q.data);
+                }
+              }
+              updatePlanModeButtons();
+              updateScrollButton();
+              // Push the phone's width to the newly-selected terminal AFTER the
+              // buffer drained (switchDone ran with syncServer:false to avoid a
+              // resize mid buffer-write). Deferred so it never races the write.
+              requestAnimationFrame(() => applyPtyDims({ syncServer: true }));
+            };
+            // Hard deadline: if drain isn't detected within 2s, proceed anyway.
+            drainDeadline = Date.now() + 2000;
+            // Poll xterm's internal write buffer until drained.
+            // Use setTimeout (not rAF) — rAF doesn't fire when tab/panel is hidden.
+            const checkDrain = () => {
+              const wb = term._core && term._core._writeBuffer;
+              const drained = wb && wb._pendingData === 0 && wb._writeBuffer.length === 0;
+              if (drained || Date.now() >= drainDeadline) {
+                switchDone();
+              } else {
+                drainTimerId = setTimeout(checkDrain, 50);
+              }
+            };
+            drainTimerId = setTimeout(checkDrain, 50);
+          }
+          break;
+
+        case 'terminal_created':
+          ws.send(JSON.stringify({
+            type: 'get_terminals',
+            projectPath: sidebarData.currentProject,
+            subfolderPath: sidebarData.currentSubfolder
+          }));
+          break;
+
+        case 'terminal_closed':
+          if (msg.terminalId === currentTerminalId) {
+            sendTerminalFocus(false, currentTerminalId);
+            currentTerminalId = null;
+            ptyDims = null;
+            lastSentResize = { terminalId: null, cols: 0, rows: 0 };
+            lastFocusSync = { terminalId: null, focused: null };
+            resetTerminalView();
+          }
+          ws.send(JSON.stringify({
+            type: 'get_terminals',
+            projectPath: sidebarData.currentProject,
+            subfolderPath: sidebarData.currentSubfolder
+          }));
+          break;
+
+        case 'sidebar_data':
+          sidebarData.projects = msg.projects || [];
+          sidebarData.currentProject = msg.currentProject || null;
+          // Desktop's active subfolder is informational — we don't auto-follow
+          // it; the phone keeps whatever scope the user picked locally.
+          sidebarData.desktopSubfolder = msg.currentSubfolder || null;
+          renderProjects();
+          updateTopbarProject();
+          // Telegram deep-link: if a project was passed and it differs from
+          // the current one, route through selectProject (which fires
+          // select_project + get_terminals for the right path). Otherwise,
+          // fetch terminals normally.
+          if (pendingProject && pendingProject !== sidebarData.currentProject
+              && sidebarData.projects.some(p => p.path === pendingProject)) {
+            const target = pendingProject;
+            pendingProject = null;
+            selectProject(target);
+          } else {
+            pendingProject = null;
+            ws.send(JSON.stringify({
+              type: 'get_terminals',
+              projectPath: sidebarData.currentProject,
+              subfolderPath: sidebarData.currentSubfolder
+            }));
+          }
+          break;
+
+        case 'command_response':
+          if (msg.success) {
+            // Re-fetch terminals after successful command
+            ws.send(JSON.stringify({
+              type: 'get_terminals',
+              projectPath: sidebarData.currentProject,
+              subfolderPath: sidebarData.currentSubfolder
+            }));
+            ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
+
+            if (msg.command === 'new_terminal') {
+              const newTermId = msg.terminalId || currentTerminalId;
+              // Navigate to the newly created terminal
+              if (newTermId) {
+                setTimeout(() => switchTerminal(newTermId), 300);
+              }
+            }
+            if (msg.command === 'new_terminal' && pendingAIStart) {
+              pendingAIStart = false;
+              const newTermId = msg.terminalId || currentTerminalId;
+              setTimeout(() => {
+                const aiCommands = {
+                  claude: 'claude --dangerously-skip-permissions',
+                  gemini: 'gemini --yolo',
+                  codex: 'codex --dangerously-bypass-approvals-and-sandbox',
+                };
+                const selectedAI = localStorage.getItem('patapim-remote-last-ai') || 'claude';
+                const cmd = aiCommands[selectedAI] || aiCommands.claude;
+                const targetId = newTermId || currentTerminalId;
+                if (ws && ws.readyState === WebSocket.OPEN && targetId) {
+                  ws.send(JSON.stringify({ type: 'input', terminalId: targetId, data: cmd + '\r' }));
+                }
+                const aiNames = { claude: 'Claude Code', gemini: 'Gemini', codex: 'Codex' };
+                showToast((aiNames[selectedAI] || 'AI') + ' starting...');
+              }, 800);
+            }
+          }
+          break;
+
+        case 'voice_transcription':
+          if (transcriptionTimeout) { clearTimeout(transcriptionTimeout); transcriptionTimeout = null; }
+          if (msg.success && msg.text) {
+            voiceText.value = msg.text;
+            voiceText.placeholder = 'Speak now...';
+            showVoicePreview();
+            voiceText.select();
+          } else if (msg.status === 'initializing') {
+            voiceText.placeholder = msg.message || 'Initializing model...';
+          } else {
+            hideVoicePreview();
+            showToast(msg.error || 'Transcription error');
+          }
+          break;
+
+        case 'pong':
+          break;
+      }
+    }
+
+    // -- Sidebar: projects --
+
+    function renderProjects() {
+      projectsList.innerHTML = '';
+
+      const allProjects = sidebarData.projects || [];
+      const sortByTime = (a, b) => {
+        const ta = a.lastOpenedAt || a.addedAt || '';
+        const tb = b.lastOpenedAt || b.addedAt || '';
+        return tb.localeCompare(ta);
+      };
+
+      const quickTasks = allProjects.filter(p => p.isQuickTasks);
+      const active = allProjects.filter(p => !p.archived && !p.isQuickTasks).sort(sortByTime);
+      const archived = allProjects.filter(p => p.archived && !p.isQuickTasks).sort(sortByTime);
+
+      if (active.length === 0 && archived.length === 0 && quickTasks.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'no-projects';
+        empty.textContent = 'No projects found';
+        projectsList.appendChild(empty);
+        return;
+      }
+
+      // Pin Quick Tasks to the top, above regular projects
+      quickTasks.forEach(p => projectsList.appendChild(createProjectItem(p, false)));
+      active.forEach(p => projectsList.appendChild(createProjectItem(p, false)));
+
+      if (archived.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'later-header' + (laterExpanded ? ' expanded' : '');
+
+        const arrow = document.createElement('span');
+        arrow.className = 'later-arrow';
+        arrow.textContent = '\u25B8';
+        header.appendChild(arrow);
+
+        const label = document.createElement('span');
+        label.textContent = 'Later';
+        header.appendChild(label);
+
+        const count = document.createElement('span');
+        count.className = 'later-count';
+        count.textContent = archived.length;
+        header.appendChild(count);
+
+        const container = document.createElement('div');
+        container.className = 'later-projects' + (laterExpanded ? ' open' : '');
+        archived.forEach(p => container.appendChild(createProjectItem(p, true)));
+
+        header.addEventListener('click', () => {
+          laterExpanded = !laterExpanded;
+          header.classList.toggle('expanded', laterExpanded);
+          container.classList.toggle('open', laterExpanded);
+        });
+
+        projectsList.appendChild(header);
+        projectsList.appendChild(container);
+      }
+    }
+
+    function createProjectItem(p, isArchived) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'project-entry';
+      wrapper.dataset.path = p.path;
+
+      const item = document.createElement('div');
+      // Project is the active scope only when the phone is on this project AND
+      // no subfolder is currently selected for it.
+      const isProjectActive = p.path === sidebarData.currentProject && !sidebarData.currentSubfolder;
+      item.className = 'project-item' + (isProjectActive ? ' active' : '');
+      if (p.isQuickTasks) item.classList.add('quick-tasks');
+      item.dataset.path = p.path;
+
+      const icon = document.createElement('span');
+      icon.className = 'project-icon';
+      icon.textContent = p.isQuickTasks ? '\u26A1' : '\uD83D\uDCC1';
+      item.appendChild(icon);
+
+      const name = document.createElement('span');
+      name.className = 'project-name';
+      if (p.isQuickTasks) {
+        name.textContent = p.name || 'Quick Tasks';
+        name.title = p.name || 'Quick Tasks';
+      } else {
+        name.textContent = p.name || p.path.split(/[/\\]/).filter(Boolean).pop() || p.path;
+        name.title = p.path;
+      }
+      item.appendChild(name);
+
+      const counts = p.terminalCounts;
+      if (counts && (counts.attention > 0 || counts.busy > 0 || counts.planMode > 0 || counts.idle > 0)) {
+        const badges = document.createElement('div');
+        badges.className = 'project-badges';
+
+        if (counts.attention > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge attention';
+          b.textContent = counts.attention;
+          b.title = counts.attention + ' finished';
+          badges.appendChild(b);
+        }
+        if (counts.busy > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge busy';
+          b.textContent = counts.busy;
+          b.title = counts.busy + ' processing';
+          badges.appendChild(b);
+        }
+        if (counts.planMode > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge plan';
+          b.textContent = counts.planMode;
+          b.title = counts.planMode + ' plan mode';
+          badges.appendChild(b);
+        }
+        if (counts.idle > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge idle';
+          b.textContent = counts.idle;
+          b.title = counts.idle + ' idle';
+          badges.appendChild(b);
+        }
+
+        item.appendChild(badges);
+      }
+
+      // Archive/unarchive button — not applicable to the synthetic Quick Tasks entry
+      if (!p.isQuickTasks) {
+        const archBtn = document.createElement('button');
+        archBtn.className = 'project-archive-btn';
+        if (isArchived) {
+          archBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+          archBtn.title = 'Move back to projects';
+        } else {
+          archBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+          archBtn.title = 'Move to Later';
+        }
+        archBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!ws || ws.readyState !== WebSocket.OPEN) return;
+          ws.send(JSON.stringify({
+            type: 'set_project_archived',
+            path: p.path,
+            archived: !isArchived,
+          }));
+          // Optimistic update
+          p.archived = !isArchived;
+          renderProjects();
+          // Also request fresh data from backend
+          ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
+        });
+        item.appendChild(archBtn);
+      }
+
+      item.addEventListener('click', () => selectProject(p.path));
+      wrapper.appendChild(item);
+
+      // Render subfolders nested under the project. Always shown — the user
+      // can tap one to scope the terminal list to that subfolder, or tap the
+      // project name to clear back to the project root.
+      const subfolders = Array.isArray(p.subfolders) ? p.subfolders : [];
+      for (const sf of subfolders) {
+        wrapper.appendChild(createSubfolderItem(p.path, sf));
+      }
+
+      return wrapper;
+    }
+
+    function createSubfolderItem(projectPath, sf) {
+      const item = document.createElement('div');
+      const isActive = projectPath === sidebarData.currentProject
+        && sf.path === sidebarData.currentSubfolder;
+      item.className = 'subfolder-item' + (isActive ? ' active' : '');
+      item.dataset.path = sf.path;
+
+      const icon = document.createElement('span');
+      icon.className = 'subfolder-icon';
+      icon.textContent = '⤷'; // arrow into folder
+      item.appendChild(icon);
+
+      const name = document.createElement('span');
+      name.className = 'subfolder-name';
+      name.textContent = sf.name || sf.path.split(/[/\\]/).filter(Boolean).pop() || sf.path;
+      name.title = sf.path;
+      item.appendChild(name);
+
+      const counts = sf.terminalCounts;
+      if (counts && (counts.attention > 0 || counts.busy > 0 || counts.planMode > 0 || counts.idle > 0)) {
+        const badges = document.createElement('div');
+        badges.className = 'subfolder-badges';
+        if (counts.attention > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge attention';
+          b.textContent = counts.attention;
+          badges.appendChild(b);
+        }
+        if (counts.busy > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge busy';
+          b.textContent = counts.busy;
+          badges.appendChild(b);
+        }
+        if (counts.planMode > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge plan';
+          b.textContent = counts.planMode;
+          badges.appendChild(b);
+        }
+        if (counts.idle > 0) {
+          const b = document.createElement('span');
+          b.className = 'tbadge idle';
+          b.textContent = counts.idle;
+          badges.appendChild(b);
+        }
+        item.appendChild(badges);
+      }
+
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectSubfolder(projectPath, sf.path);
+      });
+      return item;
+    }
+
+    function selectProject(path) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      sidebarData.currentProject = path;
+      sidebarData.currentSubfolder = null; // tapping the project always clears subfolder scope
+      renderProjects();
+      updateTopbarProject();
+
+      // Queue output during the switch to prevent old terminal's output from
+      // bleeding into the new project's terminal view (same pattern as switchTerminal)
+      isSwitching = true;
+      switchOutputQueue = [];
+      resetTerminalView();
+
+      ws.send(JSON.stringify({ type: 'select_project', path }));
+      // Pass subfolderPath: null explicitly so the server clears its tracked
+      // subfolder context on this client and returns project-root terminals.
+      ws.send(JSON.stringify({ type: 'get_terminals', projectPath: path, subfolderPath: null }));
+
+      // Close sidebar on mobile
+      closeSidebar();
+
+      // On mobile, don't auto-focus — focusing a readonly textarea prevents
+      // the next tap from showing the keyboard (iOS treats re-focus as no-op).
+      if (!isMobileClient) {
+        term.focus();
+      }
+      syncTerminalFocus();
+    }
+
+    function selectSubfolder(projectPath, subfolderPath) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      sidebarData.currentProject = projectPath;
+      sidebarData.currentSubfolder = subfolderPath;
+      renderProjects();
+      updateTopbarProject();
+
+      isSwitching = true;
+      switchOutputQueue = [];
+      resetTerminalView();
+
+      ws.send(JSON.stringify({ type: 'select_subfolder', projectPath, subfolderPath }));
+
+      closeSidebar();
+      if (!isMobileClient) term.focus();
+      syncTerminalFocus();
+    }
+
+    function updateTopbarProject() {
+      if (!sidebarData.currentProject) {
+        topbarProject.textContent = '';
+        return;
+      }
+      // Use friendly name for synthetic projects (e.g. Quick Tasks).
+      const match = (sidebarData.projects || []).find(p => p.path === sidebarData.currentProject);
+      if (match && match.isQuickTasks) {
+        topbarProject.textContent = match.name || 'Quick Tasks';
+        return;
+      }
+      const projectName = match?.name
+        || sidebarData.currentProject.split(/[/\\]/).filter(Boolean).pop()
+        || '';
+      if (sidebarData.currentSubfolder) {
+        const sf = (match?.subfolders || []).find(s => s.path === sidebarData.currentSubfolder);
+        const sfName = sf?.name
+          || sidebarData.currentSubfolder.split(/[/\\]/).filter(Boolean).pop()
+          || '';
+        topbarProject.textContent = projectName + ' / ' + sfName;
+      } else {
+        topbarProject.textContent = projectName;
+      }
+    }
+
+    // -- Tabs --
+
+    function extractTerminalNumber(id) {
+      const match = id && id.match(/(\d+)/);
+      return match ? match[1] : '?';
+    }
+
+    function makeTabEl(t) {
+      const stateClass = t.needsAttention ? ' state-attention'
+        : t.isProcessing ? ' state-busy'
+        : t.isPlanMode ? ' state-plan'
+        : '';
+      const tab = document.createElement('div');
+      tab.className = 'tab' + (t.id === currentTerminalId ? ' active' : '') + stateClass;
+      tab.dataset.terminalId = t.id;
+      const dot = document.createElement('span');
+      dot.className = 'tab-state';
+      tab.appendChild(dot);
+      const label = document.createElement('span');
+      label.textContent = t.name || ('Terminal ' + extractTerminalNumber(t.id));
+      tab.appendChild(label);
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'tab-close';
+      closeBtn.title = 'Close terminal';
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'close_terminal', terminalId: t.id }));
+        }
+      });
+      tab.appendChild(closeBtn);
+      tab.addEventListener('click', () => switchTerminal(t.id));
+      return tab;
+    }
+
+    function renderTabs() {
+      // Incremental update — never wipe innerHTML, only mutate what changed.
+      // Full innerHTML = '' forces the browser to re-rasterize the shared
+      // tabs+terminal compositing layer, producing a ghost over the canvas.
+      const existing = {};
+      tabsEl.querySelectorAll('.tab[data-terminal-id]').forEach(el => {
+        existing[el.dataset.terminalId] = el;
+      });
+
+      // Remove stale tabs
+      Object.keys(existing).forEach(id => {
+        if (!terminals.find(t => t.id === id)) existing[id].remove();
+      });
+
+      // Add or update tabs in order
+      let addBtn = tabsEl.querySelector('.tab-add');
+      terminals.forEach(t => {
+        const stateClass = t.needsAttention ? ' state-attention'
+          : t.isProcessing ? ' state-busy'
+          : t.isPlanMode ? ' state-plan'
+          : '';
+        const newClass = 'tab' + (t.id === currentTerminalId ? ' active' : '') + stateClass;
+        if (existing[t.id]) {
+          existing[t.id].className = newClass;
+        } else {
+          const tab = makeTabEl(t);
+          tabsEl.insertBefore(tab, tabsEl.querySelector('.tab-add-ai') || addBtn || null);
+        }
+      });
+
+      // Ensure AI + button exists (creates terminal + starts selected LLM) — green, on the left
+      if (!tabsEl.querySelector('.tab-add-ai')) {
+        const aiBtn = document.createElement('button');
+        aiBtn.className = 'tab-add-ai';
+        aiBtn.textContent = '+';
+        aiBtn.title = 'New AI terminal';
+        aiBtn.addEventListener('click', () => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            pendingAIStart = true;
+            ws.send(JSON.stringify({ type: 'new_terminal' }));
+            showToast('Creating AI terminal...');
+          }
+        });
+        tabsEl.appendChild(aiBtn);
+      }
+
+      // Ensure plain + button exists — gray, after AI button
+      if (!addBtn) {
+        addBtn = document.createElement('button');
+        addBtn.className = 'tab-add';
+        addBtn.textContent = '+';
+        addBtn.title = 'New terminal';
+        addBtn.addEventListener('click', () => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'new_terminal' }));
+          }
+        });
+        tabsEl.appendChild(addBtn);
+      }
+
+      // Mirror the same terminal list inside the full-screen projects panel
+      // (mobile only — desktop keeps the horizontal .tabs-bar above).
+      renderSidebarTerminals();
+    }
+
+    // Mobile: the horizontal tab bar is hidden, so the selected project's
+    // terminals are listed inside the panel. Reuses makeTabEl() so state/colors
+    // stay in sync with the desktop tabs — a single source of truth.
+    function renderSidebarTerminals() {
+      const list = document.getElementById('sidebar-terms-list');
+      if (!list) return;
+      if (!isMobileResizeMode()) { list.innerHTML = ''; return; }
+      list.innerHTML = '';
+      if (!terminals.length) {
+        const empty = document.createElement('div');
+        empty.className = 'no-terms';
+        empty.textContent = 'No terminals yet';
+        list.appendChild(empty);
+        return;
+      }
+      terminals.forEach(t => {
+        const el = makeTabEl(t);
+        // Any tap on the row (the × close button stops propagation) switches to
+        // the terminal and slides the panel away to reveal it full-screen.
+        el.addEventListener('click', closeSidebar);
+        list.appendChild(el);
+      });
+    }
+
+    function highlightTab(id) {
+      tabsEl.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.terminalId === id);
+      });
+      const list = document.getElementById('sidebar-terms-list');
+      if (list) list.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.terminalId === id);
+      });
+    }
+
+    function switchTerminal(id) {
+      if (id === currentTerminalId || !ws || ws.readyState !== WebSocket.OPEN) return;
+      isSwitching = true;
+      switchOutputQueue = [];
+      resetTerminalView();
+      ws.send(JSON.stringify({ type: 'switch', terminalId: id }));
+    }
+
+    // -- Sidebar toggle (mobile) --
+
+    // Force the soft keyboard down. The full-screen projects panel is fixed to
+    // the layout viewport (top:40px; bottom:0); while the keyboard is up the
+    // visual viewport shrinks, so the bottom of the panel hides behind the
+    // keyboard and that part of the scroll region is unreachable. Blurring the
+    // xterm textarea + re-locking it (readonly) dismisses the keyboard and lets
+    // the project list scroll normally. Mirrors the dismiss path in
+    // scrollToBottomIfKeyboard().
+    function dismissMobileKeyboard() {
+      if (!isMobileClient) return;
+      const ta = terminalWrap?.querySelector('.xterm-helper-textarea');
+      if (ta) {
+        ta.blur();
+        ta.setAttribute('readonly', 'readonly');
+      }
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      if (mobileKeyboardOpen) {
+        mobileKeyboardOpen = false;
+        if (fabKbd) fabKbd.classList.remove('hidden');
+      }
+      keyboardWasUp = false;
+      // Re-pin to the full viewport (height back to full, top→0). A direct call
+      // (not just style.height='') guarantees restore even when the blur fires no
+      // visualViewport event, and keeps height/top managed by one code path.
+      requestAnimationFrame(pinAppToVisualViewport);
+    }
+
+    // The panel is position:fixed (top:40px; bottom:0), anchored to the LAYOUT
+    // viewport — which does not shrink for the soft keyboard on iOS. So even
+    // after dismissMobileKeyboard() runs, if the keyboard lingers a frame the
+    // bottom of the panel (the Terminals list + actions) sits behind it and you
+    // can't pick another terminal. Lift the panel's bottom above the keyboard
+    // so its whole content stays reachable. No-op once the keyboard is fully
+    // down (gap collapses to ~0).
+    function syncSidebarViewport() {
+      if (!sidebarEl.classList.contains('open') || !isMobileResizeMode()) {
+        sidebarEl.style.bottom = '';
+        return;
+      }
+      const vp = window.visualViewport;
+      if (!vp) return;
+      const layoutH = window.innerHeight || document.documentElement.clientHeight;
+      const kb = Math.max(0, layoutH - vp.height);
+      sidebarEl.style.bottom = kb > 120 ? kb + 'px' : '';
+    }
+
+    function openSidebar() {
+      dismissMobileKeyboard();
+      sidebarEl.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+      // Land at the top of the list, then keep the panel above the keyboard for
+      // the few frames iOS takes to animate it away.
+      if (projectsList) projectsList.scrollTop = 0;
+      syncSidebarViewport();
+      requestAnimationFrame(syncSidebarViewport);
+    }
+
+    function closeSidebar() {
+      sidebarEl.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+      sidebarEl.style.bottom = '';
+    }
+
+    function toggleSidebar() {
+      if (sidebarEl.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    }
+
+    sidebarToggle.addEventListener('click', toggleSidebar);
+    // Tapping the terminal name in the topbar is the natural way to switch
+    // terminals — wire it to the same panel as the hamburger.
+    if (topbarSwitcher) topbarSwitcher.addEventListener('click', toggleSidebar);
+
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // -- Swipe gestures (mobile) --
+    // Swipe-right from the left edge opens the full-screen projects panel;
+    // swipe-left on the open panel closes it. Anchoring the open-gesture to the
+    // left edge keeps it from fighting the terminal's own horizontal pan in
+    // compact view (see the terminalWrap touch handlers above).
+    (function setupSwipeGestures() {
+      const EDGE = 24;       // px from the left edge that arms an open-swipe
+      const THRESHOLD = 50;  // min horizontal travel to trigger
+      let sx = 0, sy = 0, armedOpen = false, tracking = false;
+
+      document.addEventListener('touchstart', (e) => {
+        if (!isMobileResizeMode() || !e.touches[0]) { tracking = false; return; }
+        const t = e.touches[0];
+        sx = t.clientX; sy = t.clientY;
+        tracking = true;
+        // Arm an open-gesture only when the panel is closed and the touch began
+        // near the left edge; otherwise the gesture can only ever close.
+        armedOpen = !sidebarEl.classList.contains('open') && t.clientX <= EDGE;
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        if (!isMobileResizeMode()) return;
+        const t = (e.changedTouches && e.changedTouches[0]) || null;
+        if (!t) return;
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        // Ignore taps and mostly-vertical drags (those are scrolls/keyboard taps).
+        if (Math.abs(dx) < THRESHOLD || Math.abs(dy) > Math.abs(dx)) return;
+        const open = sidebarEl.classList.contains('open');
+        if (dx > 0 && armedOpen && !open) openSidebar();
+        else if (dx < 0 && open) closeSidebar();
+      }, { passive: true });
+    })();
+
+    // -- Action buttons --
+
+    function enableActions(enabled) {
+      btnStartClaude.disabled = !enabled;
+      btnStartGemini.disabled = !enabled;
+      btnStartCodex.disabled = !enabled;
+      btnNewTerminal.disabled = !enabled;
+    }
+
+    // Send AI command to current terminal (same as desktop startAICommand)
+    function sendAICommand(command) {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) return;
+      syncTerminalFocus();
+      ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: command + '\r' }));
+    }
+
+    btnStartClaude.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'claude');
+      sendAICommand('claude --dangerously-skip-permissions');
+    });
+
+    btnStartGemini.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'gemini');
+      sendAICommand('gemini --yolo');
+    });
+
+    btnStartCodex.addEventListener('click', () => {
+      localStorage.setItem('patapim-remote-last-ai', 'codex');
+      sendAICommand('codex --dangerously-bypass-approvals-and-sandbox');
+    });
+
+    btnNewTerminal.addEventListener('click', () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: 'new_terminal' }));
+    });
+
+    // -- Settings gear dropdown + font size controls --
+
+    const settingsToggle = document.getElementById('settings-toggle');
+    const settingsDropdown = document.getElementById('settings-dropdown');
+    const settingsFontValue = document.getElementById('settings-font-value');
+
+    function closeSettings() { settingsDropdown.classList.remove('visible'); }
+
+    function updateFontDisplay() { settingsFontValue.textContent = fontSize; }
+
+    settingsToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsDropdown.classList.toggle('visible');
+    });
+
+    settingsDropdown.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', closeSettings);
+
+    // Cross-link to the full desktop UI. Carry the current device so /remotedesk
+    // reconnects to the same machine (it mints a fresh connect token there).
+    const switchToDesktop = document.getElementById('switch-to-desktop');
+    if (switchToDesktop) {
+      switchToDesktop.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dev = activeDeviceToken || params.get('d');
+        window.location.href = '/remotedesk' + (dev ? '?d=' + encodeURIComponent(dev) : '');
+      });
+    }
+
+    document.getElementById('settings-font-dec').addEventListener('click', () => {
+      fontSize = Math.max(8, fontSize - 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+
+    document.getElementById('settings-font-inc').addEventListener('click', () => {
+      fontSize = Math.min(28, fontSize + 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+
+    // Zoom buttons in keys bar
+    document.getElementById('key-zoom-out').addEventListener('click', () => {
+      fontSize = Math.max(8, fontSize - 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+    document.getElementById('key-zoom-in').addEventListener('click', () => {
+      fontSize = Math.min(28, fontSize + 1);
+      fontManuallySet = true;
+      term.options.fontSize = fontSize;
+      updateFontDisplay();
+      applyPtyDims({ forceRefresh: true });
+    });
+
+    // Status pill → dropdown toggle (only when connected)
+    function closeStatusDropdown() {
+      statusDropdown.classList.remove('visible');
+    }
+    statusEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!statusEl.classList.contains('connected')) return;
+      const willOpen = !statusDropdown.classList.contains('visible');
+      statusDropdown.classList.toggle('visible');
+      // Refresh the device list each time the dropdown opens so online/offline
+      // status stays current without the user having to reload the page.
+      if (willOpen) loadDeviceList(true);
+    });
+    // Don't let clicks inside the dropdown bubble up to the document handler
+    // (which would close the dropdown immediately).
+    statusDropdown.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', closeStatusDropdown);
+
+    // Disconnect (inside status dropdown)
+    document.getElementById('btn-disconnect').addEventListener('click', () => {
+      closeStatusDropdown();
+      sendTerminalFocus(false);
+      isAuthenticated = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) ws.close();
+      location.href = '/go';
+    });
+
+    // Scroll to bottom + left
+    scrollBottomBtn.addEventListener('click', () => {
+      term.scrollToBottom();
+      terminalWrap.scrollLeft = 0;
+      setHOffset(0);
+      scrollBottomBtn.classList.remove('visible');
+    });
+
+    // Special keys bar
+    document.querySelectorAll('.key-btn[data-modifier]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mod = btn.dataset.modifier;
+        modifiers[mod] = !modifiers[mod];
+        updateModifierButtons();
+        term.focus();
+        syncTerminalFocus();
+      });
+    });
+
+    document.querySelectorAll('.key-btn[data-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const key = btn.dataset.key;
+        const keyMap = {
+          Tab: '\t',
+          Escape: '\x1b',
+          ArrowUp: '\x1b[A',
+          ArrowDown: '\x1b[B',
+          ArrowRight: '\x1b[C',
+          ArrowLeft: '\x1b[D',
+          Enter: '\r',
+        };
+        const data = keyMap[key] || '';
+        if (data) {
+          ws.send(JSON.stringify({
+            type: 'input',
+            terminalId: currentTerminalId,
+            data,
+          }));
+        }
+        term.focus();
+        syncTerminalFocus();
+      });
+    });
+
+    document.querySelectorAll('.key-btn[data-seq]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({
+          type: 'input',
+          terminalId: currentTerminalId,
+          data: btn.dataset.seq,
+        }));
+        term.focus();
+        syncTerminalFocus();
+      });
+    });
+
+    // ⇧Tab — smart Plan Mode toggle with state detection
+    keyShiftTab.addEventListener('click', () => {
+      if (!isAuthenticated) return;
+      togglePlanMode();
+    });
+
+    function updateModifierButtons() {
+      document.querySelectorAll('.key-btn[data-modifier]').forEach(btn => {
+        const mod = btn.dataset.modifier;
+        btn.classList.toggle('active', modifiers[mod]);
+      });
+    }
+
+    window.addEventListener('focus', () => {
+      syncTerminalFocus();
+    });
+
+    // Mobile browsers can emit transient blur events while still visible/active.
+    // We only release focus on visibilitychange (hidden) to avoid losing control.
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || document.visibilityState !== 'visible') {
+        sendTerminalFocus(false);
+      } else {
+        syncTerminalFocus();
+        // Re-apply PTY dims so mobile gets correct cols (not a raw fitAddon.fit
+        // which would reset to narrow mobile cols while PTY uses desktop cols).
+        // forceRefresh repaints the canvas to clear stale ghost layers.
+        if (term) {
+          requestAnimationFrame(() => {
+            applyPtyDims({ forceRefresh: true });
+          });
+        }
+      }
+    });
+
+    // iOS bfcache: page restored from freeze — show loading overlay immediately
+    // so the stale canvas is hidden until the WS reconnect completes.
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) {
+        loadingEl.classList.remove('hidden');
+        // Re-apply PTY dims so terminal is correct when overlay clears
+        if (term) {
+          applyPtyDims({ forceRefresh: true });
+        }
+      }
+    });
+
+    // ── FAB: toggle menu ────────────────────────────────────────────
+    function closeFab() {
+      fabOpen = false;
+      fabMenu.classList.remove('visible');
+      fabTrigger.classList.remove('open');
+    }
+
+    fabTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fabOpen = !fabOpen;
+      fabMenu.classList.toggle('visible', fabOpen);
+      fabTrigger.classList.toggle('open', fabOpen);
+    });
+
+    document.addEventListener('click', () => { if (fabOpen) closeFab(); });
+    fabMenu.addEventListener('click', (e) => e.stopPropagation());
+
+    // ── Toast helper ──────────────────────────────────────────────
+    let toastTimer = null;
+    function showToast(message, duration = 2000) {
+      clearTimeout(toastTimer);
+      fabToast.textContent = message;
+      fabToast.classList.add('visible');
+      toastTimer = setTimeout(() => fabToast.classList.remove('visible'), duration);
+    }
+
+    // ── FAB: Toggle Plan Mode (Shift+Tab with state detection) ───
+    fabPlanMode.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      togglePlanMode();
+    });
+
+    // ── FAB: Toggle Compact View ────────────────────────────────────
+    fabCompact.addEventListener('click', () => {
+      closeFab();
+      isCompactView = !isCompactView;
+      fabCompact.classList.toggle('compact-active', isCompactView);
+      const label = fabCompact.querySelector('span');
+      if (label) label.textContent = isCompactView ? 'Full View' : 'Compact View';
+      applyPtyDims({ syncServer: false, forceRefresh: true });
+      if (term) {
+        term.scrollToBottom();
+        term.focus();
+      }
+    });
+
+    // ── FAB: Start Claude (dangerously skip permissions) ──────────
+    fabSkipPerms.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      sendAICommand('claude --dangerously-skip-permissions');
+    });
+
+    // Base64-encode an image blob and stream it over the file_upload channel.
+    // The server writes it into the terminal's CWD and types the path in, so
+    // CLI tools (Claude Code, Codex) read the image from the remote disk.
+    function sendImageBlob(blob, fileName) {
+      if (blob.size > 10 * 1024 * 1024) {
+        showToast('Image too large (max 10 MB)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        ws.send(JSON.stringify({
+          type: 'file_upload',
+          terminalId: currentTerminalId,
+          fileName,
+          mimeType: blob.type || 'image/png',
+          size: blob.size,
+          data: base64,
+        }));
+        showToast('Sent: ' + fileName);
+        term.focus();
+        syncTerminalFocus();
+      };
+      reader.onerror = () => showToast('Failed to read image');
+      reader.readAsDataURL(blob);
+    }
+
+    // ── FAB: Paste from clipboard (text or image) ─────────────────
+    fabPaste.addEventListener('click', async () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      try {
+        let text = null;
+        // clipboard.read() sees image items (copied screenshots, photos) that
+        // readText() can't. Grab the text from the same call when there's no
+        // image — a second clipboard call can lose Safari's user activation.
+        if (navigator.clipboard.read) {
+          try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+              const imgType = item.types.find((t) => t.startsWith('image/'));
+              if (imgType) {
+                const blob = await item.getType(imgType);
+                const ext = imgType === 'image/jpeg' ? 'jpg' : (imgType.split('/')[1] || 'png');
+                sendImageBlob(blob, 'clipboard-' + Date.now() + '.' + ext);
+                return;
+              }
+              if (!text && item.types.includes('text/plain')) {
+                text = await (await item.getType('text/plain')).text();
+              }
+            }
+          } catch (_) { /* permission/format quirk — fall through to readText */ }
+        }
+        if (!text) text = await navigator.clipboard.readText();
+        if (!text) { showToast('Clipboard is empty'); return; }
+        // Bracketed paste mode prevents auto-execution of multi-line pastes
+        const data = '\x1b[200~' + text + '\x1b[201~';
+        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data }));
+        showToast('Pasted ' + text.length + ' chars');
+      } catch (err) {
+        showToast('Clipboard access denied');
+        console.warn('[FAB] Clipboard read failed:', err);
+      }
+      term.focus();
+      syncTerminalFocus();
+    });
+
+    // ── FAB: Insert image ─────────────────────────────────────────
+    fabImage.addEventListener('click', () => {
+      closeFab();
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      imagePicker.click();
+    });
+
+    imagePicker.addEventListener('change', () => {
+      const file = imagePicker.files[0];
+      if (!file) return;
+      sendImageBlob(file, file.name);
+      imagePicker.value = '';
+    });
+
+    // Native paste (Cmd/Ctrl+V on a desktop browser, iOS "Paste" callout):
+    // when the clipboard carries an image, upload it instead of letting the
+    // browser drop it — the terminal can't accept raw image data.
+    document.addEventListener('paste', (e) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) return;
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (blob) sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.png'));
+          return;
+        }
+      }
+    });
+
+    // ── Voice dictation (MediaRecorder → local transcription) ─────────────────
+
+    function pickMimeType() {
+      const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+      ];
+      for (const t of types) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) return t;
+      }
+      return ''; // let browser pick default
+    }
+
+    async function startRecording() {
+      if (typeof MediaRecorder === 'undefined') {
+        showToast('Your browser does not support audio recording');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = pickMimeType();
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        const recorderMimeType = mediaRecorder.mimeType || mimeType || 'audio/webm';
+        mediaRecorder.onstop = async () => {
+          // Release mic
+          stream.getTracks().forEach(t => t.stop());
+          if (audioChunks.length === 0) {
+            showToast('No audio recorded');
+            return;
+          }
+          const blob = new Blob(audioChunks, { type: recorderMimeType });
+          if (blob.size > 20 * 1024 * 1024) {
+            showToast('Recording too long (max 5 min)');
+            return;
+          }
+          // Convert audio to 16kHz mono Float32 PCM using Web Audio API (no ffmpeg needed server-side)
+          try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let float32Data;
+            try {
+              const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+              const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+              const source = offlineCtx.createBufferSource();
+              source.buffer = decoded;
+              source.connect(offlineCtx.destination);
+              source.start(0);
+              const resampled = await offlineCtx.startRendering();
+              float32Data = resampled.getChannelData(0);
+            } finally {
+              audioCtx.close();
+            }
+
+            // Convert Float32Array to base64 for JSON transport
+            const uint8 = new Uint8Array(float32Data.buffer, float32Data.byteOffset, float32Data.byteLength);
+            let binary = '';
+            for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+            const base64Pcm = btoa(binary);
+
+            if (ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
+              ws.send(JSON.stringify({
+                type: 'voice_audio',
+                terminalId: currentTerminalId,
+                data: base64Pcm,
+                format: 'float32_16k',
+                samples: float32Data.length,
+              }));
+              // Show preview with placeholder
+              voiceText.value = '';
+              voiceText.placeholder = 'Transcribing...';
+              showVoicePreview();
+              // Timeout for transcription (120s — 5-min recordings produce larger audio)
+              if (transcriptionTimeout) clearTimeout(transcriptionTimeout);
+              transcriptionTimeout = setTimeout(() => {
+                if (voiceText.placeholder === 'Transcribing...') {
+                  voiceText.placeholder = 'Speak now...';
+                  hideVoicePreview();
+                  showToast('Transcription timed out');
+                }
+              }, 120000);
+            } else {
+              showToast('No active connection');
+            }
+          } catch (err) {
+            console.error('Audio conversion failed:', err);
+            showToast('Failed to convert audio');
+          }
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        if (keyMic) keyMic.classList.add('recording');
+        fabMic.classList.add('recording');
+        // Auto-stop after 5 minutes
+        recordingTimeout = setTimeout(() => {
+          if (isRecording) stopRecording();
+        }, 300000);
+      } catch (e) {
+        if (e.name === 'NotAllowedError') showToast('Microphone permission denied');
+        else showToast('Failed to start microphone');
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      if (keyMic) keyMic.classList.remove('recording');
+      fabMic.classList.remove('recording');
+      if (recordingTimeout) { clearTimeout(recordingTimeout); recordingTimeout = null; }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch (_) {}
+      }
+      mediaRecorder = null;
+    }
+
+    function showVoicePreview() {
+      voicePreview.classList.add('visible');
+      voiceText.focus();
+    }
+
+    function hideVoicePreview() {
+      voicePreview.classList.remove('visible');
+      voiceText.value = '';
+      voiceText.placeholder = 'Speak now...';
+    }
+
+    // Mic button: toggle recording (both keys-bar and floating)
+    function toggleRecording() {
+      if (!isAuthenticated) return;
+      if (isRecording) stopRecording();
+      else startRecording();
+    }
+    if (keyMic) keyMic.addEventListener('click', toggleRecording);
+    fabMic.addEventListener('click', toggleRecording);
+
+    // Toggle native keyboard on mobile
+    function openMobileKeyboard() {
+      if (!isMobileClient) return;
+      mobileKeyboardOpen = true;
+      keyboardOpenTime = Date.now();
+      fabKbd.classList.add('hidden');
+      const ta = terminalWrap.querySelector('.xterm-helper-textarea');
+      if (ta) {
+        ta.blur();
+        ta.removeAttribute('readonly');
+        void ta.offsetHeight;
+        ta.focus();
+      }
+      syncTerminalFocus();
+    }
+    fabKbd.addEventListener('click', openMobileKeyboard);
+    document.getElementById('key-kbd').addEventListener('click', openMobileKeyboard);
+
+    // Send: write transcribed text to terminal — user decides Enter
+    voiceSend.addEventListener('click', () => {
+      const text = voiceText.value.trim();
+      if (text && ws && ws.readyState === WebSocket.OPEN && currentTerminalId) {
+        ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: text }));
+      }
+      hideVoicePreview();
+      term.focus();
+      syncTerminalFocus();
+    });
+
+    // Cancel: discard
+    voiceCancel.addEventListener('click', () => {
+      if (isRecording) stopRecording();
+      hideVoicePreview();
+    });
+
+    // ── Text selection mode ───────────────────────────────────────
+    keySelect.addEventListener('click', () => {
+      selectMode = !selectMode;
+      keySelect.classList.toggle('active', selectMode);
+      if (selectMode) enterSelectionMode();
+      else exitSelectionMode();
+    });
+
+    // ── Telegram notifications toggle ──────────────────────────────
+    const keyTelegram = document.getElementById('key-telegram');
+    if (keyTelegram) {
+      // Restore last choice (default: on)
+      let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
+      const renderTelegram = () => keyTelegram.classList.toggle('tg-active', telegramOn);
+      renderTelegram();
+      keyTelegram.addEventListener('click', () => {
+        telegramOn = !telegramOn;
+        localStorage.setItem('patapim_telegram_notifs', telegramOn ? '1' : '0');
+        renderTelegram();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'set_telegram_notifications', enabled: telegramOn }));
+        }
+        showToast(telegramOn ? 'Telegram notifications on' : 'Telegram notifications off');
+      });
+    }
+
+    function enterSelectionMode() {
+      if (selectionOverlay) return;
+      const buffer = term.buffer.active;
+      let text = '';
+      for (let i = 0; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        if (line) text += line.translateToString(true) + '\n';
+      }
+      selectionOverlay = document.createElement('div');
+      selectionOverlay.className = 'selection-overlay';
+      selectionOverlay.textContent = text;
+      selectionOverlay.style.fontSize = fontSize + 'px';
+      terminalWrap.appendChild(selectionOverlay);
+      // Scroll to bottom to match terminal viewport
+      selectionOverlay.scrollTop = selectionOverlay.scrollHeight;
+      keySelect.textContent = 'Done';
+    }
+
+    function exitSelectionMode() {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        navigator.clipboard.writeText(selection.toString()).then(() => {
+          showToast('Copied to clipboard');
+        }).catch(() => {});
+      }
+      if (selectionOverlay) {
+        selectionOverlay.remove();
+        selectionOverlay = null;
+      }
+      keySelect.textContent = 'Select';
+      keySelect.classList.remove('active');
+      selectMode = false;
+      term.focus();
+      syncTerminalFocus();
+    }
+
+    // Keepalive ping
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+  </script>
+</body>
+</html>

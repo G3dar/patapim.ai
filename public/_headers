@@ -13,7 +13,5 @@
 # hard-reload / cache-bust query.
 /remote
   Cache-Control: no-cache
-/remote-mobile
-  Cache-Control: no-cache
 /remotedesk
   Cache-Control: no-cache

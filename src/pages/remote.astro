@@ -15,25 +15,56 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
            display:flex; align-items:center; justify-content:center; height:100vh; }
     .msg { opacity:.6; font-size:14px; }
   </style>
-  <!-- Smart entry point. Everyone — phones and computers — gets the full
-       desktop UI (/remotedesk → the device's /desktop view), which now has a
-       built-in mobile mode (full-screen projects drawer + swipe) on touch
-       phones. The lean standalone client (/remote-mobile) is kept as a fallback,
-       reachable with ?view=mobile. Use ?view=desktop to force /remotedesk. All
-       query params (t/url/d/…) are forwarded untouched so the one-time connect
-       token is consumed once by the final page. -->
+  <!-- Smart entry point. The interface a phone gets is chosen PER MACHINE in the
+       PATAPIM desktop app (Remote Access → Mobile interface), published on the
+       device record as `remoteUI`:
+         'simple'  → /remote-mobile  (plain mobile HTML)
+         'desktop' → /remotedesk     (rich app-copy; the device's /desktop view)
+       We resolve the target device (the ?d= token, else the single online one),
+       read its remoteUI, and route accordingly. Manual override: ?view=mobile /
+       ?view=desktop. Anything ambiguous or any error → /remotedesk (the default).
+       All query params (t/url/d/…) are forwarded untouched so the one-time
+       connect token is consumed once by the final page. -->
   <script is:inline>
     (function () {
       var p = new URLSearchParams(location.search);
       var view = (p.get('view') || '').toLowerCase();
+      var d = p.get('d') || '';
       p.delete('view');
       var qs = p.toString();
 
-      // Default everyone to the rich /desktop experience; ?view=mobile opts
-      // back into the legacy standalone client as a fallback.
-      var target = view === 'mobile' ? '/remote-mobile' : '/remotedesk';
+      function go(ui) {
+        var target = (ui === 'mobile' || ui === 'simple') ? '/remote-mobile' : '/remotedesk';
+        location.replace(target + (qs ? '?' + qs : ''));
+      }
 
-      location.replace(target + (qs ? '?' + qs : ''));
+      // Manual override wins — no device lookup needed.
+      if (view === 'mobile' || view === 'desktop') { go(view); return; }
+
+      // Resolve the target device's per-machine preference. Cap the wait so a
+      // slow/needs-auth list never hangs the redirect — fall back to /remotedesk.
+      var done = false;
+      var fallback = setTimeout(function () { if (!done) { done = true; go('desktop'); } }, 2500);
+
+      fetch('/api/device/list', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (done) return;
+          done = true; clearTimeout(fallback);
+          var devices = (data && data.devices) || [];
+          var target = null;
+          if (d) {
+            for (var i = 0; i < devices.length; i++) {
+              if (devices[i].token === d) { target = devices[i]; break; }
+            }
+          }
+          if (!target) {
+            var online = devices.filter(function (x) { return x.online; });
+            if (online.length === 1) target = online[0];
+          }
+          go(target && target.remoteUI === 'simple' ? 'simple' : 'desktop');
+        })
+        .catch(function () { if (!done) { done = true; clearTimeout(fallback); go('desktop'); } });
     })();
   </script>
 </head>
