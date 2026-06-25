@@ -13,6 +13,7 @@ interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   SESSIONS: KVNamespace;
+  DEEP_TESTS: KVNamespace;
   RELEASES: R2Bucket;
   MKT_PUSH_SECRET: string;
   DISCORD_BOT_TOKEN: string;

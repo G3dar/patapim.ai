@@ -29,6 +29,11 @@ id = "5a9c98b6432343bfbee7404add18c8f3"
 binding = "SESSIONS"
 id = "99d2f45febe345dd96dc07e2edd631b0"
 
+# Deep Test sheet (patapim.ai/deep-test) — runs, per-section results, reports
+[[kv_namespaces]]
+binding = "DEEP_TESTS"
+id = "d942433285574d26a2cde15089a87e5c"
+
 [[r2_buckets]]
 binding = "RELEASES"
 bucket_name = "patapim-releases"

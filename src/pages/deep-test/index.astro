@@ -1,0 +1,260 @@
+---
+// Deep Test — landing: start/resume a test run, see all runs.
+// Public but noindexed and unlinked. All data client-fetched from /api/deep-test/*.
+import { plan } from '../../lib/deepTest';
+const sectionCount = plan.sections.length;
+const itemCount = plan.items.length;
+const planVersion = plan.planVersion;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Deep Test — PATAPIM</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="brand"><span class="brand-icon">&#x276F;_</span> PATAPIM</a>
+      <span class="sep"></span>
+      <span class="label">Deep Test</span>
+      <nav class="nav">
+        <a href="/deep-test/reports">Reports</a>
+        <a href="/deep-test/runbook.md" target="_blank">Agent runbook</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>PATAPIM Deep Test</h1>
+      <p class="sub">
+        Full-app test sheet — <strong>{itemCount}</strong> items across <strong>{sectionCount}</strong> sections
+        (plan <code>{planVersion}</code>). No account needed: enter your name, start a run, check things off.
+        Multiple people (and Claude agents) can run sheets at the same time.
+      </p>
+    </section>
+
+    <section class="card how">
+      <h2>How testing works</h2>
+      <div class="how-grid">
+        <div class="how-col">
+          <h3>🧑 You test by hand</h3>
+          <ol>
+            <li>Enter your name below, pick the environment you're testing on, hit <strong>Start run</strong>.</li>
+            <li>The sheet opens: work through it section by section. Each item tells you the <em>preconditions</em>, the <em>steps</em> to perform in PATAPIM, and what's <em>expected</em> (click ▸ on an item to see them).</li>
+            <li>Mark each item: <span class="lg p">✓ pass</span> <span class="lg f">✗ fail</span> <span class="lg b">⊘ blocked</span> <span class="lg s">▸ skip</span> — and write a note whenever something is off. Everything autosaves; you can close the tab and resume from the runs list anytime.</li>
+            <li>When you're done (or done enough), click <strong>Finish &amp; export report</strong> — it files a markdown report in the <a href="/deep-test/reports">archive</a>.</li>
+          </ol>
+        </div>
+        <div class="how-col">
+          <h3>🤖 Claude tests for you</h3>
+          <ol>
+            <li>Open <strong>Claude Code in a normal terminal, outside PATAPIM</strong>, on the machine where PATAPIM is running (host or VM).</li>
+            <li>Make sure Computer Control is ON in PATAPIM Preferences, and the <code>patapim-browser</code> MCP server is added (the kickoff prompt below explains how).</li>
+            <li>Paste the kickoff prompt below. Claude claims its own run, executes every agent-testable item via MCP, posts results here as it goes, and files its own report. Expect this to take hours — that's the point.</li>
+            <li>Watch its progress live from the runs list (refresh; results can lag ~1 min).</li>
+          </ol>
+        </div>
+        <div class="how-col">
+          <h3>💻 Full VM pass (the real deal)</h3>
+          <ol>
+            <li>Create a fresh Windows 11 VM (Hyper-V Quick Create works). Snapshot it <em>before</em> installing anything.</li>
+            <li>Inside the VM: download PATAPIM from <a href="https://patapim.ai/download">patapim.ai/download</a> and install. Start a run named like <code>VM-firstrun-&lt;date&gt;</code> and do the <strong>Onboarding &amp; First Run</strong> section FIRST — it's the only environment where onboarding is testable. Restore the snapshot to replay it.</li>
+            <li>Then continue by hand and/or install Claude Code in the VM and run the agent flow there too.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1 · Start a new run</h2>
+      <div class="form-row">
+        <input id="name" type="text" placeholder="Your name (e.g. German)" maxlength="120" />
+        <select id="environment">
+          <option value="host stable">Host — stable install</option>
+          <option value="host dev">Host — dev instance</option>
+          <option value="VM fresh install">VM — fresh install</option>
+          <option value="packaged installer">Packaged installer build</option>
+          <option value="other">Other (describe in label)</option>
+        </select>
+        <input id="label" type="text" placeholder="Label (optional, e.g. v1.5.4 RC)" maxlength="120" />
+        <button id="start" class="btn-primary">Start run →</button>
+      </div>
+      <p class="hint" id="start-hint"></p>
+    </section>
+
+    <section class="card">
+      <h2>2 · Runs — resume yours or watch others</h2>
+      <div id="runs">Loading…</div>
+    </section>
+
+    <section class="card agent-box">
+      <h2>3 · Claude kickoff prompt</h2>
+      <p>Copy this into a Claude Code session running <strong>outside PATAPIM</strong> on the test machine. It contains everything Claude needs.</p>
+      <div class="prompt-wrap">
+        <button id="copy-prompt" class="btn-primary">Copy prompt</button>
+        <textarea id="kickoff" readonly rows="10">You are the automated tester for the PATAPIM deep test.
+
+1. Read the full runbook first: fetch https://patapim.ai/deep-test/runbook.md and follow it exactly. It covers: connecting the patapim-browser MCP server (claude mcp add patapim-browser -- node &lt;path&gt;/src/mcp/patapim-browser-server.js; packaged installs use resources/app.asar.unpacked/src/mcp/patapim-browser-server.js; PATAPIM_PORT=31415 stable / 31416 dev), verifying with app_wait_ready + app_info, and the execution rules.
+2. Claim your own run: POST https://patapim.ai/api/deep-test/runs with &#123;"name":"Claude &lt;machine&gt;","kind":"agent","environment":"&lt;host stable|host dev|VM fresh install&gt;","appVersion":"&lt;from app_info&gt;"&#125;.
+3. GET https://patapim.ai/api/deep-test/plan and execute every item whose mode is "agent" or "both", P0 first. Skip destructive:true items (mark skipped) unless I explicitly authorize them. Probe requiresExternal integrations before attempting (e.g. gmail_status) and skip with a note if not connected.
+4. POST results incrementally (batches of ≤25, ≥5s apart) to /api/deep-test/runs/&lt;runId&gt;/results — never hold them until the end. Include notes and textual evidence, especially for fail/blocked.
+5. When done, POST a final markdown report to /api/deep-test/runs/&lt;runId&gt;/report (structure is in the runbook) and tell me the run URL: https://patapim.ai/deep-test/run?id=&lt;runId&gt;.
+
+Work section by section, take your time, and prefix anything you create in the app with __patapim_e2e__ and clean it up afterwards.</textarea>
+      </div>
+      <p style="margin-top:12px">Full protocol & pitfalls: <a href="/deep-test/runbook.md" target="_blank">runbook.md</a>. Raw API, if you're scripting it yourself:</p>
+      <pre><code># 1. claim a run
+curl -X POST https://patapim.ai/api/deep-test/runs \
+  -H "Content-Type: application/json" \
+  -d '&#123;"name":"Claude","kind":"agent","environment":"host stable"&#125;'
+
+# 2. fetch the plan (filter items: mode in ["agent","both"])
+curl https://patapim.ai/api/deep-test/plan
+
+# 3. post results incrementally (batches ≤25, ≥5s apart)
+curl -X POST https://patapim.ai/api/deep-test/runs/&lt;runId&gt;/results \
+  -H "Content-Type: application/json" \
+  -d '&#123;"by":"Claude","results":[&#123;"itemId":"terminals-001","status":"pass","note":"…"&#125;]&#125;'
+
+# 4. file the final report
+curl -X POST https://patapim.ai/api/deep-test/runs/&lt;runId&gt;/report \
+  -H "Content-Type: application/json" \
+  -d '&#123;"markdown":"# Report …","by":"Claude"&#125;'</code></pre>
+    </section>
+  </main>
+
+  <script is:inline>
+    const $ = (s) => document.querySelector(s);
+    const nameEl = $('#name');
+    nameEl.value = localStorage.getItem('deep-test-name') || '';
+
+    function pct(c) {
+      const tested = c.pass + c.fail + c.blocked + c.skipped;
+      return c.total ? Math.round((tested / c.total) * 100) : 0;
+    }
+    function bar(c) {
+      const seg = (n, cls) => c.total && n ? `<span class="seg ${cls}" style="width:${(n / c.total) * 100}%"></span>` : '';
+      return `<span class="bar">${seg(c.pass, 'p')}${seg(c.fail, 'f')}${seg(c.blocked, 'b')}${seg(c.skipped, 's')}</span>`;
+    }
+    function esc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    async function loadRuns() {
+      try {
+        const r = await fetch('/api/deep-test/runs');
+        const { runs } = await r.json();
+        if (!runs.length) { $('#runs').innerHTML = '<p class="hint">No runs yet — start the first one above.</p>'; return; }
+        $('#runs').innerHTML = `<table>
+          <thead><tr><th>Tester</th><th>Environment</th><th>Progress</th><th>P/F/B/S</th><th>Started</th><th>Status</th></tr></thead>
+          <tbody>${runs.map(run => `
+            <tr class="run-row" data-id="${esc(run.runId)}">
+              <td><strong>${esc(run.name)}</strong>${run.kind === 'agent' ? ' 🤖' : ''}${run.label ? `<div class="mini">${esc(run.label)}</div>` : ''}</td>
+              <td>${esc(run.environment)}</td>
+              <td>${bar(run.counts)}<span class="mini"> ${pct(run.counts)}%</span></td>
+              <td class="mono">${run.counts.pass}/${run.counts.fail}/${run.counts.blocked}/${run.counts.skipped}</td>
+              <td class="mini">${esc((run.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
+              <td><span class="status st-${esc(run.status)}">${esc(run.status)}</span></td>
+            </tr>`).join('')}
+          </tbody></table>`;
+        document.querySelectorAll('.run-row').forEach(row =>
+          row.addEventListener('click', () => location.href = '/deep-test/run?id=' + row.dataset.id));
+      } catch (e) {
+        $('#runs').innerHTML = '<p class="hint">Failed to load runs: ' + esc(e.message) + '</p>';
+      }
+    }
+
+    $('#copy-prompt').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#kickoff').value);
+      $('#copy-prompt').textContent = 'Copied ✓';
+      setTimeout(() => { $('#copy-prompt').textContent = 'Copy prompt'; }, 1500);
+    });
+
+    $('#start').addEventListener('click', async () => {
+      const name = nameEl.value.trim();
+      if (!name) { $('#start-hint').textContent = 'Enter your name first.'; nameEl.focus(); return; }
+      localStorage.setItem('deep-test-name', name);
+      $('#start').disabled = true;
+      $('#start-hint').textContent = 'Creating run…';
+      try {
+        const r = await fetch('/api/deep-test/runs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, kind: 'human',
+            environment: $('#environment').value,
+            label: $('#label').value.trim() || undefined,
+          }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || r.status);
+        location.href = '/deep-test/run?id=' + data.runId;
+      } catch (e) {
+        $('#start-hint').textContent = 'Failed: ' + e.message;
+        $('#start').disabled = false;
+      }
+    });
+
+    loadRuns();
+  </script>
+
+  <style is:global>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #e6edf3; --dim: #8b949e; --accent: #2f81f7;
+      --pass: #3fb950; --fail: #f85149; --blocked: #d29922; --skip: #6e7681;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; min-height: 100vh; }
+    code, .mono, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.92em; }
+    a { color: var(--accent); text-decoration: none; }
+    .topbar { border-bottom: 1px solid var(--border); background: var(--panel); }
+    .topbar-inner { max-width: 1080px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+    .brand { color: var(--text); font-weight: 700; } .brand-icon { color: var(--pass); }
+    .sep { width: 1px; height: 18px; background: var(--border); }
+    .label { color: var(--dim); font-size: 14px; }
+    .nav { margin-left: auto; display: flex; gap: 16px; font-size: 14px; }
+    main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+    .hero h1 { font-size: 26px; margin-bottom: 8px; }
+    .sub { color: var(--dim); line-height: 1.6; max-width: 720px; }
+    .sub code { background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .card h2 { font-size: 16px; margin-bottom: 14px; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 9px 12px; font: inherit; font-size: 14px; }
+    input { flex: 1; min-width: 180px; }
+    .btn-primary { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+    .btn-primary:disabled { opacity: 0.5; cursor: default; }
+    .hint { color: var(--dim); font-size: 13px; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; color: var(--dim); font-weight: 500; font-size: 12px; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px; border-bottom: 1px solid var(--border); }
+    .run-row { cursor: pointer; } .run-row:hover { background: rgba(47,129,247,0.06); }
+    .mini { color: var(--dim); font-size: 12px; }
+    .bar { display: inline-flex; width: 120px; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; vertical-align: middle; }
+    .seg.p { background: var(--pass); } .seg.f { background: var(--fail); }
+    .seg.b { background: var(--blocked); } .seg.s { background: var(--skip); }
+    .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+    .st-active { color: var(--accent); } .st-complete { color: var(--pass); } .st-abandoned { color: var(--dim); }
+    .agent-box pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 12.5px; line-height: 1.6; margin-top: 10px; }
+    .agent-box p { color: var(--dim); font-size: 14px; line-height: 1.6; }
+    .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+    .how-col h3 { font-size: 14px; margin-bottom: 10px; }
+    .how-col ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .how-col li { font-size: 13.5px; line-height: 1.55; color: var(--dim); }
+    .how-col li strong, .how-col li em { color: var(--text); }
+    .lg { font-size: 12px; padding: 1px 7px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
+    .lg.p { color: var(--pass); } .lg.f { color: var(--fail); }
+    .lg.b { color: var(--blocked); } .lg.s { color: var(--text); }
+    .prompt-wrap { position: relative; margin-top: 10px; }
+    #kickoff { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.55; resize: vertical; }
+    #copy-prompt { position: absolute; top: 10px; right: 10px; z-index: 1; padding: 6px 14px; font-size: 13px; }
+  </style>
+</body>
+</html>

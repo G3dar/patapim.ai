@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { generateLicenseKey, type License } from '../../../lib/license';
+import { sendPurchaseWelcome } from '../../../lib/email';
 import { createReferralAssociation, activateReferral } from '../../../lib/referral';
 
 export const prerender = false;
@@ -123,6 +124,17 @@ export const POST: APIRoute = async (context) => {
 
         await Promise.all(writes);
         console.log('[webhook] License created', { email: maskEmail(email), licenseKey: licenseKey.slice(0, 4) + '...', plan });
+
+        // Send the welcome email with the license key. Best-effort: a Resend
+        // failure must not fail the webhook (Stripe would retry and re-mint a
+        // key — the idempotency guard at the top prevents double-sends anyway).
+        try {
+          const buyerName = session.customer_details?.name || '';
+          await sendPurchaseWelcome(env, email, buyerName, plan, licenseKey);
+          console.log('[webhook] Welcome email sent', { email: maskEmail(email) });
+        } catch (e) {
+          console.error('[webhook] Welcome email failed (non-fatal):', e);
+        }
 
         // Process referral from checkout metadata (Flow B: buyer entered referrer email)
         const referrerEmail = session.metadata?.referrerEmail;

@@ -1,0 +1,593 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+import en from '../i18n/translations/en';
+import ja from '../i18n/translations/ja';
+
+const locale = getLocaleFromUrl(Astro.url);
+const translations = locale === 'ja' ? ja : en;
+const dm = translations.demos.miniComputerControl;
+
+const scriptI18n = {
+  task: dm.task,
+  mailBody: dm.mailBody,
+  sent: dm.sent,
+  actions: dm.actions,
+  done: dm.done,
+};
+---
+
+<div class="hm-cc" data-hm-cc data-i18n={JSON.stringify(scriptI18n)}>
+  <div class="hm-chrome">
+    <div class="hm-dots">
+      <span class="hm-dot hm-dot-r"></span>
+      <span class="hm-dot hm-dot-y"></span>
+      <span class="hm-dot hm-dot-g"></span>
+    </div>
+    <span class="hm-title">{dm.windowTitle}</span>
+  </div>
+  <div class="hm-cc-body">
+    <!-- Prompt bar: the instruction given to Claude -->
+    <div class="hm-cc-task" data-cc-task>
+      <svg class="hm-cc-spark" viewBox="0 0 16 16" fill="none">
+        <path d="M8 1.5l1.6 4.3 4.3 1.6-4.3 1.6L8 13.3 6.4 9 2.1 7.4l4.3-1.6L8 1.5z" fill="currentColor"/>
+      </svg>
+      <span class="hm-cc-task-text" data-cc-task-text></span>
+    </div>
+
+    <!-- Mini desktop Claude drives -->
+    <div class="hm-cc-desktop" data-cc-desktop>
+      <!-- Files window -->
+      <div class="hm-cc-win hm-cc-win-files" data-cc-win-files>
+        <div class="hm-cc-win-bar">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4a1 1 0 0 1 1-1h3.4l1.4 1.5h6.2a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4z" fill="currentColor" opacity="0.8"/></svg>
+          <span>{dm.filesTitle}</span>
+        </div>
+        <div class="hm-cc-file" data-cc-file-report>
+          <span class="hm-cc-file-ico hm-cc-ico-pdf"></span>{dm.files[0]}
+        </div>
+        <div class="hm-cc-file"><span class="hm-cc-file-ico hm-cc-ico-md"></span>{dm.files[1]}</div>
+        <div class="hm-cc-file"><span class="hm-cc-file-ico hm-cc-ico-img"></span>{dm.files[2]}</div>
+      </div>
+
+      <!-- Mail window -->
+      <div class="hm-cc-win hm-cc-win-mail" data-cc-win-mail>
+        <div class="hm-cc-win-bar">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4.5h13v7.5h-13V4.5zm0 .5L8 9.5 14.5 5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+          <span>{dm.mailTitle}</span>
+        </div>
+        <div class="hm-cc-mail-to">{dm.mailTo}</div>
+        <div class="hm-cc-mail-body" data-cc-mail-body></div>
+        <div class="hm-cc-mail-foot">
+          <span class="hm-cc-attach" data-cc-attach>
+            <svg viewBox="0 0 16 16" fill="none"><path d="M11.5 7.5l-4 4a2.3 2.3 0 0 1-3.3-3.3l5-5a1.6 1.6 0 0 1 2.3 2.3l-5 5a.9.9 0 0 1-1.3-1.3l4-4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            {dm.attachment}
+          </span>
+          <button class="hm-cc-send" data-cc-send tabindex="-1">{dm.send}</button>
+        </div>
+      </div>
+
+      <!-- Dock -->
+      <div class="hm-cc-dock">
+        <span class="hm-cc-dock-ico" data-cc-dock-files>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4a1 1 0 0 1 1-1h3.4l1.4 1.5h6.2a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4z" fill="#d4a574"/></svg>
+        </span>
+        <span class="hm-cc-dock-ico" data-cc-dock-browser>
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#60a5fa" stroke-width="1.2"/><path d="M2 8h12M8 2c-3.5 3.8-3.5 8.2 0 12 3.5-3.8 3.5-8.2 0-12z" stroke="#60a5fa" stroke-width="1"/></svg>
+        </span>
+        <span class="hm-cc-dock-ico" data-cc-dock-mail>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4h13v8h-13V4zm0 .5L8 9.5 14.5 4.5" stroke="#8bb04a" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+
+      <!-- Claude-driven cursor + click ripple -->
+      <div class="hm-cc-ripple" data-cc-ripple></div>
+      <svg class="hm-cc-cursor" data-cc-cursor viewBox="0 0 24 24" fill="none">
+        <path d="M5.5 3.2v14l3.4-3.3 2.2 4.9 2.2-1-2.2-4.7h4.7L5.5 3.2z" fill="#fff" stroke="#1a1208" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Action status line -->
+    <div class="hm-cc-status" data-cc-status></div>
+  </div>
+</div>
+
+<style>
+  .hm-cc {
+    width: 340px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .hm-chrome {
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-dots { display: flex; gap: 4px; }
+  .hm-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hm-dot-r { background: #ff5f57; }
+  .hm-dot-y { background: #febc2e; }
+  .hm-dot-g { background: #28c840; }
+  .hm-title {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .hm-cc-body {
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- Prompt bar --- */
+  .hm-cc-task {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border-default);
+    background: rgba(255,255,255,0.02);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .hm-cc-task.hm-cc-vis { opacity: 1; }
+  .hm-cc-spark {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    color: var(--accent-primary);
+  }
+  .hm-cc-task-text {
+    font-family: var(--font-mono);
+    font-size: 7.5px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* --- Desktop --- */
+  .hm-cc-desktop {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 90% at 50% 0%, rgba(212,165,116,0.05), transparent),
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+    background-size: auto, 14px 14px;
+  }
+  .hm-cc-desktop.hm-cc-live {
+    box-shadow: inset 0 0 0 1px rgba(212,165,116,0.35), inset 0 0 14px rgba(212,165,116,0.12);
+    transition: box-shadow 0.4s ease;
+  }
+  .hm-cc-desktop.hm-cc-success {
+    box-shadow: inset 0 0 0 1px rgba(124,179,130,0.4), inset 0 0 14px rgba(124,179,130,0.12);
+  }
+
+  /* --- App windows --- */
+  .hm-cc-win {
+    position: absolute;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: scale(0.9) translateY(5px);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  .hm-cc-win.hm-cc-open { opacity: 1; transform: scale(1) translateY(0); }
+
+  .hm-cc-win-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+  .hm-cc-win-bar svg { width: 8px; height: 8px; color: var(--accent-primary); flex-shrink: 0; }
+
+  .hm-cc-win-files { left: 8px; top: 7px; width: 128px; z-index: 2; }
+  .hm-cc-file {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-muted);
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .hm-cc-file.hm-cc-selected {
+    background: rgba(212,165,116,0.18);
+    color: var(--text-primary);
+  }
+  .hm-cc-file-ico {
+    width: 6px;
+    height: 7px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .hm-cc-ico-pdf { background: #e06c60; }
+  .hm-cc-ico-md { background: #60a5fa; }
+  .hm-cc-ico-img { background: #a78bfa; }
+
+  .hm-cc-win-mail { right: 8px; top: 4px; width: 158px; z-index: 3; }
+  .hm-cc-mail-to {
+    padding: 3px 6px 2px;
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .hm-cc-mail-body {
+    padding: 3px 6px;
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    min-height: 16px;
+  }
+  .hm-cc-mail-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 3px 6px 4px;
+  }
+  .hm-cc-attach {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 5px;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 6px;
+    color: var(--text-tertiary);
+    background: rgba(255,255,255,0.03);
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hm-cc-attach.hm-cc-vis { opacity: 1; transform: scale(1); }
+  .hm-cc-attach svg { width: 7px; height: 7px; color: var(--accent-primary); }
+  .hm-cc-send {
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    font-weight: 700;
+    color: #1a1208;
+    background: var(--accent-primary);
+    border: none;
+    border-radius: 3px;
+    padding: 2px 8px;
+    pointer-events: none;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  .hm-cc-send.hm-cc-sent {
+    background: var(--success);
+    color: #0d130d;
+  }
+
+  /* --- Dock --- */
+  .hm-cc-dock {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    padding: 3px 7px;
+    border-radius: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-default);
+    z-index: 1;
+  }
+  .hm-cc-dock-ico {
+    width: 13px;
+    height: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: background 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hm-cc-dock-ico svg { width: 11px; height: 11px; }
+  .hm-cc-dock-ico.hm-cc-bounce {
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-2px) scale(1.15);
+  }
+
+  /* --- Cursor + ripple --- */
+  .hm-cc-cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 13px;
+    height: 13px;
+    z-index: 10;
+    opacity: 0;
+    transform: translate(160px, 40px);
+    transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.25, 1), opacity 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    pointer-events: none;
+  }
+  .hm-cc-cursor.hm-cc-vis { opacity: 1; }
+
+  .hm-cc-ripple {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent-primary);
+    z-index: 9;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hm-cc-ripple.hm-cc-rip {
+    animation: hm-cc-ripple 0.45s ease-out forwards;
+  }
+  @keyframes hm-cc-ripple {
+    0% { opacity: 0.9; transform: scale(0.3); }
+    100% { opacity: 0; transform: scale(1.4); }
+  }
+
+  /* --- Status line --- */
+  .hm-cc-status {
+    padding: 4px 10px 6px;
+    border-top: 1px solid var(--border-default);
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    min-height: 18px;
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.12);
+    opacity: 0;
+    transition: opacity 0.3s ease, color 0.3s ease;
+  }
+  .hm-cc-status.hm-cc-vis { opacity: 1; }
+  .hm-cc-status.hm-cc-ok { color: var(--success); }
+
+  @media (max-width: 768px) {
+    .hm-cc { width: 100%; max-width: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm-cc-task,
+    .hm-cc-status,
+    .hm-cc-attach { opacity: 1; transform: none; }
+    .hm-cc-win { opacity: 1; transform: none; transition: none; }
+    .hm-cc-cursor { display: none; }
+    .hm-cc-ripple { display: none; }
+  }
+</style>
+
+<script>
+  (function() {
+    const root = document.querySelector('[data-hm-cc]') as HTMLElement;
+    if (!root) return;
+
+    const i18n = JSON.parse(root.dataset.i18n || '{}');
+    const taskText = i18n.task || 'Find the Q3 report and email it to the team';
+    const mailBodyText = i18n.mailBody || 'Hi team, Q3 report attached.';
+    const sentText = i18n.sent || 'Sent ✓';
+    const actions = i18n.actions || ['opening Files...', 'selecting q3-report.pdf', 'composing email...', 'attaching file', 'clicking Send'];
+    const doneText = i18n.done || '✓ Done — Claude drove the whole computer';
+
+    const taskEl = root.querySelector('[data-cc-task]') as HTMLElement;
+    const taskTextEl = root.querySelector('[data-cc-task-text]') as HTMLElement;
+    const desktop = root.querySelector('[data-cc-desktop]') as HTMLElement;
+    const winFiles = root.querySelector('[data-cc-win-files]') as HTMLElement;
+    const fileReport = root.querySelector('[data-cc-file-report]') as HTMLElement;
+    const winMail = root.querySelector('[data-cc-win-mail]') as HTMLElement;
+    const mailBodyEl = root.querySelector('[data-cc-mail-body]') as HTMLElement;
+    const attachEl = root.querySelector('[data-cc-attach]') as HTMLElement;
+    const sendBtn = root.querySelector('[data-cc-send]') as HTMLElement;
+    const dockFiles = root.querySelector('[data-cc-dock-files]') as HTMLElement;
+    const dockMail = root.querySelector('[data-cc-dock-mail]') as HTMLElement;
+    const cursor = root.querySelector('[data-cc-cursor]') as unknown as HTMLElement;
+    const ripple = root.querySelector('[data-cc-ripple]') as HTMLElement;
+    const statusEl = root.querySelector('[data-cc-status]') as HTMLElement;
+
+    const sendLabel = sendBtn.textContent;
+    let cx = 160, cy = 40;
+
+    function resetState() {
+      taskEl.classList.remove('hm-cc-vis');
+      taskTextEl.textContent = '';
+      desktop.classList.remove('hm-cc-live', 'hm-cc-success');
+      winFiles.classList.remove('hm-cc-open');
+      winMail.classList.remove('hm-cc-open');
+      fileReport.classList.remove('hm-cc-selected');
+      mailBodyEl.textContent = '';
+      attachEl.classList.remove('hm-cc-vis');
+      sendBtn.classList.remove('hm-cc-sent');
+      sendBtn.textContent = sendLabel;
+      dockFiles.classList.remove('hm-cc-bounce');
+      dockMail.classList.remove('hm-cc-bounce');
+      cursor.classList.remove('hm-cc-vis');
+      ripple.classList.remove('hm-cc-rip');
+      statusEl.classList.remove('hm-cc-vis', 'hm-cc-ok');
+      statusEl.textContent = '';
+      cx = 160; cy = 40;
+      cursor.style.transform = `translate(${cx}px, ${cy}px)`;
+    }
+
+    // Reduced motion: show static final state
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      taskTextEl.textContent = taskText;
+      taskEl.classList.add('hm-cc-vis');
+      winFiles.classList.add('hm-cc-open');
+      winMail.classList.add('hm-cc-open');
+      fileReport.classList.add('hm-cc-selected');
+      mailBodyEl.textContent = mailBodyText;
+      attachEl.classList.add('hm-cc-vis');
+      sendBtn.classList.add('hm-cc-sent');
+      sendBtn.textContent = sentText;
+      statusEl.textContent = doneText;
+      statusEl.classList.add('hm-cc-vis', 'hm-cc-ok');
+      return;
+    }
+
+    let running = false;
+    let animId: ReturnType<typeof setTimeout> | null = null;
+
+    function wait(ms: number): Promise<void> {
+      return new Promise(resolve => { animId = setTimeout(resolve, ms); });
+    }
+
+    async function typeText(el: HTMLElement, text: string) {
+      for (let i = 0; i < text.length; i++) {
+        if (!running) return;
+        el.textContent += text[i];
+        await wait(22 + Math.random() * 14);
+      }
+    }
+
+    async function moveCursorTo(target: HTMLElement, dx = 0, dy = 0) {
+      const dRect = desktop.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      cx = tRect.left - dRect.left + tRect.width / 2 + dx;
+      cy = tRect.top - dRect.top + tRect.height / 2 + dy;
+      cursor.style.transform = `translate(${cx}px, ${cy}px)`;
+      await wait(600);
+    }
+
+    async function click() {
+      ripple.style.left = `${cx - 8 + 3}px`;
+      ripple.style.top = `${cy - 8 + 3}px`;
+      ripple.classList.remove('hm-cc-rip');
+      void ripple.offsetWidth;
+      ripple.classList.add('hm-cc-rip');
+      cursor.style.transform = `translate(${cx}px, ${cy}px) scale(0.8)`;
+      await wait(130);
+      cursor.style.transform = `translate(${cx}px, ${cy}px)`;
+      await wait(180);
+    }
+
+    function setStatus(text: string) {
+      statusEl.textContent = `▸ ${text}`;
+      statusEl.classList.add('hm-cc-vis');
+    }
+
+    async function startLoop() {
+      while (running) {
+        // Reset, type the instruction
+        resetState();
+        await wait(250);
+        if (!running) break;
+        taskEl.classList.add('hm-cc-vis');
+        await typeText(taskTextEl, taskText);
+        if (!running) break;
+        await wait(300);
+        if (!running) break;
+
+        // Claude takes control
+        desktop.classList.add('hm-cc-live');
+        cursor.classList.add('hm-cc-vis');
+        await wait(350);
+        if (!running) break;
+
+        // Open Files from the dock
+        setStatus(actions[0]);
+        await moveCursorTo(dockFiles);
+        if (!running) break;
+        await click();
+        if (!running) break;
+        dockFiles.classList.add('hm-cc-bounce');
+        winFiles.classList.add('hm-cc-open');
+        await wait(450);
+        if (!running) break;
+
+        // Select the report
+        setStatus(actions[1]);
+        await moveCursorTo(fileReport, 8, 0);
+        if (!running) break;
+        await click();
+        if (!running) break;
+        fileReport.classList.add('hm-cc-selected');
+        await wait(400);
+        if (!running) break;
+
+        // Open Mail from the dock
+        setStatus(actions[2]);
+        await moveCursorTo(dockMail);
+        if (!running) break;
+        await click();
+        if (!running) break;
+        dockMail.classList.add('hm-cc-bounce');
+        winMail.classList.add('hm-cc-open');
+        await wait(450);
+        if (!running) break;
+
+        // Type the email body
+        await moveCursorTo(mailBodyEl, 20, 0);
+        if (!running) break;
+        await typeText(mailBodyEl, mailBodyText);
+        if (!running) break;
+
+        // Attach the file
+        setStatus(actions[3]);
+        attachEl.classList.add('hm-cc-vis');
+        await wait(500);
+        if (!running) break;
+
+        // Click Send
+        setStatus(actions[4]);
+        await moveCursorTo(sendBtn);
+        if (!running) break;
+        await click();
+        if (!running) break;
+        sendBtn.classList.add('hm-cc-sent');
+        sendBtn.textContent = sentText;
+        await wait(400);
+        if (!running) break;
+
+        // Done
+        desktop.classList.remove('hm-cc-live');
+        desktop.classList.add('hm-cc-success');
+        statusEl.textContent = doneText;
+        statusEl.classList.add('hm-cc-ok');
+        await wait(2000);
+        if (!running) break;
+
+        // Fade out, loop
+        root.style.opacity = '0';
+        root.style.transition = 'opacity 0.4s ease';
+        await wait(500);
+        if (!running) break;
+        root.style.opacity = '1';
+      }
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          startLoop();
+        } else if (!e.isIntersecting && running) {
+          running = false;
+          if (animId) { clearTimeout(animId); animId = null; }
+          resetState();
+          root.style.opacity = '1';
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(root);
+  })();
+</script>
