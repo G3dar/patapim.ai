@@ -28,8 +28,10 @@ const siteUrl = 'https://patapim.ai';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- critical: paint black before any stylesheet arrives — no white blink, ever -->
-  <style>html{background:#000;color-scheme:dark}</style>
+  <!-- critical: paint black before any stylesheet arrives — no white blink, ever.
+       is:inline keeps it verbatim in the HTML (a processed <style> gets
+       extracted to the async CSS bundle, defeating the whole point) -->
+  <style is:inline>html{background:#000;color-scheme:dark}</style>
   <meta name="theme-color" content="#000000" />
   <title>{title}</title>
   <meta name="description" content={description} />
