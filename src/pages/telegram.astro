@@ -58,8 +58,14 @@ export const prerender = true;
     ::-webkit-scrollbar-thumb { background: #161616; border-radius: 0; }
     ::-webkit-scrollbar-thumb:hover { background: #1d1d1d; }
 
+    /* seamless cross-document navigation, same as the rest of the site */
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+    ::view-transition-old(site-nav), ::view-transition-new(site-nav) { animation: none; }
+
     /* site nav — mirrors the shared .tv-nav metrics exactly */
     .site-nav {
+      view-transition-name: site-nav;
       position: fixed;
       top: 0;
       left: 0;

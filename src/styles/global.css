@@ -293,3 +293,24 @@ a:hover {
     padding: var(--space-4xl) 0;
   }
 }
+
+/* ==================== CROSS-DOCUMENT VIEW TRANSITIONS ====================
+   MPA navigation without the blink: the browser holds the old frame until
+   the new page is ready, and the nav lives on its own transition layer so
+   the header is pixel-continuous across pages — never repainted, never
+   flashed. Content swaps as a hard cut (the typed entrance IS the effect). */
+@view-transition {
+  navigation: auto;
+}
+.tv-nav, .site-nav {
+  view-transition-name: site-nav;
+}
+/* hard cut, no crossfade — terminal, not powerpoint */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(site-nav),
+::view-transition-new(site-nav) {
+  animation: none;
+}
