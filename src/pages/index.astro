@@ -55,6 +55,15 @@ const PRO_FEATURES = [
 
 <BaseLayout title="PATAPIM — Superpower Suite for Claude Code" description="Patapim adds everything Claude Code is missing — multi-project workspaces, voice, remote control, live notifications — without taking the terminal away from you.">
 <div class="tv" id="tv">
+  <!-- the boot ceremony is for ARRIVALS: coming from inside patapim.ai skips
+       it entirely. Synchronous so not even one frame of the beam leaks. -->
+  <script is:inline>
+    try {
+      if (document.referrer && new URL(document.referrer).origin === location.origin) {
+        document.documentElement.classList.add('tv-noboot');
+      }
+    } catch (e) { /* no referrer info — play the boot */ }
+  </script>
   <!-- boot sequence overlay: CRT power-on → typed prompt → page prints in -->
   <div id="tv-boot" aria-hidden="true">
     <div class="tvb-crt"></div>
@@ -394,6 +403,8 @@ const PRO_FEATURES = [
     visibility: hidden;
     pointer-events: none;
   }
+  /* internal navigation: no ceremony, no flash — the overlay never paints */
+  .tv-noboot #tv-boot { display: none; }
   @keyframes tvb-failsafe {
     to { opacity: 0; visibility: hidden; pointer-events: none; }
   }
@@ -1466,7 +1477,8 @@ const PRO_FEATURES = [
       startObserving();
     };
 
-    if (!overlay || !typed || reduced) { finish(); return; }
+    const internalNav = document.documentElement.classList.contains('tv-noboot');
+    if (!overlay || !typed || reduced || internalNav) { finish(); return; }
 
     // timeline: flash (140ms) → cursor cuts in → beat → type → beat → page prints
     const T_CURSOR = 170;   // cursor appears by cut, right after the flash
