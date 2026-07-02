@@ -388,3 +388,152 @@
   flex: 1;
   border-top: 1px solid var(--border-subtle);
 }
+
+/* ---------- shared navbar (fixed, 56px) ---------- */
+.tv-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tv-nav-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.tv-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.tv-brand-icon {
+  background: var(--p-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+.tv-brand-sep { color: var(--text-muted); }
+.tv-brand-name { color: var(--text-primary); letter-spacing: 0.05em; }
+.tv-nav-links { display: flex; gap: 26px; align-items: center; }
+.tv-nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 120ms;
+}
+.tv-nav-links a:hover { color: var(--text-primary); }
+.tv-nav-actions { display: flex; align-items: center; gap: 18px; }
+.tv-nav-signin { color: var(--text-secondary); text-decoration: none; font-size: 13px; }
+.tv-nav-signin:hover { color: var(--text-primary); }
+.tv-nav-cta { color: var(--text-primary) !important; text-decoration: none; font-size: 13px; }
+.tv-nav-cta:hover {
+  background: var(--p-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tv-nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.tv-nav-mobile {
+  display: none;
+  flex-direction: column;
+  padding: 10px 24px 20px;
+  background: #050505;
+  border-bottom: 1px solid var(--border-default);
+}
+.tv-nav-mobile.open { display: flex; }
+.tv-nav-mobile a {
+  padding: 11px 0;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tv-nav-mobile a:last-child { border-bottom: none; }
+.tv-nav-mobile .tv-nav-cta { color: var(--text-primary); }
+.tv-nav-lang-row { display: flex; justify-content: flex-end; padding: 6px 0 10px; }
+@media (max-width: 880px) {
+  .tv-nav-links, .tv-nav-actions { display: none; }
+  .tv-nav-toggle { display: block; }
+}
+
+/* ---------- shared footer ---------- */
+.tvf-footer {
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-primary);
+  padding: 56px 0 20px;
+  font-family: var(--font-mono);
+}
+.tvf-inner { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.tvf-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 44px;
+}
+.tvf-brandrow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+.tvf-tagline { color: var(--text-tertiary); font-size: 12.5px; max-width: 280px; line-height: 1.7; }
+.tvf-email {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 120ms;
+}
+.tvf-email:hover { color: var(--cy); }
+.tvf-col { display: flex; flex-direction: column; gap: 9px; }
+.tvf-col h4 {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.tvf-col h4::before { content: '$ '; color: var(--vi); }
+.tvf-col a {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  text-decoration: none;
+  transition: color 120ms;
+}
+.tvf-col a:hover { color: var(--text-primary); }
+.tvf-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 18px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.tvf-bottom a { color: var(--text-muted); text-decoration: none; }
+.tvf-bottom a:hover { color: var(--text-secondary); }
+@media (max-width: 768px) {
+  .tvf-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .tvf-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .tvf-grid { grid-template-columns: 1fr; }
+}
