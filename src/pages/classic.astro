@@ -1,0 +1,38 @@
+---
+export const prerender = true;
+
+// Archived pre-terminal homepage. Kept for reference; noindex + out of sitemap.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import SessionBar from '../components/SessionBar.astro';
+import Hero from '../components/Hero.astro';
+import SecondaryFeatures from '../components/SecondaryFeatures.astro';
+import PricingPreview from '../components/PricingPreview.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="PATAPIM — Classic" noindex={true}>
+  <div class="classic-note">// you're viewing the classic design — <a href="/">back to patapim.ai</a></div>
+  <Navbar />
+  <SessionBar />
+  <Hero />
+  <SecondaryFeatures />
+  <PricingPreview />
+  <Footer />
+</BaseLayout>
+
+<style>
+  .classic-note {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    z-index: 2000;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid var(--border-default);
+    padding: 5px 10px;
+  }
+  .classic-note a { color: var(--text-tertiary); text-decoration: underline; }
+</style>

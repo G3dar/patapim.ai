@@ -10,7 +10,11 @@ export default defineConfig({
       path: 'src/worker.ts',
     },
   }),
-  integrations: [sitemap({ filter: (page) => !page.includes('/launch') })],
+  redirects: {
+    // the terminal design graduated from /v2 to the homepage
+    '/v2': '/',
+  },
+  integrations: [sitemap({ filter: (page) => !page.includes('/launch') && !page.includes('/classic') })],
   build: {
     assets: '_assets'
   },
