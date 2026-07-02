@@ -14,7 +14,7 @@ export const prerender = true;
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <meta property="og:title" content="PATAPIM × Telegram" />
   <meta property="og:description" content="Reply to Claude from Telegram. One click, one paste, done." />
@@ -22,28 +22,32 @@ export const prerender = true;
 
   <style>
     :root {
-      --bg: #0f0f10;
-      --bg-2: #17171a;
-      --bg-3: #1d1d21;
-      --ink: #e8e6e3;
-      --ink-soft: #a09b94;
-      --ink-mute: #6b6660;
-      --accent: #d4a574;
-      --accent-soft: #c9956a;
-      --accent-bg: rgba(212, 165, 116, 0.10);
+      --bg: #000000;
+      --bg-2: #0b0b0e;
+      --bg-3: #111114;
+      --ink: #ededed;
+      --ink-soft: #9a9a9a;
+      --ink-mute: #6a6a6a;
+      --accent: #a78bfa;
+      --accent-soft: #c4b5fd;
+      --accent-bg: rgba(167, 139, 250, 0.10);
+      --cyan: #22d3ee;
       --tg: #2aabee;
       --tg-soft: rgba(42, 171, 238, 0.14);
-      --rule: rgba(255, 255, 255, 0.08);
-      --good: #7cb382;
+      --rule: rgba(255, 255, 255, 0.09);
+      --good: #4ade80;
+      --panel: linear-gradient(180deg, #0b0b0e, #070708);
+      --grad: linear-gradient(120deg, #c26bf0, #8b7cf8, #22d3ee);
+      --mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, Menlo, monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     body {
       background: var(--bg);
       color: var(--ink);
-      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 17px;
-      line-height: 1.55;
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.6;
       overflow-x: hidden;
     }
 
@@ -63,42 +67,54 @@ export const prerender = true;
       color: var(--ink-mute);
       margin-bottom: 28px;
     }
-    .topbar .brand { color: var(--accent); font-weight: 600; }
+    .topbar .brand { color: var(--accent); font-weight: 700; }
     .topbar .x { opacity: 0.5; }
-    .topbar .tg { color: var(--tg); font-weight: 600; }
+    .topbar .tg { color: var(--cyan); font-weight: 700; }
 
     /* === Hero === */
     h1 {
-      font-size: 36px;
-      line-height: 1.12;
+      font-size: 30px;
+      line-height: 1.2;
       font-weight: 700;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.02em;
       margin-bottom: 16px;
     }
-    h1 .tg-color { color: var(--tg); }
+    h1 .tg-color {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
     .lede {
-      font-size: 18px;
+      font-size: 15px;
       color: var(--ink-soft);
       margin-bottom: 32px;
-      line-height: 1.55;
+      line-height: 1.7;
     }
 
     /* === Sections === */
-    section { margin: 48px 0; }
+    section { margin: 56px 0; }
     h2 {
       font-size: 13px;
       font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: var(--ink);
       margin-bottom: 18px;
+    }
+    h2::before {
+      content: '$ ';
+      color: var(--accent);
+      font-weight: 700;
     }
 
     /* === Big chat-bubble demo === */
     .chat {
-      background: var(--bg-2);
+      background: var(--panel);
       border: 1px solid var(--rule);
-      border-radius: 18px;
+      border-radius: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
       padding: 18px 16px;
       margin: 24px 0;
       display: flex;
@@ -142,7 +158,7 @@ export const prerender = true;
     }
     .bubble.bot small { color: var(--ink-mute); display: block; margin-top: 4px; font-size: 11px; }
     .bubble code {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--mono);
       font-size: 13px;
       background: rgba(255,255,255,0.08);
       padding: 1px 5px;
@@ -152,9 +168,10 @@ export const prerender = true;
     /* === Cards (what it does) === */
     .cards { display: flex; flex-direction: column; gap: 12px; }
     .card {
-      background: var(--bg-2);
+      background: var(--panel);
       border: 1px solid var(--rule);
-      border-radius: 14px;
+      border-radius: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
       padding: 18px 18px;
     }
     .card-emoji {
@@ -163,7 +180,7 @@ export const prerender = true;
       margin-bottom: 8px;
     }
     .card h3 {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 600;
       margin-bottom: 4px;
     }
@@ -179,9 +196,10 @@ export const prerender = true;
       counter-increment: s;
       position: relative;
       padding: 18px 18px 18px 60px;
-      background: var(--bg-2);
+      background: var(--panel);
       border: 1px solid var(--rule);
-      border-radius: 14px;
+      border-radius: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
       margin-bottom: 10px;
     }
     .step::before {
@@ -190,15 +208,16 @@ export const prerender = true;
       left: 18px;
       top: 18px;
       width: 28px; height: 28px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: var(--bg);
+      border-radius: 0;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       display: flex; align-items: center; justify-content: center;
     }
     .step h3 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       margin-bottom: 4px;
     }
@@ -209,13 +228,13 @@ export const prerender = true;
     }
     .step kbd {
       display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--mono);
       font-size: 12px;
       background: var(--bg-3);
-      border: 1px solid var(--rule);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       padding: 1px 6px;
-      border-radius: 4px;
-      color: var(--accent);
+      border-radius: 0;
+      color: var(--cyan);
     }
 
     /* === Before/After === */
@@ -226,13 +245,13 @@ export const prerender = true;
       margin-top: 10px;
     }
     .vs-col {
-      background: var(--bg-2);
+      background: var(--panel);
       border: 1px solid var(--rule);
-      border-radius: 14px;
+      border-radius: 0;
       padding: 16px 14px;
     }
     .vs-col.bad { opacity: 0.65; }
-    .vs-col.good { border-color: var(--accent-bg); background: linear-gradient(180deg, var(--accent-bg), var(--bg-2)); }
+    .vs-col.good { border-color: rgba(74, 222, 128, 0.35); background: linear-gradient(180deg, rgba(74, 222, 128, 0.07), #070708); }
     .vs-tag {
       font-size: 11px;
       letter-spacing: 0.12em;
@@ -241,7 +260,7 @@ export const prerender = true;
       margin-bottom: 8px;
       font-weight: 600;
     }
-    .vs-col.good .vs-tag { color: var(--accent); }
+    .vs-col.good .vs-tag { color: var(--good); }
     .vs-col ol, .vs-col ul {
       margin-left: 18px;
       font-size: 13px;
@@ -254,11 +273,11 @@ export const prerender = true;
     .faq summary {
       cursor: pointer;
       padding: 14px 16px;
-      background: var(--bg-2);
+      background: var(--panel);
       border: 1px solid var(--rule);
-      border-radius: 12px;
+      border-radius: 0;
       font-weight: 500;
-      font-size: 15px;
+      font-size: 14px;
       list-style: none;
       display: flex;
       justify-content: space-between;
@@ -282,41 +301,47 @@ export const prerender = true;
 
     /* === CTA === */
     .cta {
-      background: linear-gradient(160deg, var(--accent-bg), transparent 80%);
-      border: 1px solid var(--accent-bg);
-      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
       padding: 26px 22px;
       text-align: center;
       margin-top: 40px;
     }
     .cta h3 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       margin-bottom: 8px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
     }
     .cta p {
       color: var(--ink-soft);
       margin-bottom: 18px;
-      font-size: 15px;
+      font-size: 14px;
     }
     .cta-btn {
       display: inline-block;
-      background: var(--accent);
-      color: var(--bg);
-      font-weight: 600;
-      font-size: 15px;
+      background: var(--grad);
+      color: #050505;
+      font-weight: 700;
+      font-size: 14px;
       padding: 12px 22px;
-      border-radius: 10px;
+      border-radius: 0;
       text-decoration: none;
-      transition: transform 150ms ease, background 150ms ease;
+      transition: transform 150ms ease, filter 150ms ease;
     }
-    .cta-btn:hover { background: var(--accent-soft); transform: translateY(-1px); }
+    .cta-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
     .cta-sub {
       display: block;
       font-size: 12px;
       color: var(--ink-mute);
       margin-top: 12px;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--mono);
     }
 
     /* === Footer === */
@@ -332,7 +357,7 @@ export const prerender = true;
     footer a:hover { color: var(--accent); }
 
     @media (min-width: 700px) {
-      h1 { font-size: 44px; }
+      h1 { font-size: 38px; }
       .wrap { padding: 56px 22px 96px; }
     }
   </style>
