@@ -9,27 +9,30 @@ const intent = url.searchParams.get('intent') || '';
 ---
 <BaseLayout title="Verify email — PATAPIM" description="Verify your PATAPIM email address.">
   <main class="auth-page">
-    <div class="auth-card">
-      <a href="/" class="brand">PATAPIM</a>
-      <h1>Verifying your email…</h1>
+    <div class="auth-wrap">
+      <a href="/" class="auth-brand"><span class="auth-brand-icon">❯_</span><span class="auth-brand-sep">/</span><span class="auth-brand-name">patapim</span></a>
+      <div class="auth-card tv-auth-card verify-card">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim verify <span class="tv-dim">— --email</span></div>
+        <h1 class="tv-auth-title">Verifying your email…</h1>
 
-      <div id="state-pending">
-        <p class="lead">Hold on a second while we confirm your link.</p>
-      </div>
+        <div id="state-pending">
+          <p class="lead">Hold on a second while we confirm your link.</p>
+        </div>
 
-      <div id="state-success" hidden>
-        <p class="lead success">Your email has been verified. You're all set.</p>
-        <p class="lead" id="next-action">
-          <a href="/go" class="btn primary">Go to your dashboard</a>
-        </p>
-      </div>
+        <div id="state-success" hidden>
+          <p class="lead success">Your email has been verified. You're all set.</p>
+          <p class="lead" id="next-action">
+            <a href="/go" class="btn primary">Go to your dashboard</a>
+          </p>
+        </div>
 
-      <div id="state-error" hidden>
-        <p class="lead error">This verification link is invalid or has expired.</p>
-        <p class="lead">If you signed in already, you can request a new link from your dashboard.</p>
-        <p>
-          <a href="/go" class="btn primary">Go to my dashboard</a>
-        </p>
+        <div id="state-error" hidden>
+          <p class="lead error">This verification link is invalid or has expired.</p>
+          <p class="lead">If you signed in already, you can request a new link from your dashboard.</p>
+          <p>
+            <a href="/go" class="btn primary">Go to my dashboard</a>
+          </p>
+        </div>
       </div>
     </div>
   </main>
@@ -37,43 +40,67 @@ const intent = url.searchParams.get('intent') || '';
 
 <style>
   .auth-page {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 32px 16px;
-    background:
-      radial-gradient(circle at 20% 10%, rgba(212,165,116,0.06), transparent 40%),
-      radial-gradient(circle at 80% 80%, rgba(120,165,212,0.04), transparent 40%),
-      var(--bg-deep);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: var(--bg-deep);
   }
-  .auth-card {
-    width: 100%; max-width: 440px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    padding: 36px 32px;
-    box-shadow: var(--shadow-lg);
+  .auth-wrap { width: 100%; max-width: 400px; }
+  .auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin: 0 0 14px 2px;
   }
-  .brand {
-    display: block; font-family: var(--font-sans); font-weight: 700;
-    color: var(--text-secondary); letter-spacing: 1.5px; text-decoration: none;
-    font-size: 13px; margin-bottom: 24px;
+  .auth-brand:hover .auth-brand-name { color: var(--text-primary); }
+  .auth-brand-icon {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
   }
-  .brand:hover { color: var(--accent-primary); }
-  h1 {
-    font-family: var(--font-sans); color: var(--text-primary);
-    font-size: 22px; font-weight: 600; margin: 0 0 14px;
+  .auth-brand-sep { color: var(--text-muted); }
+  .auth-brand-name { letter-spacing: 0.05em; transition: color 120ms; }
+</style>
+
+<!-- Global (page-scoped by .verify-card) so the anchor the script injects
+     into #next-action gets the same button styling as the static ones. -->
+<style is:global>
+  .verify-card .lead {
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 0 0 14px;
   }
-  .lead { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 14px; }
-  .lead.success { color: var(--success); }
-  .lead.error { color: var(--error); }
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    padding: 12px 18px; border-radius: var(--radius-md);
-    font-size: 14px; font-weight: 600; font-family: var(--font-sans);
-    cursor: pointer; border: 1px solid transparent; text-decoration: none;
-    transition: all var(--transition-fast); margin-top: 8px;
+  .verify-card .lead.success { color: var(--success); }
+  .verify-card .lead.error { color: var(--error); }
+  .verify-card .btn.primary {
+    display: block;
+    text-align: center;
+    border: none;
+    padding: 12px;
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    color: #000;
+    transition: background 150ms, box-shadow 150ms;
   }
-  .btn.primary { background: var(--accent-primary); color: var(--bg-deep); }
-  .btn.primary:hover { background: var(--accent-secondary); }
+  .verify-card .btn.primary:hover {
+    background: linear-gradient(90deg, #d187ff, #9c8dff, #4ae0f7);
+    color: #000;
+    box-shadow: 0 0 28px rgba(139, 124, 248, 0.35);
+  }
 </style>
 
 <script define:vars={{ token, intent }}>

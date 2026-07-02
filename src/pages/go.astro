@@ -117,7 +117,7 @@ const scriptI18n = {
 <style>
   .dashboard-page {
     min-height: 100vh;
-    padding-top: 96px;
+    padding-top: 110px;
     padding-bottom: var(--space-4xl);
   }
 
@@ -129,22 +129,34 @@ const scriptI18n = {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(10, 10, 11, 0.92);
+    background: rgba(0, 0, 0, 0.92);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
   .success-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     padding: var(--space-4xl) var(--space-3xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     max-width: 400px;
     width: 90%;
+  }
+
+  .success-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    opacity: 0.7;
   }
 
   .success-check {
@@ -153,35 +165,35 @@ const scriptI18n = {
   }
 
   .success-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: var(--space-sm);
   }
 
   .success-desc {
-    font-size: 17px;
+    font-size: 14px;
     color: var(--text-secondary);
     margin-bottom: var(--space-md);
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   .success-close {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: var(--space-3xl);
   }
 
   .success-dashboard-link {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-muted);
     text-decoration: none;
     transition: color var(--transition-fast);
   }
 
   .success-dashboard-link:hover {
-    color: var(--text-secondary);
+    color: var(--cy);
   }
 
   /* Dashboard Header (compact single line) */
@@ -191,7 +203,7 @@ const scriptI18n = {
     justify-content: space-between;
     padding: var(--space-sm) 0;
     border-bottom: 1px solid var(--border-subtle);
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-xl);
   }
 
   .dash-user {
@@ -204,7 +216,7 @@ const scriptI18n = {
   .dash-avatar {
     width: 22px;
     height: 22px;
-    border-radius: 50%;
+    border-radius: 0;
     border: 1px solid var(--border-default);
     flex-shrink: 0;
   }
@@ -227,8 +239,8 @@ const scriptI18n = {
     background: none;
     border: none;
     color: var(--text-tertiary);
-    font-size: 13px;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
     cursor: pointer;
     padding: 0;
     transition: color var(--transition-fast);
@@ -239,12 +251,12 @@ const scriptI18n = {
   }
 
   .btn-link-accent {
-    color: var(--accent-primary);
+    color: var(--cy);
     text-decoration: none;
   }
 
   .btn-link-accent:hover {
-    color: var(--text-primary);
+    color: #7ae6f7;
   }
 
   .btn-sm {
@@ -255,24 +267,27 @@ const scriptI18n = {
   .plan-badge {
     font-family: var(--font-mono);
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     padding: 2px 8px;
-    border-radius: 100px;
+    border-radius: 0;
   }
 
   .plan-free {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border-default);
+    color: var(--text-tertiary);
   }
 
   .plan-pro {
-    background: var(--accent-primary);
-    color: var(--bg-deep);
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    color: #000;
   }
 
   .plan-lifetime {
-    background: rgba(224, 164, 88, 0.15);
-    color: var(--warning);
+    background: rgba(34, 211, 238, 0.12);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    color: var(--cy);
   }
 
   /* Sections */
@@ -281,10 +296,20 @@ const scriptI18n = {
   }
 
   .section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
     margin-bottom: var(--space-xl);
+  }
+
+  .section-title::before {
+    content: '$ ';
+    font-weight: 700;
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .section-header {
@@ -292,7 +317,7 @@ const scriptI18n = {
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-lg);
   }
   .section-header .section-title {
     margin-bottom: 0;
@@ -302,25 +327,25 @@ const scriptI18n = {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 999px;
+    width: 34px;
+    height: 34px;
+    border-radius: 0;
     border: 1px solid var(--border-default);
-    background: var(--bg-tertiary);
+    background: none;
     color: var(--text-secondary);
     cursor: pointer;
     transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
   }
   .refresh-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     transition: transform 240ms ease;
   }
   .refresh-btn:hover {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: var(--accent-subtle);
+    color: var(--cy);
+    border-color: rgba(34, 211, 238, 0.55);
+    background: rgba(34, 211, 238, 0.06);
   }
   .refresh-btn:active {
     transform: scale(0.94);
@@ -340,7 +365,8 @@ const scriptI18n = {
     text-align: center;
     padding: var(--space-3xl);
     color: var(--text-muted);
-    font-size: 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
   }
 
   @media (max-width: 640px) {
@@ -368,9 +394,10 @@ const scriptI18n = {
   }
 
   .device-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     padding: var(--space-2xl) var(--space-xl);
     transition: border-color var(--transition-fast), opacity var(--transition-fast), box-shadow 0.2s ease;
     cursor: pointer;
@@ -381,16 +408,20 @@ const scriptI18n = {
   }
 
   .device-card:hover {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 1px rgba(224, 164, 88, 0.1), 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(139, 124, 248, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(139, 124, 248, 0.22),
+      0 0 28px rgba(139, 124, 248, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
   .device-icon {
     flex-shrink: 0;
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 0;
     background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -399,8 +430,8 @@ const scriptI18n = {
   }
 
   .device-card:hover .device-icon {
-    color: var(--accent-primary);
-    background: rgba(224, 164, 88, 0.08);
+    color: var(--cy);
+    background: rgba(34, 211, 238, 0.06);
   }
 
   .device-icon svg {
@@ -421,12 +452,12 @@ const scriptI18n = {
   }
 
   .device-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
     cursor: text;
     padding: 2px 4px;
-    border-radius: 4px;
+    border-radius: 0;
     border: 1px solid transparent;
     transition: border-color var(--transition-fast), background var(--transition-fast);
     overflow: hidden;
@@ -440,12 +471,12 @@ const scriptI18n = {
   }
 
   .device-name-input {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
-    background: var(--bg-tertiary);
-    border: 1px solid var(--accent-primary);
-    border-radius: 4px;
+    background: var(--bg-deep);
+    border: 1px solid rgba(34, 211, 238, 0.55);
+    border-radius: 0;
     padding: 2px 4px;
     outline: none;
     width: 100%;
@@ -457,11 +488,12 @@ const scriptI18n = {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
     font-weight: 600;
     padding: 3px 10px;
-    border-radius: 100px;
-    letter-spacing: 0.2px;
+    border-radius: 0;
+    letter-spacing: 0.04em;
   }
 
   .online-badge::before {
@@ -472,7 +504,8 @@ const scriptI18n = {
   }
 
   .online-badge.online {
-    background: rgba(124, 179, 130, 0.12);
+    background: var(--success-subtle);
+    border: 1px solid rgba(74, 222, 128, 0.3);
     color: var(--success);
   }
 
@@ -491,7 +524,8 @@ const scriptI18n = {
   }
 
   .online-badge.heartbeat {
-    background: rgba(224, 164, 88, 0.12);
+    background: rgba(216, 180, 90, 0.1);
+    border: 1px solid rgba(216, 180, 90, 0.3);
     color: var(--warning);
   }
 
@@ -557,30 +591,31 @@ const scriptI18n = {
   }
 
   .device-badges .tbadge {
+    font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
     min-width: 16px;
     height: 16px;
     line-height: 16px;
     text-align: center;
-    border-radius: 8px;
+    border-radius: 0;
     padding: 0 4px;
     display: inline-block;
   }
 
   .device-badges .tbadge.attention {
-    background: rgba(124, 179, 130, 0.18);
-    color: var(--success);
-  }
-
-  .device-badges .tbadge.busy {
-    background: rgba(212, 120, 120, 0.18);
+    background: var(--error-subtle);
     color: var(--error);
   }
 
+  .device-badges .tbadge.busy {
+    background: rgba(216, 180, 90, 0.14);
+    color: var(--warning);
+  }
+
   .device-badges .tbadge.plan {
-    background: rgba(0, 188, 212, 0.18);
-    color: #4dd0e1;
+    background: rgba(34, 211, 238, 0.14);
+    color: var(--cy);
   }
 
   .device-badges .tbadge.idle {
@@ -595,9 +630,10 @@ const scriptI18n = {
     align-items: center;
     text-align: center;
     padding: var(--space-4xl) var(--space-xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .dash-empty-icon {
@@ -607,14 +643,14 @@ const scriptI18n = {
   }
 
   .dash-empty-title {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     color: var(--text-primary);
     margin-bottom: var(--space-sm);
   }
 
   .dash-empty-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-tertiary);
     margin-bottom: var(--space-2xl);
     max-width: 400px;

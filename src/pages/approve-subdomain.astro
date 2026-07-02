@@ -41,85 +41,88 @@ const repoTarget = existingRepo
 
 <BaseLayout title="Approve subdomain — PATAPIM" description="Review and approve a 3DAR subdomain request.">
   <main class="approve-page">
-    <div class="card" data-id={id} data-initial-status={initialStatus}>
-      {pageState === 'missing' && (
-        <>
-          <h1>Request not found</h1>
-          <p class="muted">This request has expired or doesn't exist. Subdomain requests are kept for 7 days.</p>
-        </>
-      )}
+    <div class="approve-wrap">
+      <a href="/" class="auth-brand"><span class="auth-brand-icon">❯_</span><span class="auth-brand-sep">/</span><span class="auth-brand-name">patapim</span></a>
+      <div class="card" data-id={id} data-initial-status={initialStatus}>
+        {pageState === 'missing' && (
+          <>
+            <h1>Request not found</h1>
+            <p class="muted">This request has expired or doesn't exist. Subdomain requests are kept for 7 days.</p>
+          </>
+        )}
 
-      {pageState === 'forbidden' && (
-        <>
-          <h1>Not authorized</h1>
-          <p class="muted">This request belongs to a different account. Sign in as the 3DAR team owner to review it.</p>
-        </>
-      )}
+        {pageState === 'forbidden' && (
+          <>
+            <h1>Not authorized</h1>
+            <p class="muted">This request belongs to a different account. Sign in as the 3DAR team owner to review it.</p>
+          </>
+        )}
 
-      {pageState === 'ok' && subreq && (
-        <>
-          <div class="eyebrow">Subdomain request</div>
-          <h1 class="fqdn">{fqdn}</h1>
-          <p class="meta">
-            Requested by <strong>{requester}</strong>
-            {createdAt && <span class="when"> · {new Date(createdAt).toLocaleString()}</span>}
-          </p>
+        {pageState === 'ok' && subreq && (
+          <>
+            <div class="eyebrow tv-label"><span class="tv-label-prompt">$</span> patapim subdomain <span class="tv-dim">— approval request</span></div>
+            <h1 class="fqdn">{fqdn}</h1>
+            <p class="meta">
+              Requested by <strong>{requester}</strong>
+              {createdAt && <span class="when"> · {new Date(createdAt).toLocaleString()}</span>}
+            </p>
 
-          <div class="detail-grid">
-            <div class="detail-row">
-              <span class="detail-label">Repo</span>
-              <span class="detail-value">
-                <code>{repoTarget.label}</code>
-                <span class={`pill pill-${repoTarget.kind}`}>{repoTarget.kind === 'existing' ? 'existing — attach' : 'new — create'}</span>
-              </span>
+            <div class="detail-grid">
+              <div class="detail-row">
+                <span class="detail-label">Repo</span>
+                <span class="detail-value">
+                  <code>{repoTarget.label}</code>
+                  <span class={`pill pill-${repoTarget.kind}`}>{repoTarget.kind === 'existing' ? 'existing — attach' : 'new — create'}</span>
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Collab</span>
+                <span class="detail-value">
+                  {requesterGithub
+                    ? <><code>{requesterGithub}</code> <span class="pill pill-info">push invite</span></>
+                    : <span class="muted-inline">none — repo created without auto-collaborator</span>}
+                </span>
+              </div>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">Collab</span>
-              <span class="detail-value">
-                {requesterGithub
-                  ? <><code>{requesterGithub}</code> <span class="pill pill-info">push invite</span></>
-                  : <span class="muted-inline">none — repo created without auto-collaborator</span>}
-              </span>
+
+            <div class="status-row">
+              <span class="status-label">Status</span>
+              <span class="badge" id="status-badge" data-status={initialStatus}>{initialStatus}</span>
             </div>
-          </div>
 
-          <div class="status-row">
-            <span class="status-label">Status</span>
-            <span class="badge" id="status-badge" data-status={initialStatus}>{initialStatus}</span>
-          </div>
+            <p class="explainer" id="explainer">
+              Approving runs <strong>deploy-sub.sh</strong> on your machine — the one with the
+              Cloudflare &amp; GitHub credentials.
+              {repoTarget.kind === 'new'
+                ? <> A new GitHub repo (<code>{repoTarget.label}</code>) and a Cloudflare Pages project are created, the domain is attached, and the requester is invited as a push collaborator.</>
+                : <> The existing repo (<code>{repoTarget.label}</code>) is cloned, a per-subdomain workflow is added, the Pages project is created and the domain attached.</>}
+            </p>
 
-          <p class="explainer" id="explainer">
-            Approving runs <strong>deploy-sub.sh</strong> on your machine — the one with the
-            Cloudflare &amp; GitHub credentials.
-            {repoTarget.kind === 'new'
-              ? <> A new GitHub repo (<code>{repoTarget.label}</code>) and a Cloudflare Pages project are created, the domain is attached, and the requester is invited as a push collaborator.</>
-              : <> The existing repo (<code>{repoTarget.label}</code>) is cloned, a per-subdomain workflow is added, the Pages project is created and the domain attached.</>}
-          </p>
-
-          <div class="actions" id="actions" hidden={initialStatus !== 'pending'}>
-            <button class="btn btn-approve" id="approve-btn">Approve &amp; create</button>
-            <button class="btn btn-reject" id="reject-btn">Reject</button>
-          </div>
-
-          <div class="result" id="result" hidden>
-            <div class="result-line" id="result-domain" hidden>
-              <span class="result-label">Live at</span>
-              <a id="result-domain-link" href="#" target="_blank" rel="noopener"></a>
+            <div class="actions" id="actions" hidden={initialStatus !== 'pending'}>
+              <button class="btn btn-approve" id="approve-btn">Approve &amp; create</button>
+              <button class="btn btn-reject" id="reject-btn">Reject</button>
             </div>
-            <div class="result-line" id="result-repo" hidden>
-              <span class="result-label">Repo</span>
-              <a id="result-repo-link" href="#" target="_blank" rel="noopener"></a>
-            </div>
-            <div class="result-line" id="result-pages" hidden>
-              <span class="result-label">Pages</span>
-              <a id="result-pages-link" href="#" target="_blank" rel="noopener"></a>
-            </div>
-            <pre class="result-log" id="result-log" hidden></pre>
-          </div>
 
-          <p class="form-msg" id="msg" hidden></p>
-        </>
-      )}
+            <div class="result" id="result" hidden>
+              <div class="result-line" id="result-domain" hidden>
+                <span class="result-label">Live at</span>
+                <a id="result-domain-link" href="#" target="_blank" rel="noopener"></a>
+              </div>
+              <div class="result-line" id="result-repo" hidden>
+                <span class="result-label">Repo</span>
+                <a id="result-repo-link" href="#" target="_blank" rel="noopener"></a>
+              </div>
+              <div class="result-line" id="result-pages" hidden>
+                <span class="result-label">Pages</span>
+                <a id="result-pages-link" href="#" target="_blank" rel="noopener"></a>
+              </div>
+              <pre class="result-log" id="result-log" hidden></pre>
+            </div>
+
+            <p class="form-msg" id="msg" hidden></p>
+          </>
+        )}
+      </div>
     </div>
   </main>
 </BaseLayout>
@@ -131,44 +134,70 @@ const repoTarget = existingRepo
     align-items: center;
     justify-content: center;
     padding: 96px 16px var(--space-4xl);
+    background: var(--bg-deep);
   }
+  .approve-wrap { max-width: 520px; width: 100%; }
+  .auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin: 0 0 14px 2px;
+  }
+  .auth-brand:hover .auth-brand-name { color: var(--text-primary); }
+  .auth-brand-icon {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  .auth-brand-sep { color: var(--text-muted); }
+  .auth-brand-name { letter-spacing: 0.05em; transition: color 120ms; }
+
   .card {
-    max-width: 520px;
+    position: relative;
     width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    padding: var(--space-2xl);
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    padding: 30px 28px;
   }
-  .eyebrow {
-    color: var(--text-tertiary);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    opacity: 0.7;
   }
+  .eyebrow { margin-bottom: 10px; }
   .fqdn {
-    font-size: 26px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 700;
     color: var(--text-primary);
     margin: 0 0 8px;
-    font-family: var(--font-mono, monospace);
+    font-family: var(--font-mono);
     word-break: break-all;
   }
   h1 {
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--text-primary);
     margin: 0 0 12px;
   }
   .meta {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
     margin: 0 0 20px;
   }
-  .meta .when { color: var(--text-tertiary); }
-  .muted { color: var(--text-tertiary); font-size: 14px; line-height: 1.5; }
+  .meta .when { color: var(--text-muted); }
+  .muted { color: var(--text-tertiary); font-size: 13px; line-height: 1.6; }
 
   .detail-grid {
     display: flex;
@@ -176,7 +205,7 @@ const repoTarget = existingRepo
     gap: 8px;
     padding: 14px 0;
     margin-bottom: 4px;
-    border-top: 1px solid var(--border-default);
+    border-top: 1px solid var(--border-subtle);
   }
   .detail-row {
     display: flex;
@@ -186,9 +215,8 @@ const repoTarget = existingRepo
   }
   .detail-label {
     color: var(--text-tertiary);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     min-width: 56px;
   }
@@ -202,44 +230,43 @@ const repoTarget = existingRepo
   .detail-value code {
     background: var(--bg-tertiary);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 12px;
   }
   .pill {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
+    border-radius: 0;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.06em;
   }
   .pill-new      { background: var(--success-subtle); color: var(--success); }
-  .pill-existing { background: #fdf0d5; color: #9a6b00; }
-  .pill-info     { background: var(--bg-tertiary); color: var(--text-secondary); }
-  .muted-inline  { color: var(--text-tertiary); font-size: 13px; }
+  .pill-existing { background: rgba(216, 180, 90, 0.12); color: var(--warning); }
+  .pill-info     { background: rgba(34, 211, 238, 0.12); color: var(--cy); }
+  .muted-inline  { color: var(--text-tertiary); font-size: 12.5px; }
 
   .status-row {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px 0;
-    border-top: 1px solid var(--border-default);
-    border-bottom: 1px solid var(--border-default);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
     margin-bottom: 18px;
   }
   .status-label {
     color: var(--text-tertiary);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
+    padding: 3px 12px;
+    border-radius: 0;
+    font-size: 12px;
     font-weight: 600;
     text-transform: capitalize;
     background: var(--bg-tertiary);
@@ -247,38 +274,53 @@ const repoTarget = existingRepo
   }
   .badge[data-status='pending'] { background: var(--bg-tertiary); color: var(--text-secondary); }
   .badge[data-status='approved'],
-  .badge[data-status='running'] { background: #fdf0d5; color: #9a6b00; }
+  .badge[data-status='running'] { background: rgba(216, 180, 90, 0.12); color: var(--warning); }
   .badge[data-status='done'] { background: var(--success-subtle); color: var(--success); }
   .badge[data-status='failed'],
   .badge[data-status='rejected'] { background: var(--error-subtle); color: var(--error); }
 
   .explainer {
     color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 13px;
+    line-height: 1.65;
     margin: 0 0 22px;
+  }
+  .explainer code {
+    background: var(--bg-tertiary);
+    border-radius: 0;
   }
 
   .actions { display: flex; gap: 12px; }
-  .btn {
+  .actions .btn {
     flex: 1;
     padding: 12px 18px;
-    border-radius: var(--radius-md);
-    font-size: 14px;
+    border-radius: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: opacity var(--transition-fast);
+    transition: opacity var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   }
-  .btn:disabled { opacity: 0.5; cursor: default; }
-  .btn-approve { background: var(--text-primary); color: var(--bg-primary); }
-  .btn-reject {
+  .actions .btn:disabled { opacity: 0.5; cursor: default; }
+  .actions .btn-approve {
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    color: #000;
+  }
+  .actions .btn-approve:hover:not(:disabled) {
+    box-shadow: 0 0 28px rgba(139, 124, 248, 0.35);
+  }
+  .actions .btn-reject {
     background: transparent;
     color: var(--text-secondary);
     border-color: var(--border-default);
     flex: 0 0 auto;
     padding-left: 22px;
     padding-right: 22px;
+  }
+  .actions .btn-reject:hover:not(:disabled) {
+    border-color: rgba(242, 109, 109, 0.5);
+    color: var(--error);
   }
 
   .result { margin-top: 4px; }
@@ -287,21 +329,22 @@ const repoTarget = existingRepo
     gap: 10px;
     align-items: baseline;
     padding: 6px 0;
-    font-size: 14px;
+    font-size: 13px;
   }
   .result-label {
     color: var(--text-tertiary);
-    font-size: 12px;
+    font-size: 10.5px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.1em;
     min-width: 64px;
   }
-  .result-line a { color: var(--accent-primary); word-break: break-all; }
+  .result-line a { color: var(--cy); word-break: break-all; }
   .result-log {
     margin-top: 12px;
     padding: 12px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0;
     font-size: 12px;
     line-height: 1.5;
     color: var(--text-secondary);
@@ -314,8 +357,8 @@ const repoTarget = existingRepo
   .form-msg {
     margin: 16px 0 0;
     padding: 10px 12px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
+    border-radius: 0;
+    font-size: 12.5px;
   }
   .form-msg.error { background: var(--error-subtle); color: var(--error); }
   .form-msg.info { background: var(--bg-tertiary); color: var(--text-secondary); }
