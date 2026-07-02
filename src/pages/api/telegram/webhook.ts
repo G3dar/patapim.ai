@@ -103,12 +103,16 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
   // the route + terminal_id. When found, we override routing.
   let route: Route | null = null;
   let originTerminalId = '';
+  let originInstanceId = '';
+  let originBootId = '';
   const repliedTo = msg.reply_to_message;
   if (repliedTo && repliedTo.message_id) {
     const overlay = await lookupMsgRoute(env, chatId, repliedTo.message_id);
     if (overlay) {
       route = overlay.route;
       originTerminalId = overlay.terminal_id || '';
+      originInstanceId = overlay.instance_id || '';
+      originBootId = overlay.boot_id || '';
     }
   }
 
@@ -125,6 +129,8 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
   }
   if (originTerminalId) {
     (msg as any)._patapim_terminal_id = originTerminalId;
+    if (originInstanceId) (msg as any)._patapim_origin_instance = originInstanceId;
+    if (originBootId) (msg as any)._patapim_boot_id = originBootId;
   }
 
   // Voice/audio: two paths depending on duration.
@@ -200,7 +206,13 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
   await doStub.fetch('https://do/__internal/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ update }),
+    body: JSON.stringify({
+      update,
+      // Replies bound to a specific install must never land on another one:
+      // the account DO delivers only to this instance's sockets and queues
+      // for it when offline.
+      target_instance_id: route.kind === 'v2' ? originInstanceId : '',
+    }),
   });
 }
 
@@ -218,25 +230,40 @@ async function routeCallbackQuery(cq: NonNullable<TelegramUpdate['callback_query
   }
 
   // Look up the per-message binding so the DO can attach _patapim_terminal_id
-  // before forwarding. Only honor it if it routes to the same place as the chat.
+  // and target the owning install before forwarding. Only honor it if it
+  // routes to the same account/install as the chat (no cross-account leaks).
   let terminalId = '';
+  let targetInstanceId = '';
+  let bootId = '';
   if (messageId) {
     const overlay = await lookupMsgRoute(env, chatId, messageId);
     if (overlay && sameRoute(overlay.route, route)) {
       terminalId = overlay.terminal_id || '';
+      targetInstanceId = overlay.instance_id || '';
+      bootId = overlay.boot_id || '';
     }
   }
 
   // Mutate a shallow copy of the update so the DO/client receive the binding.
-  const cqOut = terminalId
-    ? { ...cq, message: cq.message ? { ...cq.message, _patapim_terminal_id: terminalId } : cq.message }
+  const cqOut = terminalId && cq.message
+    ? {
+        ...cq,
+        message: {
+          ...cq.message,
+          _patapim_terminal_id: terminalId,
+          ...(bootId ? { _patapim_boot_id: bootId } : {}),
+        },
+      }
     : cq;
 
   const doStub = getRouteStub(env, route);
   await doStub.fetch('https://do/__internal/callback_query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ callback_query: cqOut }),
+    body: JSON.stringify({
+      callback_query: cqOut,
+      target_instance_id: route.kind === 'v2' ? targetInstanceId : '',
+    }),
   });
 }
 
@@ -269,13 +296,23 @@ async function lookupMsgRoute(
   env: any,
   chatId: number,
   messageId: number,
-): Promise<{ route: Route; terminal_id: string } | null> {
+): Promise<{ route: Route; terminal_id: string; instance_id: string; boot_id: string } | null> {
   try {
     const raw = await env.SESSIONS.get(`tg:msg-v2:${chatId}:${messageId}`);
     if (raw) {
-      const parsed = JSON.parse(raw) as { email?: string; terminal_id?: string };
+      const parsed = JSON.parse(raw) as {
+        email?: string;
+        terminal_id?: string;
+        instance_id?: string;
+        boot_id?: string;
+      };
       if (parsed.email) {
-        return { route: { kind: 'v2', email: parsed.email }, terminal_id: parsed.terminal_id || '' };
+        return {
+          route: { kind: 'v2', email: parsed.email },
+          terminal_id: parsed.terminal_id || '',
+          instance_id: parsed.instance_id || '',
+          boot_id: parsed.boot_id || '',
+        };
       }
     }
   } catch (err) {
@@ -284,11 +321,15 @@ async function lookupMsgRoute(
   try {
     const raw = await env.SESSIONS.get(`tg:msg:${chatId}:${messageId}`);
     if (raw) {
-      const parsed = JSON.parse(raw) as { instance_id?: string; terminal_id?: string };
+      const parsed = JSON.parse(raw) as { instance_id?: string; terminal_id?: string; boot_id?: string };
       if (parsed.instance_id) {
         return {
           route: { kind: 'legacy', instance_id: parsed.instance_id },
           terminal_id: parsed.terminal_id || '',
+          // The legacy route already addresses the owning install's own DO;
+          // no account-level instance targeting applies.
+          instance_id: '',
+          boot_id: parsed.boot_id || '',
         };
       }
     }

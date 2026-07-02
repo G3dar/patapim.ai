@@ -74,6 +74,9 @@ interface AccountState {
 interface QueuedMessage {
   ts: number;
   update: TelegramUpdate;
+  // When set, only the install with this instance_id may receive the entry
+  // (a reply/callback bound to a specific machine). Absent = untargeted.
+  target_instance_id?: string;
 }
 
 interface SocketAttachment {
@@ -148,9 +151,10 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
       active_instance_id: state.active_instance_id,
       instance_count: Object.keys(state.instances).length,
     }));
-    if (state.active_instance_id === instanceId || !state.active_instance_id) {
-      await this.flushQueue(server);
-    }
+    // Unconditional: targeted entries must reach their owning install even
+    // when it isn't the active one. drainQueueFor gates untargeted entries
+    // on the active role internally.
+    await this.drainQueueFor(server, instanceId);
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -197,7 +201,12 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
             try {
               await this.env.SESSIONS.put(
                 `tg:msg-v2:${sent.chat.id}:${sent.message_id}`,
-                JSON.stringify({ email: state.email, instance_id: att.instance_id, terminal_id: terminalId }),
+                JSON.stringify({
+                  email: state.email,
+                  instance_id: att.instance_id,
+                  terminal_id: terminalId,
+                  boot_id: msg.boot_id ? String(msg.boot_id) : '',
+                }),
                 { expirationTtl: 30 * 24 * 3600 },
               );
             } catch (err) {
@@ -363,10 +372,19 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
   }
 
   async internalDeliverMessage(request: Request): Promise<Response> {
-    const { update } = await request.json() as { update: TelegramUpdate };
-    const delivered = await this.deliverInbound({ type: 'message', update });
+    const { update, target_instance_id } = await request.json() as {
+      update: TelegramUpdate;
+      target_instance_id?: string;
+    };
+    const target = target_instance_id || '';
+    const delivered = await this.deliverInbound({ type: 'message', update }, target);
     if (!delivered) {
-      await this.enqueue({ ts: Date.now(), update });
+      const entry: QueuedMessage = { ts: Date.now(), update };
+      if (target) entry.target_instance_id = target;
+      await this.enqueue(entry);
+      if (target) {
+        await this.notifyTargetOffline(target, update);
+      }
     }
     return new Response(JSON.stringify({ delivered }), {
       headers: { 'Content-Type': 'application/json' },
@@ -374,17 +392,52 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
   }
 
   async internalDeliverCallbackQuery(request: Request): Promise<Response> {
-    const { callback_query } = await request.json() as { callback_query: any };
-    const delivered = await this.deliverInbound({ type: 'callback_query', update: callback_query });
+    const { callback_query, target_instance_id } = await request.json() as {
+      callback_query: any;
+      target_instance_id?: string;
+    };
+    const target = target_instance_id || '';
+    const delivered = await this.deliverInbound({ type: 'callback_query', update: callback_query }, target);
     if (!delivered) {
+      let toast = 'PATAPIM is offline — open the app and try again.';
+      if (target) {
+        const state = await this.loadState();
+        const name = state.instances[target]?.name;
+        toast = name
+          ? `"${name}" is offline — open PATAPIM there and tap again.`
+          : 'That machine is offline — open PATAPIM there and tap again.';
+      }
       try {
-        await answerCallbackQuery(this.env.TELEGRAM_BOT_TOKEN, callback_query.id, 'PATAPIM is offline — open the app and try again.', true);
+        await answerCallbackQuery(this.env.TELEGRAM_BOT_TOKEN, callback_query.id, toast, true);
       } catch {
       }
     }
     return new Response(JSON.stringify({ delivered }), {
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  /**
+   * Best-effort Telegram feedback when a reply bound to a specific install
+   * couldn't be delivered because that install has no live socket. Without
+   * this the user would assume the reply landed somewhere.
+   */
+  async notifyTargetOffline(targetInstanceId: string, update: TelegramUpdate): Promise<void> {
+    try {
+      const state = await this.loadState();
+      if (!state.chat_id) return;
+      const name = state.instances[targetInstanceId]?.name;
+      const text = name
+        ? `⏳ That terminal lives on "${name}", which is offline right now. Your reply is queued and will be delivered when it reconnects (kept up to 7 days). To reach the active terminal instead, send the message without replying.`
+        : `⚠️ That terminal belongs to a PATAPIM instance that is no longer registered. Open PATAPIM on that machine to receive the queued reply, or send the message without replying to reach the active terminal.`;
+      await sendMessage(this.env.TELEGRAM_BOT_TOKEN, {
+        chat_id: state.chat_id,
+        reply_to_message_id: (update as any)?.message?.message_id,
+        text,
+      });
+    } catch (err) {
+      console.warn('[TelegramAccount] offline-feedback send failed:', err);
+    }
   }
 
   async internalStatus(): Promise<Response> {
@@ -405,11 +458,29 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
    * Deliver to the active instance's sockets first; if none connected, fall
    * back to any live socket so the message isn't lost. Returns true iff at
    * least one socket received the frame.
+   *
+   * With targetInstanceId set (reply/callback bound to a specific install),
+   * ONLY that install's sockets are eligible — no active/any-socket fallback;
+   * the caller queues the frame for that instance instead.
    */
-  async deliverInbound(payload: { type: string; update: unknown }): Promise<boolean> {
+  async deliverInbound(payload: { type: string; update: unknown }, targetInstanceId = ''): Promise<boolean> {
     const frame = JSON.stringify(payload);
     this.sockets = this.ctx.getWebSockets();
     if (this.sockets.length === 0) return false;
+    if (targetInstanceId) {
+      let delivered = false;
+      for (const ws of this.sockets) {
+        const att: SocketAttachment = ws.deserializeAttachment() || {};
+        if (att.instance_id === targetInstanceId) {
+          try {
+            ws.send(frame);
+            delivered = true;
+          } catch {
+          }
+        }
+      }
+      return delivered;
+    }
     const state = await this.loadState();
     const active = state.active_instance_id;
     let delivered = false;
@@ -513,15 +584,35 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
     await this.ctx.storage.put('queue', queue);
   }
 
-  async flushQueue(ws: WebSocket): Promise<void> {
+  /**
+   * Flush queued entries to a freshly-connected install. Entries targeted at
+   * this instance always flush; untargeted entries flush only when this
+   * instance is (or can become) the active receiver — the pre-targeting
+   * behavior. Everything else stays queued for its owner.
+   */
+  async drainQueueFor(ws: WebSocket, instanceId: string): Promise<void> {
     const queue = await this.getQueue();
     if (!queue.length) return;
+    const state = await this.loadState();
+    const takesUntargeted = !state.active_instance_id || state.active_instance_id === instanceId;
+    const keep: QueuedMessage[] = [];
     for (const entry of queue) {
+      const target = entry.target_instance_id || '';
+      const mine = target ? target === instanceId : takesUntargeted;
+      if (!mine) {
+        keep.push(entry);
+        continue;
+      }
       try {
         ws.send(JSON.stringify({ type: 'message', update: entry.update }));
       } catch {
+        keep.push(entry);
       }
     }
-    await this.ctx.storage.delete('queue');
+    if (keep.length) {
+      await this.ctx.storage.put('queue', keep);
+    } else {
+      await this.ctx.storage.delete('queue');
+    }
   }
 }
