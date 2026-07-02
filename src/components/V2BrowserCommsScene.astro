@@ -1,0 +1,586 @@
+---
+// Maximized demo scene: BROWSER + WHATSAPP·TELEGRAM·GMAIL AUTOMATION.
+// Every terminal carries its own embedded Chrome — the agent runs real-life
+// errands in it (groceries, bank, football night) and reports back on the
+// service where you actually live. 'scene:start' / 'scene:stop'.
+---
+
+<div class="bcs" data-bcs>
+  <div class="bcs-app">
+    <div class="bcs-bar">
+      <span class="bcs-dots"><i></i><i></i><i></i></span>
+      <span class="bcs-brand"><b>❯_</b> patapim</span>
+      <span class="bcs-tab">errands — claude</span>
+      <span class="bcs-note">1 terminal · 1 embedded chrome</span>
+    </div>
+
+    <div class="bcs-body">
+      <!-- left: the terminal -->
+      <div class="bcs-term-col">
+        <div class="bcs-termpane" data-bcs-term></div>
+
+        <!-- reports land where you live -->
+        <div class="bcs-comms">
+          <span class="bcs-svc" data-bcs-svc="wa" title="WhatsApp">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#25d366"/><path d="M12 5.6a6.3 6.3 0 0 0-5.4 9.6L5.5 18l2.9-1a6.3 6.3 0 1 0 3.6-11.4zm3.4 8.6c-.2.5-.9.9-1.4.9-.4.1-.8.1-2.4-.5-2-.8-3.3-2.9-3.4-3-.1-.2-.8-1.1-.8-2.1s.5-1.5.7-1.7c.2-.2.4-.2.6-.2h.4c.1 0 .3 0 .4.4l.6 1.4c0 .1.1.3 0 .4l-.3.4-.3.4c-.1.1-.2.2-.1.4.1.2.6 1 1.2 1.6.9.8 1.6 1 1.8 1.1.2.1.3.1.5-.1l.6-.8c.2-.2.3-.2.5-.1l1.3.6c.2.1.3.2.4.3 0 .1 0 .5-.3.6z" fill="#fff"/></svg>
+            <i class="bcs-badge" data-bcs-badge="wa"></i>
+          </span>
+          <span class="bcs-svc" data-bcs-svc="tg" title="Telegram">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#2aabee"/><path d="M5.4 11.8l11.2-4.4c.5-.2 1 .1.8.9l-1.9 9c-.1.6-.5.8-1 .5l-2.9-2.1-1.4 1.3c-.2.2-.3.3-.6.3l.2-3 5.5-5c.2-.2 0-.3-.3-.1l-6.8 4.3-2.9-.9c-.6-.2-.6-.6.1-.8z" fill="#fff"/></svg>
+            <i class="bcs-badge" data-bcs-badge="tg"></i>
+          </span>
+          <span class="bcs-svc" data-bcs-svc="gm" title="Gmail">
+            <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#fff"/><path d="M2 7l10 7L22 7" fill="none" stroke="#ea4335" stroke-width="2.4"/><path d="M2 7v10h3V10.5L2 7zm17 3.5V17h3V7l-3 3.5z" fill="#ea4335" opacity="0.85"/></svg>
+            <i class="bcs-badge" data-bcs-badge="gm"></i>
+          </span>
+          <span class="bcs-toast" data-bcs-toast></span>
+        </div>
+      </div>
+
+      <!-- right: this terminal's own embedded Chrome -->
+      <div class="bcs-browser">
+        <div class="bcs-urlbar">
+          <span class="bcs-nav">‹ ›</span>
+          <span class="bcs-lock">⛨</span>
+          <span class="bcs-url" data-bcs-url>about:blank</span>
+        </div>
+        <div class="bcs-page">
+          <div class="bcs-idle" data-bcs-idle>— this chrome belongs to the terminal —</div>
+
+          <!-- page 0: groceries -->
+          <div class="bcs-scene" data-bcs-page="0">
+            <div class="bcs-shop-head"><b>megamart</b><span class="bcs-cart" data-bcs-cart>cart · 0</span></div>
+            <div class="bcs-item" data-bcs-item><i></i><b style="width:54%"></b><em>$4.20</em><u>＋</u></div>
+            <div class="bcs-item" data-bcs-item><i></i><b style="width:66%"></b><em>$2.85</em><u>＋</u></div>
+            <div class="bcs-item" data-bcs-item><i></i><b style="width:46%"></b><em>$7.10</em><u>＋</u></div>
+            <div class="bcs-item" data-bcs-item><i></i><b style="width:58%"></b><em>$24.00</em><u>＋</u></div>
+            <div class="bcs-shop-foot">
+              <span>total <b>$38.15</b></span>
+              <span class="bcs-btn" data-bcs-checkout>checkout</span>
+            </div>
+            <div class="bcs-placed" data-bcs-placed>✓ order placed — arriving tomorrow</div>
+          </div>
+
+          <!-- page 1: the bank -->
+          <div class="bcs-scene" data-bcs-page="1">
+            <div class="bcs-bank-row"><span>checking balance</span><b>$1,240.60</b></div>
+            <div class="bcs-bank-bar"><i data-bcs-bankbar></i></div>
+            <div class="bcs-bank-row bcs-bill" data-bcs-bill>
+              <span>credit-card bill · due friday</span><b>$412.00</b>
+            </div>
+            <div class="bcs-covered" data-bcs-covered>covered ✓ — $828.60 to spare</div>
+          </div>
+
+          <!-- page 2: telegram web -->
+          <div class="bcs-scene" data-bcs-page="2">
+            <div class="bcs-chat-head">the boys ⚽ · 5 members</div>
+            <div class="bcs-msg bcs-msg-out" data-bcs-msgout>football tonight, 8pm?</div>
+            <div class="bcs-msg bcs-msg-in" data-bcs-msgin="0">in ⚽</div>
+            <div class="bcs-msg bcs-msg-in" data-bcs-msgin="1">count me in</div>
+            <div class="bcs-msg bcs-msg-in" data-bcs-msgin="2">bringing the ball</div>
+            <div class="bcs-msg bcs-msg-in" data-bcs-msgin="3">book the pitch 🙌</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bcs-status">
+      <span data-bcs-status>embedded chrome: idle · no computer automation needed</span>
+      <span>more muscle than a plain browser MCP</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bcs {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    overflow: hidden;
+    --done: #4ade80;
+  }
+  .bcs-app {
+    position: absolute;
+    inset: 4% 5%;
+    background: #0a0a0c;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  }
+  .bcs-dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+  .bcs-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+  .bcs-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .bcs-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .bcs-tab {
+    font-size: 10px;
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-bottom: none;
+    padding: 3px 10px;
+    background: #0e0e11;
+  }
+  .bcs-note { margin-left: auto; font-size: 9.5px; color: var(--text-muted); }
+
+  .bcs-body { flex: 1; display: flex; min-height: 0; }
+
+  /* ===== terminal column ===== */
+  .bcs-term-col {
+    width: 44%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-default);
+    min-width: 0;
+  }
+  .bcs-termpane {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.85;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .bcs-termpane :global(.tl-user) { color: #fff; }
+  .bcs-termpane :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .bcs-termpane :global(.tl-run) { color: var(--text-secondary); }
+  .bcs-termpane :global(.tl-dim) { color: var(--text-muted); }
+  .bcs-termpane :global(.tl-ok) { color: #d8d8d8; }
+  .bcs-termpane :global(.tl-ok b) { color: var(--done); font-weight: 400; }
+  .bcs-termpane :global(.tl-cursor) { color: var(--cy); animation: bcs-blink 1s steps(1, end) infinite; }
+  @keyframes bcs-blink { 50% { opacity: 0; } }
+
+  /* comms dock: where the reports land */
+  .bcs-comms {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-top: 1px dashed var(--border-default);
+  }
+  .bcs-svc {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    opacity: 0.28;
+    filter: saturate(0);
+    transition: opacity 300ms, filter 300ms, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .bcs-svc svg { width: 100%; height: 100%; }
+  .bcs-svc.lit {
+    opacity: 1;
+    filter: saturate(1);
+    transform: scale(1.15);
+  }
+  .bcs-badge {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    min-width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--done);
+    color: #000;
+    font-size: 8.5px;
+    font-weight: 700;
+    font-style: normal;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .bcs-badge.on { display: flex; animation: bcs-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes bcs-pop { from { transform: scale(0.4); } }
+  .bcs-toast {
+    font-size: 9.5px;
+    color: var(--text-secondary);
+    border-left: 2px solid var(--done);
+    background: rgba(74, 222, 128, 0.05);
+    padding: 4px 9px;
+    opacity: 0;
+    transform: translateX(6px);
+    transition: opacity 220ms, transform 220ms;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .bcs-toast.show { opacity: 1; transform: none; }
+
+  /* ===== embedded chrome ===== */
+  .bcs-browser { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #0c0c0e; }
+  .bcs-urlbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    background: #101013;
+  }
+  .bcs-nav { color: var(--text-muted); letter-spacing: 2px; }
+  .bcs-lock { color: var(--text-muted); }
+  .bcs-url { color: var(--text-secondary); }
+  .bcs-url::after { content: '▏'; color: var(--cy); animation: bcs-blink 0.8s steps(1, end) infinite; }
+
+  .bcs-page { position: relative; flex: 1; overflow: hidden; }
+  .bcs-idle {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #3d3d42;
+    letter-spacing: 0.08em;
+    transition: opacity 250ms;
+  }
+  .bcs-idle.off { opacity: 0; }
+  .bcs-scene {
+    position: absolute;
+    inset: 0;
+    padding: 14px 16px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 280ms, transform 280ms;
+    pointer-events: none;
+  }
+  .bcs-scene.on { opacity: 1; transform: none; }
+
+  /* page 0: shop */
+  .bcs-shop-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 9px;
+  }
+  .bcs-cart { color: var(--text-muted); transition: color 200ms; }
+  .bcs-cart.hot { color: var(--cy); }
+  .bcs-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 0;
+    opacity: 0.35;
+    transition: opacity 250ms;
+  }
+  .bcs-item.added { opacity: 1; }
+  .bcs-item i { width: 15px; height: 15px; background: #1c1c20; border: 1px solid #2c2c31; flex-shrink: 0; }
+  .bcs-item b { height: 6px; background: #2a2a2f; }
+  .bcs-item em { margin-left: auto; font-style: normal; font-size: 9.5px; color: var(--text-tertiary); }
+  .bcs-item u {
+    text-decoration: none;
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 0 5px;
+    transition: all 200ms;
+  }
+  .bcs-item.added u { color: #000; background: var(--done); border-color: var(--done); }
+  .bcs-shop-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 10.5px;
+    color: var(--text-secondary);
+  }
+  .bcs-btn {
+    padding: 4px 14px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #000;
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    transition: filter 150ms;
+  }
+  .bcs-btn.clicked { filter: brightness(1.5); }
+  .bcs-placed {
+    margin-top: 10px;
+    font-size: 10.5px;
+    color: var(--done);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    background: rgba(74, 222, 128, 0.06);
+    padding: 5px 10px;
+    display: inline-block;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 240ms, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .bcs-placed.on { opacity: 1; transform: none; }
+
+  /* page 1: bank */
+  .bcs-bank-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+  }
+  .bcs-bank-row b { color: #fff; }
+  .bcs-bank-bar { height: 7px; background: #1a1a1e; margin: 4px 0 12px; }
+  .bcs-bank-bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #8b7cf8, #22d3ee);
+    transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .bcs-bank-bar i.fill { width: 75%; }
+  .bcs-bill { border-top: 1px solid var(--border-subtle); transition: color 200ms; }
+  .bcs-bill.scan b { color: var(--cy); }
+  .bcs-covered {
+    margin-top: 10px;
+    font-size: 10.5px;
+    color: var(--done);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    background: rgba(74, 222, 128, 0.06);
+    padding: 5px 10px;
+    display: inline-block;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 240ms, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .bcs-covered.on { opacity: 1; transform: none; }
+
+  /* page 2: telegram */
+  .bcs-chat-head {
+    font-size: 10px;
+    color: var(--text-muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+  }
+  .bcs-msg {
+    max-width: 68%;
+    font-size: 10.5px;
+    line-height: 1.5;
+    padding: 5px 10px;
+    margin-bottom: 7px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 240ms, transform 240ms;
+  }
+  .bcs-msg.on { opacity: 1; transform: none; }
+  .bcs-msg-out {
+    margin-left: auto;
+    color: #fff;
+    background: rgba(139, 124, 248, 0.18);
+    border: 1px solid rgba(139, 124, 248, 0.35);
+  }
+  .bcs-msg-in {
+    color: var(--text-secondary);
+    background: #141418;
+    border: 1px solid var(--border-default);
+  }
+
+  .bcs-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .bcs-status :global(.live-txt) { color: var(--cy); }
+</style>
+
+<script>
+  const root = document.querySelector('[data-bcs]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const $$ = (s: string) => Array.from(root.querySelectorAll(s)) as HTMLElement[];
+    const term = $('[data-bcs-term]');
+    const url = $('[data-bcs-url]');
+    const idle = $('[data-bcs-idle]');
+    const statusEl = $('[data-bcs-status]');
+    const toast = $('[data-bcs-toast]');
+    const pages = [0, 1, 2].map(i => $(`[data-bcs-page="${i}"]`));
+    const items = $$('[data-bcs-item]');
+    const cart = $('[data-bcs-cart]');
+    const checkout = $('[data-bcs-checkout]');
+    const placed = $('[data-bcs-placed]');
+    const bankbar = $('[data-bcs-bankbar]');
+    const bill = $('[data-bcs-bill]');
+    const covered = $('[data-bcs-covered]');
+    const msgout = $('[data-bcs-msgout]');
+    const msgins = [0, 1, 2, 3].map(i => $(`[data-bcs-msgin="${i}"]`));
+
+    let running = false;
+    let gen = 0;
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+
+    function line_(cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      const cur = term.querySelector('.tl-cursor');
+      if (cur) term.insertBefore(el, cur);
+      else term.appendChild(el);
+      while (term.children.length > 9) term.removeChild(term.firstChild!);
+      return el;
+    }
+
+    async function typeInto(el: HTMLElement, text: string, g: number, ms = 24) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+
+    async function navigate(to: string, page: number, g: number) {
+      idle.classList.add('off');
+      pages.forEach(p => p.classList.remove('on'));
+      url.textContent = '';
+      statusEl.innerHTML = 'embedded chrome: <span class="live-txt">● browsing</span>';
+      await typeInto(url, to, g, 26);
+      if (!alive(g)) return;
+      await sleep(250);
+      pages[page].classList.add('on');
+    }
+
+    function report(svc: string, text: string) {
+      const chip = root.querySelector(`[data-bcs-svc="${svc}"]`);
+      const badge = root.querySelector(`[data-bcs-badge="${svc}"]`);
+      chip?.classList.add('lit');
+      if (badge) { badge.textContent = '1'; badge.classList.add('on'); }
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3400);
+    }
+
+    function reset() {
+      term.innerHTML = '';
+      url.textContent = 'about:blank';
+      idle.classList.remove('off');
+      pages.forEach(p => p.classList.remove('on'));
+      items.forEach(i => i.classList.remove('added'));
+      cart.textContent = 'cart · 0';
+      cart.classList.remove('hot');
+      checkout.classList.remove('clicked');
+      placed.classList.remove('on');
+      bankbar.classList.remove('fill');
+      bill.classList.remove('scan');
+      covered.classList.remove('on');
+      msgout.classList.remove('on');
+      msgins.forEach(m => m.classList.remove('on'));
+      toast.classList.remove('show');
+      $$('.bcs-svc').forEach(s => s.classList.remove('lit'));
+      $$('.bcs-badge').forEach(b => b.classList.remove('on'));
+      statusEl.textContent = 'embedded chrome: idle · no computer automation needed';
+    }
+
+    async function scene(g: number) {
+      reset();
+      line_('tl-cursor', '█');
+      await sleep(700);
+      if (!alive(g)) return;
+
+      // ===== errand 1: groceries → whatsapp =====
+      const c1 = line_('tl-user', '');
+      await typeInto(c1, 'claude "get my weekly groceries — whatsapp me when done"', g, 20);
+      if (!alive(g)) return;
+      await sleep(350);
+      line_('tl-run', '▷ opening this terminal&#39;s chrome…');
+      await navigate('megamart.com/weekly-list', 0, g);
+      if (!alive(g)) return;
+      await sleep(400);
+      for (let i = 0; i < items.length; i++) {
+        if (!alive(g)) return;
+        items[i].classList.add('added');
+        cart.textContent = `cart · ${i + 1}`;
+        cart.classList.add('hot');
+        await sleep(420);
+      }
+      await sleep(300);
+      checkout.classList.add('clicked');
+      await sleep(500);
+      if (!alive(g)) return;
+      placed.classList.add('on');
+      await sleep(600);
+      report('wa', '→ whatsapp: groceries ordered ✓ arriving tomorrow');
+      line_('tl-ok', '✓ ordered — <b>$38.15</b> · whatsapp sent');
+      await sleep(2600);
+      if (!alive(g)) return;
+
+      // ===== errand 2: the bill → gmail =====
+      const c2 = line_('tl-user', '');
+      await typeInto(c2, 'claude "is my card bill covered this month?"', g, 20);
+      if (!alive(g)) return;
+      await sleep(350);
+      line_('tl-run', '▷ checking the bank…');
+      await navigate('mybank.com/accounts', 1, g);
+      if (!alive(g)) return;
+      await sleep(400);
+      bankbar.classList.add('fill');
+      await sleep(1000);
+      if (!alive(g)) return;
+      bill.classList.add('scan');
+      await sleep(700);
+      covered.classList.add('on');
+      await sleep(600);
+      if (!alive(g)) return;
+      report('gm', '→ gmail: bill $412 due friday — covered ✓');
+      line_('tl-ok', '✓ covered — <b>$828.60</b> to spare · summary emailed');
+      await sleep(2600);
+      if (!alive(g)) return;
+
+      // ===== errand 3: football night → telegram =====
+      const c3 = line_('tl-user', '');
+      await typeInto(c3, 'claude "invite the boys — football tonight, 8pm?"', g, 20);
+      if (!alive(g)) return;
+      await sleep(350);
+      line_('tl-run', '▷ pinging the group…');
+      await navigate('web.telegram.org', 2, g);
+      if (!alive(g)) return;
+      await sleep(400);
+      msgout.classList.add('on');
+      await sleep(700);
+      for (const m of msgins) {
+        if (!alive(g)) return;
+        m.classList.add('on');
+        await sleep(550);
+      }
+      await sleep(400);
+      report('tg', '→ telegram: 4 in — pitch booked for 8pm ⚽');
+      line_('tl-ok', '✓ <b>4 in</b> — pitch booked for 8pm ⚽');
+      await sleep(1600);
+      if (!alive(g)) return;
+
+      line_('tl-dim', '// browsed, paid, booked — no computer automation needed');
+      line_('tl-ok', '✓ your chrome runs your errands — <b>reports where you live</b>');
+      statusEl.textContent = 'embedded chrome: idle · 3 errands done';
+      await sleep(3800);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => { gen++; running = true; loop(); });
+    root.addEventListener('scene:stop', () => { running = false; gen++; reset(); });
+  }
+</script>

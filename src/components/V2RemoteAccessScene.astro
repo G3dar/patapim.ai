@@ -1,0 +1,1132 @@
+---
+// Maximized demo scene: REMOTE ACCESS — "Night Grid".
+// A cinematic tracking shot across a sleeping town: a house, an office tower,
+// a person on the street. Commands ride gradient packets through
+// patapim.ai/remote; the camera follows the data. 22s loop.
+// World is authored at close-up scale (1900×940 = 2× stage) so text only
+// ever scales DOWN and stays crisp. 'scene:start' / 'scene:stop'.
+
+const ARC_PHONE = 'M 1000 560 C 1000 440 975 330 952 272';
+const ARC_OFFICE = 'M 1467 368 C 1420 290 1150 258 968 258';
+const ARC_HOUSE = 'M 430 620 C 520 400 720 265 932 260';
+
+// office tower window grid: 4 cols × 7 rows
+const WIN_COLS = [1408, 1442, 1476, 1510];
+const WIN_ROWS = [420, 464, 508, 552, 596, 640, 684];
+const WINDOWS = WIN_ROWS.flatMap((y, r) => WIN_COLS.map((x, c) => ({ x, y, r, c, cyan: c === 2 && (r === 1 || r === 3 || r === 5) })));
+---
+
+<div class="ras" data-ras>
+  <div class="ras-view" data-ras-view>
+
+    <!-- ===== sky layer (parallax ×0.2) ===== -->
+    <div class="ras-layer ras-sky" data-layer="sky">
+      <div class="ras-stars"></div>
+      <div class="ras-moon"></div>
+    </div>
+
+    <!-- ===== skyline layer (parallax, horizontal only) ===== -->
+    <div class="ras-layer ras-skyline" data-layer="skyline">
+      <svg viewBox="0 0 1900 940" width="1900" height="940">
+        <!-- far band -->
+        <path d="M-100 940 L-100 690 L60 690 L60 656 L150 656 L150 700 L290 700 L290 662 L370 662 L370 708 L520 708 L520 672 L610 672 L610 700 L780 700 L780 650 L850 650 L850 702 L1010 702 L1010 668 L1110 668 L1110 706 L1270 706 L1270 646 L1340 646 L1340 700 L1520 700 L1520 664 L1620 664 L1620 704 L1780 704 L1780 676 L2000 676 L2000 940 Z"
+          fill="#08080b"/>
+        <!-- near band -->
+        <path d="M-100 940 L-100 730 L120 730 L120 700 L230 700 L230 736 L420 736 L420 694 L500 694 L500 740 L700 740 L700 712 L800 712 L800 744 L1030 744 L1030 704 L1130 704 L1130 740 L1330 740 L1330 690 L1420 690 L1420 736 L1650 736 L1650 708 L1760 708 L1760 742 L2000 742 L2000 940 Z"
+          fill="#0c0c10"/>
+        <!-- sparse distant windows -->
+        <g fill="rgba(255,240,210,0.05)">
+          <rect x="90" y="668" width="4" height="5"/><rect x="310" y="674" width="4" height="5"/>
+          <rect x="545" y="684" width="4" height="5"/><rect x="800" y="662" width="4" height="5"/>
+          <rect x="1050" y="680" width="4" height="5"/><rect x="1292" y="658" width="4" height="5"/>
+          <rect x="1548" y="676" width="4" height="5"/><rect x="1800" y="688" width="4" height="5"/>
+          <rect x="450" y="706" width="4" height="5"/><rect x="1160" y="714" width="4" height="5"/>
+          <rect x="1690" y="716" width="4" height="5"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ===== world layer (×1.0) ===== -->
+    <div class="ras-layer ras-world" data-layer="world">
+      <!-- horizon glow: violet marks home, cyan marks the office -->
+      <div class="ras-hglow ras-hglow-home"></div>
+      <div class="ras-hglow ras-hglow-office"></div>
+      <div class="ras-hglow ras-hglow-city"></div>
+      <svg class="ras-map" viewBox="0 0 1900 940" width="1900" height="940">
+        <defs>
+          <linearGradient id="pgrad" gradientUnits="userSpaceOnUse" x1="280" y1="700" x2="1545" y2="300">
+            <stop offset="0" stop-color="#c26bf0"/>
+            <stop offset="0.5" stop-color="#8b7cf8"/>
+            <stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ground + road -->
+        <line x1="60" y1="760" x2="1840" y2="760" stroke="#2a2a2e" stroke-width="1"/>
+        <g stroke="#1d1d1f" stroke-width="2">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <line x1={70 + i * 60} y1="772" x2={84 + i * 60} y2="772" />
+          ))}
+        </g>
+
+        <!-- street trees + lamp light pool -->
+        <g stroke="#26262b" fill="#0b0b0e" stroke-width="1.5">
+          <line x1="640" y1="760" x2="640" y2="718"/><circle cx="640" cy="704" r="15"/>
+          <line x1="1180" y1="760" x2="1180" y2="724"/><circle cx="1180" cy="712" r="12"/>
+          <line x1="1720" y1="760" x2="1720" y2="714"/><circle cx="1720" cy="698" r="17"/>
+          <line x1="150" y1="760" x2="150" y2="722"/><circle cx="150" cy="708" r="14"/>
+        </g>
+        <ellipse cx="888" cy="761" rx="56" ry="5" fill="rgba(255,255,255,0.045)"/>
+
+        <!-- HOUSE -->
+        <g class="ras-draw" data-draw="0">
+          <rect x="280" y="580" width="200" height="180" fill="#09090b" stroke="#3d3d42" stroke-width="1.5"/>
+          <polygon points="260,580 380,490 500,580" fill="#09090b" stroke="#3d3d42" stroke-width="1.5"/>
+          <rect x="434" y="505" width="12" height="42" fill="#09090b" stroke="#3d3d42" stroke-width="1.5"/>
+          <rect x="365" y="700" width="30" height="60" fill="#0c0c0e" stroke="#333338" stroke-width="1"/>
+          <rect x="320" y="630" width="24" height="30" fill="#0c0c0e" stroke="#333338" stroke-width="1"/>
+          <rect x="410" y="630" width="24" height="30" fill="#0c0c0e" stroke="#333338" stroke-width="1"/>
+          <rect class="ras-homewin" data-ras-homewin x="410" y="630" width="24" height="30" fill="rgba(194,107,240,0.16)" stroke="rgba(194,107,240,0.5)" stroke-width="1"/>
+        </g>
+
+        <!-- LAMPPOST + light cone -->
+        <g class="ras-draw" data-draw="1">
+          <line x1="850" y1="560" x2="850" y2="760" stroke="#3f3f46" stroke-width="1.5"/>
+          <line x1="850" y1="560" x2="880" y2="560" stroke="#3f3f46" stroke-width="1.5"/>
+          <polygon points="866,564 820,760 960,760 894,564" fill="url(#lampcone)" opacity="0.5"/>
+          <circle cx="880" cy="564" r="3" fill="#6b6b70"/>
+        </g>
+        <defs>
+          <linearGradient id="lampcone" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="rgba(255,255,255,0.07)"/>
+            <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+          </linearGradient>
+        </defs>
+
+        <!-- PERSON -->
+        <g class="ras-person" stroke="#6b6b70" stroke-width="2" stroke-linecap="round" fill="none">
+          <circle cx="906" cy="676" r="8" fill="none"/>
+          <path d="M906 684 L906 724"/>
+          <path d="M906 694 L926 706"/>
+          <path d="M906 724 L894 758"/>
+          <path d="M906 724 L918 758"/>
+        </g>
+
+        <!-- OFFICE TOWER -->
+        <g class="ras-draw" data-draw="2">
+          <rect x="1390" y="400" width="155" height="360" fill="#09090b" stroke="#3d3d42" stroke-width="1.5" data-ras-tower/>
+          <rect x="1454" y="734" width="26" height="26" fill="#0c0c0e" stroke="#333338" stroke-width="1"/>
+          <line x1="1467" y1="400" x2="1467" y2="368" stroke="#3d3d42" stroke-width="1.5"/>
+          <circle class="ras-antenna" cx="1467" cy="368" r="3" fill="#22d3ee"/>
+        </g>
+        <g>
+          {WINDOWS.map((w) => <rect x={w.x} y={w.y} width="20" height="16" fill="#0c0c0e"/>)}
+        </g>
+        <g>
+          {WINDOWS.map((w, i) => (
+            <rect class="ras-winlit" data-win={i} x={w.x} y={w.y} width="20" height="16"
+              fill={w.cyan ? 'rgba(34,211,238,0.38)' : 'rgba(255,236,190,0.18)'}/>
+          ))}
+        </g>
+
+        <!-- LINK ARCS: base + glow twins -->
+        <g fill="none">
+          <path d={ARC_PHONE} class="ras-arcbase" data-arcbase="phone"/>
+          <path d={ARC_OFFICE} class="ras-arcbase" data-arcbase="office"/>
+          <path d={ARC_HOUSE} class="ras-arcbase" data-arcbase="house"/>
+          <path d={ARC_PHONE} class="ras-arcglow" data-arcglow="phone"/>
+          <path d={ARC_OFFICE} class="ras-arcglow" data-arcglow="office"/>
+          <path d={ARC_HOUSE} class="ras-arcglow" data-arcglow="house"/>
+        </g>
+
+        <!-- RELAY diamond -->
+        <rect class="ras-relay-dia" x="944" y="249" width="12" height="12" transform="rotate(45 950 255)"/>
+      </svg>
+
+      <!-- relay chip + ping rings -->
+      <div class="ras-relaychip">⇄ patapim.ai/remote</div>
+      <div class="ras-rings" data-ras-rings></div>
+
+      <!-- place labels -->
+      <div class="ras-plabel" style="left:280px; top:792px; width:200px;">HOME · ☾ 9:12 PM</div>
+      <div class="ras-plabel" style="left:850px; top:792px; width:200px;">ON THE STREET</div>
+      <div class="ras-plabel" style="left:1368px; top:792px; width:200px;">OFFICE · NOBODY THERE</div>
+
+      <!-- PHONE -->
+      <div class="ras-phone" data-ras-phone>
+        <div class="ras-phone-beacon" data-ras-beacon></div>
+        <div class="ras-phone-notch"></div>
+        <div class="ras-phone-body" data-ras-phonebody>
+          <div class="ras-phone-head">⇄ office / api</div>
+          <div class="ras-phone-note">already in — nothing to enable</div>
+          <div class="ras-phone-bubble" data-ras-bubble></div>
+          <div class="ras-phone-chips" data-ras-pchips></div>
+        </div>
+      </div>
+
+      <!-- HOME CARD -->
+      <div class="ras-leader ras-leader-home" data-ras-leaderhome></div>
+      <div class="ras-card ras-card-home" data-ras-homecard>
+        <div class="ras-card-bar">
+          <span class="ras-card-brand"><b>❯_</b> macbook</span>
+          <span class="ras-carddot" data-ras-homedot>○</span>
+        </div>
+        <div class="ras-mirrorbar" data-ras-mirror>⇄ mirroring office — zero setup</div>
+        <div class="ras-screen" data-ras-homescr>
+          <div class="ras-scanline" data-ras-scanline></div>
+        </div>
+      </div>
+
+      <!-- OFFICE CARD -->
+      <div class="ras-leader ras-leader-office" data-ras-leaderoffice></div>
+      <div class="ras-card ras-card-office" data-ras-officecard>
+        <div class="ras-card-bar">
+          <span class="ras-card-brand"><b>❯_</b> workstation</span>
+          <span class="ras-ccchip" data-ras-ccchip>⬚ control</span>
+        </div>
+        <div class="ras-screen" data-ras-officescr></div>
+        <div class="ras-minidesk" data-ras-minidesk>
+          <div class="ras-md-win" style="left:8px; width:64px;"></div>
+          <div class="ras-md-win" style="left:80px; width:88px;"></div>
+          <div class="ras-md-win" style="left:176px; width:56px;"></div>
+          <div class="ras-md-progress" data-ras-mdprog>▯▯▯▯▯▯</div>
+          <svg class="ras-md-cursor" data-ras-mdcursor viewBox="0 0 24 24"><path d="M5.5 3.2v14l3.4-3.3 2.2 4.9 2.2-1-2.2-4.7h4.7L5.5 3.2z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== screen-fixed overlays ===== -->
+  <div class="ras-scanlines" aria-hidden="true"></div>
+  <div class="ras-vignette" aria-hidden="true"></div>
+  <div class="ras-streak" data-ras-streak aria-hidden="true"></div>
+  <div class="ras-punch" data-ras-punch>no remote mode. no setup. <b>if it's on, you're in.</b></div>
+</div>
+
+<style>
+  .ras {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    overflow: hidden;
+    contain: layout paint;
+    background: linear-gradient(180deg, #0a0a16 0%, #06060a 30%, #050505 55%);
+    --done: #4ade80;
+  }
+  .ras-view { position: absolute; inset: 0; }
+  .ras-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1900px;
+    height: 940px;
+    transform-origin: 0 0;
+  }
+  .ras-world, .ras-sky, .ras-skyline { will-change: transform; }
+  .ras-map { position: absolute; top: 0; left: 0; }
+
+  /* ===== sky ===== */
+  .ras-stars {
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow:
+      120px 30px rgba(255,255,255,0.3), 340px 90px rgba(255,255,255,0.2), 520px 40px rgba(255,255,255,0.35),
+      760px 120px rgba(255,255,255,0.22), 980px 60px rgba(255,255,255,0.3), 1180px 140px rgba(255,255,255,0.18),
+      1420px 50px rgba(255,255,255,0.32), 1650px 110px rgba(255,255,255,0.25), 240px 200px rgba(255,255,255,0.2),
+      620px 230px rgba(255,255,255,0.28), 890px 190px rgba(255,255,255,0.18), 1120px 250px rgba(255,255,255,0.3),
+      1360px 210px rgba(255,255,255,0.2), 1580px 260px rgba(255,255,255,0.26), 60px 130px rgba(255,255,255,0.24),
+      440px 160px rgba(255,255,255,0.55), 1040px 100px rgba(255,255,255,0.55), 1500px 170px rgba(255,255,255,0.5),
+      200px 320px rgba(255,255,255,0.16), 700px 340px rgba(255,255,255,0.2), 1250px 330px rgba(255,255,255,0.18),
+      320px 76px 0 1px rgba(194,107,240,0.4), 1470px 92px 0 1px rgba(34,211,238,0.45), 860px 280px 0 0.5px rgba(139,124,248,0.35);
+    animation: ras-twinkle 4s ease-in-out infinite;
+  }
+  @keyframes ras-twinkle { 50% { opacity: 0.65; } }
+  .ras-moon {
+    position: absolute;
+    left: 1540px;
+    top: 110px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #3a3a3e;
+    background: radial-gradient(circle at 62% 40%, #131316 58%, transparent 59%), #0d0d10;
+    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.07));
+  }
+
+  /* ===== horizon glow — figure/ground separation ===== */
+  .ras-hglow { position: absolute; pointer-events: none; }
+  .ras-hglow-home {
+    left: 100px; top: 480px; width: 560px; height: 290px;
+    background: radial-gradient(55% 65% at 50% 100%, rgba(194, 107, 240, 0.09), transparent 72%);
+  }
+  .ras-hglow-office {
+    left: 1180px; top: 400px; width: 580px; height: 370px;
+    background: radial-gradient(55% 65% at 50% 100%, rgba(34, 211, 238, 0.08), transparent 72%);
+  }
+  .ras-hglow-city {
+    left: 540px; top: 560px; width: 820px; height: 210px;
+    background: radial-gradient(60% 70% at 50% 100%, rgba(139, 124, 248, 0.05), transparent 75%);
+  }
+
+  /* ===== buildings / draw-ins ===== */
+  .ras-homewin { opacity: 0; transition: opacity 500ms; }
+  .ras-homewin.lit { opacity: 1; }
+  .ras-winlit { opacity: 0; transition: opacity 350ms; }
+  .ras-winlit.lit { opacity: 1; }
+  [data-ras-tower] { transition: stroke 600ms, filter 600ms; }
+  [data-ras-tower].cyan { stroke: rgba(34, 211, 238, 0.5); filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.35)); }
+  .ras-antenna { animation: ras-antblink 2.4s ease-in-out infinite; }
+  @keyframes ras-antblink { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  .ras-person { transition: stroke 500ms; }
+  .ras-person.awake { stroke: #a1a1aa; }
+
+  /* ===== arcs ===== */
+  .ras-arcbase { stroke: #232326; stroke-width: 1.25; stroke-dasharray: 4 7; }
+  .ras-arcglow {
+    stroke: url(#pgrad);
+    stroke-width: 1.25;
+    stroke-dasharray: 4 7;
+    opacity: 0;
+    filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
+    transition: opacity 250ms;
+  }
+  .ras-arcglow.on { opacity: 1; animation: ras-flow 700ms linear infinite; }
+  @keyframes ras-flow { to { stroke-dashoffset: -11; } }
+
+  /* ===== relay ===== */
+  .ras-relay-dia {
+    fill: #050505;
+    stroke: #22d3ee;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.5));
+  }
+  .ras-relaychip {
+    position: absolute;
+    left: 950px;
+    top: 282px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #22d3ee;
+    letter-spacing: 0.08em;
+    border: 1px solid rgba(34, 211, 238, 0.45);
+    background: #08080a;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+  .ras-rings { position: absolute; left: 950px; top: 255px; }
+  .ras-rings :global(.ring) {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    margin: -13px 0 0 -13px;
+    border: 1px solid rgba(34, 211, 238, 0.7);
+    transform: rotate(45deg) scale(0.6);
+    opacity: 0.8;
+    animation: ras-ring 900ms ease-out forwards;
+  }
+  .ras-rings :global(.ring.green) { border-color: rgba(74, 222, 128, 0.7); }
+  @keyframes ras-ring { to { transform: rotate(45deg) scale(2.2); opacity: 0; } }
+
+  /* ===== labels ===== */
+  .ras-plabel {
+    position: absolute;
+    text-align: center;
+    font-size: 10px;
+    color: #71717a;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ===== packets: rotated squares, never circles ===== */
+  .ras :global(.ras-pk) {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    margin: -3.5px 0 0 -3.5px;
+    transform: rotate(45deg);
+    offset-rotate: 0deg;
+    background: linear-gradient(135deg, #c26bf0, #22d3ee);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.9);
+    z-index: 6;
+    pointer-events: none;
+    will-change: offset-distance;
+  }
+  .ras :global(.ras-pk.green) { background: var(--done); box-shadow: 0 0 10px rgba(74, 222, 128, 0.9); }
+  .ras :global(.ras-pk.cyan) { background: #22d3ee; box-shadow: 0 0 10px rgba(34, 211, 238, 0.9); }
+  .ras :global(.ras-pk.ambient) { opacity: 0.7; }
+
+  /* ===== phone (world coords 950..1050 × 560..758) ===== */
+  .ras-phone {
+    position: absolute;
+    left: 950px;
+    top: 560px;
+    width: 100px;
+    height: 198px;
+    background: #060608;
+    border: 2px solid #2c2c30;
+    border-radius: 12px;
+    transition: border-color 400ms, box-shadow 400ms;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 7px 0;
+  }
+  .ras-phone.live { border-color: rgba(34, 211, 238, 0.55); box-shadow: 0 0 22px rgba(34, 211, 238, 0.14); }
+  .ras-phone-beacon {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    background: #c26bf0;
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+  .ras-phone-notch { width: 38px; height: 4px; border-radius: 2px; background: #1c1c1f; margin-bottom: 8px; flex-shrink: 0; }
+  .ras-phone-body {
+    width: 100%;
+    flex: 1;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 350ms ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .ras-phone-body.on { clip-path: inset(0 0 0 0); }
+  .ras-phone-head { font-size: 8px; color: #22d3ee; letter-spacing: 0.04em; }
+  .ras-phone-note { margin-top: 3px; font-size: 6.5px; color: #5c5c62; letter-spacing: 0.03em; }
+  .ras-phone-bubble {
+    margin-top: 12px;
+    max-width: 82px;
+    border: 1px solid #27272a;
+    padding: 5px 6px;
+    font-size: 9px;
+    line-height: 1.5;
+    color: #fff;
+    min-height: 24px;
+    align-self: flex-end;
+    margin-right: 2px;
+  }
+  .ras-phone-bubble:empty { opacity: 0; }
+  .ras-phone-bubble.typing::after { content: '▏'; color: #22d3ee; animation: ras-blink 0.8s steps(1, end) infinite; }
+  .ras-phone-bubble.sent { animation: ras-sendsquish 120ms ease; }
+  @keyframes ras-sendsquish { 50% { transform: scale(0.94); } }
+  .ras-phone-chips { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+  .ras-phone-chips :global(.chip) {
+    font-size: 8.5px;
+    color: var(--done);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    background: rgba(74, 222, 128, 0.06);
+    padding: 3px 7px;
+    animation: ras-chippop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  @keyframes ras-chippop { from { transform: scale(0.6); opacity: 0; } }
+  @keyframes ras-blink { 50% { opacity: 0; } }
+
+  /* ===== terminal cards ===== */
+  .ras-card {
+    position: absolute;
+    width: 300px;
+    background: #0a0a0c;
+    border: 1px solid #27272a;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    pointer-events: none;
+    transition: border-color 300ms, box-shadow 300ms;
+  }
+  .ras-card.live { border-color: rgba(34, 211, 238, 0.5); box-shadow: 0 16px 44px rgba(0,0,0,0.7), 0 0 26px rgba(34, 211, 238, 0.12); }
+  .ras-card-home { left: 460px; top: 430px; height: 170px; transform-origin: -38px 215px; }
+  .ras-card-office { left: 1120px; top: 330px; height: 180px; transform-origin: 300px 38px; }
+  .ras-card.bloom { animation: ras-bloom 460ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .ras-card-home.bloom { animation: ras-bloomhome 480ms cubic-bezier(0.2, 0.9, 0.25, 1) forwards; }
+  @keyframes ras-bloom {
+    from { opacity: 0; transform: scale(0.86) translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes ras-bloomhome {
+    from { opacity: 0; transform: scale(0.25); }
+    to { opacity: 1; transform: none; }
+  }
+  .ras-card.pulse { animation: ras-cardpulse 300ms ease; }
+  @keyframes ras-cardpulse { 50% { box-shadow: 0 0 34px rgba(139, 124, 248, 0.35); } }
+
+  .ras-leader {
+    position: absolute;
+    height: 1px;
+    background: #3f3f46;
+    transform: scaleX(0);
+    transition: transform 300ms ease;
+    z-index: 1;
+  }
+  .ras-leader.on { transform: scaleX(1); }
+  .ras-leader-home {
+    left: 428px; top: 622px; width: 55px;
+    transform-origin: left center;
+    rotate: -35deg;
+  }
+  .ras-leader-office {
+    left: 1420px; top: 369px; width: 47px;
+    transform-origin: right center;
+    left: 1420px;
+  }
+
+  .ras-card-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 24px;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 10px;
+    color: #a1a1aa;
+  }
+  .ras-card-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ras-carddot { font-size: 9px; color: var(--text-muted); transition: color 300ms; }
+  .ras-carddot.on { color: var(--done); }
+  .ras-ccchip {
+    font-size: 8.5px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 2px 6px;
+    transition: all 250ms;
+  }
+  .ras-ccchip.armed {
+    color: #000;
+    font-weight: 700;
+    background: #22d3ee;
+    border-color: #22d3ee;
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+    animation: ras-ccpulse 1.4s ease-in-out infinite;
+  }
+  @keyframes ras-ccpulse { 50% { box-shadow: 0 0 22px rgba(34, 211, 238, 1); } }
+
+  .ras-mirrorbar {
+    display: block;
+    padding: 4px 10px;
+    font-size: 8.5px;
+    color: #22d3ee;
+    letter-spacing: 0.05em;
+    background: rgba(34, 211, 238, 0.06);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.25);
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 400ms ease;
+  }
+  .ras-mirrorbar.on { clip-path: inset(0 0 0 0); }
+
+  .ras-screen {
+    position: relative;
+    padding: 7px 10px;
+    font-size: 9.5px;
+    line-height: 1.65;
+    height: 108px;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .ras-screen :global(.tl-user) { color: #fff; }
+  .ras-screen :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .ras-screen :global(.tl-user .src) { font-size: 8px; color: #22d3ee; }
+  .ras-screen :global(.tl-run) { color: #a1a1aa; }
+  .ras-screen :global(.tl-dim) { color: var(--text-muted); }
+  .ras-screen :global(.tl-ok) { color: #d8d8d8; }
+  .ras-screen :global(.tl-ok b) { color: var(--done); font-weight: 400; }
+  .ras-screen :global(.tl-cursor) { color: #22d3ee; animation: ras-blink 1s steps(1, end) infinite; }
+  .ras-screen :global(.cascade) { animation: ras-cascade 300ms ease backwards; }
+  @keyframes ras-cascade { from { opacity: 0; transform: translateY(4px); } }
+  .ras-scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -2px;
+    height: 1px;
+    background: rgba(34, 211, 238, 0.7);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+    opacity: 0;
+    z-index: 2;
+  }
+  .ras-scanline.sweep { animation: ras-sweep 500ms ease forwards; }
+  @keyframes ras-sweep {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(108px); }
+  }
+
+  /* mini desktop for the computer-control beat */
+  .ras-minidesk {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 8px;
+    height: 34px;
+    border-top: 1px dashed #232326;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .ras-minidesk.on { opacity: 1; }
+  .ras-md-win {
+    position: absolute;
+    top: 8px;
+    height: 18px;
+    border: 1px solid #333338;
+    background: #0d0d10;
+  }
+  .ras-md-progress {
+    position: absolute;
+    right: 0;
+    top: 11px;
+    font-size: 8px;
+    color: #22d3ee;
+    letter-spacing: 1px;
+  }
+  .ras-md-cursor {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 20px;
+    top: 12px;
+    transition: left 450ms cubic-bezier(0.4, 0, 0.2, 1), top 450ms cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+    z-index: 2;
+  }
+
+  /* ===== screen-fixed overlays ===== */
+  .ras-scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 3px);
+  }
+  .ras-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 11;
+    background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.5) 100%);
+  }
+  .ras-streak {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 12;
+    background: repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.05) 18px 19px);
+    transform: scaleX(1.4);
+    opacity: 0;
+  }
+  .ras-streak.whip { animation: ras-whip 420ms linear; }
+  @keyframes ras-whip {
+    0% { opacity: 0; }
+    25% { opacity: 0.5; }
+    100% { opacity: 0; }
+  }
+  .ras-punch {
+    position: absolute;
+    bottom: 9%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 13;
+    font-size: 15px;
+    color: #a1a1aa;
+    letter-spacing: 0.2em;
+    opacity: 0;
+    transition: opacity 700ms ease, letter-spacing 700ms ease;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .ras-punch.show { opacity: 1; letter-spacing: 0.05em; }
+  .ras-punch b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  const root = document.querySelector('[data-ras]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const world = $('[data-layer="world"]');
+    const sky = $('[data-layer="sky"]');
+    const skyline = $('[data-layer="skyline"]');
+    const view = $('[data-ras-view]');
+    const streak = $('[data-ras-streak]');
+    const punch = $('[data-ras-punch]');
+    const rings = $('[data-ras-rings]');
+    const phone = $('[data-ras-phone]');
+    const phoneBody = $('[data-ras-phonebody]');
+    const bubble = $('[data-ras-bubble]');
+    const pchips = $('[data-ras-pchips]');
+    const person = root.querySelector('.ras-person') as SVGElement;
+    const homewin = $('[data-ras-homewin]');
+    const tower = $('[data-ras-tower]');
+    const homeCard = $('[data-ras-homecard]');
+    const officeCard = $('[data-ras-officecard]');
+    const homeDot = $('[data-ras-homedot]');
+    const ccchip = $('[data-ras-ccchip]');
+    const mirror = $('[data-ras-mirror]');
+    const homeScr = $('[data-ras-homescr]');
+    const officeScr = $('[data-ras-officescr]');
+    const scanline = $('[data-ras-scanline]');
+    const minidesk = $('[data-ras-minidesk]');
+    const mdprog = $('[data-ras-mdprog]');
+    const mdcursor = $('[data-ras-mdcursor]');
+    const leaderHome = $('[data-ras-leaderhome]');
+    const leaderOffice = $('[data-ras-leaderoffice]');
+
+    const ARC: Record<string, string> = {
+      phone: 'M 1000 560 C 1000 440 975 330 952 272',
+      office: 'M 1467 368 C 1420 290 1150 258 968 258',
+      house: 'M 430 620 C 520 400 720 265 932 260',
+    };
+    const glow = (k: string) => root.querySelector(`[data-arcglow="${k}"]`) as SVGPathElement;
+
+    const W = 1900, H = 940;
+    let running = false;
+    let gen = 0;
+    let firstRun = true;
+    const liveAnims: Animation[] = [];
+    const liveTimers: number[] = [];
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+
+    // ---------- camera rig ----------
+    // named easing vocabulary from the art direction
+    const EASE = {
+      establish: 'cubic-bezier(0.33, 0, 0.2, 1)',
+      push: 'cubic-bezier(0.45, 0.05, 0.15, 1)',
+      travel: 'cubic-bezier(0.45, 0, 0.25, 1)',
+      whip: 'cubic-bezier(0.85, 0, 0.15, 1)',
+      arrive: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    };
+
+    // the wide shot frames the town band (x≈190–1710, y≈130–880), not the whole
+    // canvas — keeps everything readable when zoomed out
+    const WIDE = { cx: 950, cy: 505 };
+    let widePose = { tx: 0, ty: 0, s: 0.62 };
+    function stageSize() {
+      const r = root.getBoundingClientRect();
+      return { w: r.width, h: r.height };
+    }
+    function poseFor(cx: number, cy: number, s: number) {
+      const { w, h } = stageSize();
+      return { tx: w / 2 - cx * s, ty: h / 2 - cy * s, s };
+    }
+    function computeWide() {
+      const { w, h } = stageSize();
+      const s = Math.min(w / 1520, h / 745);
+      widePose = poseFor(WIDE.cx, WIDE.cy, s);
+      return widePose;
+    }
+    // parallax is HORIZONTAL ONLY — vertical follows the world 1:1 so the
+    // skyline stays glued to the ground instead of floating during pans
+    const LAYERS: [HTMLElement, number][] = [[world, 1], [skyline, 0.7], [sky, 0.3]];
+    function layerTarget(p: { tx: number; ty: number; s: number }, f: number) {
+      const tx = widePose.tx + (p.tx - widePose.tx) * f;
+      return `translate(${tx}px, ${p.ty}px) scale(${p.s})`;
+    }
+    function setPoseNow(p: { tx: number; ty: number; s: number }) {
+      LAYERS.forEach(([el, f]) => { el.style.transform = layerTarget(p, f); });
+    }
+    function cam(cx: number, cy: number, s: number, ms: number, ease: string) {
+      const p = poseFor(cx, cy, s);
+      const anims = LAYERS.map(([el, f]) => {
+        const a = el.animate(
+          [{ transform: layerTarget(p, f) }],
+          { duration: reduced ? 0 : ms, easing: ease, fill: 'forwards' }
+        );
+        liveAnims.push(a);
+        return a;
+      });
+      return Promise.all(anims.map(a => a.finished.catch(() => {})));
+    }
+
+    // ---------- effects ----------
+    function ping(green = false) {
+      const r = document.createElement('div');
+      r.className = 'ring' + (green ? ' green' : '');
+      rings.appendChild(r);
+      setTimeout(() => r.remove(), 950);
+    }
+
+    function packet(kind: 'grad' | 'green' | 'cyan' | 'ambient') {
+      const p = document.createElement('div');
+      p.className = 'ras-pk' + (kind === 'green' ? ' green' : kind === 'cyan' ? ' cyan' : kind === 'ambient' ? ' ambient' : '');
+      world.appendChild(p);
+      return p;
+    }
+
+    // ride one arc; dir 1 = start→relay-end of path, dir -1 = reverse
+    async function ride(p: HTMLElement, arc: string, dir: 1 | -1, ms: number, ease: string, g: number) {
+      p.style.offsetPath = `path('${ARC[arc]}')`;
+      const gl = glow(arc);
+      gl?.classList.add('on');
+      const a = p.animate(
+        [{ offsetDistance: dir === 1 ? '0%' : '100%' }, { offsetDistance: dir === 1 ? '100%' : '0%' }],
+        { duration: reduced ? 0 : ms, easing: ease, fill: 'forwards' }
+      );
+      liveAnims.push(a);
+      await a.finished.catch(() => {});
+      setTimeout(() => gl?.classList.remove('on'), 250);
+    }
+
+    // full journey A → relay → B with a relay ping at the handoff
+    async function send(fromArc: string, toArc: string, kind: 'grad' | 'green' | 'cyan', g: number) {
+      const p = packet(kind);
+      await ride(p, fromArc, 1, 700, 'ease-in', g);
+      if (!alive(g)) { p.remove(); return; }
+      ping(kind === 'green');
+      await ride(p, toArc, -1, 700, 'ease-out', g);
+      p.remove();
+    }
+
+    function whipStreak() {
+      streak.classList.remove('whip');
+      void streak.offsetWidth;
+      streak.classList.add('whip');
+      const a = view.animate(
+        [{ transform: 'scaleX(1)' }, { transform: 'scaleX(1.04)', offset: 0.4 }, { transform: 'scaleX(1)' }],
+        { duration: reduced ? 0 : 500, easing: 'ease-in-out' }
+      );
+      liveAnims.push(a);
+    }
+
+    // ---------- terminal helpers ----------
+    function line_(scr: HTMLElement, cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      const cur = scr.querySelector('.tl-cursor');
+      if (cur) scr.insertBefore(el, cur);
+      else scr.appendChild(el);
+      while (scr.querySelectorAll('div').length > 7) {
+        const first = scr.querySelector('div:not(.ras-scanline)');
+        first?.remove();
+      }
+      return el;
+    }
+    async function typeInto(el: HTMLElement, text: string, g: number, ms = 26) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+    function spinner(el: HTMLElement, base: string, g: number) {
+      const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴'];
+      let i = 0;
+      const t = window.setInterval(() => {
+        if (!alive(g)) { clearInterval(t); return; }
+        el.innerHTML = `${frames[i++ % frames.length]} ${base}`;
+      }, 120);
+      liveTimers.push(t);
+      return () => clearInterval(t);
+    }
+
+    // ---------- reset ----------
+    function reset() {
+      liveAnims.forEach(a => { try { a.cancel(); } catch {} });
+      liveAnims.length = 0;
+      liveTimers.forEach(t => clearInterval(t));
+      liveTimers.length = 0;
+      root.querySelectorAll('.ras-pk').forEach(p => p.remove());
+      rings.innerHTML = '';
+      root.querySelectorAll('.ras-arcglow').forEach(gl => gl.classList.remove('on'));
+      root.querySelectorAll('.ras-winlit').forEach(wl => wl.classList.remove('lit'));
+      homewin.classList.remove('lit');
+      tower.classList.remove('cyan');
+      person?.classList.remove('awake');
+      phone.classList.remove('live');
+      phoneBody.classList.remove('on');
+      bubble.textContent = '';
+      bubble.classList.remove('typing', 'sent');
+      pchips.innerHTML = '';
+      [homeCard, officeCard].forEach(c => { c.classList.remove('bloom', 'live', 'pulse'); c.style.opacity = ''; });
+      [leaderHome, leaderOffice].forEach(l => l.classList.remove('on'));
+      homeDot.classList.remove('on');
+      homeDot.textContent = '○';
+      ccchip.classList.remove('armed');
+      mirror.classList.remove('on');
+      homeScr.querySelectorAll('div:not(.ras-scanline)').forEach(d => d.remove());
+      officeScr.innerHTML = '';
+      scanline.classList.remove('sweep');
+      minidesk.classList.remove('on');
+      mdprog.textContent = '▯▯▯▯▯▯';
+      punch.classList.remove('show');
+      computeWide();
+      setPoseNow(widePose);
+    }
+
+    // ---------- the film ----------
+    async function scene(g: number) {
+      reset();
+
+      // SHOT 1 — establish wide, the town asleep
+      cam(WIDE.cx, WIDE.cy, widePose.s * 1.04, 2200, EASE.establish);
+      if (firstRun) {
+        ping();
+        firstRun = false;
+      } else {
+        ping();
+      }
+      await sleep(2200);
+      if (!alive(g)) return;
+
+      // SHOT 2 — push in to the street
+      cam(960, 635, 1.08, 1600, EASE.push);
+      await sleep(700);
+      if (!alive(g)) return;
+      person?.classList.add('awake');
+      phone.classList.add('live');
+      phoneBody.classList.add('on');
+      await sleep(900);
+      if (!alive(g)) return;
+
+      // SHOT 3 — hold phone: the message
+      cam(960, 635, 1.12, 2400, 'linear'); // imperceptible breathing
+      bubble.classList.add('typing');
+      await typeInto(bubble, '"restart the staging server"', g, 28);
+      if (!alive(g)) return;
+      bubble.classList.remove('typing');
+      await sleep(300);
+      bubble.classList.add('sent');
+
+      // SHOT 4 — pull-track: the camera follows the data
+      const p1 = send('phone', 'office', 'grad', g);
+      await sleep(200);
+      cam(1090, 420, 0.62, 1400, EASE.travel);
+      await p1;
+      if (!alive(g)) return;
+      // the antenna takes the hit — two windows flicker (the server room)
+      const flick = [21, 22].map(i => root.querySelector(`[data-win="${i}"]`));
+      flick.forEach(f => f?.classList.add('lit'));
+      setTimeout(() => flick.forEach(f => f?.classList.remove('lit')), 400);
+
+      // SHOT 5 — land on the office
+      await cam(1300, 440, 1.0, 700, EASE.arrive);
+      if (!alive(g)) return;
+      leaderOffice.classList.add('on');
+      await sleep(100);
+      officeCard.classList.add('bloom', 'live');
+      await sleep(450);
+      if (!alive(g)) return;
+
+      // SHOT 6 — beat A lands: nobody enabled anything — the machine was
+      // simply on, so it was reachable
+      line_(officeScr, 'tl-dim', '// nobody here — but it&#39;s on, so it&#39;s reachable');
+      line_(officeScr, 'tl-user', 'restart staging <span class="src">⇄ phone</span>');
+      line_(officeScr, 'tl-cursor', '█');
+      await sleep(500);
+      if (!alive(g)) return;
+      const run1 = line_(officeScr, 'tl-run', '⠋ restarting…');
+      const stop1 = spinner(run1, 'restarting…', g);
+      await sleep(1100);
+      stop1();
+      if (!alive(g)) return;
+      run1.innerHTML = '⠿ restarted';
+      line_(officeScr, 'tl-ok', '✓ staging up — <b>0:00:01</b>');
+      // success packet home to the phone — allowed to exit frame
+      send('office', 'phone', 'green', g).then(() => {
+        if (alive(g)) {
+          const chip = document.createElement('span');
+          chip.className = 'chip';
+          chip.textContent = '✓ done';
+          pchips.appendChild(chip);
+        }
+      });
+      await sleep(700);
+      if (!alive(g)) return;
+
+      // SHOT 7 — whip-pan to the house
+      whipStreak();
+      await cam(555, 555, 1.0, 750, EASE.whip);
+      if (!alive(g)) return;
+      homewin.classList.add('lit'); // someone's home
+      await sleep(250);
+
+      // SHOT 8 — beat B: the mirror
+      leaderHome.classList.add('on');
+      await sleep(120);
+      homeCard.classList.add('bloom', 'live');
+      homeDot.classList.add('on');
+      homeDot.textContent = '● in';
+      line_(homeScr, 'tl-dim', '// in instantly — no /remote, nothing to enable');
+      cam(555, 545, 1.05, 2400, 'linear');
+      await sleep(400);
+      if (!alive(g)) return;
+      await send('office', 'house', 'cyan', g);
+      if (!alive(g)) return;
+      mirror.classList.add('on');
+      scanline.classList.add('sweep');
+      const mirrored = [
+        ['tl-dim cascade', '// office session'],
+        ['tl-user cascade', 'restart staging <span class="src">⇄ phone</span>'],
+        ['tl-ok cascade', '✓ staging up — <b>0:00:01</b>'],
+      ];
+      mirrored.forEach(([cls, html], i) => {
+        setTimeout(() => { if (alive(g)) { const el = line_(homeScr, cls as string, html as string); el.style.animationDelay = '0ms'; } }, i * 90);
+      });
+      setTimeout(() => { if (alive(g)) line_(homeScr, 'tl-cursor', '█'); }, 300);
+      await sleep(900);
+      if (!alive(g)) return;
+
+      // SHOT 9 — the command (camera locked; typing never happens mid-move)
+      const cmdLine = line_(homeScr, 'tl-user', '');
+      await typeInto(cmdLine, 'claude "update the quarterly deck"', g, 24);
+      if (!alive(g)) return;
+      homeCard.classList.add('pulse');
+      setTimeout(() => homeCard.classList.remove('pulse'), 350);
+
+      // SHOT 10 — travel with the packet to the office
+      const p4 = send('house', 'office', 'grad', g);
+      await sleep(250);
+      whipStreak();
+      cam(1300, 430, 0.95, 700, EASE.whip);
+      await p4;
+      if (!alive(g)) return;
+      line_(officeScr, 'tl-user', 'update the deck <span class="src">⇄ home</span>');
+      await sleep(400);
+      if (!alive(g)) return;
+
+      // SHOT 11 — beat C: computer control (the money shot)
+      ccchip.classList.add('armed');
+      tower.classList.add('cyan');
+      minidesk.classList.add('on');
+      const run2 = line_(officeScr, 'tl-run', '⠋ driving the desktop…');
+      const stop2 = spinner(run2, 'driving the desktop…', g);
+      // ghost cursor works the mini desktop
+      const stops = [[86, 12], [150, 14], [204, 12]];
+      stops.forEach(([x, y], i) => {
+        const t = window.setTimeout(() => { mdcursor.style.left = `${x}px`; mdcursor.style.top = `${y}px`; }, i * 480);
+        liveTimers.push(t as unknown as number);
+      });
+      const progFrames = ['▮▯▯▯▯▯', '▮▮▯▯▯▯', '▮▮▮▯▯▯', '▮▮▮▮▯▯', '▮▮▮▮▮▯', '▮▮▮▮▮▮'];
+      progFrames.forEach((f, i) => {
+        const t = window.setTimeout(() => { if (alive(g)) mdprog.textContent = f; }, 200 + i * 240);
+        liveTimers.push(t as unknown as number);
+      });
+      // THE TOWER WAKES: windows light bottom row → top with jitter
+      await sleep(400);
+      if (!alive(g)) return;
+      const byRow = [6, 5, 4, 3, 2, 1, 0];
+      byRow.forEach((row, ri) => {
+        for (let c = 0; c < 4; c++) {
+          const idx = row * 4 + c;
+          const d = ri * 180 + c * 45 + Math.random() * 40;
+          const t = window.setTimeout(() => {
+            if (alive(g)) root.querySelector(`[data-win="${idx}"]`)?.classList.add('lit');
+          }, d);
+          liveTimers.push(t as unknown as number);
+        }
+      });
+      await sleep(1700);
+      stop2();
+      if (!alive(g)) return;
+      run2.innerHTML = '⠿ desktop driven';
+      line_(officeScr, 'tl-ok', '✓ deck updated — <b>12 slides</b>');
+      await sleep(300);
+      if (!alive(g)) return;
+
+      // SHOT 12 — pull to finale wide; success fans out
+      cam(WIDE.cx, WIDE.cy, widePose.s, 1700, EASE.establish);
+      send('office', 'house', 'green', g).then(() => {
+        if (alive(g)) {
+          line_(homeScr, 'tl-ok', '✓ deck updated — <b>12 slides</b>');
+          ping(true);
+        }
+      });
+      setTimeout(() => {
+        send('office', 'phone', 'green', g).then(() => {
+          if (alive(g)) {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.textContent = '✓ deck updated';
+            pchips.appendChild(chip);
+            ping(true);
+          }
+        });
+      }, 150);
+      await sleep(1700);
+      if (!alive(g)) return;
+
+      // SHOT 13 — finale: the one sanctioned everything-glows moment
+      root.querySelectorAll('.ras-arcglow').forEach(gl => gl.classList.add('on'));
+      const ambient = (['phone', 'office', 'house'] as const).map((arc, i) => {
+        const p = packet('ambient');
+        p.style.offsetPath = `path('${ARC[arc]}')`;
+        const a = p.animate(
+          [{ offsetDistance: '0%' }, { offsetDistance: '100%' }],
+          { duration: 4000, delay: i * 1300, iterations: Infinity, easing: 'linear' }
+        );
+        liveAnims.push(a);
+        return p;
+      });
+      punch.classList.add('show');
+      await sleep(2400);
+      if (!alive(g)) return;
+      punch.classList.remove('show');
+      await sleep(400);
+      if (!alive(g)) return;
+
+      // the town's lights time out — decay back to frame 0
+      ambient.forEach(p => p.remove());
+      root.querySelectorAll('.ras-arcglow').forEach(gl => gl.classList.remove('on'));
+      root.querySelectorAll('.ras-winlit.lit').forEach((wl, i) => {
+        const t = window.setTimeout(() => wl.classList.remove('lit'), Math.random() * 500);
+        liveTimers.push(t as unknown as number);
+      });
+      tower.classList.remove('cyan');
+      homewin.classList.remove('lit');
+      ccchip.classList.remove('armed');
+      [homeCard, officeCard].forEach(c => {
+        const a = c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, fill: 'forwards' });
+        liveAnims.push(a);
+      });
+      const pf = phoneBody.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, fill: 'forwards' });
+      liveAnims.push(pf);
+      phone.classList.remove('live');
+      person?.classList.remove('awake');
+      await sleep(800);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => {
+      gen++;
+      running = true;
+      const g = gen;
+      // wait for the modal's FLIP animation to finish before measuring the
+      // stage — mid-FLIP the frame is scaled and rects lie
+      setTimeout(() => {
+        if (!alive(g)) return;
+        computeWide();
+        setPoseNow(widePose);
+        loop();
+      }, 430);
+    });
+    root.addEventListener('scene:stop', () => {
+      running = false;
+      gen++;
+      reset();
+    });
+  }
+</script>

@@ -1,0 +1,705 @@
+---
+// Maximized demo scene: the PATAPIM multi-terminal, folder-oriented workspace.
+// Projects are folders, each folder runs its own terminals. Red dot = terminal
+// working, green dot = finished. Notifications ping you the moment an agent
+// finishes or needs you. Starts/stops on 'scene:start' / 'scene:stop'.
+---
+
+<div class="mts" data-mts>
+  <div class="mts-app">
+    <div class="mts-bar">
+      <span class="mts-dots"><i></i><i></i><i></i></span>
+      <span class="mts-brand"><b>❯_</b> patapim</span>
+      <span class="mts-tools">
+        <span class="mts-tool">▮▮▮</span>
+        <span class="mts-tool mts-bell" data-mts-bell>
+          ◷<span class="mts-badge" data-mts-badge>0</span>
+        </span>
+      </span>
+    </div>
+
+    <div class="mts-body">
+      <!-- folder-oriented sidebar -->
+      <div class="mts-side">
+        <div class="mts-side-h">projects <span class="mts-side-hint">= folders</span></div>
+
+        <div class="mts-proj" data-mts-proj="convoy">
+          <span class="mts-proj-name">▾ convoy</span>
+          <span class="mts-dot" data-mts-dot="convoy"></span>
+        </div>
+        <div class="mts-terms" data-mts-terms="convoy">
+          <div class="mts-term-item"><span data-mts-td="convoy-0">api — claude</span><span class="mts-tdot" data-mts-tdot="convoy-0"></span></div>
+          <div class="mts-term-item"><span data-mts-td="convoy-1">tests</span><span class="mts-tdot" data-mts-tdot="convoy-1"></span></div>
+          <div class="mts-term-item"><span data-mts-td="convoy-2">db — codex</span><span class="mts-tdot" data-mts-tdot="convoy-2"></span></div>
+          <div class="mts-term-item"><span data-mts-td="convoy-3">deploy</span><span class="mts-tdot" data-mts-tdot="convoy-3"></span></div>
+        </div>
+
+        <div class="mts-proj" data-mts-proj="eggscape">
+          <span class="mts-proj-name">▸ eggscape</span>
+          <span class="mts-dot" data-mts-dot="eggscape"></span>
+        </div>
+        <div class="mts-terms" data-mts-terms="eggscape" style="display:none">
+          <div class="mts-term-item"><span data-mts-td="eggscape-0">ui — codex</span><span class="mts-tdot" data-mts-tdot="eggscape-0"></span></div>
+          <div class="mts-term-item"><span data-mts-td="eggscape-1">scraper — gemini</span><span class="mts-tdot" data-mts-tdot="eggscape-1"></span></div>
+          <div class="mts-term-item"><span data-mts-td="eggscape-2">tests</span><span class="mts-tdot" data-mts-tdot="eggscape-2"></span></div>
+          <div class="mts-term-item"><span data-mts-td="eggscape-3">assets</span><span class="mts-tdot" data-mts-tdot="eggscape-3"></span></div>
+        </div>
+
+        <div class="mts-proj" data-mts-proj="api-server">
+          <span class="mts-proj-name">▸ api-server</span>
+          <span class="mts-dot" data-mts-dot="api-server"></span>
+        </div>
+        <div class="mts-proj" data-mts-proj="landing-page">
+          <span class="mts-proj-name">▸ landing-page</span>
+          <span class="mts-dot" data-mts-dot="landing-page"></span>
+        </div>
+        <div class="mts-proj" data-mts-proj="mobile-app">
+          <span class="mts-proj-name">▸ mobile-app</span>
+          <span class="mts-dot" data-mts-dot="mobile-app"></span>
+        </div>
+        <div class="mts-proj" data-mts-proj="dashboard">
+          <span class="mts-proj-name">▸ dashboard</span>
+          <span class="mts-dot" data-mts-dot="dashboard"></span>
+        </div>
+
+        <div class="mts-side-f">~/projects · 6 folders</div>
+      </div>
+
+      <!-- active folder: its own terminals -->
+      <div class="mts-main">
+        <div class="mts-path"><span class="mts-path-ico">▦</span><span data-mts-path>~/projects/convoy</span></div>
+        <div class="mts-grid">
+          <div class="mts-pane">
+            <div class="mts-pane-t"><span data-mts-ptitle="0">api — claude</span><span class="mts-tdot" data-mts-pd="0"></span></div>
+            <div class="mts-pane-b" data-mts-pane="0"></div>
+          </div>
+          <div class="mts-pane">
+            <div class="mts-pane-t"><span data-mts-ptitle="1">tests</span><span class="mts-tdot" data-mts-pd="1"></span></div>
+            <div class="mts-pane-b" data-mts-pane="1"></div>
+          </div>
+          <div class="mts-pane">
+            <div class="mts-pane-t"><span data-mts-ptitle="2">db — codex</span><span class="mts-tdot" data-mts-pd="2"></span></div>
+            <div class="mts-pane-b" data-mts-pane="2"></div>
+          </div>
+          <div class="mts-pane">
+            <div class="mts-pane-t"><span data-mts-ptitle="3">deploy</span><span class="mts-tdot" data-mts-pd="3"></span></div>
+            <div class="mts-pane-b" data-mts-pane="3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mts-status">
+      <span data-mts-status>8 shells · 6 projects · all local</span>
+      <span class="mts-status-r">claude · codex · gemini</span>
+    </div>
+
+    <!-- notification toasts -->
+    <div class="mts-toasts" data-mts-toasts></div>
+
+    <!-- notification panel (bell dropdown) -->
+    <div class="mts-panel" data-mts-panel>
+      <div class="mts-panel-h">notifications</div>
+      <div data-mts-panel-list></div>
+    </div>
+  </div>
+
+  <!-- ghost cursor + ripple -->
+  <div class="mts-ripple" data-mts-ripple></div>
+  <svg class="mts-cursor" data-mts-cursor viewBox="0 0 24 24" fill="none">
+    <path d="M5.5 3.2v14l3.4-3.3 2.2 4.9 2.2-1-2.2-4.7h4.7L5.5 3.2z" fill="#fff" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<style>
+  .mts {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    --busy: #f26d6d;
+    --done: #4ade80;
+  }
+  .mts-app {
+    position: absolute;
+    inset: 4% 5%;
+    background: #0a0a0c;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  }
+  .mts-dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+  .mts-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+
+  .mts-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .mts-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .mts-tools { margin-left: auto; display: flex; gap: 8px; }
+  .mts-tool {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 3px 8px;
+    position: relative;
+  }
+  .mts-bell { font-size: 12px; line-height: 1; }
+  .mts-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #000;
+    background: #22d3ee;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 150ms, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.5);
+  }
+  .mts-badge.on { opacity: 1; transform: scale(1); }
+
+  .mts-body { flex: 1; display: flex; min-height: 0; }
+  .mts-side {
+    width: 176px;
+    border-right: 1px solid var(--border-default);
+    padding: 10px 0;
+    font-size: 11.5px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .mts-side-h {
+    padding: 0 12px 8px;
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .mts-side-hint { color: #3d3d3d; letter-spacing: 0.05em; text-transform: none; }
+  .mts-proj {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 12px;
+    color: var(--text-secondary);
+    transition: background 150ms, color 150ms;
+  }
+  .mts-proj.on { color: #fff; background: rgba(139, 124, 248, 0.12); }
+
+  /* status dots: red = working, green = done */
+  .mts-dot, .mts-tdot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 200ms;
+    flex-shrink: 0;
+  }
+  .mts-tdot { width: 6px; height: 6px; }
+  .mts-dot.busy, .mts-tdot.busy {
+    background: var(--busy);
+    animation: mts-busy 1.1s ease-in-out infinite;
+  }
+  .mts-dot.done, .mts-tdot.done {
+    background: var(--done);
+    animation: none;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  }
+  @keyframes mts-busy {
+    50% { opacity: 0.35; }
+  }
+
+  .mts-terms { padding: 2px 0 6px; }
+  .mts-term-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 12px 3px 24px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+  }
+  .mts-side-f { margin-top: auto; padding: 10px 12px 0; font-size: 9.5px; color: #3d3d3d; }
+
+  .mts-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .mts-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+  .mts-path-ico {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .mts-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-default);
+    min-height: 0;
+    transition: opacity 180ms;
+  }
+  .mts-grid.swap { opacity: 0; }
+  .mts-pane { background: #0a0a0c; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .mts-pane-t {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-subtle);
+    letter-spacing: 0.05em;
+  }
+  .mts-pane-b {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.7;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .mts-pane-b :global(.tl-user) { color: #fff; }
+  .mts-pane-b :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .mts-pane-b :global(.tl-run) { color: var(--text-secondary); }
+  .mts-pane-b :global(.tl-ok) { color: #d8d8d8; }
+  .mts-pane-b :global(.tl-ok b) { color: var(--done); font-weight: 400; }
+  .mts-pane-b :global(.tl-cursor) { color: var(--cy); animation: mts-blink 1s steps(1, end) infinite; }
+  @keyframes mts-blink { 50% { opacity: 0; } }
+
+  .mts-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ===== notifications ===== */
+  .mts-toasts {
+    position: absolute;
+    top: 44px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 12;
+    width: 260px;
+  }
+  .mts-toasts :global(.mts-toast) {
+    background: rgba(14, 14, 17, 0.97);
+    border: 1px solid var(--border-strong);
+    border-left: 2px solid var(--done);
+    padding: 8px 12px;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    transform: translateX(20px);
+    opacity: 0;
+    transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1.1), opacity 200ms;
+  }
+  .mts-toasts :global(.mts-toast.in) { transform: none; opacity: 1; }
+  .mts-toasts :global(.mts-toast .t-proj) {
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+  }
+  .mts-toasts :global(.mts-toast .t-msg b) { color: var(--done); font-weight: 400; }
+
+  .mts-panel {
+    position: absolute;
+    top: 40px;
+    right: 12px;
+    width: 270px;
+    background: #0d0d10;
+    border: 1px solid var(--border-strong);
+    z-index: 13;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 180ms, transform 200ms;
+    pointer-events: none;
+    font-size: 10.5px;
+  }
+  .mts-panel.open { opacity: 1; transform: none; }
+  .mts-panel-h {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .mts-panel :global(.mts-pitem) {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .mts-panel :global(.mts-pitem .t-proj) {
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+  }
+  .mts-panel :global(.mts-pitem .t-msg b) { color: var(--done); font-weight: 400; }
+  .mts-panel :global(.mts-pitem.sel) { background: rgba(139, 124, 248, 0.15); color: #fff; }
+
+  /* ===== cursor / ripple ===== */
+  .mts-cursor {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 20;
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    transition: top 650ms cubic-bezier(0.45, 0, 0.25, 1), left 650ms cubic-bezier(0.45, 0, 0.25, 1), opacity 250ms;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+    pointer-events: none;
+  }
+  .mts-cursor.show { opacity: 1; }
+  .mts-ripple {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--cy);
+    border-radius: 50%;
+    z-index: 19;
+    opacity: 0;
+    transform: scale(0.3);
+    pointer-events: none;
+  }
+  .mts-ripple.go { animation: mts-ripple 450ms ease-out; }
+  @keyframes mts-ripple {
+    0% { opacity: 0.9; transform: scale(0.3); }
+    100% { opacity: 0; transform: scale(1.5); }
+  }
+</style>
+
+<script>
+  const root = document.querySelector('[data-mts]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const panes = [0, 1, 2, 3].map(i => $(`[data-mts-pane="${i}"]`));
+    const ptitles = [0, 1, 2, 3].map(i => $(`[data-mts-ptitle="${i}"]`));
+    const pdots = [0, 1, 2, 3].map(i => $(`[data-mts-pd="${i}"]`));
+    const path = $('[data-mts-path]');
+    const grid = root.querySelector('.mts-grid') as HTMLElement;
+    const badge = $('[data-mts-badge]');
+    const bell = $('[data-mts-bell]');
+    const toasts = $('[data-mts-toasts]');
+    const panel = $('[data-mts-panel]');
+    const panelList = $('[data-mts-panel-list]');
+    const cursor = $('[data-mts-cursor]');
+    const ripple = $('[data-mts-ripple]');
+    const statusEl = $('[data-mts-status]');
+
+    let running = false;
+    let gen = 0;
+    let notifCount = 0;
+    let activeProj = 'convoy';
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+
+    type PaneLine = { cls: string; text: string; typed?: boolean; pause?: number };
+    const PROJECTS: Record<string, { path: string; titles: string[]; scripts: PaneLine[][] }> = {
+      convoy: {
+        path: '~/projects/convoy',
+        titles: ['api — claude', 'tests', 'db — codex', 'deploy'],
+        scripts: [
+          [
+            { cls: 'tl-user', text: 'claude "add rate limiting to the api"', typed: true },
+            { cls: 'tl-run', text: '▷ editing middleware…', pause: 3400 },
+            { cls: 'tl-ok', text: '✓ done — <b>3 files</b>', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: 'npm test', typed: true },
+            { cls: 'tl-run', text: '▷ running 42 specs…', pause: 2100 },
+            { cls: 'tl-ok', text: '✓ <b>42/42</b> passing', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: 'codex "index the users table"', typed: true },
+            { cls: 'tl-run', text: '▷ writing migration…', pause: 2900 },
+            { cls: 'tl-ok', text: '✓ migration ready', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: './deploy.sh --staging', typed: true },
+            { cls: 'tl-run', text: '▷ building…', pause: 3900 },
+            { cls: 'tl-ok', text: '✓ live on <b>staging</b>', pause: 300 },
+          ],
+        ],
+      },
+      eggscape: {
+        path: '~/projects/eggscape',
+        titles: ['ui — codex', 'scraper — gemini', 'tests', 'assets'],
+        scripts: [
+          [
+            { cls: 'tl-user', text: 'codex "polish the lobby screen"', typed: true },
+            { cls: 'tl-run', text: '▷ tweaking layout…', pause: 2400 },
+            { cls: 'tl-ok', text: '✓ lobby updated — <b>2 files</b>', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: 'gemini "pull today\'s scores"', typed: true },
+            { cls: 'tl-run', text: '▷ fetching 128 rows…', pause: 2000 },
+            { cls: 'tl-ok', text: '✓ saved <b>scores.json</b>', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: 'npm test', typed: true },
+            { cls: 'tl-run', text: '▷ 18 specs…', pause: 1700 },
+            { cls: 'tl-ok', text: '✓ <b>18/18</b> passing', pause: 300 },
+          ],
+          [
+            { cls: 'tl-user', text: 'npm run optimize', typed: true },
+            { cls: 'tl-run', text: '▷ compressing 214 images…', pause: 2600 },
+            { cls: 'tl-ok', text: '✓ bundle <b>−38%</b>', pause: 300 },
+          ],
+        ],
+      },
+    };
+
+    function setTermStat(proj: string, idx: number, state: 'busy' | 'done' | '') {
+      const sdot = root.querySelector(`[data-mts-tdot="${proj}-${idx}"]`);
+      if (sdot) { sdot.classList.remove('busy', 'done'); if (state) sdot.classList.add(state); }
+      if (proj === activeProj) {
+        pdots[idx].classList.remove('busy', 'done');
+        if (state) pdots[idx].classList.add(state);
+      }
+    }
+    function setFolderStat(proj: string, state: 'busy' | 'done' | '') {
+      const dot = root.querySelector(`[data-mts-dot="${proj}"]`);
+      if (dot) { dot.classList.remove('busy', 'done'); if (state) dot.classList.add(state); }
+    }
+
+    function line(pane: HTMLElement, cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      pane.appendChild(el);
+      return el;
+    }
+
+    async function typeInto(el: HTMLElement, text: string, g: number, ms = 24) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+
+    async function runPane(proj: string, idx: number, g: number, startDelay: number) {
+      await sleep(startDelay);
+      if (!alive(g)) return;
+      setTermStat(proj, idx, 'busy');
+      const pane = panes[idx];
+      const cur = line(pane, 'tl-cursor', '█');
+      for (const l of PROJECTS[proj].scripts[idx]) {
+        if (!alive(g)) return;
+        // if the user switched folders, keep working silently in the background
+        const el = document.createElement('div');
+        el.className = l.cls;
+        if (proj === activeProj) pane.insertBefore(el, cur);
+        if (l.typed && proj === activeProj) await typeInto(el, l.text, g);
+        else el.innerHTML = l.text;
+        await sleep(l.pause ?? 300);
+      }
+      if (!alive(g)) return;
+      setTermStat(proj, idx, 'done');
+    }
+
+    function notify(proj: string, msg: string) {
+      notifCount++;
+      badge.textContent = String(notifCount);
+      badge.classList.add('on');
+      const t = document.createElement('div');
+      t.className = 'mts-toast';
+      t.innerHTML = `<span class="t-proj">${proj}</span><span class="t-msg">${msg}</span>`;
+      toasts.appendChild(t);
+      requestAnimationFrame(() => t.classList.add('in'));
+      setTimeout(() => { t.classList.remove('in'); setTimeout(() => t.remove(), 300); }, 3200);
+      const p = document.createElement('div');
+      p.className = 'mts-pitem';
+      p.innerHTML = t.innerHTML;
+      panelList.appendChild(p);
+    }
+
+    async function setProject(name: string, g: number, fill: 'empty' | 'done' = 'empty') {
+      grid.classList.add('swap');
+      await sleep(200);
+      if (!alive(g)) return;
+      activeProj = name;
+      const pr = PROJECTS[name];
+      path.textContent = pr.path;
+      root.querySelectorAll('[data-mts-proj]').forEach(el => {
+        const key = (el as HTMLElement).dataset.mtsProj!;
+        const on = key === name;
+        el.classList.toggle('on', on);
+        const nameEl = el.querySelector('.mts-proj-name')!;
+        nameEl.textContent = `${on ? '▾' : '▸'} ${key}`;
+      });
+      root.querySelectorAll('[data-mts-terms]').forEach(el => {
+        (el as HTMLElement).style.display = (el as HTMLElement).dataset.mtsTerms === name ? '' : 'none';
+      });
+      ptitles.forEach((t, i) => { t.textContent = pr.titles[i]; });
+      panes.forEach((p, i) => {
+        p.innerHTML = '';
+        pdots[i].classList.remove('busy', 'done');
+        const sdot = root.querySelector(`[data-mts-tdot="${name}-${i}"]`);
+        if (sdot?.classList.contains('busy')) pdots[i].classList.add('busy');
+        if (sdot?.classList.contains('done')) pdots[i].classList.add('done');
+        if (fill === 'done') {
+          pr.scripts[i].forEach(l => line(p, l.cls, l.text));
+          line(p, 'tl-cursor', '█');
+        }
+      });
+      grid.classList.remove('swap');
+    }
+
+    async function moveTo(target: HTMLElement, g: number, dwell = 700) {
+      const d = root.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      cursor.style.left = `${r.left - d.left + r.width / 2}px`;
+      cursor.style.top = `${r.top - d.top + r.height / 2}px`;
+      await sleep(dwell);
+      if (!alive(g)) return;
+    }
+
+    async function clickAt(g: number) {
+      ripple.style.left = `${parseFloat(cursor.style.left) - 15}px`;
+      ripple.style.top = `${parseFloat(cursor.style.top) - 15}px`;
+      ripple.classList.remove('go');
+      void ripple.offsetWidth;
+      ripple.classList.add('go');
+      await sleep(320);
+    }
+
+    function reset() {
+      notifCount = 0;
+      badge.textContent = '0';
+      badge.classList.remove('on');
+      toasts.innerHTML = '';
+      panelList.innerHTML = '';
+      panel.classList.remove('open');
+      cursor.classList.remove('show');
+      root.querySelectorAll('.mts-dot, .mts-tdot').forEach(d => d.classList.remove('busy', 'done'));
+      statusEl.textContent = '8 shells · 6 projects · all local';
+      activeProj = 'convoy';
+    }
+
+    async function scene(g: number) {
+      reset();
+      await setProject('convoy', g);
+      if (!alive(g)) return;
+
+      // ambient life in other folders: red = working, green = already done
+      setFolderStat('convoy', 'busy');
+      setFolderStat('dashboard', 'busy');
+      setFolderStat('api-server', 'done');
+      await sleep(400);
+      if (!alive(g)) return;
+
+      // 1. convoy: 4 terminals working in parallel (red dots), finishing one by one (green)
+      const convoyWork = Promise.all([
+        runPane('convoy', 0, g, 0).then(() => { if (alive(g)) notify('convoy / api', '✓ rate limiting — <b>3 files</b>'); }),
+        runPane('convoy', 1, g, 700).then(() => { if (alive(g)) notify('convoy / tests', '✓ <b>42/42</b> specs passing'); }),
+        runPane('convoy', 2, g, 1400),
+        runPane('convoy', 3, g, 2100).then(() => {
+          if (alive(g)) { notify('convoy / deploy', '✓ live on <b>staging</b>'); setFolderStat('convoy', 'done'); }
+        }),
+      ]);
+      await sleep(5400);
+      if (!alive(g)) return;
+
+      // 2. move to another folder while convoy keeps working
+      cursor.classList.add('show');
+      const eggRow = root.querySelector('[data-mts-proj="eggscape"]') as HTMLElement;
+      await moveTo(eggRow, g); if (!alive(g)) return;
+      await clickAt(g);
+      await setProject('eggscape', g);
+      if (!alive(g)) return;
+      cursor.classList.remove('show');
+      setFolderStat('eggscape', 'busy');
+
+      // 3. eggscape's own 4 terminals spin up; background folders keep reporting
+      const eggWork = Promise.all([
+        runPane('eggscape', 0, g, 200),
+        runPane('eggscape', 1, g, 900),
+        runPane('eggscape', 2, g, 1500).then(() => { if (alive(g)) notify('eggscape / tests', '✓ <b>18/18</b> passing'); }),
+        runPane('eggscape', 3, g, 2200).then(() => { if (alive(g)) setFolderStat('eggscape', 'done'); }),
+      ]);
+      setTimeout(() => { if (alive(g)) { notify('dashboard / charts', '✓ render bug fixed'); setFolderStat('dashboard', 'done'); } }, 3000);
+      await eggWork;
+      if (!alive(g)) return;
+      await sleep(800);
+
+      // 4. the bell: everything that happened, in one place
+      cursor.classList.add('show');
+      await moveTo(bell, g); if (!alive(g)) return;
+      await clickAt(g);
+      panel.classList.add('open');
+      await sleep(1700);
+      if (!alive(g)) return;
+
+      // 5. jump straight back to the finished work from a notification
+      const first = panelList.querySelector('.mts-pitem') as HTMLElement | null;
+      if (first) {
+        first.classList.add('sel');
+        await moveTo(first, g); if (!alive(g)) return;
+        await clickAt(g);
+      }
+      panel.classList.remove('open');
+      await setProject('convoy', g, 'done');
+      if (!alive(g)) return;
+      cursor.classList.remove('show');
+      badge.classList.remove('on');
+      badge.textContent = '0';
+      statusEl.textContent = '✓ nothing needs you — all agents done';
+      await convoyWork;
+      await sleep(3400);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => { gen++; running = true; loop(); });
+    root.addEventListener('scene:stop', () => {
+      running = false;
+      gen++;
+      reset();
+      panes.forEach(p => p.innerHTML = '');
+    });
+  }
+</script>

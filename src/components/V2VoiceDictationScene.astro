@@ -1,0 +1,616 @@
+---
+// Maximized demo scene: PATAPIM voice dictation. Hold two keys to talk,
+// instant local transcription into any terminal, auto-mute while speaking,
+// dictation history, and mobile dictation via remote. 'scene:start'/'scene:stop'.
+---
+
+<div class="vds" data-vds>
+  <!-- ===== PATAPIM app ===== -->
+  <div class="vds-app">
+    <div class="vds-bar">
+      <span class="vds-dots"><i></i><i></i><i></i></span>
+      <span class="vds-brand"><b>❯_</b> patapim</span>
+      <span class="vds-tools">
+        <span class="vds-tool vds-audio" data-vds-audio>♫ audio</span>
+        <span class="vds-tool" data-vds-histbtn>◷ history</span>
+        <span class="vds-tool vds-mic" data-vds-micbtn>▮▮▮ voice</span>
+      </span>
+    </div>
+
+    <div class="vds-body">
+      <div class="vds-side">
+        <div class="vds-side-h">projects</div>
+        <div class="vds-proj vds-proj-on">▾ convoy</div>
+        <div class="vds-term-item vds-term-on">· terminal 1</div>
+        <div class="vds-proj">▸ eggscape</div>
+        <div class="vds-proj">▸ dashboard</div>
+      </div>
+      <div class="vds-main">
+        <div class="vds-termpane" data-vds-term></div>
+      </div>
+    </div>
+
+    <div class="vds-status">
+      <span data-vds-status>voice: idle · 100% local whisper</span>
+      <span>convoy · claude</span>
+    </div>
+
+    <!-- push-to-talk keycaps -->
+    <div class="vds-keys" data-vds-keys>
+      <span class="vds-key" data-vds-key1>ctrl</span>
+      <span class="vds-key-plus">+</span>
+      <span class="vds-key" data-vds-key2>ctrl</span>
+      <span class="vds-keys-hint" data-vds-keyhint>hold to talk</span>
+    </div>
+
+    <!-- live transcription HUD -->
+    <div class="vds-hud" data-vds-hud>
+      <span class="vds-wave" data-vds-wave><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="vds-hud-text" data-vds-hudtext></span>
+    </div>
+
+    <!-- dictation history panel -->
+    <div class="vds-hist" data-vds-hist>
+      <div class="vds-hist-h">dictation history</div>
+      <div class="vds-hist-item"><span>"refactor the auth module and run the tests"</span><i>just now</i></div>
+      <div class="vds-hist-item"><span>"fix the login bug"</span><i>2m ago</i></div>
+      <div class="vds-hist-item"><span>"commit and push to main"</span><i>9m ago</i></div>
+      <div class="vds-hist-item"><span>"open the dashboard project"</span><i>14m ago</i></div>
+    </div>
+  </div>
+
+  <!-- ===== your phone (mobile dictation via remote) ===== -->
+  <div class="vds-phone" data-vds-phone>
+    <div class="vds-phone-notch"></div>
+    <div class="vds-phone-head">patapim.ai/remote</div>
+    <div class="vds-phone-sess">⇄ convoy / terminal 1</div>
+    <div class="vds-phone-micwrap">
+      <div class="vds-phone-mic" data-vds-pmic>
+        <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <span class="vds-phone-wave" data-vds-pwave><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="vds-phone-text" data-vds-ptext></div>
+    <div class="vds-phone-hint" data-vds-phint>tap &amp; talk from anywhere</div>
+  </div>
+
+  <!-- ghost cursor + ripple -->
+  <div class="vds-ripple" data-vds-ripple></div>
+  <svg class="vds-cursor" data-vds-cursor viewBox="0 0 24 24" fill="none">
+    <path d="M5.5 3.2v14l3.4-3.3 2.2 4.9 2.2-1-2.2-4.7h4.7L5.5 3.2z" fill="#fff" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<style>
+  .vds {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    overflow: hidden;
+    --done: #4ade80;
+  }
+  .vds-dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+  .vds-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+
+  .vds-app {
+    position: absolute;
+    inset: 5% 28% 6% 5%;
+    background: #0a0a0c;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  }
+  .vds-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .vds-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .vds-tools { margin-left: auto; display: flex; gap: 8px; }
+  .vds-tool {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 3px 8px;
+    transition: all 200ms;
+  }
+  .vds-audio.muted { color: #6a6a6a; text-decoration: line-through; border-style: dashed; }
+  .vds-mic.live {
+    color: #000;
+    font-weight: 700;
+    background: #22d3ee;
+    border-color: #22d3ee;
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.7);
+  }
+
+  .vds-body { flex: 1; display: flex; min-height: 0; }
+  .vds-side {
+    width: 128px;
+    border-right: 1px solid var(--border-default);
+    padding: 10px 0;
+    font-size: 11px;
+  }
+  .vds-side-h {
+    padding: 0 12px 8px;
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .vds-proj { padding: 5px 12px; color: var(--text-secondary); }
+  .vds-proj-on { color: #fff; background: rgba(139, 124, 248, 0.12); }
+  .vds-term-item { padding: 3px 12px 3px 22px; color: var(--text-muted); font-size: 10.5px; }
+  .vds-term-on { color: var(--cy); }
+
+  .vds-main { flex: 1; min-width: 0; display: flex; }
+  .vds-termpane {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.85;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .vds-termpane :global(.tl-user) { color: #fff; }
+  .vds-termpane :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .vds-termpane :global(.tl-user.from-voice)::after { content: ' 🎙'; font-size: 10px; }
+  .vds-termpane :global(.tl-user.from-phone)::after { content: ' ⇄ phone'; font-size: 9.5px; color: var(--cy); }
+  .vds-termpane :global(.tl-run) { color: var(--text-secondary); }
+  .vds-termpane :global(.tl-ok) { color: #d8d8d8; }
+  .vds-termpane :global(.tl-ok b) { color: var(--done); font-weight: 400; }
+  .vds-termpane :global(.tl-cursor) { color: var(--cy); animation: vds-blink 1s steps(1, end) infinite; }
+  @keyframes vds-blink { 50% { opacity: 0; } }
+
+  .vds-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .vds-status .live-txt { color: var(--cy); }
+
+  /* ===== push-to-talk keycaps ===== */
+  .vds-keys {
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 6;
+    background: #0a0a0c;
+    padding: 0 10px;
+  }
+  .vds-key {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: #141416;
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 3px;
+    transition: all 120ms;
+  }
+  .vds-key.pressed {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    color: #000;
+    font-weight: 700;
+    background: #22d3ee;
+    border-color: #22d3ee;
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.6);
+  }
+  .vds-key-plus { color: var(--text-muted); font-size: 11px; }
+  .vds-keys-hint { font-size: 10px; color: var(--text-muted); margin-left: 6px; transition: color 200ms; }
+  .vds-keys-hint.live { color: var(--cy); }
+
+  /* ===== live transcription HUD ===== */
+  .vds-hud {
+    position: absolute;
+    left: 50%;
+    bottom: 18%;
+    transform: translateX(-50%) translateY(8px);
+    max-width: 74%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 10, 13, 0.97);
+    border: 1px solid var(--cy);
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.25);
+    padding: 12px 18px;
+    z-index: 7;
+    opacity: 0;
+    transition: opacity 200ms, transform 250ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    pointer-events: none;
+  }
+  .vds-hud.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .vds-wave { display: inline-flex; align-items: center; gap: 3px; height: 18px; flex-shrink: 0; }
+  .vds-wave i {
+    width: 3px;
+    height: 4px;
+    background: var(--cy);
+    animation: vds-wave 900ms ease-in-out infinite;
+  }
+  .vds-wave i:nth-child(2) { animation-delay: 120ms; }
+  .vds-wave i:nth-child(3) { animation-delay: 240ms; }
+  .vds-wave i:nth-child(4) { animation-delay: 360ms; }
+  .vds-wave i:nth-child(5) { animation-delay: 480ms; }
+  .vds-hud:not(.on) .vds-wave i { animation-play-state: paused; }
+  @keyframes vds-wave {
+    0%, 100% { height: 4px; }
+    50% { height: 16px; }
+  }
+  .vds-hud-text { font-size: 13px; color: #fff; min-height: 18px; }
+  .vds-hud-text::after { content: '▏'; color: var(--cy); animation: vds-blink 0.8s steps(1, end) infinite; }
+
+  /* ===== dictation history ===== */
+  .vds-hist {
+    position: absolute;
+    top: 38px;
+    right: 8px;
+    width: 300px;
+    background: #0d0d10;
+    border: 1px solid var(--border-strong);
+    z-index: 8;
+    font-size: 10.5px;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 180ms, transform 200ms;
+    pointer-events: none;
+  }
+  .vds-hist.open { opacity: 1; transform: none; }
+  .vds-hist-h {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .vds-hist-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .vds-hist-item i { font-style: normal; color: var(--text-muted); font-size: 9.5px; flex-shrink: 0; }
+  .vds-hist-item:first-child span { color: #fff; }
+
+  /* ===== phone ===== */
+  .vds-phone {
+    position: absolute;
+    right: 4.5%;
+    top: 50%;
+    width: 192px;
+    height: 380px;
+    transform: translateY(-50%) translateX(150%);
+    background: #060608;
+    border: 2px solid #2c2c30;
+    border-radius: 24px;
+    z-index: 5;
+    transition: transform 600ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 14px 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  }
+  .vds-phone.in { transform: translateY(-50%) translateX(0); }
+  .vds-phone-notch {
+    width: 60px;
+    height: 6px;
+    border-radius: 3px;
+    background: #1c1c1f;
+    margin-bottom: 14px;
+  }
+  .vds-phone-head {
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+  }
+  .vds-phone-sess { font-size: 9px; color: var(--cy); margin-top: 4px; }
+  .vds-phone-micwrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 34px 0 16px;
+  }
+  .vds-phone-mic {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    transition: all 250ms;
+  }
+  .vds-phone-mic svg { width: 26px; height: 26px; }
+  .vds-phone-mic.live {
+    color: #000;
+    background: linear-gradient(135deg, #c26bf0, #8b7cf8, #22d3ee);
+    border-color: transparent;
+    animation: vds-pmic 1.3s ease-in-out infinite;
+  }
+  @keyframes vds-pmic {
+    50% { box-shadow: 0 0 0 12px rgba(34, 211, 238, 0.12); }
+  }
+  .vds-phone-wave { display: inline-flex; gap: 3px; height: 14px; align-items: center; opacity: 0; transition: opacity 200ms; }
+  .vds-phone-wave.on { opacity: 1; }
+  .vds-phone-wave i {
+    width: 2.5px;
+    height: 4px;
+    background: var(--cy);
+    animation: vds-wave 900ms ease-in-out infinite;
+  }
+  .vds-phone-wave i:nth-child(2) { animation-delay: 110ms; }
+  .vds-phone-wave i:nth-child(3) { animation-delay: 220ms; }
+  .vds-phone-wave i:nth-child(4) { animation-delay: 330ms; }
+  .vds-phone-wave i:nth-child(5) { animation-delay: 440ms; }
+  .vds-phone-wave:not(.on) i { animation-play-state: paused; }
+  .vds-phone-text {
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #fff;
+    text-align: center;
+    min-height: 50px;
+    padding: 0 4px;
+  }
+  .vds-phone-hint { margin-top: auto; font-size: 9px; color: var(--text-muted); transition: color 200ms; }
+  .vds-phone-hint.ok { color: var(--done); }
+
+  /* ===== cursor / ripple ===== */
+  .vds-cursor {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 20;
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    transition: top 650ms cubic-bezier(0.45, 0, 0.25, 1), left 650ms cubic-bezier(0.45, 0, 0.25, 1), opacity 250ms;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+    pointer-events: none;
+  }
+  .vds-cursor.show { opacity: 1; }
+  .vds-ripple {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--cy);
+    border-radius: 50%;
+    z-index: 19;
+    opacity: 0;
+    transform: scale(0.3);
+    pointer-events: none;
+  }
+  .vds-ripple.go { animation: vds-ripple 450ms ease-out; }
+  @keyframes vds-ripple {
+    0% { opacity: 0.9; transform: scale(0.3); }
+    100% { opacity: 0; transform: scale(1.5); }
+  }
+</style>
+
+<script>
+  const root = document.querySelector('[data-vds]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const term = $('[data-vds-term]');
+    const statusEl = $('[data-vds-status]');
+    const audio = $('[data-vds-audio]');
+    const micbtn = $('[data-vds-micbtn]');
+    const histbtn = $('[data-vds-histbtn]');
+    const hist = $('[data-vds-hist]');
+    const key1 = $('[data-vds-key1]');
+    const key2 = $('[data-vds-key2]');
+    const keyhint = $('[data-vds-keyhint]');
+    const hud = $('[data-vds-hud]');
+    const hudtext = $('[data-vds-hudtext]');
+    const phone = $('[data-vds-phone]');
+    const pmic = $('[data-vds-pmic]');
+    const pwave = $('[data-vds-pwave]');
+    const ptext = $('[data-vds-ptext]');
+    const phint = $('[data-vds-phint]');
+    const cursor = $('[data-vds-cursor]');
+    const ripple = $('[data-vds-ripple]');
+
+    let running = false;
+    let gen = 0;
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+
+    function line(cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      term.appendChild(el);
+      return el;
+    }
+
+    // instant transcription: words pop in fast, like real-time speech-to-text
+    async function transcribe(el: HTMLElement, text: string, g: number) {
+      const words = text.split(' ');
+      let out = '';
+      for (const w of words) {
+        if (!alive(g)) return;
+        out += (out ? ' ' : '') + w;
+        el.textContent = out;
+        await sleep(150 + Math.random() * 130);
+      }
+    }
+
+    async function moveTo(target: HTMLElement, g: number, dwell = 700) {
+      const d = root.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      cursor.style.left = `${r.left - d.left + r.width / 2}px`;
+      cursor.style.top = `${r.top - d.top + r.height / 2}px`;
+      await sleep(dwell);
+      if (!alive(g)) return;
+    }
+
+    async function clickAt(g: number) {
+      ripple.style.left = `${parseFloat(cursor.style.left) - 15}px`;
+      ripple.style.top = `${parseFloat(cursor.style.top) - 15}px`;
+      ripple.classList.remove('go');
+      void ripple.offsetWidth;
+      ripple.classList.add('go');
+      await sleep(320);
+    }
+
+    function setKeys(pressed: boolean) {
+      key1.classList.toggle('pressed', pressed);
+      key2.classList.toggle('pressed', pressed);
+      keyhint.classList.toggle('live', pressed);
+      keyhint.textContent = pressed ? 'listening…' : 'hold to talk';
+      micbtn.classList.toggle('live', pressed);
+    }
+
+    function reset() {
+      term.innerHTML = '';
+      setKeys(false);
+      hud.classList.remove('on');
+      hudtext.textContent = '';
+      hist.classList.remove('open');
+      audio.classList.remove('muted');
+      audio.textContent = '♫ audio';
+      phone.classList.remove('in');
+      pmic.classList.remove('live');
+      pwave.classList.remove('on');
+      ptext.textContent = '';
+      phint.classList.remove('ok');
+      phint.textContent = 'tap & talk from anywhere';
+      cursor.classList.remove('show');
+      statusEl.innerHTML = 'voice: idle · 100% local whisper';
+    }
+
+    async function scene(g: number) {
+      reset();
+      await sleep(600);
+      if (!alive(g)) return;
+
+      line('tl-run', '// hold <b>ctrl+ctrl</b> and just talk');
+      const cur = line('tl-cursor', '█');
+      await sleep(1100);
+      if (!alive(g)) return;
+
+      // 1. push two keys → mic goes live, audio auto-mutes
+      setKeys(true);
+      audio.classList.add('muted');
+      audio.textContent = '♪ muted';
+      statusEl.innerHTML = 'voice: <span class="live-txt">● listening</span> · audio auto-muted';
+      hud.classList.add('on');
+      await sleep(400);
+      if (!alive(g)) return;
+
+      // 2. instant transcription, word by word
+      const said = 'refactor the auth module and run the tests';
+      await transcribe(hudtext, said, g);
+      if (!alive(g)) return;
+      await sleep(500);
+
+      // 3. release → text lands in the terminal, audio back on
+      setKeys(false);
+      hud.classList.remove('on');
+      audio.classList.remove('muted');
+      audio.textContent = '♫ audio';
+      statusEl.innerHTML = 'voice: idle · transcribed in <span class="live-txt">0.3s</span>';
+      const userLine = document.createElement('div');
+      userLine.className = 'tl-user from-voice';
+      userLine.textContent = said;
+      term.insertBefore(userLine, cur);
+      await sleep(700);
+      if (!alive(g)) return;
+      const run1 = document.createElement('div');
+      run1.className = 'tl-run';
+      run1.innerHTML = '▷ refactoring auth…';
+      term.insertBefore(run1, cur);
+      await sleep(1500);
+      if (!alive(g)) return;
+      const ok1 = document.createElement('div');
+      ok1.className = 'tl-ok';
+      ok1.innerHTML = '✓ refactored · <b>42/42</b> tests passing';
+      term.insertBefore(ok1, cur);
+      await sleep(900);
+      if (!alive(g)) return;
+
+      // 4. dictation history
+      cursor.classList.add('show');
+      await moveTo(histbtn, g); if (!alive(g)) return;
+      await clickAt(g);
+      hist.classList.add('open');
+      await sleep(2100);
+      if (!alive(g)) return;
+      hist.classList.remove('open');
+      cursor.classList.remove('show');
+      await sleep(400);
+
+      // 5. your phone joins: dictate from anywhere, same terminal
+      phone.classList.add('in');
+      await sleep(900);
+      if (!alive(g)) return;
+      pmic.classList.add('live');
+      pwave.classList.add('on');
+      phint.textContent = 'listening…';
+      const saidPhone = 'deploy to staging when tests pass';
+      await transcribe(ptext, saidPhone, g);
+      if (!alive(g)) return;
+      await sleep(450);
+      pmic.classList.remove('live');
+      pwave.classList.remove('on');
+      phint.classList.add('ok');
+      phint.textContent = '✓ sent to convoy / terminal 1';
+      await sleep(500);
+      if (!alive(g)) return;
+
+      const phoneLine = document.createElement('div');
+      phoneLine.className = 'tl-user from-phone';
+      phoneLine.textContent = saidPhone;
+      term.insertBefore(phoneLine, cur);
+      await sleep(800);
+      if (!alive(g)) return;
+      const run2 = document.createElement('div');
+      run2.className = 'tl-run';
+      run2.innerHTML = '▷ deploying to staging…';
+      term.insertBefore(run2, cur);
+      await sleep(1400);
+      if (!alive(g)) return;
+      const ok2 = document.createElement('div');
+      ok2.className = 'tl-ok';
+      ok2.innerHTML = '✓ staging live — <b>you just talked to your computer</b>';
+      term.insertBefore(ok2, cur);
+      await sleep(3400);
+      if (!alive(g)) return;
+      phone.classList.remove('in');
+      await sleep(600);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => { gen++; running = true; loop(); });
+    root.addEventListener('scene:stop', () => { running = false; gen++; reset(); });
+  }
+</script>

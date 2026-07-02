@@ -1,0 +1,376 @@
+---
+// /v2 mini demo: integrated browser + comms automation, unified.
+// Every terminal has its own embedded Chrome; the agent runs real-life
+// errands in it and reports back on WhatsApp / Telegram / Gmail.
+// Authored markup + class toggles only (immune to Astro scoped-style
+// pitfalls with JS-created nodes). Pauses off-viewport, honors
+// prefers-reduced-motion.
+---
+
+<div class="bc" data-bc>
+  <div class="bc-chrome">
+    <span class="bc-dots"><i></i><i></i><i></i></span>
+    <span class="bc-title">Browser + Comms</span>
+  </div>
+
+  <!-- the ask, typed in the terminal -->
+  <div class="bc-term">
+    <span class="bc-prompt">❯</span>
+    <span class="bc-cmd" data-bc-cmd></span><span class="bc-caret">█</span>
+  </div>
+
+  <!-- this terminal's own embedded Chrome -->
+  <div class="bc-browser">
+    <div class="bc-urlbar"><span class="bc-lock">⛨</span><span data-bc-url>about:blank</span></div>
+    <div class="bc-page">
+
+      <!-- scene 0: weekly groceries -->
+      <div class="bc-scene" data-bc-scene="0">
+        <div class="bc-row" data-bc-item><i class="bc-thumb"></i><b style="width:52%"></b><em>$4.20</em></div>
+        <div class="bc-row" data-bc-item><i class="bc-thumb"></i><b style="width:64%"></b><em>$2.85</em></div>
+        <div class="bc-row" data-bc-item><i class="bc-thumb"></i><b style="width:44%"></b><em>$7.10</em></div>
+        <div class="bc-foot">
+          <span class="bc-total">total <b>$38.15</b></span>
+          <span class="bc-btn" data-bc-checkout>checkout</span>
+        </div>
+      </div>
+
+      <!-- scene 1: credit-card bill -->
+      <div class="bc-scene" data-bc-scene="1">
+        <div class="bc-bank-balance"><span>balance</span><b>$1,240.60</b></div>
+        <div class="bc-bank-bar"><i data-bc-bankbar></i></div>
+        <div class="bc-bank-bill" data-bc-bill><span>credit-card bill · due friday</span><b>$412.00</b></div>
+      </div>
+
+      <!-- scene 2: football tonight -->
+      <div class="bc-scene" data-bc-scene="2">
+        <div class="bc-msg bc-msg-out" data-bc-msgout>football tonight, 8pm?</div>
+        <div class="bc-msg bc-msg-in" data-bc-msgin="0">in ⚽</div>
+        <div class="bc-msg bc-msg-in" data-bc-msgin="1">count me in</div>
+        <div class="bc-msg bc-msg-in" data-bc-msgin="2">bringing the ball</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- the report lands where you live: whatsapp / telegram / gmail -->
+  <div class="bc-comms">
+    <span class="bc-svc" data-bc-svc="wa" title="WhatsApp">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#25d366"/><path d="M12 5.6a6.3 6.3 0 0 0-5.4 9.6L5.5 18l2.9-1a6.3 6.3 0 1 0 3.6-11.4zm3.4 8.6c-.2.5-.9.9-1.4.9-.4.1-.8.1-2.4-.5-2-.8-3.3-2.9-3.4-3-.1-.2-.8-1.1-.8-2.1s.5-1.5.7-1.7c.2-.2.4-.2.6-.2h.4c.1 0 .3 0 .4.4l.6 1.4c0 .1.1.3 0 .4l-.3.4-.3.4c-.1.1-.2.2-.1.4.1.2.6 1 1.2 1.6.9.8 1.6 1 1.8 1.1.2.1.3.1.5-.1l.6-.8c.2-.2.3-.2.5-.1l1.3.6c.2.1.3.2.4.3 0 .1 0 .5-.3.6z" fill="#fff"/></svg>
+    </span>
+    <span class="bc-svc" data-bc-svc="tg" title="Telegram">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#2aabee"/><path d="M5.4 11.8l11.2-4.4c.5-.2 1 .1.8.9l-1.9 9c-.1.6-.5.8-1 .5l-2.9-2.1-1.4 1.3c-.2.2-.3.3-.6.3l.2-3 5.5-5c.2-.2 0-.3-.3-.1l-6.8 4.3-2.9-.9c-.6-.2-.6-.6.1-.8z" fill="#fff"/></svg>
+    </span>
+    <span class="bc-svc" data-bc-svc="gm" title="Gmail">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#fff"/><path d="M2 7l10 7L22 7" fill="none" stroke="#ea4335" stroke-width="2.4"/><path d="M2 7v10h3V10.5L2 7zm17 3.5V17h3V7l-3 3.5z" fill="#ea4335" opacity="0.85"/></svg>
+    </span>
+    <span class="bc-toast" data-bc-toast></span>
+  </div>
+</div>
+
+<style>
+  .bc {
+    width: 340px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-deep);
+    font-family: var(--font-mono);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  .bc-chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .bc-dots { display: inline-flex; gap: 4px; }
+  .bc-dots i { width: 6px; height: 6px; border-radius: 50%; background: #3a3a3e; }
+  .bc-title { font-size: 8px; color: var(--text-tertiary); letter-spacing: 0.05em; }
+
+  .bc-term {
+    display: flex;
+    gap: 6px;
+    padding: 7px 10px;
+    font-size: 9px;
+    border-bottom: 1px solid var(--border-subtle);
+    min-height: 26px;
+    align-items: baseline;
+  }
+  .bc-prompt { color: var(--vi); flex-shrink: 0; }
+  .bc-cmd { color: #fff; }
+  .bc-caret { color: var(--cy); animation: bc-blink 1s steps(1, end) infinite; }
+  @keyframes bc-blink { 50% { opacity: 0; } }
+
+  /* ===== embedded chrome ===== */
+  .bc-browser { margin: 8px 10px; border: 1px solid var(--border-default); background: #0c0c0e; }
+  .bc-urlbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font-size: 7.5px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-subtle);
+    background: #101013;
+  }
+  .bc-lock { font-size: 8px; color: var(--text-muted); }
+
+  .bc-page { position: relative; height: 96px; overflow: hidden; }
+  .bc-scene {
+    position: absolute;
+    inset: 0;
+    padding: 8px 10px;
+    opacity: 0;
+    transition: opacity 250ms;
+    pointer-events: none;
+  }
+  .bc-scene.on { opacity: 1; }
+
+  /* scene 0: groceries */
+  .bc-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 220ms, transform 220ms;
+  }
+  .bc-row.in { opacity: 1; transform: none; }
+  .bc-thumb { width: 12px; height: 12px; background: #1d1d21; border: 1px solid #2c2c30; flex-shrink: 0; }
+  .bc-row b { height: 5px; background: #26262b; display: block; }
+  .bc-row em { margin-left: auto; font-style: normal; font-size: 7.5px; color: var(--text-tertiary); }
+  .bc-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .bc-total { font-size: 7.5px; color: var(--text-tertiary); }
+  .bc-total b { color: #fff; }
+  .bc-btn {
+    font-size: 7.5px;
+    padding: 3px 9px;
+    color: #000;
+    font-weight: 700;
+    background: linear-gradient(90deg, #c26bf0, #22d3ee);
+    transition: filter 150ms, transform 150ms;
+  }
+  .bc-btn.press { filter: brightness(1.5); transform: scale(0.94); }
+
+  /* scene 1: bank */
+  .bc-bank-balance { display: flex; justify-content: space-between; font-size: 8px; color: var(--text-tertiary); }
+  .bc-bank-balance b { color: #fff; font-size: 10px; }
+  .bc-bank-bar { height: 6px; background: #1a1a1e; margin: 8px 0 10px; }
+  .bc-bank-bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #8b7cf8, #22d3ee);
+    transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .bc-bank-bar i.fill { width: 74%; }
+  .bc-bank-bill {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5px;
+    color: var(--text-tertiary);
+    border: 1px dashed #2c2c30;
+    padding: 6px 8px;
+    transition: border-color 250ms, color 250ms;
+  }
+  .bc-bank-bill b { color: #fff; }
+  .bc-bank-bill.ok { border-color: rgba(74, 222, 128, 0.5); }
+  .bc-bank-bill.ok span::after { content: ' — covered ✓'; color: #4ade80; }
+
+  /* scene 2: football */
+  .bc-msg {
+    max-width: 70%;
+    font-size: 8px;
+    padding: 4px 7px;
+    margin-bottom: 5px;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 220ms, transform 220ms;
+  }
+  .bc-msg.in { opacity: 1; transform: none; }
+  .bc-msg-out { margin-left: auto; color: #fff; border: 1px solid rgba(139, 124, 248, 0.5); background: rgba(139, 124, 248, 0.1); }
+  .bc-msg-in { color: var(--text-secondary); border: 1px solid var(--border-default); background: #121215; }
+
+  /* ===== comms row ===== */
+  .bc-comms {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 9px;
+    border-top: 1px solid var(--border-subtle);
+    min-height: 34px;
+  }
+  .bc-svc {
+    width: 16px;
+    height: 16px;
+    opacity: 0.35;
+    transition: opacity 250ms, transform 250ms;
+    flex-shrink: 0;
+  }
+  .bc-svc svg { width: 100%; height: 100%; display: block; }
+  .bc-svc.lit { opacity: 1; transform: scale(1.18); }
+  .bc-toast {
+    margin-left: 4px;
+    font-size: 7.5px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    border-left: 2px solid #4ade80;
+    padding-left: 7px;
+    opacity: 0;
+    transform: translateX(5px);
+    transition: opacity 220ms, transform 220ms;
+  }
+  .bc-toast.show { opacity: 1; transform: none; }
+  .bc-toast :global(b) { color: #4ade80; font-weight: 400; }
+</style>
+
+<script>
+  const root = document.querySelector('[data-bc]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const cmd = $('[data-bc-cmd]');
+    const url = $('[data-bc-url]');
+    const toast = $('[data-bc-toast]');
+    const scenes = [0, 1, 2].map(i => $(`[data-bc-scene="${i}"]`));
+    const svc: Record<string, HTMLElement> = {
+      wa: $('[data-bc-svc="wa"]'),
+      tg: $('[data-bc-svc="tg"]'),
+      gm: $('[data-bc-svc="gm"]'),
+    };
+
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let visible = false;
+    let running = false;
+    let gen = 0;
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+    const alive = (g: number) => running && g === gen;
+
+    async function type(el: HTMLElement, text: string, g: number, ms = 24) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+
+    function report(key: string, html: string) {
+      svc[key].classList.add('lit');
+      toast.innerHTML = html;
+      toast.classList.add('show');
+    }
+    function clearReport() {
+      Object.values(svc).forEach(s => s.classList.remove('lit'));
+      toast.classList.remove('show');
+    }
+
+    function resetScenes() {
+      scenes.forEach(s => s.classList.remove('on'));
+      root.querySelectorAll('.bc-row, .bc-msg').forEach(el => el.classList.remove('in'));
+      $('[data-bc-checkout]')?.classList.remove('press');
+      $('[data-bc-bankbar]')?.classList.remove('fill');
+      $('[data-bc-bill]')?.classList.remove('ok');
+      cmd.textContent = '';
+      url.textContent = 'about:blank';
+    }
+
+    async function groceries(g: number) {
+      await type(cmd, 'get my weekly groceries — whatsapp me when done', g);
+      await sleep(350);
+      if (!alive(g)) return;
+      url.textContent = 'megamart.com/cart';
+      scenes[0].classList.add('on');
+      const rows = root.querySelectorAll('[data-bc-item]');
+      for (let i = 0; i < rows.length; i++) {
+        await sleep(260);
+        if (!alive(g)) return;
+        rows[i].classList.add('in');
+      }
+      await sleep(500);
+      if (!alive(g)) return;
+      const btn = $('[data-bc-checkout]');
+      btn.classList.add('press');
+      await sleep(250);
+      btn.classList.remove('press');
+      await sleep(600);
+      if (!alive(g)) return;
+      report('wa', '<b>✓</b> order placed — arriving tomorrow · whatsapp sent');
+      await sleep(2600);
+    }
+
+    async function bill(g: number) {
+      await type(cmd, 'is my credit-card bill covered this month?', g);
+      await sleep(350);
+      if (!alive(g)) return;
+      url.textContent = 'mybank.com/account';
+      scenes[1].classList.add('on');
+      await sleep(300);
+      if (!alive(g)) return;
+      $('[data-bc-bankbar]').classList.add('fill');
+      await sleep(1100);
+      if (!alive(g)) return;
+      $('[data-bc-bill]').classList.add('ok');
+      await sleep(500);
+      if (!alive(g)) return;
+      report('gm', 'bill <b>$412</b> due friday — balance covers it <b>✓</b>');
+      await sleep(2600);
+    }
+
+    async function football(g: number) {
+      await type(cmd, 'invite the boys — football tonight?', g);
+      await sleep(350);
+      if (!alive(g)) return;
+      url.textContent = 'web.telegram.org/#footy';
+      scenes[2].classList.add('on');
+      await sleep(300);
+      if (!alive(g)) return;
+      $('[data-bc-msgout]').classList.add('in');
+      for (let i = 0; i < 3; i++) {
+        await sleep(560);
+        if (!alive(g)) return;
+        root.querySelector(`[data-bc-msgin="${i}"]`)?.classList.add('in');
+      }
+      await sleep(400);
+      if (!alive(g)) return;
+      report('tg', '<b>4 in</b> — pitch booked for 8pm <b>⚽</b>');
+      await sleep(2600);
+    }
+
+    const ACTS = [groceries, bill, football];
+
+    async function loop() {
+      const g = gen;
+      let i = 0;
+      while (alive(g)) {
+        resetScenes();
+        clearReport();
+        await sleep(500);
+        if (!alive(g)) return;
+        await ACTS[i % ACTS.length](g);
+        i++;
+      }
+    }
+
+    function start() {
+      if (running) return;
+      gen++;
+      running = true;
+      loop();
+    }
+    function stop() {
+      running = false;
+      gen++;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        visible = e.isIntersecting;
+        if (visible) start();
+        else stop();
+      });
+    }, { threshold: 0.2 });
+    io.observe(root);
+  }
+</script>

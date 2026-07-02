@@ -1,0 +1,453 @@
+---
+// Maximized demo scene: CONNECTED-PERSISTENT-TABS.
+// A busy cockpit full of terminals across projects. One terminal asks another
+// about ITS project (the message visibly travels there and back), delegates a
+// process to a third — then patapim closes and reopens, and every tab comes
+// back exactly as it was. 'scene:start' / 'scene:stop'.
+---
+
+<div class="cts" data-cts>
+  <!-- the void behind the app: only visible during the close/reopen beat -->
+  <div class="cts-void" data-cts-void>
+    <span class="cts-void-line" data-cts-voidline>— reopening patapim —</span>
+  </div>
+
+  <div class="cts-app" data-cts-app>
+    <div class="cts-bar">
+      <span class="cts-dots"><i></i><i></i><i></i></span>
+      <span class="cts-brand"><b>❯_</b> patapim</span>
+      <span class="cts-restorechip" data-cts-restorechip>✓ session restored</span>
+      <span class="cts-tools"><span class="cts-tool">▮▮▮</span><span class="cts-tool">⇄</span></span>
+    </div>
+
+    <div class="cts-body">
+      <!-- sidebar: lots of projects, lots of terminals -->
+      <div class="cts-side">
+        <div class="cts-side-h">projects</div>
+        <div class="cts-proj cts-proj-on">▾ convoy <span class="cts-badge">3</span></div>
+        <div class="cts-term-item cts-t-on">· api — claude</div>
+        <div class="cts-term-item">· tests</div>
+        <div class="cts-term-item">· deploy</div>
+        <div class="cts-proj">▾ eggscape <span class="cts-badge">2</span></div>
+        <div class="cts-term-item">· scraper — gemini</div>
+        <div class="cts-term-item">· ui — codex</div>
+        <div class="cts-proj">▾ dashboard <span class="cts-badge">1</span></div>
+        <div class="cts-term-item">· charts</div>
+        <div class="cts-side-f">6 shells · 3 projects</div>
+      </div>
+
+      <!-- 2×2 grid of live terminals -->
+      <div class="cts-grid">
+        <div class="cts-pane" data-cts-p="0">
+          <div class="cts-pane-t">convoy / api — claude</div>
+          <div class="cts-pane-b" data-cts-pane="0"></div>
+          <div class="cts-sweep" data-cts-sweep="0"></div>
+        </div>
+        <div class="cts-pane" data-cts-p="1">
+          <div class="cts-pane-t">convoy / tests</div>
+          <div class="cts-pane-b" data-cts-pane="1"></div>
+          <div class="cts-sweep" data-cts-sweep="1"></div>
+        </div>
+        <div class="cts-pane" data-cts-p="2">
+          <div class="cts-pane-t">eggscape / scraper — gemini</div>
+          <div class="cts-pane-b" data-cts-pane="2"></div>
+          <div class="cts-sweep" data-cts-sweep="2"></div>
+        </div>
+        <div class="cts-pane" data-cts-p="3">
+          <div class="cts-pane-t">dashboard / charts</div>
+          <div class="cts-pane-b" data-cts-pane="3"></div>
+          <div class="cts-sweep" data-cts-sweep="3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cts-status">
+      <span data-cts-status>6 shells · 3 projects · all connected</span>
+      <span class="cts-status-r">claude · codex · gemini</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cts {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    overflow: hidden;
+    --done: #4ade80;
+  }
+
+  .cts-void {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(50% 45% at 50% 45%, rgba(139, 124, 248, 0.05), transparent),
+      #050505;
+  }
+  .cts-void-line {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+    opacity: 0;
+    transition: opacity 250ms;
+  }
+  .cts-void-line.on { opacity: 1; animation: cts-voidblink 900ms steps(1, end) infinite; }
+  @keyframes cts-voidblink { 50% { opacity: 0.35; } }
+
+  .cts-app {
+    position: absolute;
+    inset: 4% 5%;
+    background: #0a0a0c;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+    transition: transform 300ms cubic-bezier(0.5, 0, 0.75, 0), opacity 280ms ease;
+  }
+  .cts-app.closed { transform: scale(0.93) translateY(10px); opacity: 0; pointer-events: none; }
+  .cts-app.reopening { transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease; }
+
+  .cts-dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+  .cts-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+  .cts-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .cts-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .cts-restorechip {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--done);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.07);
+    padding: 2px 8px;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 200ms, transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .cts-restorechip.on { opacity: 1; transform: scale(1); }
+  .cts-tools { margin-left: auto; display: flex; gap: 8px; }
+  .cts-tool { font-size: 10px; color: var(--text-muted); border: 1px solid var(--border-default); padding: 3px 8px; }
+
+  .cts-body { flex: 1; display: flex; min-height: 0; }
+  .cts-side {
+    width: 168px;
+    border-right: 1px solid var(--border-default);
+    padding: 10px 0;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cts-side-h {
+    padding: 0 12px 8px;
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .cts-proj {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 12px;
+    color: var(--text-secondary);
+  }
+  .cts-proj-on { color: #fff; background: rgba(139, 124, 248, 0.12); }
+  .cts-badge {
+    font-size: 8.5px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 0 5px;
+  }
+  .cts-term-item { padding: 3px 12px 3px 24px; color: var(--text-muted); font-size: 10.5px; }
+  .cts-t-on { color: var(--cy); }
+  .cts-side-f { margin-top: auto; padding: 10px 12px 0; font-size: 9.5px; color: #3d3d3d; }
+
+  .cts-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-default);
+    min-height: 0;
+  }
+  .cts-pane {
+    position: relative;
+    background: #0a0a0c;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    transition: box-shadow 250ms;
+  }
+  /* a pane lights up while it's being talked to */
+  .cts-pane.talk { box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.55), inset 0 0 26px rgba(34, 211, 238, 0.08); z-index: 2; }
+  .cts-pane-t {
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-subtle);
+    letter-spacing: 0.05em;
+  }
+  .cts-pane-b {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.7;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .cts-pane-b :global(.tl-user) { color: #fff; }
+  .cts-pane-b :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .cts-pane-b :global(.tl-user .src) { font-size: 8.5px; color: var(--cy); }
+  .cts-pane-b :global(.tl-run) { color: var(--text-secondary); }
+  .cts-pane-b :global(.tl-dim) { color: var(--text-muted); }
+  .cts-pane-b :global(.tl-ok) { color: #d8d8d8; }
+  .cts-pane-b :global(.tl-ok b) { color: var(--done); font-weight: 400; }
+  /* an incoming question from another tab */
+  .cts-pane-b :global(.tl-ask) { color: #cfcfd4; }
+  .cts-pane-b :global(.tl-ask)::before { content: '⇄ '; color: var(--vi); }
+  /* its reply travelling back */
+  .cts-pane-b :global(.tl-reply) { color: var(--text-secondary); }
+  .cts-pane-b :global(.tl-reply)::before { content: '→ '; color: var(--cy); }
+  .cts-pane-b :global(.tl-cursor) { color: var(--cy); animation: cts-blink 1s steps(1, end) infinite; }
+  @keyframes cts-blink { 50% { opacity: 0; } }
+
+  /* restore sweep: a cyan scanline confirms each pane came back intact */
+  .cts-sweep {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 22px;
+    height: 1px;
+    background: rgba(34, 211, 238, 0.7);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cts-sweep.go { animation: cts-sweep 550ms ease forwards; }
+  @keyframes cts-sweep {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(140px); }
+  }
+
+  .cts-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .cts-status :global(.ok-txt) { color: var(--done); }
+
+  /* the message that travels between terminals — rotated square, never a circle */
+  .cts :global(.cts-pk) {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #c26bf0, #22d3ee);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.9);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .cts :global(.cts-pk.green) { background: var(--done); box-shadow: 0 0 10px rgba(74, 222, 128, 0.9); }
+</style>
+
+<script>
+  const root = document.querySelector('[data-cts]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const app = $('[data-cts-app]');
+    const voidline = $('[data-cts-voidline]');
+    const restorechip = $('[data-cts-restorechip]');
+    const statusEl = $('[data-cts-status]');
+    const panes = [0, 1, 2, 3].map(i => $(`[data-cts-pane="${i}"]`));
+    const paneBoxes = [0, 1, 2, 3].map(i => $(`[data-cts-p="${i}"]`));
+    const sweeps = [0, 1, 2, 3].map(i => $(`[data-cts-sweep="${i}"]`));
+
+    let running = false;
+    let gen = 0;
+    const liveAnims: Animation[] = [];
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function line(pane: HTMLElement, cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      const cur = pane.querySelector('.tl-cursor');
+      if (cur) pane.insertBefore(el, cur);
+      else pane.appendChild(el);
+      while (pane.children.length > 6) pane.removeChild(pane.firstChild!);
+      return el;
+    }
+
+    async function typeInto(el: HTMLElement, text: string, g: number, ms = 24) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+
+    // a message physically travels from one terminal to another (slight arc)
+    async function send(from: number, to: number, g: number, green = false) {
+      const r = root.getBoundingClientRect();
+      const a = paneBoxes[from].getBoundingClientRect();
+      const b = paneBoxes[to].getBoundingClientRect();
+      const ax = a.left - r.left + a.width / 2, ay = a.top - r.top + a.height / 2;
+      const bx = b.left - r.left + b.width / 2, by = b.top - r.top + b.height / 2;
+      const p = document.createElement('div');
+      p.className = 'cts-pk' + (green ? ' green' : '');
+      root.appendChild(p);
+      paneBoxes[from].classList.add('talk');
+      paneBoxes[to].classList.add('talk');
+      const anim = p.animate(
+        [
+          { transform: `translate(${ax}px, ${ay}px) rotate(45deg)` },
+          { transform: `translate(${(ax + bx) / 2}px, ${Math.min(ay, by) - 36}px) rotate(45deg)`, offset: 0.5 },
+          { transform: `translate(${bx}px, ${by}px) rotate(45deg)` },
+        ],
+        { duration: reduced ? 0 : 620, easing: 'ease-in-out' }
+      );
+      liveAnims.push(anim);
+      await anim.finished.catch(() => {});
+      p.remove();
+      setTimeout(() => paneBoxes[from].classList.remove('talk'), 350);
+      setTimeout(() => paneBoxes[to].classList.remove('talk'), 900);
+    }
+
+    function reset() {
+      liveAnims.forEach(a => { try { a.cancel(); } catch {} });
+      liveAnims.length = 0;
+      root.querySelectorAll('.cts-pk').forEach(p => p.remove());
+      panes.forEach(p => { p.innerHTML = ''; });
+      paneBoxes.forEach(p => p.classList.remove('talk'));
+      sweeps.forEach(s => s.classList.remove('go'));
+      app.classList.remove('closed', 'reopening');
+      voidline.classList.remove('on');
+      restorechip.classList.remove('on');
+      statusEl.innerHTML = '6 shells · 3 projects · all connected';
+    }
+
+    async function scene(g: number) {
+      reset();
+      await sleep(400);
+      if (!alive(g)) return;
+
+      // 0. a busy cockpit — lots of things already running
+      line(panes[0], 'tl-user', 'claude "add rate limiting"');
+      line(panes[0], 'tl-ok', '✓ done — <b>3 files</b>');
+      line(panes[0], 'tl-cursor', '█');
+      line(panes[1], 'tl-dim', '// idle — waiting for work');
+      line(panes[1], 'tl-cursor', '█');
+      line(panes[2], 'tl-user', 'gemini "pull the catalog"');
+      line(panes[2], 'tl-run', '⠹ fetching rows…');
+      line(panes[2], 'tl-cursor', '█');
+      line(panes[3], 'tl-user', 'npm run build');
+      line(panes[3], 'tl-ok', '✓ built in <b>4.2s</b>');
+      line(panes[3], 'tl-cursor', '█');
+      await sleep(1300);
+      if (!alive(g)) return;
+
+      // 1. CONNECTED — ask one terminal about ANOTHER project
+      const q = line(panes[0], 'tl-user', '');
+      await typeInto(q, 'check the scraper terminal on eggscape — how\'s it going?', g);
+      if (!alive(g)) return;
+      await sleep(350);
+      line(panes[0], 'tl-run', '▷ asking <b>eggscape / scraper</b>…');
+      await send(0, 2, g);
+      if (!alive(g)) return;
+      line(panes[2], 'tl-ask', 'convoy/api asks: status?');
+      await sleep(900);
+      if (!alive(g)) return;
+      line(panes[2], 'tl-reply', '214/300 rows · ~2 min left');
+      await send(2, 0, g);
+      if (!alive(g)) return;
+      line(panes[0], 'tl-ok', 'eggscape/scraper → <b>214/300 rows</b> · ~2 min left');
+      await sleep(1300);
+      if (!alive(g)) return;
+
+      // 2. CONNECTED — start a process in a different terminal
+      const q2 = line(panes[0], 'tl-user', '');
+      await typeInto(q2, 'nice — start the test suite over on convoy/tests', g);
+      if (!alive(g)) return;
+      await sleep(350);
+      line(panes[0], 'tl-run', '▷ delegating…');
+      await send(0, 1, g);
+      if (!alive(g)) return;
+      line(panes[1], 'tl-user', 'npm test <span class="src">⇄ started by convoy/api</span>');
+      await sleep(700);
+      if (!alive(g)) return;
+      line(panes[1], 'tl-run', '⠋ running 42 specs…');
+      await sleep(1600);
+      if (!alive(g)) return;
+      line(panes[1], 'tl-ok', '✓ <b>42/42</b> passing');
+      await send(1, 0, g, true);
+      if (!alive(g)) return;
+      line(panes[0], 'tl-ok', 'convoy/tests → <b>✓ 42/42</b>');
+      await sleep(1400);
+      if (!alive(g)) return;
+
+      // 3. PERSISTENT — close patapim mid-everything…
+      line(panes[0], 'tl-dim', '// closing patapim…');
+      await sleep(900);
+      if (!alive(g)) return;
+      app.classList.remove('reopening');
+      app.classList.add('closed');
+      await sleep(500);
+      if (!alive(g)) return;
+      voidline.classList.add('on');
+      await sleep(1400);
+      if (!alive(g)) return;
+
+      // …and reopen: every tab is EXACTLY as you left it (nothing was cleared)
+      voidline.classList.remove('on');
+      app.classList.add('reopening');
+      app.classList.remove('closed');
+      await sleep(400);
+      if (!alive(g)) return;
+      restorechip.classList.add('on');
+      sweeps.forEach((s, i) => {
+        setTimeout(() => { if (alive(g)) { s.classList.remove('go'); void s.offsetWidth; s.classList.add('go'); } }, i * 120);
+      });
+      statusEl.innerHTML = '6 shells · <span class="ok-txt">restored in 0.3s — exactly as you left it</span>';
+      await sleep(1000);
+      if (!alive(g)) return;
+      line(panes[0], 'tl-ok', '✓ every tab back — <b>nothing lost</b>');
+      await sleep(3200);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => { gen++; running = true; loop(); });
+    root.addEventListener('scene:stop', () => { running = false; gen++; reset(); });
+  }
+</script>

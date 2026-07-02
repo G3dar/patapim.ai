@@ -1,0 +1,607 @@
+---
+// Maximized demo scene: a stylized replica of the real PATAPIM Electron app
+// running a Full Computer Control task. Monochrome + P-gradient accents,
+// matching the /v2 terminal aesthetic. Starts on 'ccs:start', stops on 'ccs:stop'.
+---
+
+<div class="ccs" data-ccs>
+  <div class="ccs-desktop">
+
+    <!-- ===== the OS desktop Claude will drive ===== -->
+    <div class="ccs-menubar" aria-hidden="true">
+      <span class="ccs-menubar-l"><b>⌘</b><i>file</i><i>edit</i><i>view</i><i>go</i></span>
+      <span class="ccs-menubar-r">◨ ⌁ 09:41</span>
+    </div>
+
+    <div class="ccs-icons" aria-hidden="true">
+      <span class="ccs-icon"><i>▦</i>projects</span>
+      <span class="ccs-icon"><i>▤</i>q3-report.pdf</span>
+      <span class="ccs-icon"><i>▣</i>screenshots</span>
+      <span class="ccs-icon"><i>♺</i>trash</span>
+    </div>
+
+    <div class="ccs-dock" aria-hidden="true">
+      <span class="ccs-dock-ico" data-ccs-dock-files title="Files">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4a1 1 0 0 1 1-1h3.4l1.4 1.5h6.2a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4z" fill="currentColor"/></svg>
+      </span>
+      <span class="ccs-dock-ico" data-ccs-dock-mail title="Mail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M1.5 4h13v8h-13V4zm0 .5L8 9.5 14.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="ccs-dock-ico" title="Browser">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M2 8h12M8 2c-3.5 3.8-3.5 8.2 0 12 3.5-3.8 3.5-8.2 0-12z" stroke="currentColor" stroke-width="1"/></svg>
+      </span>
+    </div>
+
+    <!-- Files window -->
+    <div class="ccs-win ccs-files" data-ccs-files>
+      <div class="ccs-win-bar">
+        <span class="ccs-win-dots"><i></i><i></i><i></i></span>
+        <span>~/documents</span>
+      </div>
+      <div class="ccs-file" data-ccs-report><span class="ccs-fico">▤</span> q3-report.pdf</div>
+      <div class="ccs-file"><span class="ccs-fico">▢</span> notes.md</div>
+      <div class="ccs-file"><span class="ccs-fico">▣</span> screenshot.png</div>
+    </div>
+
+    <!-- Mail window -->
+    <div class="ccs-win ccs-mail" data-ccs-mail>
+      <div class="ccs-win-bar">
+        <span class="ccs-win-dots"><i></i><i></i><i></i></span>
+        <span>new message</span>
+      </div>
+      <div class="ccs-mail-row"><span class="ccs-mail-k">to</span> team@company.com</div>
+      <div class="ccs-mail-row"><span class="ccs-mail-k">subj</span> Q3 report</div>
+      <div class="ccs-mail-body" data-ccs-mailbody></div>
+      <div class="ccs-mail-foot">
+        <span class="ccs-attach" data-ccs-attach>⧉ q3-report.pdf</span>
+        <span class="ccs-send" data-ccs-send>send ↗</span>
+      </div>
+    </div>
+
+    <!-- ===== the PATAPIM app window ===== -->
+    <div class="ccs-app" data-ccs-app>
+      <div class="ccs-app-bar">
+        <span class="ccs-win-dots"><i></i><i></i><i></i></span>
+        <span class="ccs-app-brand"><b>❯_</b> patapim</span>
+        <span class="ccs-app-tools">
+          <span class="ccs-tool" title="voice">▮▮▮</span>
+          <span class="ccs-tool" title="remote">⇄</span>
+          <span class="ccs-tool ccs-ccbtn" data-ccs-ccbtn title="computer control">⬚ control</span>
+        </span>
+      </div>
+      <div class="ccs-app-body">
+        <div class="ccs-side">
+          <div class="ccs-side-h">projects</div>
+          <div class="ccs-proj ccs-proj-on">▾ convoy</div>
+          <div class="ccs-term-item">· terminal 1</div>
+          <div class="ccs-term-item ccs-term-on" data-ccs-termtab>· q3 report task</div>
+          <div class="ccs-proj">▸ eggscape</div>
+          <div class="ccs-proj">▸ macys</div>
+          <div class="ccs-side-f">
+            <span class="ccs-agent">claude</span>
+            <span class="ccs-agent">codex</span>
+          </div>
+        </div>
+        <div class="ccs-main">
+          <div class="ccs-tabs">
+            <span class="ccs-tab ccs-tab-on">q3 report task</span>
+            <span class="ccs-tab">terminal 1</span>
+          </div>
+          <div class="ccs-termpane" data-ccs-term></div>
+        </div>
+      </div>
+      <div class="ccs-app-status">
+        <span data-ccs-status>1 shell · computer control: off</span>
+        <span class="ccs-status-r">convoy · claude</span>
+      </div>
+    </div>
+
+    <!-- ghost cursor + ripple + action toast -->
+    <div class="ccs-ripple" data-ccs-ripple></div>
+    <svg class="ccs-cursor" data-ccs-cursor viewBox="0 0 24 24" fill="none">
+      <path d="M5.5 3.2v14l3.4-3.3 2.2 4.9 2.2-1-2.2-4.7h4.7L5.5 3.2z" fill="#fff" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/>
+    </svg>
+    <div class="ccs-toast" data-ccs-toast></div>
+  </div>
+</div>
+
+<style>
+  .ccs { width: 100%; height: 100%; font-family: var(--font-mono); }
+  .ccs-desktop {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background:
+      radial-gradient(60% 50% at 50% 0%, rgba(139, 124, 248, 0.07), transparent),
+      radial-gradient(50% 40% at 80% 100%, rgba(34, 211, 238, 0.05), transparent),
+      repeating-linear-gradient(to bottom, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px),
+      #050505;
+  }
+
+  /* window chrome shared */
+  .ccs-win-dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+  .ccs-win-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+
+  /* ===== OS menubar (mac-style) ===== */
+  .ccs-menubar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    background: rgba(16, 16, 18, 0.85);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    z-index: 2;
+  }
+  .ccs-menubar-l { display: flex; gap: 14px; align-items: center; }
+  .ccs-menubar-l b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  .ccs-menubar-l i { font-style: normal; }
+  .ccs-menubar-r { color: var(--text-muted); letter-spacing: 0.06em; }
+
+  /* ===== desktop icons (windows-style column) ===== */
+  .ccs-icons {
+    position: absolute;
+    top: 40px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 1;
+  }
+  .ccs-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 74px;
+    font-size: 9.5px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+  .ccs-icon i {
+    font-style: normal;
+    font-size: 20px;
+    color: #6f6f6f;
+    line-height: 1;
+  }
+
+  /* ===== dock ===== */
+  .ccs-dock {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 14px;
+    padding: 8px 14px;
+    background: rgba(20, 20, 22, 0.9);
+    border: 1px solid var(--border-default);
+    z-index: 2;
+  }
+  .ccs-dock-ico { width: 22px; height: 22px; color: #8a8a8a; }
+  .ccs-dock-ico svg { width: 100%; height: 100%; }
+  .ccs-dock-ico.lit { color: var(--cy); filter: drop-shadow(0 0 6px rgba(34,211,238,0.6)); }
+
+  /* ===== desktop windows ===== */
+  .ccs-win {
+    position: absolute;
+    background: #0c0c0e;
+    border: 1px solid var(--border-strong);
+    font-size: 12px;
+    color: var(--text-secondary);
+    z-index: 3;
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 200ms ease, transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    pointer-events: none;
+  }
+  .ccs-win.open { opacity: 1; transform: scale(1); }
+  .ccs-win-bar {
+    display: flex;
+    align-items: center;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-tertiary);
+    font-size: 11px;
+  }
+  .ccs-files { top: 14%; left: 13%; width: 220px; }
+  .ccs-file { padding: 7px 12px; display: flex; gap: 8px; align-items: center; }
+  .ccs-fico { color: var(--text-muted); }
+  .ccs-file.sel { background: rgba(139, 124, 248, 0.18); color: #fff; }
+  .ccs-mail { top: 16%; right: 7%; width: 290px; }
+  .ccs-mail-row { padding: 6px 12px; border-bottom: 1px solid var(--border-subtle); font-size: 11.5px; }
+  .ccs-mail-k { color: var(--text-muted); display: inline-block; width: 34px; }
+  .ccs-mail-body { padding: 10px 12px; min-height: 44px; font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); }
+  .ccs-mail-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .ccs-attach {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-default);
+    padding: 3px 8px;
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+  .ccs-attach.on { opacity: 1; color: var(--cy); border-color: rgba(34,211,238,0.4); }
+  .ccs-send {
+    font-size: 11px;
+    color: #000;
+    background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
+    padding: 4px 12px;
+    font-weight: 700;
+  }
+  .ccs-send.clicked { filter: brightness(1.4); }
+
+  /* ===== PATAPIM app window ===== */
+  .ccs-app {
+    position: absolute;
+    inset: 7% 11% 12% 11%;
+    background: #0a0a0c;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    z-index: 4;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+    transition: transform 650ms cubic-bezier(0.65, 0, 0.35, 1), opacity 400ms;
+    transform-origin: 4% 96%;
+  }
+  .ccs-app.docked { transform: scale(0.34); opacity: 0.94; }
+  .ccs-app-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-default);
+    font-size: 12px;
+    color: var(--text-secondary);
+    gap: 10px;
+  }
+  .ccs-app-brand b {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ccs-app-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .ccs-tool {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    padding: 3px 8px;
+  }
+  .ccs-ccbtn { transition: all 250ms; letter-spacing: 0.05em; }
+  .ccs-ccbtn.armed {
+    color: #000;
+    font-weight: 700;
+    background: #22d3ee;
+    border-color: #22d3ee;
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.7);
+    animation: ccs-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes ccs-pulse {
+    50% { box-shadow: 0 0 26px rgba(34, 211, 238, 0.95); }
+  }
+
+  .ccs-app-body { flex: 1; display: flex; min-height: 0; }
+  .ccs-side {
+    width: 148px;
+    border-right: 1px solid var(--border-default);
+    padding: 10px 0;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+  }
+  .ccs-side-h {
+    padding: 0 12px 8px;
+    color: var(--text-muted);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .ccs-proj { padding: 5px 12px; color: var(--text-secondary); }
+  .ccs-proj-on { color: var(--text-primary); }
+  .ccs-term-item { padding: 3px 12px 3px 22px; color: var(--text-muted); font-size: 10.5px; }
+  .ccs-term-on { color: var(--cy); }
+  .ccs-side-f { margin-top: auto; padding: 10px 12px 0; display: flex; gap: 6px; }
+  .ccs-agent {
+    font-size: 9.5px;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-default);
+    padding: 2px 7px;
+  }
+
+  .ccs-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .ccs-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-default); padding: 6px 8px 0; }
+  .ccs-tab {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border: 1px solid transparent;
+    border-bottom: none;
+  }
+  .ccs-tab-on {
+    color: var(--text-primary);
+    border-color: var(--border-default);
+    background: #0e0e11;
+  }
+  .ccs-termpane {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.85;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .ccs-termpane :global(.tl-user) { color: #fff; }
+  .ccs-termpane :global(.tl-user)::before { content: '❯ '; color: var(--vi); }
+  .ccs-termpane :global(.tl-run) { color: var(--text-secondary); }
+  .ccs-termpane :global(.tl-ok) { color: #d8d8d8; }
+  .ccs-termpane :global(.tl-ok b) { color: var(--cy); font-weight: 400; }
+  .ccs-termpane :global(.tl-cursor) { color: var(--cy); animation: ccs-blink 1s steps(1, end) infinite; }
+  @keyframes ccs-blink { 50% { opacity: 0; } }
+
+  .ccs-app-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .ccs-app-status .armed-txt { color: var(--cy); }
+
+  /* ===== cursor / ripple / toast ===== */
+  .ccs-cursor {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 10;
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    transition: top 700ms cubic-bezier(0.45, 0, 0.25, 1), left 700ms cubic-bezier(0.45, 0, 0.25, 1), opacity 250ms;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+    pointer-events: none;
+  }
+  .ccs-cursor.show { opacity: 1; }
+  .ccs-ripple {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--cy);
+    border-radius: 50%;
+    z-index: 9;
+    opacity: 0;
+    transform: scale(0.3);
+    pointer-events: none;
+  }
+  .ccs-ripple.go { animation: ccs-ripple 450ms ease-out; }
+  @keyframes ccs-ripple {
+    0% { opacity: 0.9; transform: scale(0.3); }
+    100% { opacity: 0; transform: scale(1.5); }
+  }
+  .ccs-toast {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: rgba(12, 12, 14, 0.95);
+    border: 1px solid var(--border-strong);
+    border-left: 2px solid var(--cy);
+    padding: 7px 14px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    z-index: 11;
+    opacity: 0;
+    transition: opacity 200ms, transform 200ms;
+    white-space: nowrap;
+  }
+  .ccs-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+
+<script>
+  const root = document.querySelector('[data-ccs]') as HTMLElement | null;
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const app = $('[data-ccs-app]');
+    const term = $('[data-ccs-term]');
+    const ccbtn = $('[data-ccs-ccbtn]');
+    const status = $('[data-ccs-status]');
+    const filesWin = $('[data-ccs-files]');
+    const mailWin = $('[data-ccs-mail]');
+    const report = $('[data-ccs-report]');
+    const attach = $('[data-ccs-attach]');
+    const send = $('[data-ccs-send]');
+    const mailBody = $('[data-ccs-mailbody]');
+    const cursor = $('[data-ccs-cursor]');
+    const ripple = $('[data-ccs-ripple]');
+    const toast = $('[data-ccs-toast]');
+    const dockFiles = $('[data-ccs-dock-files]');
+    const dockMail = $('[data-ccs-dock-mail]');
+
+    let running = false;
+    let gen = 0;
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const alive = (g: number) => running && g === gen;
+
+    function termLine(cls: string, html = '') {
+      const el = document.createElement('div');
+      el.className = cls;
+      el.innerHTML = html;
+      term.appendChild(el);
+      return el;
+    }
+
+    async function typeInto(el: HTMLElement, text: string, g: number, ms = 30) {
+      for (let i = 1; i <= text.length; i++) {
+        if (!alive(g)) return;
+        el.textContent = text.slice(0, i);
+        await sleep(ms);
+      }
+    }
+
+    // move the ghost cursor to the center of a target element (desktop coords)
+    async function moveTo(target: HTMLElement, g: number, dwell = 750) {
+      const d = root.querySelector('.ccs-desktop')!.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      cursor.style.left = `${r.left - d.left + r.width / 2}px`;
+      cursor.style.top = `${r.top - d.top + r.height / 2}px`;
+      await sleep(dwell);
+      if (!alive(g)) return;
+    }
+
+    async function clickAt(g: number) {
+      ripple.style.left = `${parseFloat(cursor.style.left) - 15}px`;
+      ripple.style.top = `${parseFloat(cursor.style.top) - 15}px`;
+      ripple.classList.remove('go');
+      void ripple.offsetWidth;
+      ripple.classList.add('go');
+      await sleep(320);
+      if (!alive(g)) return;
+    }
+
+    async function say(text: string, g: number) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      await sleep(200);
+      if (!alive(g)) return;
+    }
+
+    function reset() {
+      term.innerHTML = '';
+      app.classList.remove('docked');
+      ccbtn.classList.remove('armed');
+      filesWin.classList.remove('open');
+      mailWin.classList.remove('open');
+      report.classList.remove('sel');
+      attach.classList.remove('on');
+      send.classList.remove('clicked');
+      mailBody.textContent = '';
+      cursor.classList.remove('show');
+      toast.classList.remove('show');
+      dockFiles.classList.remove('lit');
+      dockMail.classList.remove('lit');
+      status.innerHTML = '1 shell · computer control: off';
+    }
+
+    async function scene(g: number) {
+      reset();
+      await sleep(500);
+      if (!alive(g)) return;
+
+      // 1. the task is typed into the PATAPIM terminal
+      const task = termLine('tl-user');
+      const cur = termLine('tl-cursor', '█');
+      await typeInto(task, 'open the Q3 report and email it to the team', g, 26);
+      if (!alive(g)) return;
+      await sleep(400);
+
+      termLine('tl-run', '▷ this needs the mouse — arming <b>computer control</b>…');
+      await sleep(700);
+      if (!alive(g)) return;
+
+      // 2. the control button arms (solid green→cyan glow, like the real toolbar)
+      ccbtn.classList.add('armed');
+      status.innerHTML = '1 shell · computer control: <span class="armed-txt">AUTONOMOUS</span>';
+      await sleep(900);
+      if (!alive(g)) return;
+
+      // 3. the app docks away — Claude takes the desktop
+      app.classList.add('docked');
+      cursor.classList.add('show');
+      await sleep(750);
+      if (!alive(g)) return;
+
+      // 4. open files
+      await say('claude: opening file manager…', g);
+      await moveTo(dockFiles, g); if (!alive(g)) return;
+      await clickAt(g); if (!alive(g)) return;
+      dockFiles.classList.add('lit');
+      filesWin.classList.add('open');
+      await sleep(450);
+      if (!alive(g)) return;
+
+      // 5. pick the report
+      await say('claude: found q3-report.pdf', g);
+      await moveTo(report, g); if (!alive(g)) return;
+      await clickAt(g); if (!alive(g)) return;
+      report.classList.add('sel');
+      await sleep(500);
+      if (!alive(g)) return;
+
+      // 6. compose the mail
+      await say('claude: composing email…', g);
+      await moveTo(dockMail, g); if (!alive(g)) return;
+      await clickAt(g); if (!alive(g)) return;
+      dockMail.classList.add('lit');
+      mailWin.classList.add('open');
+      await sleep(450);
+      if (!alive(g)) return;
+      attach.classList.add('on');
+      await typeInto(mailBody, 'Hi team, Q3 report attached.', g, 24);
+      if (!alive(g)) return;
+      await sleep(350);
+
+      // 7. send
+      await moveTo(send, g); if (!alive(g)) return;
+      await clickAt(g); if (!alive(g)) return;
+      send.classList.add('clicked');
+      await say('claude: sent ✓', g);
+      await sleep(800);
+      if (!alive(g)) return;
+
+      // 8. hand the desktop back
+      filesWin.classList.remove('open');
+      mailWin.classList.remove('open');
+      toast.classList.remove('show');
+      cursor.classList.remove('show');
+      app.classList.remove('docked');
+      await sleep(750);
+      if (!alive(g)) return;
+
+      cur.remove();
+      termLine('tl-ok', '✓ emailed to <b>team@company.com</b>');
+      termLine('tl-ok', '✓ done — claude drove the whole computer');
+      termLine('tl-cursor', '█');
+      ccbtn.classList.remove('armed');
+      status.innerHTML = '1 shell · computer control: off';
+      await sleep(3000);
+    }
+
+    async function loop() {
+      const g = gen;
+      while (alive(g)) {
+        await scene(g);
+      }
+    }
+
+    root.addEventListener('scene:start', () => {
+      gen++;
+      running = true;
+      loop();
+    });
+    root.addEventListener('scene:stop', () => {
+      running = false;
+      gen++;
+      reset();
+    });
+  }
+</script>
