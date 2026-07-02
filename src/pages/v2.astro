@@ -63,8 +63,6 @@ const PRO_FEATURES = [
       <span id="tvb-typed"></span><span class="tvb-cursor">█</span>
     </div>
   </div>
-  <div class="tv-scanlines" aria-hidden="true"></div>
-
   <!-- ============ NAV ============ -->
   <nav class="tv-nav">
     <div class="tv-nav-inner">
@@ -378,47 +376,16 @@ const PRO_FEATURES = [
 </div>
 
 <style is:global>
-  /* ==================== TERMINAL THEME OVERRIDES ==================== */
+  /* ==================== HOME-ONLY THEME OVERRIDES ====================
+     Tokens live in global.css now. The .tv wrapper keeps ONLY the
+     desaturation overrides that keep the mini demo widgets monochrome. */
   .tv {
-    /* monochrome palette — the mini demos inherit these vars and re-skin themselves */
-    --bg-deep: #000000;
-    --bg-primary: #050505;
-    --bg-secondary: #0a0a0a;
-    --bg-tertiary: #111111;
-    --bg-elevated: #161616;
-    --bg-hover: #1d1d1d;
-
-    --text-primary: #ededed;
-    --text-secondary: #9a9a9a;
-    --text-tertiary: #6a6a6a;
-    --text-muted: #444444;
-
-    --accent-primary: #d6d6d6;
-    --accent-secondary: #bbbbbb;
-    --accent-subtle: rgba(255, 255, 255, 0.07);
-    --accent-glow: rgba(255, 255, 255, 0.05);
-
     --success: #cfcfcf;
     --success-subtle: rgba(255, 255, 255, 0.08);
     --warning: #bdbdbd;
     --error: #9e9e9e;
     --error-subtle: rgba(255, 255, 255, 0.08);
     --info: #b5b5b5;
-
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-default: rgba(255, 255, 255, 0.12);
-    --border-strong: rgba(255, 255, 255, 0.2);
-
-    --radius-sm: 0px;
-    --radius-md: 0px;
-    --radius-lg: 0px;
-    --radius-xl: 0px;
-    --radius-2xl: 0px;
-
-    /* the only color on the page: the P-logo duotone */
-    --cy: #22d3ee;
-    --vi: #a78bfa;
-    --p-gradient: linear-gradient(180deg, #c26bf0 0%, #8b7cf8 48%, #22d3ee 100%);
 
     font-family: var(--font-mono);
     background: #000;
@@ -427,7 +394,6 @@ const PRO_FEATURES = [
     position: relative;
   }
 
-  .tv ::selection { background: var(--cy); color: #000; }
   .tv a { color: inherit; }
 
   /* ==================== BOOT SEQUENCE ==================== */
@@ -496,21 +462,6 @@ const PRO_FEATURES = [
   }
   #tvb-typed:empty { margin-left: -10px; }  /* no gap ghost before typing starts */
   .tvb-cursor { color: var(--cy); animation: tv-blink 0.7s steps(1, end) infinite; }
-
-  /* subtle full-page scanlines — the terminal soul */
-  .tv-scanlines {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.012) 0px,
-      rgba(255, 255, 255, 0.012) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-  }
 
   .tv-main {
     max-width: 1120px;

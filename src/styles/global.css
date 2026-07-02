@@ -1,37 +1,46 @@
 /* ==================== DESIGN SYSTEM - PATAPIM.AI ==================== */
+/* Terminal aesthetic: pure black, monochrome grays, JetBrains Mono,
+   sharp corners, one accent — the violet→cyan P-logo duotone. */
+@import './terminal.css';
+
 :root {
-  /* Color Palette - Warm Neutrals with Amber Accent */
-  --bg-deep: #0f0f10;
-  --bg-primary: #151516;
-  --bg-secondary: #1a1a1c;
-  --bg-tertiary: #222225;
-  --bg-elevated: #28282c;
-  --bg-hover: #2e2e33;
+  /* Backgrounds — pure black stack */
+  --bg-deep: #000000;
+  --bg-primary: #050505;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #111111;
+  --bg-elevated: #161616;
+  --bg-hover: #1d1d1d;
 
   /* Text Colors */
-  --text-primary: #e8e6e3;
-  --text-secondary: #a09b94;
-  --text-tertiary: #6b6660;
-  --text-muted: #4a4642;
+  --text-primary: #ededed;
+  --text-secondary: #9a9a9a;
+  --text-tertiary: #6a6a6a;
+  --text-muted: #444444;
 
-  /* Accent Colors */
-  --accent-primary: #d4a574;
-  --accent-secondary: #c9956a;
-  --accent-subtle: rgba(212, 165, 116, 0.15);
-  --accent-glow: rgba(212, 165, 116, 0.08);
+  /* Accent — neutral near-white; color lives in --cy/--vi/--p-gradient */
+  --accent-primary: #d6d6d6;
+  --accent-secondary: #bbbbbb;
+  --accent-subtle: rgba(255, 255, 255, 0.07);
+  --accent-glow: rgba(255, 255, 255, 0.05);
+
+  /* The only color: the P-logo duotone (+ semantic green/red) */
+  --cy: #22d3ee;
+  --vi: #a78bfa;
+  --p-gradient: linear-gradient(180deg, #c26bf0 0%, #8b7cf8 48%, #22d3ee 100%);
 
   /* Semantic Colors */
-  --success: #7cb382;
-  --success-subtle: rgba(124, 179, 130, 0.15);
-  --warning: #e0a458;
-  --error: #d47878;
-  --error-subtle: rgba(212, 120, 120, 0.15);
-  --info: #78a5d4;
+  --success: #4ade80;
+  --success-subtle: rgba(74, 222, 128, 0.12);
+  --warning: #d8b45a;
+  --error: #f26d6d;
+  --error-subtle: rgba(242, 109, 109, 0.12);
+  --info: #22d3ee;
 
   /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -50,21 +59,21 @@
   --space-4xl: 64px;
   --space-5xl: 96px;
 
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
+  /* Border Radius — sharp corners everywhere */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Typography */
-  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+  /* Typography — mono is the voice of the whole site */
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, Menlo, 'SF Mono', monospace;
+  --font-sans: var(--font-mono);
 }
 
 * {
@@ -97,7 +106,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--bg-elevated);
-  border-radius: 4px;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bg-hover);
@@ -132,7 +141,7 @@ body {
   color: var(--accent-primary);
   background: var(--accent-subtle);
   padding: 6px 14px;
-  border-radius: 100px;
+  border-radius: 0;
   margin-bottom: var(--space-lg);
   letter-spacing: 0.5px;
 }
@@ -176,7 +185,7 @@ body {
 .btn-primary:hover {
   background: var(--accent-secondary);
   color: var(--bg-deep);
-  box-shadow: 0 0 24px rgba(212, 165, 116, 0.3);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
 }
 
 .btn-secondary {
