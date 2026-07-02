@@ -49,6 +49,53 @@ export const prerender = true;
       font-size: 15px;
       line-height: 1.6;
       overflow-x: hidden;
+      padding-top: 56px; /* clears the fixed site nav */
+    }
+    html { scrollbar-gutter: stable; }
+    /* same 8px scrollbar as global.css so the centered nav lines up site-wide */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: #161616; border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: #1d1d1d; }
+
+    /* site nav — mirrors the shared .tv-nav metrics exactly */
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .site-nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .site-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .site-brand-icon {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+    .site-brand-sep { color: #444; }
+    .site-brand-name { color: var(--ink); letter-spacing: 0.05em; }
+    .site-nav-links { display: flex; gap: 26px; align-items: center; }
+    .site-nav-links a { color: var(--ink-soft); text-decoration: none; font-size: 13px; transition: color 120ms; }
+    .site-nav-links a:hover { color: var(--ink); }
+    .site-nav-cta { color: var(--ink) !important; }
+    @media (max-width: 880px) {
+      .site-nav-links a:not(.site-nav-cta) { display: none; }
     }
 
     .wrap {
@@ -363,6 +410,25 @@ export const prerender = true;
   </style>
 </head>
 <body>
+  <!-- site nav: same metrics as the shared tv-nav so the menu never moves -->
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a href="/" class="site-brand">
+        <span class="site-brand-icon">&#x276F;_</span>
+        <span class="site-brand-sep">/</span>
+        <span class="site-brand-name">patapim</span>
+      </a>
+      <div class="site-nav-links">
+        <a href="/#demos">Features</a>
+        <a href="/download">Download</a>
+        <a href="/docs/releases">Docs</a>
+        <a href="/whats-new">What's new</a>
+        <a href="/about">About</a>
+        <a href="/go" class="site-nav-cta">[ dashboard ]</a>
+      </div>
+    </div>
+  </nav>
+
   <div class="wrap">
 
     <div class="topbar">
