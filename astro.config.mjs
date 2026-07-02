@@ -5,6 +5,7 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://patapim.ai',
   output: 'static',
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   adapter: cloudflare({
     workerEntryPoint: {
       path: 'src/worker.ts',

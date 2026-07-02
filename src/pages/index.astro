@@ -1263,55 +1263,65 @@ const PRO_FEATURES = [
       setTimeout(() => logo.classList.remove('glitch'), 280);
     }, 3800);
 
-    // every 8–16s: SLICE GLITCH — the wordmark splits into horizontal bands
-    // that desync sideways with hard steps and chromatic echoes, then realign.
-    // no noise characters: the logo stays the logo, just badly synced for a beat
+    // SLICE GLITCH — the wordmark splits into horizontal bands that desync
+    // sideways with hard steps and chromatic echoes, then realign. Fires on
+    // its own every few seconds, and on demand when you click the logo.
     const basePre = logo.querySelector('.tv-logo-base') as HTMLElement | null;
+    let malfActive = false;
+    const runMalf = () => {
+      if (malfActive || !basePre) return;
+      malfActive = true;
+      const cuts = [0, 16 + Math.random() * 16, 44 + Math.random() * 14, 70 + Math.random() * 14, 100];
+      const clones: HTMLElement[] = [];
+      basePre.style.visibility = 'hidden';
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const clip = `inset(${cuts[i]}% -6px ${100 - cuts[i + 1]}% -6px)`;
+        const dx = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.random() * 9);
+        const dur = 380 + Math.random() * 140;
+        const mk = (color: string | null, amp: number) => {
+          const c = basePre.cloneNode(true) as HTMLElement;
+          c.classList.add('tv-malf-slice');
+          c.style.clipPath = clip;
+          if (color) {
+            c.style.background = 'none';
+            c.style.webkitTextFillColor = color;
+            c.style.opacity = '0.7';
+          }
+          logo.appendChild(c);
+          clones.push(c);
+          c.animate(
+            [
+              { transform: 'translateX(0)', ...(color ? { opacity: 0 } : {}) },
+              { transform: `translateX(${dx * amp}px)`, ...(color ? { opacity: 0.7 } : {}), offset: 0.2 },
+              { transform: `translateX(${-dx * amp * 0.6}px)`, offset: 0.55 },
+              { transform: `translateX(${dx * amp * 0.25}px)`, ...(color ? { opacity: 0.4 } : {}), offset: 0.8 },
+              { transform: 'translateX(0)', ...(color ? { opacity: 0 } : {}) },
+            ],
+            { duration: dur, easing: 'steps(4, end)' }
+          );
+        };
+        mk(null, 1);
+        // two slices get a chromatic echo trailing the opposite way
+        if (i === 1) mk('var(--cy)', -1.7);
+        if (i === 2) mk('var(--vi)', -1.7);
+      }
+      setTimeout(() => {
+        clones.forEach(c => c.remove());
+        basePre.style.visibility = '';
+        malfActive = false;
+      }, 560);
+    };
     const scheduleMalf = () => {
       setTimeout(() => {
-        if (!basePre || logo.classList.contains('glitch')) { scheduleMalf(); return; }
-        const cuts = [0, 16 + Math.random() * 16, 44 + Math.random() * 14, 70 + Math.random() * 14, 100];
-        const clones: HTMLElement[] = [];
-        basePre.style.visibility = 'hidden';
-        for (let i = 0; i < cuts.length - 1; i++) {
-          const clip = `inset(${cuts[i]}% -6px ${100 - cuts[i + 1]}% -6px)`;
-          const dx = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.random() * 9);
-          const dur = 380 + Math.random() * 140;
-          const mk = (color: string | null, amp: number) => {
-            const c = basePre.cloneNode(true) as HTMLElement;
-            c.classList.add('tv-malf-slice');
-            c.style.clipPath = clip;
-            if (color) {
-              c.style.background = 'none';
-              c.style.webkitTextFillColor = color;
-              c.style.opacity = '0.7';
-            }
-            logo.appendChild(c);
-            clones.push(c);
-            c.animate(
-              [
-                { transform: 'translateX(0)', ...(color ? { opacity: 0 } : {}) },
-                { transform: `translateX(${dx * amp}px)`, ...(color ? { opacity: 0.7 } : {}), offset: 0.2 },
-                { transform: `translateX(${-dx * amp * 0.6}px)`, offset: 0.55 },
-                { transform: `translateX(${dx * amp * 0.25}px)`, ...(color ? { opacity: 0.4 } : {}), offset: 0.8 },
-                { transform: 'translateX(0)', ...(color ? { opacity: 0 } : {}) },
-              ],
-              { duration: dur, easing: 'steps(4, end)' }
-            );
-          };
-          mk(null, 1);
-          // two slices get a chromatic echo trailing the opposite way
-          if (i === 1) mk('var(--cy)', -1.7);
-          if (i === 2) mk('var(--vi)', -1.7);
-        }
-        setTimeout(() => {
-          clones.forEach(c => c.remove());
-          basePre.style.visibility = '';
-          scheduleMalf();
-        }, 560);
+        if (!logo.classList.contains('glitch')) runMalf();
+        scheduleMalf();
       }, 3500 + Math.random() * 4500);
     };
     scheduleMalf();
+
+    // click the logo → immediate glitch
+    logo.style.cursor = 'pointer';
+    logo.addEventListener('click', runMalf);
   }
 
   // ---------- founder note: types itself at reading speed on arrival ----------
@@ -1476,6 +1486,20 @@ const PRO_FEATURES = [
       startTagline();
       startObserving();
     };
+
+    // use the boot pause to warm the rest of the site: by the time the
+    // ceremony ends, the main routes are already prefetched
+    try {
+      const spec = document.createElement('script');
+      spec.type = 'speculationrules';
+      spec.textContent = JSON.stringify({
+        prefetch: [{
+          urls: ['/download/', '/pricing/', '/whats-new/', '/about/', '/docs/releases/', '/telegram/'],
+          eagerness: 'eager',
+        }],
+      });
+      document.head.appendChild(spec);
+    } catch {}
 
     const internalNav = document.documentElement.classList.contains('tv-noboot');
     if (!overlay || !typed || reduced || internalNav) { finish(); return; }

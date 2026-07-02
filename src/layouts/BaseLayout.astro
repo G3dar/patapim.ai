@@ -83,10 +83,74 @@ const siteUrl = 'https://patapim.ai';
   <style is:global>
     @import '../styles/global.css';
   </style>
+
+  <!-- Speculative prerender: hovering a link warms the next page so
+       navigation lands instantly — the shell (nav) never appears to reload -->
+  <script type="speculationrules" set:html={JSON.stringify({
+    prerender: [{ where: { and: [{ href_matches: '/*' }] }, eagerness: 'moderate' }]
+  })} />
 </head>
 <body>
   <div class="tv-scanlines" aria-hidden="true"></div>
   <slot />
+
+  <!-- Terminal entrance: page content types itself in a fast cascade.
+       Synchronous at end-of-body so it splits before first paint. The nav,
+       footer and anything below ~1.35 viewports appear instantly — the shell
+       never rewrites, only the section you navigated to "assembles". -->
+  <script is:inline>
+    (function () {
+      try {
+        if (document.getElementById('tv-boot')) return; // the home runs its own ceremony
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var EXCL = '.tv-nav,.site-nav,nav,footer,.tvf-footer,script,style,noscript,#session-bar,[data-no-type]';
+        var vh = window.innerHeight || 800;
+        var LIMIT = vh * 1.35;
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+        var nodes = [];
+        while (walker.nextNode()) {
+          var n = walker.currentNode;
+          if (!n.nodeValue || !n.nodeValue.trim()) continue;
+          var pe = n.parentElement;
+          if (!pe || pe.closest(EXCL)) continue;
+          nodes.push(n);
+        }
+        var tops = nodes.map(function (n) { return n.parentElement.getBoundingClientRect().top; });
+        var jobs = [];
+        nodes.forEach(function (n, i) {
+          if (tops[i] > LIMIT) return; // below the fold: instant
+          var full = n.nodeValue;
+          var shown = document.createElement('span');
+          var hidden = document.createElement('span');
+          hidden.style.visibility = 'hidden';
+          hidden.textContent = full;
+          n.parentNode.replaceChild(hidden, n);
+          hidden.parentNode.insertBefore(shown, hidden);
+          jobs.push({
+            s: shown, h: hidden, f: full, i: 0,
+            rate: Math.max(1, Math.ceil(full.length / 22)),
+            delay: Math.floor(Math.random() * 4 + Math.max(0, Math.min(tops[i], 1200)) / 1200 * 26)
+          });
+        });
+        if (!jobs.length) return;
+        function step() {
+          var active = false;
+          for (var k = 0; k < jobs.length; k++) {
+            var j = jobs[k];
+            if (j.delay > 0) { j.delay--; active = true; continue; }
+            if (j.i < j.f.length) {
+              j.i = Math.min(j.f.length, j.i + j.rate);
+              j.s.textContent = j.f.slice(0, j.i);
+              j.h.textContent = j.f.slice(j.i);
+              active = true;
+            }
+          }
+          if (active) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      } catch (e) { /* the flourish must never block a page */ }
+    })();
+  </script>
 
   <!-- SF geo beacon: records page opens + dwell time for SF visitors only.
        The server drops non-SF traffic, and a tracked:false reply stops the
