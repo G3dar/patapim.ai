@@ -15,6 +15,29 @@ const translations = locale === 'ja' ? ja : en;
 
 const featuresCompare = translations.pricing.featuresCompare;
 const faq = translations.pricing.faq;
+
+// terminal-aesthetic tier features (mirrors the v2 home lineup)
+const FREE_FEATURES = [
+  'Full computer control',
+  'Up to 3 projects',
+  'Up to 9 terminals',
+  'A long 30 min dictation buffer',
+  'Remote access',
+  'Task management',
+];
+const PRO_FEATURES = [
+  'Unlimited terminals',
+  'Unlimited projects',
+  'Unlimited dictation',
+  'Everything in Free',
+  'Priority support',
+];
+const LIFETIME_FEATURES = [
+  'Pro features for life',
+  'No subscriptions',
+  'No renewals',
+  'Yours. Forever.',
+];
 ---
 
 <BaseLayout title={t(locale, 'meta.pricingTitle')} description={t(locale, 'meta.pricingDescription')}>
@@ -22,78 +45,95 @@ const faq = translations.pricing.faq;
   <SessionBar />
 
   <main class="pricing-page">
-    <div class="container">
-      <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">{t(locale, 'pricing.label')}</span>
-        <h1 class="section-title">{t(locale, 'pricing.title')}</h1>
-        <p class="section-subtitle">
-          {t(locale, 'pricing.subtitle')}
-        </p>
+    <div class="pp-main">
+
+      <!-- Header -->
+      <div class="pp-head">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim upgrade <span class="tv-dim">— start free. upgrade when you're ready.</span></div>
+        <h1 class="tv-heading pp-title">{t(locale, 'pricing.title')}</h1>
+        <p class="tv-heading-sub">{t(locale, 'pricing.subtitle')}</p>
       </div>
 
       <!-- Pricing Cards -->
-      <div class="pricing-cards">
-        <div class="p-card">
-          <h2>{t(locale, 'pricing.freeTitle')}</h2>
-          <div class="p-price"><span class="p-amount">{t(locale, 'pricing.freePrice')}</span> <span class="p-period">{t(locale, 'pricing.freePeriod')}</span></div>
-          <p class="p-desc">{t(locale, 'pricing.freeDesc')}</p>
-          <a href={lp('/download')} class="btn btn-secondary" style="width:100%; justify-content:center;">{t(locale, 'common.downloadFree')}</a>
-          <ul class="p-list">
-            {featuresCompare.map((f) => (
-              <li>
-                <span class="p-label">{f.name}</span>
-                <span class={`p-value ${f.free === 'No' ? 'dim' : ''}`}>{f.free}</span>
-              </li>
-            ))}
+      <div class="tv-price-grid pp-grid">
+        <div class="tv-pcard tv-pcard-hero">
+          <div class="tv-pcard-tag">VERY POWERFUL</div>
+          <div class="tv-pcard-head">
+            <span class="tv-pcard-name">{t(locale, 'pricing.freeTitle')}</span>
+            <span class="tv-pcard-sub">{t(locale, 'pricing.freeDesc')}</span>
+          </div>
+          <div class="tv-pcard-pricebox">
+            <span class="tv-pcard-amount tv-grad">{t(locale, 'pricing.freePrice')}</span>
+            <span class="tv-pcard-period">{t(locale, 'pricing.freePeriod')}</span>
+          </div>
+          <ul>
+            {FREE_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
           </ul>
+          <a href={lp('/download')} class="tv-pbtn tv-pbtn-accent">$ {t(locale, 'common.downloadFree').toLowerCase()}</a>
         </div>
 
-        <div class="p-card featured">
-          <h2>{t(locale, 'pricing.proTitle')}</h2>
-          <div class="p-price">
-            <span class="p-amount">{t(locale, 'pricing.proPrice')}</span>
-            <span class="p-period">{t(locale, 'pricing.proPeriod')}</span>
+        <div class="tv-pcard">
+          <div class="tv-pcard-head">
+            <span class="tv-pcard-name">{t(locale, 'pricing.proTitle')}</span>
+            <span class="tv-pcard-sub">{t(locale, 'pricing.proDesc')}</span>
           </div>
-          <p class="p-desc">{t(locale, 'pricing.proDesc')}</p>
-          <a href="#" class="btn btn-primary" id="checkout-monthly" style="width:100%; justify-content:center;">{t(locale, 'common.goPro')}</a>
-          <ul class="p-list">
-            {featuresCompare.map((f) => (
-              <li>
-                <span class="p-label">{f.name}</span>
-                <span class={`p-value ${f.pro !== f.free ? 'highlight' : ''}`}>{f.pro}</span>
-              </li>
-            ))}
+          <div class="tv-pcard-pricebox">
+            <span class="tv-pcard-amount">{t(locale, 'pricing.proPrice')}</span>
+            <span class="tv-pcard-period">{t(locale, 'pricing.proPeriod')}</span>
+          </div>
+          <ul>
+            {PRO_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
           </ul>
+          <a href="#" class="tv-pbtn" id="checkout-monthly">$ {t(locale, 'common.goPro').toLowerCase()}</a>
+        </div>
+
+        <div class="tv-pcard">
+          <div class="tv-pcard-head">
+            <span class="tv-pcard-name">Lifetime</span>
+            <span class="tv-pcard-sub">one payment. done.</span>
+          </div>
+          <div class="tv-pcard-pricebox">
+            <span class="tv-pcard-amount">{t(locale, 'pricing.unlockPrice')}</span>
+            <span class="tv-pcard-period">{t(locale, 'pricing.unlockNote')}</span>
+          </div>
+          <ul>
+            {LIFETIME_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
+          </ul>
+          <a href="#" class="tv-pbtn" id="checkout-lifetime">$ {t(locale, 'pricing.unlockButton').toLowerCase()}</a>
         </div>
       </div>
 
-      <!-- Unlock Forever Banner -->
-      <div class="unlock-section">
-        <div class="unlock-card">
-          <span class="unlock-badge">{t(locale, 'pricing.unlockBadge')}</span>
-          <h2 class="unlock-title">{t(locale, 'pricing.unlockTitle')}</h2>
-          <p class="unlock-desc" set:html={t(locale, 'pricing.unlockDesc').replace(/\n/g, '<br/>')} />
-          <div class="unlock-price-row">
-            <div class="unlock-price-area">
-              <span class="unlock-price">{t(locale, 'pricing.unlockPrice')}</span>
-              <span class="unlock-once">{t(locale, 'pricing.unlockNote')}</span>
-            </div>
-            <a href="#" class="btn btn-primary" id="checkout-lifetime">{t(locale, 'pricing.unlockButton')}</a>
+      <!-- Compare: free vs pro -->
+      <div class="pp-section">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> diff free pro <span class="tv-dim">— feature by feature</span></div>
+        <div class="pp-compare tv-panel tv-panel-static">
+          <div class="pp-compare-row pp-compare-header">
+            <span class="pp-compare-name">FEATURE</span>
+            <span class="pp-compare-free">FREE</span>
+            <span class="pp-compare-pro">PRO</span>
           </div>
+          {featuresCompare.map((f) => (
+            <div class="pp-compare-row">
+              <span class="pp-compare-name">{f.name}</span>
+              <span class={`pp-compare-free ${f.free === 'No' ? 'dim' : ''}`}>{f.free}</span>
+              <span class={`pp-compare-pro ${f.pro !== f.free ? 'highlight' : ''}`}>{f.pro}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       <!-- Enterprise / Business -->
-      <div class="enterprise-section">
-        <div class="enterprise-card">
+      <div class="pp-section">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim enterprise <span class="tv-dim">— for teams</span></div>
+        <div class="enterprise-card tv-panel tv-panel-static">
           <div class="enterprise-grid">
             <div class="enterprise-copy">
-              <span class="enterprise-badge">{t(locale, 'pricing.enterpriseBadge')}</span>
+              <span class="pp-microlabel">{t(locale, 'pricing.enterpriseBadge')}</span>
               <h2 class="enterprise-title">{t(locale, 'pricing.enterpriseTitle')}</h2>
               <p class="enterprise-desc" set:html={t(locale, 'pricing.enterpriseDesc').replace(/\n/g, '<br/>')} />
             </div>
             <div class="enterprise-action">
-              <a href="mailto:info@patapim.ai?subject=PATAPIM%20for%20Business" class="btn btn-secondary enterprise-btn">{t(locale, 'pricing.enterpriseCta')}</a>
+              <a href="mailto:info@patapim.ai?subject=PATAPIM%20for%20Business" class="tv-pbtn enterprise-btn">$ {t(locale, 'pricing.enterpriseCta').toLowerCase()}</a>
               <span class="enterprise-note">{t(locale, 'pricing.enterpriseNote')}</span>
             </div>
           </div>
@@ -101,11 +141,12 @@ const faq = translations.pricing.faq;
       </div>
 
       <!-- Already purchased? Associate license key -->
-      <div class="claim-section">
-        <div class="claim-card">
+      <div class="pp-section" id="claim-section">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim license --claim <span class="tv-dim">— already purchased?</span></div>
+        <div class="claim-card tv-panel tv-panel-static">
           <div class="claim-grid">
             <div class="claim-copy">
-              <span class="claim-badge">Already purchased</span>
+              <span class="pp-microlabel">Already purchased</span>
               <h2 class="claim-title">Have a license key?</h2>
               <p class="claim-desc">
                 Link an existing PATAPIM license to your account. You can associate the same key with up to <strong>2 accounts</strong> — handy if you bought with one email and use PATAPIM with another, or if you share a lifetime license with a partner.
@@ -121,7 +162,7 @@ const faq = translations.pricing.faq;
                   spellcheck="false"
                   required
                 />
-                <button type="submit" class="btn btn-secondary claim-btn">Associate to my account</button>
+                <button type="submit" class="tv-pbtn claim-btn">$ associate to my account</button>
               </form>
               <p id="claim-msg" class="claim-msg" hidden></p>
             </div>
@@ -130,17 +171,18 @@ const faq = translations.pricing.faq;
       </div>
 
       <!-- FAQ -->
-      <div class="faq-section section">
-        <h2 class="section-title" style="font-size: 28px;">{t(locale, 'pricing.faqTitle')}</h2>
+      <div class="pp-section faq-section">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> faq <span class="tv-dim">— {t(locale, 'pricing.faqTitle').toLowerCase()}</span></div>
         <div class="faq-grid">
           {faq.map((item) => (
             <div class="faq-item">
-              <h3>{item.q}</h3>
+              <h3><span class="faq-q-mark">?</span> {item.q}</h3>
               <p set:html={item.a} />
             </div>
           ))}
         </div>
       </div>
+
     </div>
   </main>
 
@@ -150,207 +192,100 @@ const faq = translations.pricing.faq;
 <style>
   .pricing-page {
     min-height: 100vh;
+    font-family: var(--font-mono);
+    background: var(--bg-deep);
   }
 
-  .pricing-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
-    max-width: 800px;
+  .pp-main {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px 72px;
+  }
+
+  .pp-head {
+    padding-top: 120px;
+    margin-bottom: 44px;
+  }
+
+  .pp-title {
+    margin-top: 26px;
+    font-size: clamp(17px, 2.4vw, 22px);
+    text-transform: uppercase;
+  }
+
+  .pp-grid {
+    max-width: 980px;
     margin: 0 auto;
   }
 
-  .p-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
-    position: relative;
+  .pp-section {
+    max-width: 860px;
+    margin: 88px auto 0;
   }
 
-  .p-card.featured {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 40px rgba(212, 165, 116, 0.1);
-  }
-
-  .p-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent-primary);
-    color: var(--bg-deep);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 16px;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
-
-  .p-card h2 {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: var(--space-sm);
-  }
-
-  .p-price {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    margin-bottom: var(--space-xs);
-  }
-  .p-amount {
-    font-size: 48px;
+  .pp-microlabel {
+    display: inline-block;
+    font-size: 10px;
     font-weight: 700;
-    font-family: var(--font-mono);
-  }
-  .p-period {
-    font-size: 16px;
-    color: var(--text-tertiary);
-  }
-  .p-desc {
-    font-size: 14px;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-xl);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cy);
+    margin-bottom: 10px;
   }
 
-  .p-list {
-    list-style: none;
-    margin-top: var(--space-xl);
-    border-top: 1px solid var(--border-subtle);
-    padding-top: var(--space-lg);
+  /* Compare: free vs pro */
+  .pp-compare {
+    padding: 8px 24px 12px;
   }
-  .p-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .pp-compare-row {
+    display: grid;
+    grid-template-columns: 1fr 130px 130px;
+    gap: 16px;
+    align-items: baseline;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-subtle);
-    font-size: 14px;
-  }
-  .p-label { color: var(--text-secondary); }
-  .p-value { color: var(--text-primary); font-weight: 500; }
-  .p-value.dim { color: var(--text-muted); font-weight: 400; }
-  .p-value.highlight { color: var(--accent-primary); }
-
-  /* Unlock Forever */
-  .unlock-section {
-    max-width: 800px;
-    margin: var(--space-2xl) auto 0;
-  }
-
-  .unlock-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
-    text-align: center;
-  }
-
-  .unlock-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--warning);
-    background: rgba(224, 164, 88, 0.12);
-    padding: 4px 12px;
-    border-radius: 100px;
-    margin-bottom: var(--space-md);
-  }
-
-  .unlock-title {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: var(--space-sm);
-  }
-
-  .unlock-desc {
-    font-size: 15px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    max-width: 480px;
-    margin: 0 auto var(--space-xl);
-  }
-
-  .unlock-price-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2xl);
-  }
-
-  .unlock-price-area {
-    text-align: center;
-  }
-
-  .unlock-price {
-    display: block;
-    font-size: 42px;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    color: var(--text-primary);
-  }
-
-  .unlock-once {
-    display: block;
     font-size: 13px;
-    color: var(--text-tertiary);
-    margin-top: 2px;
+  }
+  .pp-compare-row:last-child { border-bottom: none; }
+  .pp-compare-header {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+  }
+  .pp-compare-name { color: var(--text-secondary); }
+  .pp-compare-free { color: var(--text-tertiary); }
+  .pp-compare-free.dim { color: var(--text-muted); }
+  .pp-compare-pro { color: var(--text-primary); }
+  .pp-compare-pro.highlight {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
   }
 
   /* Enterprise / Business */
-  .enterprise-section {
-    max-width: 800px;
-    margin: var(--space-xl) auto 0;
-  }
-
-  .enterprise-card {
-    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary, var(--bg-secondary)));
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl) var(--space-2xl);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .enterprise-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at top right, var(--accent-glow), transparent 60%);
-    pointer-events: none;
-  }
-
   .enterprise-grid {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: var(--space-xl);
+    gap: 32px;
     align-items: center;
     position: relative;
   }
 
-  .enterprise-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--accent-primary);
-    background: var(--accent-subtle);
-    padding: 4px 12px;
-    border-radius: 100px;
-    margin-bottom: var(--space-sm);
-    letter-spacing: 0.02em;
-  }
-
   .enterprise-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: var(--space-xs);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
   }
 
   .enterprise-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.8;
     margin: 0;
   }
 
@@ -358,65 +293,38 @@ const faq = translations.pricing.faq;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
 
   .enterprise-btn {
     white-space: nowrap;
+    padding: 12px 22px;
   }
 
   .enterprise-note {
-    font-size: 12px;
-    color: var(--text-tertiary);
+    font-size: 11px;
+    color: var(--text-muted);
   }
 
   /* Already-purchased / claim license key */
-  .claim-section {
-    max-width: 800px;
-    margin: var(--space-xl) auto 0;
-  }
-  .claim-card {
-    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary, var(--bg-secondary)));
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl) var(--space-2xl);
-    position: relative;
-    overflow: hidden;
-  }
-  .claim-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at top left, var(--accent-glow), transparent 60%);
-    pointer-events: none;
-  }
   .claim-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-2xl);
+    gap: 32px;
     align-items: center;
     position: relative;
   }
-  .claim-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--accent-primary);
-    background: var(--accent-subtle);
-    padding: 4px 10px;
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-sm);
-    letter-spacing: 0.02em;
-  }
   .claim-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: var(--space-xs);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
   }
   .claim-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.8;
     margin: 0;
   }
   .claim-desc strong {
@@ -430,25 +338,29 @@ const faq = translations.pricing.faq;
     gap: 10px;
   }
   #claim-form input {
-    background: var(--bg-primary);
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-deep);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     color: var(--text-primary);
     padding: 11px 14px;
-    font-size: 14px;
+    font-size: 13.5px;
     font-family: var(--font-mono);
     letter-spacing: 0.02em;
-    transition: border-color var(--transition-fast);
+    transition: border-color 150ms, box-shadow 150ms;
   }
+  #claim-form input::placeholder { color: var(--text-muted); }
   #claim-form input:focus {
     outline: none;
-    border-color: var(--accent-primary);
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25);
   }
-  .claim-btn { width: 100%; justify-content: center; }
+  .claim-btn { width: 100%; }
   .claim-msg {
     font-size: 13px;
     padding: 10px 12px;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     margin: 0;
   }
   .claim-msg.success {
@@ -463,38 +375,49 @@ const faq = translations.pricing.faq;
   }
 
   /* FAQ */
-  .faq-section {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
   .faq-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
-    margin-top: var(--space-2xl);
+    gap: 0 40px;
   }
 
+  .faq-item {
+    padding: 20px 4px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
   .faq-item h3 {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 13.5px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: var(--space-sm);
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+  }
+  .faq-q-mark {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    margin-right: 4px;
   }
   .faq-item p {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.7;
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .pp-grid {
+      grid-template-columns: 1fr;
+      max-width: 440px;
+    }
   }
 
   @media (max-width: 640px) {
-    .pricing-cards { grid-template-columns: 1fr; }
     .claim-grid { grid-template-columns: 1fr; }
     .faq-grid { grid-template-columns: 1fr; }
-    .unlock-price-row {
-      flex-direction: column;
-      gap: var(--space-lg);
-    }
+    .pp-compare-row { grid-template-columns: 1fr 80px 80px; gap: 10px; }
     .enterprise-grid {
       grid-template-columns: 1fr;
       text-align: center;
@@ -502,6 +425,7 @@ const faq = translations.pricing.faq;
     .enterprise-action {
       align-items: center;
     }
+    .pp-section { margin-top: 64px; }
   }
 </style>
 

@@ -16,15 +16,15 @@ const lp = (path: string) => getLocalePath(locale, path);
   <SessionBar />
 
   <main class="legal-page">
-    <div class="container">
-      <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">Legal</span>
-        <h1 class="section-title">Privacy Policy</h1>
-        <p class="section-subtitle">Last updated: February 8, 2026</p>
+    <div class="legal-container">
+      <div class="legal-head">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> cat PRIVACY.md <span class="tv-dim">— legal</span></div>
+        <h1 class="tv-heading legal-title">PRIVACY POLICY</h1>
+        <p class="tv-heading-sub">Last updated: February 8, 2026</p>
       </div>
 
       <div class="legal-content">
-        <p class="legal-intro">
+        <p class="legal-intro tv-panel tv-panel-static">
           This Privacy Policy describes how PATAPIM ("we", "us", "our") collects, uses, and protects
           information when you use the PATAPIM desktop application ("Software") and related services
           at patapim.ai ("Service"). We are committed to protecting your privacy and being transparent
@@ -48,7 +48,7 @@ const lp = (path: string) => getLocalePath(locale, path);
           <li><strong>License Verification:</strong> Email address and license key, sent approximately every 30 minutes while the application is running, to verify your subscription status.</li>
           <li><strong>Account Authentication:</strong> Device token and session ID during sign-in, to authenticate your account and maintain your session.</li>
         </ul>
-        <div class="legal-highlight">
+        <div class="legal-highlight tv-panel tv-panel-static">
           <p><strong>No other data is transmitted to our servers.</strong> We do not collect usage analytics, telemetry, crash reports, or any content from your terminal sessions.</p>
         </div>
 
@@ -56,37 +56,37 @@ const lp = (path: string) => getLocalePath(locale, path);
         <p>PATAPIM integrates with the following third-party services. Each service has its own privacy policy governing data you share with it:</p>
 
         <div class="service-grid">
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>Anthropic (Claude Code)</h4>
             <p>PATAPIM wraps the Claude Code CLI in a terminal. All data flows directly between you and Anthropic's servers. PATAPIM does not intercept, read, or modify this data.</p>
             <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">Anthropic Privacy Policy</a>
           </div>
 
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>OpenAI (Whisper API)</h4>
             <p>Optional cloud dictation. If enabled, audio recordings are sent directly to OpenAI for transcription using your own API key.</p>
             <a href="https://openai.com/privacy" target="_blank" rel="noopener">OpenAI Privacy Policy</a>
           </div>
 
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>Hugging Face (Local Whisper)</h4>
             <p>Optional local dictation. A Whisper model is downloaded once and runs entirely on your device. No audio data is sent anywhere after download.</p>
             <a href="https://huggingface.co/privacy" target="_blank" rel="noopener">Hugging Face Privacy Policy</a>
           </div>
 
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>GitHub (gh CLI)</h4>
             <p>Uses the locally installed gh CLI tool. Authentication is handled directly by GitHub. PATAPIM does not store or transmit GitHub credentials.</p>
             <a href="https://docs.github.com/en/site-policy/privacy-policies" target="_blank" rel="noopener">GitHub Privacy Policy</a>
           </div>
 
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>Cloudflare (Tunneling)</h4>
             <p>Optional remote access feature (Pro). Creates a secure tunnel connection to your device via Cloudflare Tunnels.</p>
             <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare Privacy Policy</a>
           </div>
 
-          <div class="service-item">
+          <div class="service-item tv-panel tv-panel-static">
             <h4>Stripe (Payments)</h4>
             <p>All payment processing occurs on patapim.ai through Stripe. The desktop application never handles payment card data.</p>
             <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe Privacy Policy</a>
@@ -170,76 +170,91 @@ const lp = (path: string) => getLocalePath(locale, path);
 <style>
   .legal-page {
     min-height: 100vh;
+    font-family: var(--font-mono);
+    background: var(--bg-deep);
+  }
+
+  .legal-container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .legal-head {
+    padding-top: 120px;
+    margin-bottom: 44px;
+  }
+
+  .legal-title {
+    margin-top: 26px;
+    font-size: clamp(17px, 2.4vw, 22px);
   }
 
   .legal-content {
     max-width: 720px;
     margin: 0 auto;
-    padding-bottom: var(--space-4xl);
+    padding-bottom: 96px;
   }
 
   .legal-intro {
-    font-size: 15px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: var(--space-2xl);
-    padding: var(--space-xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
+    line-height: 1.9;
+    margin-bottom: 40px;
   }
 
   .legal-content h2 {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-top: var(--space-2xl);
-    margin-bottom: var(--space-md);
-    padding-bottom: var(--space-sm);
+    letter-spacing: 0.05em;
+    margin-top: 40px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border-subtle);
+  }
+  .legal-content h2::before {
+    content: '## ';
+    color: var(--text-muted);
+    font-weight: 400;
   }
 
   .legal-content p {
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: var(--space-md);
+    line-height: 1.9;
+    margin-bottom: 14px;
   }
 
   .legal-content ul {
     list-style: none;
     padding: 0;
-    margin-bottom: var(--space-lg);
+    margin-bottom: 18px;
   }
 
   .legal-content ul li {
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    padding: var(--space-sm) 0;
-    padding-left: var(--space-lg);
+    line-height: 1.9;
+    padding: 6px 0;
+    padding-left: 18px;
     position: relative;
   }
 
   .legal-content ul li::before {
-    content: '';
+    content: '-';
     position: absolute;
-    left: 0;
-    top: 14px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    opacity: 0.5;
+    left: 2px;
+    color: var(--vi);
   }
 
   .legal-content ul li ul {
-    margin-top: var(--space-sm);
+    margin-top: 6px;
     margin-bottom: 0;
   }
 
   .legal-content ul li ul li {
-    padding-left: var(--space-lg);
+    padding-left: 18px;
   }
 
   .legal-content strong {
@@ -248,27 +263,24 @@ const lp = (path: string) => getLocalePath(locale, path);
 
   .legal-content code {
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12.5px;
     background: var(--bg-tertiary);
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
-    color: var(--accent-primary);
+    border-radius: 0;
+    color: var(--cy);
   }
 
   .legal-content a {
-    color: var(--accent-primary);
-    text-decoration: none;
+    color: var(--text-secondary);
+    text-decoration: underline;
   }
   .legal-content a:hover {
-    text-decoration: underline;
+    color: var(--cy);
   }
 
   .legal-highlight {
-    padding: var(--space-lg);
-    background: var(--bg-secondary);
-    border-left: 3px solid var(--accent-primary);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-lg);
+    margin-bottom: 18px;
+    border-left: 2px solid var(--cy);
   }
 
   .legal-highlight p {
@@ -278,51 +290,54 @@ const lp = (path: string) => getLocalePath(locale, path);
   .service-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-lg);
-    margin-bottom: var(--space-xl);
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
   .service-item {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
+    padding: 20px 20px 18px;
   }
 
   .service-item h4 {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-sm);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .service-item p {
-    font-size: 13px;
-    margin-bottom: var(--space-sm);
+    font-size: 12.5px;
+    line-height: 1.8;
+    margin-bottom: 10px;
   }
 
   .service-item a {
-    font-size: 12px;
-    color: var(--accent-primary);
-    text-decoration: none;
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    text-decoration: underline;
   }
   .service-item a:hover {
-    text-decoration: underline;
+    color: var(--cy);
   }
 
   .legal-copyright {
-    margin-top: var(--space-2xl);
-    padding-top: var(--space-xl);
+    margin-top: 40px;
+    padding-top: 24px;
     border-top: 1px solid var(--border-subtle);
     color: var(--text-muted) !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     text-align: center;
   }
 
   @media (max-width: 640px) {
     .legal-content {
-      padding-left: var(--space-md);
-      padding-right: var(--space-md);
+      padding-left: 12px;
+      padding-right: 12px;
     }
     .service-grid {
       grid-template-columns: 1fr;

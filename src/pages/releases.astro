@@ -16,11 +16,11 @@ const lp = (path: string) => getLocalePath(locale, path);
   <SessionBar />
 
   <main class="releases-page">
-    <div class="container">
-      <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">Changelog</span>
-        <h1 class="section-title">Release Notes</h1>
-        <p class="section-subtitle">Every update, feature, and fix — from day one.</p>
+    <div class="releases-container">
+      <div class="releases-head">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> git log --releases <span class="tv-dim">— changelog</span></div>
+        <h1 class="tv-heading releases-title">RELEASE NOTES</h1>
+        <p class="tv-heading-sub">Every update, feature, and fix — from day one.</p>
       </div>
 
       <div class="releases-content" id="releases-content">
@@ -124,28 +124,47 @@ const lp = (path: string) => getLocalePath(locale, path);
 <style is:global>
   .releases-page {
     min-height: 100vh;
-    padding-bottom: var(--space-3xl);
+    padding-bottom: 48px;
+    font-family: var(--font-mono);
+    background: var(--bg-deep);
+  }
+
+  .releases-container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .releases-head {
+    padding-top: 120px;
+    margin-bottom: 24px;
+  }
+
+  .releases-title {
+    margin-top: 26px;
+    font-size: clamp(17px, 2.4vw, 22px);
   }
 
   .releases-content {
     max-width: 720px;
     margin: 0 auto;
-    padding: var(--space-xl) 0;
+    padding: 24px 0;
   }
 
   /* Loading */
   .releases-loading {
     text-align: center;
-    padding: var(--space-3xl) 0;
+    padding: 48px 0;
     color: var(--text-muted);
+    font-size: 13px;
   }
   .spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--border-subtle);
-    border-top-color: var(--accent-primary);
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--cy);
     border-radius: 50%;
-    margin: 0 auto var(--space-md);
+    margin: 0 auto 12px;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -153,124 +172,137 @@ const lp = (path: string) => getLocalePath(locale, path);
   /* Error / empty */
   .releases-error, .releases-empty {
     text-align: center;
-    padding: var(--space-2xl) 0;
+    padding: 32px 0;
     color: var(--text-muted);
+    font-size: 13px;
   }
-  .releases-error a { color: var(--accent-primary); }
+  .releases-error a { color: var(--text-secondary); }
 
-  /* Release card */
+  /* Release card — quiet terminal panel */
   .release-card {
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md, 12px);
-    padding: var(--space-lg);
-    margin-bottom: var(--space-lg);
-    background: var(--bg-surface, var(--bg-secondary));
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    padding: 20px 22px;
+    margin-bottom: 18px;
     transition: border-color 0.2s;
   }
   .release-card:first-child {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    border-color: rgba(139, 124, 248, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(139, 124, 248, 0.22),
+      0 0 28px rgba(139, 124, 248, 0.14),
+      0 18px 48px rgba(0, 0, 0, 0.55);
   }
 
   .release-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--space-md);
-    gap: var(--space-sm);
+    margin-bottom: 12px;
+    gap: 8px;
     flex-wrap: wrap;
   }
 
   .release-version {
     display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+    align-items: baseline;
+    gap: 12px;
   }
 
   .version-badge {
     display: inline-block;
-    background: var(--accent-primary);
-    color: var(--bg-primary, #1a1a2e);
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    font-size: 14px;
-    padding: 2px 10px;
-    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    background: linear-gradient(120deg, #c26bf0, #8b7cf8, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .version-badge::before {
+    content: 'v';
   }
 
   .release-date {
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .release-anchor {
     color: var(--text-muted);
     font-size: 14px;
     text-decoration: none;
-    opacity: 0.3;
-    transition: opacity 0.2s;
-    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.4;
+    transition: opacity 0.2s, color 0.2s;
+    font-family: var(--font-mono);
   }
-  .release-anchor:hover { opacity: 0.7; }
+  .release-anchor:hover { opacity: 1; color: var(--cy); }
 
   /* Release body (rendered markdown) */
   .release-body h2 {
-    font-size: 16px;
+    font-size: 14px;
     color: var(--text-primary);
-    margin: var(--space-md) 0 var(--space-xs);
+    letter-spacing: 0.04em;
+    margin: 12px 0 4px;
   }
   .release-body h3 {
-    font-size: 14px;
-    color: var(--accent-primary);
-    margin: var(--space-md) 0 var(--space-xs);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    margin: 12px 0 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.16em;
+  }
+  .release-body h3::before {
+    content: '$ ';
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   .release-body p {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.7;
-    margin-bottom: var(--space-xs);
+    line-height: 1.75;
+    margin-bottom: 4px;
   }
   .release-body ul {
     list-style: none;
     padding: 0;
-    margin: 0 0 var(--space-sm);
+    margin: 0 0 8px;
   }
   .release-body li {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.7;
-    padding-left: var(--space-md);
+    line-height: 1.75;
+    padding-left: 16px;
     position: relative;
   }
   .release-body li::before {
-    content: '';
+    content: '·';
     position: absolute;
-    left: 0;
-    top: 10px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    opacity: 0.5;
+    left: 2px;
+    color: var(--cy);
   }
   .release-body strong {
     color: var(--text-primary);
   }
   .release-body a {
-    color: var(--accent-primary);
-    text-decoration: none;
+    color: var(--text-secondary);
+    text-decoration: underline;
   }
-  .release-body a:hover { text-decoration: underline; }
+  .release-body a:hover { color: var(--cy); }
 
   @media (max-width: 640px) {
     .releases-content {
-      padding-left: var(--space-md);
-      padding-right: var(--space-md);
+      padding-left: 12px;
+      padding-right: 12px;
     }
     .release-card {
-      padding: var(--space-md);
+      padding: 14px 16px;
     }
   }
 </style>

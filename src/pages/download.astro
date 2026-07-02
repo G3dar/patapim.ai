@@ -14,6 +14,29 @@ const lp = (path: string) => getLocalePath(locale, path);
 const translations = locale === 'ja' ? ja : en;
 
 const sysReqs = translations.download.sysReqs;
+
+// terminal-aesthetic tier features (mirrors the v2 home lineup)
+const FREE_FEATURES = [
+  'Full computer control',
+  'Up to 3 projects',
+  'Up to 9 terminals',
+  'A long 30 min dictation buffer',
+  'Remote access',
+  'Task management',
+];
+const PRO_FEATURES = [
+  'Unlimited terminals',
+  'Unlimited projects',
+  'Unlimited dictation',
+  'Everything in Free',
+  'Priority support',
+];
+const LIFETIME_FEATURES = [
+  'Everything in Pro',
+  'Pay once, own forever',
+  'All future updates',
+  'No subscriptions',
+];
 ---
 
 <BaseLayout title={t(locale, 'meta.downloadTitle')} description={t(locale, 'meta.downloadDescription')}>
@@ -21,30 +44,30 @@ const sysReqs = translations.download.sysReqs;
   <SessionBar />
 
   <main class="download-page">
-    <div class="container">
-      <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">{t(locale, 'download.label')}</span>
-        <h1 class="section-title">{t(locale, 'download.title')}</h1>
-        <p class="section-subtitle">
-          {t(locale, 'download.subtitle')}
-        </p>
+    <div class="dlp-main">
+
+      <!-- Header -->
+      <div class="dlp-head">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim install <span class="tv-dim">— {t(locale, 'download.subtitle').toLowerCase()}</span></div>
+        <h1 class="tv-heading dlp-title">{t(locale, 'download.title')}</h1>
+        <p class="tv-heading-sub">windows 10+ · macos 12+</p>
       </div>
 
       <!-- Platform cards grid -->
       <div class="dl-grid">
 
         <!-- Windows -->
-        <div class="dl-card dl-card-windows">
+        <div class="dl-card tv-panel">
           <div class="dl-card-top">
             <div class="dl-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
               </svg>
             </div>
             <h2>{t(locale, 'download.windows')}</h2>
             <p class="dl-version">{t(locale, 'download.windowsNote')}</p>
-            <a href="/api/download/latest" class="btn btn-primary dl-btn">
-              {t(locale, 'download.downloadInstaller')}
+            <a href="/api/download/latest" class="tv-pbtn tv-pbtn-accent dl-btn">
+              $ {t(locale, 'download.downloadInstaller').toLowerCase()}
             </a>
           </div>
           <div class="dl-install-cmds">
@@ -52,41 +75,39 @@ const sysReqs = translations.download.sysReqs;
               <span class="dl-cmd-label">PowerShell</span>
               <div class="dl-cmd-line" data-dl-copy="irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex">
                 <span class="dl-tooltip">Click to copy</span>
+                <span class="tvi-prompt">PS&gt;</span>
                 <code>irm https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.ps1 | iex</code>
-                <span class="dl-copy-btn" aria-label="Copy">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </span>
+                <span class="dl-copy-btn" aria-label="Copy">⧉</span>
               </div>
             </div>
             <div class="dl-cmd-block">
               <span class="dl-cmd-label">CMD</span>
               <div class="dl-cmd-line" data-dl-copy='curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" && "%TEMP%\patapim-install.cmd"'>
                 <span class="dl-tooltip">Click to copy</span>
+                <span class="tvi-prompt">C:\&gt;</span>
                 <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install.cmd -o "%TEMP%\patapim-install.cmd" &amp;&amp; "%TEMP%\patapim-install.cmd"</code>
-                <span class="dl-copy-btn" aria-label="Copy">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </span>
+                <span class="dl-copy-btn" aria-label="Copy">⧉</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- macOS -->
-        <div class="dl-card dl-card-macos">
+        <div class="dl-card tv-panel">
           <div class="dl-card-top">
-            <div class="dl-icon dl-icon-apple">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <div class="dl-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
               </svg>
             </div>
             <h2>{t(locale, 'download.macos')}</h2>
             <p class="dl-version" set:html={t(locale, 'download.macosNote')} />
             <div class="dl-mac-buttons">
-              <a href="/api/download/latest-mac-arm64" class="btn btn-primary dl-btn">
-                {t(locale, 'download.downloadAppleSilicon')}
+              <a href="/api/download/latest-mac-arm64" class="tv-pbtn tv-pbtn-accent dl-btn">
+                $ {t(locale, 'download.downloadAppleSilicon').toLowerCase()}
               </a>
-              <a href="/api/download/latest-mac-x64" class="btn btn-secondary dl-btn dl-btn-alt">
-                {t(locale, 'download.downloadIntel')}
+              <a href="/api/download/latest-mac-x64" class="tv-pbtn dl-btn dl-btn-alt">
+                $ {t(locale, 'download.downloadIntel').toLowerCase()}
               </a>
             </div>
           </div>
@@ -95,10 +116,9 @@ const sysReqs = translations.download.sysReqs;
               <span class="dl-cmd-label">Terminal</span>
               <div class="dl-cmd-line" data-dl-copy="curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash">
                 <span class="dl-tooltip">Click to copy</span>
+                <span class="tvi-prompt">$</span>
                 <code>curl -fsSL https://raw.githubusercontent.com/G3dar/patapim-releases/main/install-mac.sh | bash</code>
-                <span class="dl-copy-btn" aria-label="Copy">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </span>
+                <span class="dl-copy-btn" aria-label="Copy">⧉</span>
               </div>
             </div>
           </div>
@@ -108,71 +128,64 @@ const sysReqs = translations.download.sysReqs;
 
       <!-- Plans -->
       <div class="upgrade-section">
-        <h2 class="upgrade-title">Choose your plan</h2>
-        <div class="upgrade-cards">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim upgrade <span class="tv-dim">— choose your plan</span></div>
+        <div class="tv-price-grid upgrade-cards">
 
-          <div class="upgrade-card upgrade-card-featured">
-            <div class="upgrade-card-inner">
-              <h3 class="plan-name">{t(locale, 'pricing.freeTitle')}</h3>
-              <div class="upgrade-price">
-                <span class="upgrade-amount">{t(locale, 'pricing.freePrice')}</span>
-                <span class="upgrade-period">{t(locale, 'pricing.freePeriod')}</span>
-              </div>
-              <p class="plan-desc">{t(locale, 'pricing.freeDesc')}</p>
-              <ul class="plan-features">
-                <li>Up to 9 terminals</li>
-                <li>Up to 3 projects</li>
-                <li>30 min voice dictation</li>
-                <li>Remote access</li>
-              </ul>
-              <span class="plan-tag plan-tag-free">Included with download</span>
+          <div class="tv-pcard tv-pcard-hero">
+            <div class="tv-pcard-tag">VERY POWERFUL</div>
+            <div class="tv-pcard-head">
+              <span class="tv-pcard-name">{t(locale, 'pricing.freeTitle')}</span>
+              <span class="tv-pcard-sub">{t(locale, 'pricing.freeDesc')}</span>
             </div>
+            <div class="tv-pcard-pricebox">
+              <span class="tv-pcard-amount tv-grad">{t(locale, 'pricing.freePrice')}</span>
+              <span class="tv-pcard-period">{t(locale, 'pricing.freePeriod')}</span>
+            </div>
+            <ul>
+              {FREE_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
+            </ul>
+            <span class="plan-tag-free">✓ included with download</span>
           </div>
 
-          <div class="upgrade-card upgrade-card-pro">
-            <div class="upgrade-card-inner">
-              <h3 class="plan-name">{t(locale, 'pricing.proTitle')}</h3>
-              <div class="upgrade-price">
-                <span class="upgrade-amount">{t(locale, 'pricing.proPrice')}</span>
-                <span class="upgrade-period">{t(locale, 'pricing.proPeriod')}</span>
-              </div>
-              <p class="plan-desc">{t(locale, 'pricing.proDesc')}</p>
-              <ul class="plan-features">
-                <li>Unlimited terminals</li>
-                <li>Unlimited projects</li>
-                <li>Unlimited voice dictation</li>
-                <li>Remote access</li>
-              </ul>
-              <a href="#" class="btn btn-primary upgrade-btn upgrade-btn-pro" id="checkout-monthly">{t(locale, 'common.goPro')}</a>
+          <div class="tv-pcard">
+            <div class="tv-pcard-head">
+              <span class="tv-pcard-name">{t(locale, 'pricing.proTitle')}</span>
+              <span class="tv-pcard-sub">{t(locale, 'pricing.proDesc')}</span>
             </div>
+            <div class="tv-pcard-pricebox">
+              <span class="tv-pcard-amount">{t(locale, 'pricing.proPrice')}</span>
+              <span class="tv-pcard-period">{t(locale, 'pricing.proPeriod')}</span>
+            </div>
+            <ul>
+              {PRO_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
+            </ul>
+            <a href="#" class="tv-pbtn" id="checkout-monthly">$ {t(locale, 'common.goPro').toLowerCase()}</a>
           </div>
 
-          <div class="upgrade-card upgrade-card-lifetime">
-            <div class="upgrade-card-inner">
-              <h3 class="plan-name">Lifetime</h3>
-              <div class="upgrade-price">
-                <span class="upgrade-amount">{t(locale, 'pricing.unlockPrice')}</span>
-                <span class="upgrade-period">{t(locale, 'pricing.unlockNote')}</span>
-              </div>
-              <p class="plan-desc">All Pro features, forever. No subscriptions.</p>
-              <ul class="plan-features">
-                <li>Everything in Pro</li>
-                <li>Pay once, own forever</li>
-                <li>All future updates</li>
-              </ul>
-              <a href="#" class="btn btn-primary upgrade-btn upgrade-btn-lifetime" id="checkout-lifetime">{t(locale, 'pricing.unlockButton')}</a>
+          <div class="tv-pcard">
+            <div class="tv-pcard-head">
+              <span class="tv-pcard-name">Lifetime</span>
+              <span class="tv-pcard-sub">one payment. done.</span>
             </div>
+            <div class="tv-pcard-pricebox">
+              <span class="tv-pcard-amount">{t(locale, 'pricing.unlockPrice')}</span>
+              <span class="tv-pcard-period">{t(locale, 'pricing.unlockNote')}</span>
+            </div>
+            <ul>
+              {LIFETIME_FEATURES.map((f) => <li><span class="tv-check">✓</span> {f}</li>)}
+            </ul>
+            <a href="#" class="tv-pbtn" id="checkout-lifetime">$ {t(locale, 'pricing.unlockButton').toLowerCase()}</a>
           </div>
 
         </div>
       </div>
 
       <!-- Requirements -->
-      <div class="requirements section">
-        <h2 style="font-size: 24px; margin-bottom: var(--space-xl); text-align: center;">{t(locale, 'download.sysReqTitle')}</h2>
+      <div class="requirements">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim doctor <span class="tv-dim">— {t(locale, 'download.sysReqTitle').toLowerCase()}</span></div>
         <div class="req-grid">
           {sysReqs.map((req) => (
-            <div class="req-item">
+            <div class="req-item tv-panel tv-panel-static">
               <h3>{req.label}</h3>
               <p>{req.value}</p>
             </div>
@@ -189,20 +202,35 @@ const sysReqs = translations.download.sysReqs;
 <style>
   .download-page {
     min-height: 100vh;
+    font-family: var(--font-mono);
+    background: var(--bg-deep);
+  }
+
+  .dlp-main {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px 72px;
+  }
+
+  .dlp-head {
+    padding-top: 120px;
+    margin-bottom: 44px;
+  }
+
+  .dlp-title {
+    margin-top: 26px;
+    font-size: clamp(17px, 2.4vw, 22px);
+    text-transform: uppercase;
   }
 
   .dl-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
-    margin-bottom: var(--space-xl);
+    gap: 24px;
+    margin-bottom: 24px;
   }
 
   .dl-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
     display: flex;
     flex-direction: column;
   }
@@ -212,41 +240,36 @@ const sysReqs = translations.download.sysReqs;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-bottom: var(--space-xl);
+    margin-bottom: 26px;
   }
 
   .dl-card h2 {
-    font-size: 24px;
-    margin-bottom: var(--space-xs);
-  }
-
-  .dl-card-windows {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 30px rgba(212, 165, 116, 0.1);
-  }
-
-  .dl-card-macos {
-    border-color: rgba(130, 120, 255, 0.5);
-    box-shadow: 0 0 30px rgba(130, 120, 255, 0.1);
-    background: linear-gradient(160deg, rgba(130, 120, 255, 0.06) 0%, var(--bg-secondary) 50%, rgba(90, 200, 250, 0.06) 100%);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin: 0 0 4px;
   }
 
   .dl-icon {
     color: var(--text-primary);
-    margin-bottom: var(--space-lg);
+    margin-bottom: 16px;
   }
-  .dl-icon-apple {
-    color: rgba(180, 170, 255, 0.9);
+  .dl-card:hover .dl-icon {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .dl-version {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-tertiary);
-    margin-bottom: var(--space-xl);
+    margin: 0 0 22px;
   }
 
   .dl-btn {
-    justify-content: center;
     max-width: 320px;
     width: 100%;
   }
@@ -260,63 +283,66 @@ const sysReqs = translations.download.sysReqs;
   }
 
   .dl-btn-alt {
-    font-size: 13px;
-    padding: 8px 20px;
+    font-size: 12px;
+    padding: 9px 12px;
   }
 
-  /* Install commands */
+  /* Install commands — .tvi-panel look, page-local hooks for the copy JS */
   .dl-install-cmds {
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: 12px;
     text-align: left;
+    position: relative;
+    z-index: 1;
   }
   .dl-cmd-block {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
   }
   .dl-cmd-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.18em;
   }
   .dl-cmd-line {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: var(--bg-tertiary);
+    gap: 10px;
+    background: var(--bg-secondary);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
+    border-radius: 0;
+    padding: 11px 14px;
+    font-size: 12px;
     cursor: pointer;
     position: relative;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.2s;
   }
   .dl-cmd-line:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-strong);
   }
   .dl-cmd-line:hover .dl-copy-btn {
-    color: var(--accent-primary);
+    color: var(--text-primary);
   }
   .dl-cmd-line.copied {
-    border-color: var(--success);
+    border-color: var(--cy);
   }
   .dl-cmd-line .dl-tooltip {
     position: absolute;
-    top: -32px;
+    top: -30px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
-    color: #111;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
     font-size: 11px;
-    font-family: var(--font-sans, sans-serif);
-    padding: 4px 10px;
-    border-radius: 6px;
+    font-family: var(--font-mono);
+    padding: 3px 10px;
+    border-radius: 0;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
@@ -326,15 +352,15 @@ const sysReqs = translations.download.sysReqs;
     opacity: 1;
   }
   .dl-cmd-line.copied .dl-tooltip {
-    background: var(--success);
-    color: #fff;
+    border-color: var(--cy);
+    color: var(--cy);
   }
   .dl-cmd-line code {
     flex: 1;
     font-size: 12px;
     background: none;
     padding: 0;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text-secondary);
     word-break: break-all;
     line-height: 1.5;
   }
@@ -348,222 +374,75 @@ const sysReqs = translations.download.sysReqs;
     transition: color 0.2s;
   }
   .dl-copy-btn.copied {
-    color: var(--success);
+    color: var(--cy);
   }
 
   /* Upgrade section */
   .upgrade-section {
-    max-width: 900px;
-    margin: 0 auto var(--space-3xl);
-    padding-top: var(--space-3xl);
-    border-top: 1px solid var(--border-subtle);
-  }
-
-  .upgrade-title {
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: var(--space-2xl);
+    max-width: 980px;
+    margin: 88px auto 0;
   }
 
   .upgrade-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: var(--space-lg);
-  }
-
-  .upgrade-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-  }
-
-  .upgrade-card-inner {
-    padding: var(--space-2xl) var(--space-xl);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    height: 100%;
-  }
-
-  .plan-name {
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-lg);
-  }
-
-  .upgrade-card-featured {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 40px rgba(212, 165, 116, 0.08);
-  }
-
-  .upgrade-card-featured .plan-name {
-    color: var(--accent-primary);
-  }
-
-  .upgrade-card-pro {
-    border-color: rgba(74, 222, 128, 0.5);
-    box-shadow: 0 0 40px rgba(74, 222, 128, 0.06);
-  }
-
-  .upgrade-card-pro .plan-name {
-    color: rgb(74, 222, 128);
-  }
-
-  .upgrade-card-pro .plan-features li::before {
-    color: rgb(74, 222, 128);
-  }
-
-  .upgrade-card-lifetime {
-    border-color: rgba(130, 120, 255, 0.5);
-    box-shadow: 0 0 40px rgba(130, 120, 255, 0.08);
-  }
-
-  .upgrade-card-lifetime .plan-name {
-    color: rgba(170, 160, 255, 0.9);
-  }
-
-  .upgrade-price {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: var(--space-sm);
-  }
-
-  .upgrade-amount {
-    font-size: 36px;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    color: var(--text-primary);
-  }
-
-  .upgrade-period {
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-
-  .plan-desc {
-    font-size: 13px;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-xl);
-  }
-
-  .plan-features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 auto;
-    width: 100%;
-    text-align: left;
-    padding-bottom: var(--space-xl);
-  }
-
-  .plan-features li {
-    font-size: 13px;
-    color: var(--text-secondary);
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .plan-features li:last-child {
-    border-bottom: none;
-  }
-
-  .plan-features li::before {
-    content: '✓';
-    color: var(--accent-primary);
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .plan-tag {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: var(--radius-md);
-    width: 100%;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 42px;
+    margin-top: 30px;
   }
 
   .plan-tag-free {
-    color: var(--accent-primary);
-    border: 1px solid rgba(212, 165, 116, 0.25);
-    background: rgba(212, 165, 116, 0.08);
-  }
-
-  .upgrade-btn {
-    width: 100%;
-    justify-content: center;
-    min-height: 42px;
-  }
-
-  .upgrade-btn-pro {
-    background: rgba(74, 222, 128, 0.85);
-    border-color: rgba(74, 222, 128, 0.85);
-    color: #111;
-  }
-
-  .upgrade-btn-pro:hover {
-    background: rgba(74, 222, 128, 1);
-    border-color: rgba(74, 222, 128, 1);
-  }
-
-  .upgrade-btn-lifetime {
-    background: rgba(130, 120, 255, 0.9);
-    border-color: rgba(130, 120, 255, 0.9);
-  }
-
-  .upgrade-btn-lifetime:hover {
-    background: rgba(150, 140, 255, 1);
-    border-color: rgba(150, 140, 255, 1);
-  }
-
-  @media (max-width: 768px) {
-    .upgrade-cards { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+    display: block;
+    text-align: center;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cy);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    background: rgba(34, 211, 238, 0.06);
   }
 
   /* Requirements */
+  .requirements {
+    max-width: 980px;
+    margin: 88px auto 0;
+  }
   .req-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-lg);
-    max-width: 800px;
-    margin: 0 auto;
+    gap: 16px;
   }
   .req-item {
     text-align: center;
-    padding: var(--space-xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
+    padding: 22px 16px;
   }
   .req-item h3 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: var(--space-sm);
-    color: var(--accent-primary);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   .req-item p {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .upgrade-cards {
+      grid-template-columns: 1fr;
+      max-width: 440px;
+      margin-left: auto;
+      margin-right: auto;
+    }
   }
 
   @media (max-width: 768px) {
     .dl-grid { grid-template-columns: 1fr; }
-    .dl-card { padding: var(--space-xl); }
     .req-grid { grid-template-columns: 1fr 1fr; }
+    .upgrade-section, .requirements { margin-top: 64px; }
   }
   @media (max-width: 480px) {
     .req-grid { grid-template-columns: 1fr; }

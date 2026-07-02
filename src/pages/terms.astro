@@ -16,15 +16,15 @@ const lp = (path: string) => getLocalePath(locale, path);
   <SessionBar />
 
   <main class="legal-page">
-    <div class="container">
-      <div class="section-header" style="padding-top: 120px;">
-        <span class="section-label">Legal</span>
-        <h1 class="section-title">Terms of Use (EULA)</h1>
-        <p class="section-subtitle">Last updated: February 8, 2026</p>
+    <div class="legal-container">
+      <div class="legal-head">
+        <div class="tv-label"><span class="tv-label-prompt">$</span> cat TERMS.md <span class="tv-dim">— legal</span></div>
+        <h1 class="tv-heading legal-title">TERMS OF USE (EULA)</h1>
+        <p class="tv-heading-sub">Last updated: February 8, 2026</p>
       </div>
 
       <div class="legal-content">
-        <p class="legal-intro">
+        <p class="legal-intro tv-panel tv-panel-static">
           Please read this End User License Agreement ("Agreement") carefully before using PATAPIM.
           By installing, copying, or otherwise using the Software, you agree to be bound by the terms
           of this Agreement. If you do not agree to the terms of this Agreement, do not install or use
@@ -60,7 +60,7 @@ const lp = (path: string) => getLocalePath(locale, path);
         </ul>
 
         <h2>4. Third-Party AI Services</h2>
-        <div class="legal-highlight">
+        <div class="legal-highlight tv-panel tv-panel-static">
           <p><strong>PATAPIM is a terminal wrapper and IDE environment for AI coding assistants. It does NOT intercept, modify, proxy, or store AI conversation data.</strong></p>
         </div>
         <ul>
@@ -155,67 +155,82 @@ const lp = (path: string) => getLocalePath(locale, path);
 <style>
   .legal-page {
     min-height: 100vh;
+    font-family: var(--font-mono);
+    background: var(--bg-deep);
+  }
+
+  .legal-container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .legal-head {
+    padding-top: 120px;
+    margin-bottom: 44px;
+  }
+
+  .legal-title {
+    margin-top: 26px;
+    font-size: clamp(17px, 2.4vw, 22px);
   }
 
   .legal-content {
     max-width: 720px;
     margin: 0 auto;
-    padding-bottom: var(--space-4xl);
+    padding-bottom: 96px;
   }
 
   .legal-intro {
-    font-size: 15px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: var(--space-2xl);
-    padding: var(--space-xl);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
+    line-height: 1.9;
+    margin-bottom: 40px;
   }
 
   .legal-content h2 {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-top: var(--space-2xl);
-    margin-bottom: var(--space-md);
-    padding-bottom: var(--space-sm);
+    letter-spacing: 0.05em;
+    margin-top: 40px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border-subtle);
+  }
+  .legal-content h2::before {
+    content: '## ';
+    color: var(--text-muted);
+    font-weight: 400;
   }
 
   .legal-content p {
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: var(--space-md);
+    line-height: 1.9;
+    margin-bottom: 14px;
   }
 
   .legal-content ul {
     list-style: none;
     padding: 0;
-    margin-bottom: var(--space-lg);
+    margin-bottom: 18px;
   }
 
   .legal-content ul li {
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.8;
-    padding: var(--space-sm) 0;
-    padding-left: var(--space-lg);
+    line-height: 1.9;
+    padding: 6px 0;
+    padding-left: 18px;
     position: relative;
   }
 
   .legal-content ul li::before {
-    content: '';
+    content: '-';
     position: absolute;
-    left: 0;
-    top: 14px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    opacity: 0.5;
+    left: 2px;
+    color: var(--vi);
   }
 
   .legal-content strong {
@@ -223,19 +238,16 @@ const lp = (path: string) => getLocalePath(locale, path);
   }
 
   .legal-content a {
-    color: var(--accent-primary);
-    text-decoration: none;
+    color: var(--text-secondary);
+    text-decoration: underline;
   }
   .legal-content a:hover {
-    text-decoration: underline;
+    color: var(--cy);
   }
 
   .legal-highlight {
-    padding: var(--space-lg);
-    background: var(--bg-secondary);
-    border-left: 3px solid var(--accent-primary);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-lg);
+    margin-bottom: 18px;
+    border-left: 2px solid var(--cy);
   }
 
   .legal-highlight p {
@@ -243,22 +255,22 @@ const lp = (path: string) => getLocalePath(locale, path);
   }
 
   .legal-caps {
-    font-size: 13px !important;
+    font-size: 12.5px !important;
   }
 
   .legal-copyright {
-    margin-top: var(--space-2xl);
-    padding-top: var(--space-xl);
+    margin-top: 40px;
+    padding-top: 24px;
     border-top: 1px solid var(--border-subtle);
     color: var(--text-muted) !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     text-align: center;
   }
 
   @media (max-width: 640px) {
     .legal-content {
-      padding-left: var(--space-md);
-      padding-right: var(--space-md);
+      padding-left: 12px;
+      padding-right: 12px;
     }
   }
 </style>
