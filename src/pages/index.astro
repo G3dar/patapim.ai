@@ -314,7 +314,7 @@ const PRO_FEATURES = [
       <div class="tv-label"><span class="tv-label-prompt">$</span> patapim upgrade <span class="tv-dim">— start free. upgrade when you're ready.</span></div>
       <div class="tv-price-grid">
         <div class="tv-pcard tv-pcard-hero">
-          <div class="tv-pcard-tag">VERY POWERFUL</div>
+          <div class="tv-pcard-tag">INCLUDES ALL FEATURES</div>
           <div class="tv-pcard-head">
             <span class="tv-pcard-name">Free</span>
             <span class="tv-pcard-sub">the free plan is seriously powerful</span>
@@ -328,7 +328,9 @@ const PRO_FEATURES = [
           </ul>
           <a href="/download" class="tv-pbtn tv-pbtn-accent">$ download free</a>
         </div>
-        <div class="tv-pcard">
+        <div class="tv-pcard plan-hoverable">
+          <span class="plan-trace" aria-hidden="true"></span>
+          <div class="plan-hover-tag">CANCEL ANYTIME</div>
           <div class="tv-pcard-head">
             <span class="tv-pcard-name">Pro</span>
             <span class="tv-pcard-sub">full power, no limits</span>
@@ -342,7 +344,9 @@ const PRO_FEATURES = [
           </ul>
           <a href="/pricing" class="tv-pbtn">$ go pro</a>
         </div>
-        <div class="tv-pcard tv-pcard-life">
+        <div class="tv-pcard tv-pcard-life plan-hoverable">
+          <span class="plan-trace" aria-hidden="true"></span>
+          <div class="plan-hover-tag">PERMANENT ACCESS</div>
           <div class="tv-pcard-head">
             <span class="tv-pcard-name">Lifetime</span>
             <span class="tv-pcard-sub">one payment. done.</span>
@@ -1190,6 +1194,71 @@ const PRO_FEATURES = [
     color: #000;
     background: linear-gradient(90deg, #c26bf0, #8b7cf8, #22d3ee);
     z-index: 2;
+  }
+
+  /* Pro / Lifetime hover: a cyan box traces itself clockwise around the
+     card, then the plan promise tag pops in at the top edge (same as /download) */
+  .plan-trace {
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .plan-trace::before,
+  .plan-trace::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    box-sizing: border-box;
+    /* un-hover: fade out, then collapse instantly */
+    transition: opacity 0.12s, width 0s 0.12s, height 0s 0.12s;
+  }
+  .plan-trace::before {
+    top: 0;
+    left: 0;
+    border-top: 1px solid var(--cy);
+    border-right: 1px solid var(--cy);
+  }
+  .plan-trace::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: 1px solid var(--cy);
+    border-left: 1px solid var(--cy);
+  }
+  .plan-hoverable:hover .plan-trace::before {
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0s, width 0.14s ease-out, height 0.14s ease-out 0.14s;
+  }
+  .plan-hoverable:hover .plan-trace::after {
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0s 0.28s, width 0.14s ease-out 0.28s, height 0.14s ease-out 0.42s;
+  }
+  .plan-hover-tag {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    padding: 3px 12px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    color: var(--cy);
+    background: #000;
+    border: 1px solid var(--cy);
+    opacity: 0;
+    z-index: 3;
+    transition: opacity 0.12s, transform 0.12s;
+  }
+  .plan-hoverable:hover .plan-hover-tag {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.16s 0.5s, transform 0.16s 0.5s;
   }
 
   .tv-pcard-head { margin-bottom: 20px; }
