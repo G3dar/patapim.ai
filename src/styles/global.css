@@ -13,10 +13,10 @@
   --bg-hover: #1d1d1d;
 
   /* Text Colors */
-  --text-primary: #ededed;
-  --text-secondary: #9a9a9a;
-  --text-tertiary: #6a6a6a;
-  --text-muted: #444444;
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #b5b5b5;
+  --text-muted: #8e8e8e;
 
   /* Accent — neutral near-white; color lives in --cy/--vi/--p-gradient */
   --accent-primary: #d6d6d6;

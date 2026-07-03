@@ -39,7 +39,7 @@
     <div class="vds-keys" data-vds-keys>
       <span class="vds-key" data-vds-key1>ctrl</span>
       <span class="vds-key-plus">+</span>
-      <span class="vds-key" data-vds-key2>ctrl</span>
+      <span class="vds-key" data-vds-key2>alt</span>
       <span class="vds-keys-hint" data-vds-keyhint>hold to talk</span>
     </div>
 
@@ -507,7 +507,7 @@
       await sleep(600);
       if (!alive(g)) return;
 
-      line('tl-run', '// hold <b>ctrl+ctrl</b> and just talk');
+      line('tl-run', '// hold <b>ctrl+alt</b> and just talk');
       const cur = line('tl-cursor', '█');
       await sleep(1100);
       if (!alive(g)) return;
