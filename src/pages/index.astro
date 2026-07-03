@@ -93,8 +93,30 @@ const PRO_FEATURES = [
         <a href="/signin" class="tv-nav-signin" id="tv-home-signin">Sign In</a>
         <a href="/go" class="tv-nav-cta">[ Dashboard ]</a>
       </div>
+      <button class="tv-nav-toggle" aria-label="Toggle menu" id="mobile-toggle">≡</button>
+    </div>
+    <div class="tv-nav-mobile" id="mobile-menu">
+      <div class="tv-nav-lang-row"><LanguageSwitcher /></div>
+      <a href="#demos">Features</a>
+      <a href="/download">Download</a>
+      <a href="/docs/releases">Documentation</a>
+      <a href="/about">About</a>
+      <a href="/signin" id="mobile-signin">Sign In</a>
+      <a href="/go" class="tv-nav-cta">[ Dashboard ]</a>
     </div>
   </nav>
+  <script is:inline>
+    (function () {
+      var t = document.getElementById('mobile-toggle');
+      var m = document.getElementById('mobile-menu');
+      if (!t || !m) return;
+      t.addEventListener('click', function () { m.classList.toggle('open'); });
+      // same-page anchors (#demos) don't navigate, so close the menu on tap
+      m.addEventListener('click', function (e) {
+        if (e.target.closest('a')) m.classList.remove('open');
+      });
+    })();
+  </script>
 
   <main class="tv-main">
 
