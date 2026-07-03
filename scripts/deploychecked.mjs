@@ -17,7 +17,9 @@ const quick = args.has('--quick');
 const dryRun = args.has('--dry-run');
 
 const baseUrl = process.env.DEPLOYCHECKED_URL || 'https://patapim.ai';
-const remotePath = process.env.DEPLOYCHECKED_REMOTE_PATH || '/remote';
+// /remote is now a tiny UA router; the mobile client markers this script
+// verifies live in /remote-mobile
+const remotePath = process.env.DEPLOYCHECKED_REMOTE_PATH || '/remote-mobile';
 const appRepoDir = path.resolve(process.cwd(), process.env.DEPLOYCHECKED_APP_DIR || '../patapim');
 const appProcessList = (process.env.DEPLOYCHECKED_APP_PROCESSES || 'PATAPIM')
   .split(',')
