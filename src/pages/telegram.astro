@@ -61,20 +61,18 @@ export const prerender = true;
 
     /* seamless cross-document navigation, same as the rest of the site */
     @view-transition { navigation: auto; }
-    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-    ::view-transition-old(site-nav), ::view-transition-new(site-nav) { animation: none; }
+    ::view-transition { background-color: #000; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 90ms; }
 
-    /* site nav — mirrors the shared .tv-nav metrics exactly */
+    /* site nav — mirrors the shared .tv-nav metrics exactly.
+       solid black: snapshot-safe for view transitions */
     .site-nav {
-      view-transition-name: site-nav;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: #000;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .site-nav-inner {

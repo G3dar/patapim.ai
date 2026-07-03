@@ -500,8 +500,8 @@ const PRO_FEATURES = [
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(8px);
+    /* solid black — snapshot-safe for view transitions */
+    background: #000;
     border-bottom: 1px solid var(--border-subtle);
   }
   .tv-nav-inner {

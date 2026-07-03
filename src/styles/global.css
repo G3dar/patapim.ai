@@ -302,22 +302,16 @@ a:hover {
 @view-transition {
   navigation: auto;
 }
-.tv-nav, .site-nav {
-  view-transition-name: site-nav;
-}
 /* the transition overlay itself is black — any gap between snapshots can
    only ever show black, never the default canvas */
 ::view-transition {
   background-color: #000;
 }
 /* near-instant crossfade: fast enough to read as a cut, but it masks the
-   document swap so nothing pops */
+   document swap so nothing pops. The nav is pixel-identical on every page,
+   so it appears static through the root crossfade — no separate layer
+   (snapshotting a backdrop-filtered nav renders white in Chromium). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 90ms;
-}
-/* the nav is pixel-identical on every page: keep its layer static */
-::view-transition-old(site-nav),
-::view-transition-new(site-nav) {
-  animation: none;
 }

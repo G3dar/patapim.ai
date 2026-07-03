@@ -396,9 +396,9 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* solid black: identical look on our black pages, and — critically —
+     snapshot-safe for view transitions (backdrop-filter snapshots white) */
+  background: #000;
   border-bottom: 1px solid var(--border-subtle);
 }
 .tv-nav-inner {
