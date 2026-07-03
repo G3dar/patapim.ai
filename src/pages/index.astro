@@ -4,6 +4,7 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
 import LanguageSwitcher from '../components/LanguageSwitcher.astro';
+import SessionBar from '../components/SessionBar.astro';
 import HeroMiniComputerControl from '../components/HeroMiniComputerControl.astro';
 import V2MiniMultiTerminal from '../components/V2MiniMultiTerminal.astro';
 import HeroMiniVoiceDictation from '../components/HeroMiniVoiceDictation.astro';
@@ -117,6 +118,7 @@ const PRO_FEATURES = [
       });
     })();
   </script>
+  <SessionBar />
 
   <main class="tv-main">
 
@@ -486,7 +488,9 @@ const PRO_FEATURES = [
   .tv-main {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 0 24px 40px;
+    /* the scoped rule beats SessionBar's global main{padding-top}, so the
+       online-devices offset must live here too */
+    padding: var(--session-bar-height, 0px) 24px 40px;
   }
 
   .tv-label {
