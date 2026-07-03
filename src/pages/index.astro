@@ -86,12 +86,11 @@ const PRO_FEATURES = [
         <a href="#demos">Features</a>
         <a href="/download">Download</a>
         <a href="/docs/releases">Documentation</a>
-        <a href="/whats-new">What's new</a>
         <a href="/about">About</a>
       </div>
       <div class="tv-nav-actions">
         <LanguageSwitcher />
-        <a href="/signin" class="tv-nav-signin" id="tv-home-signin" style="display:none;">Sign In</a>
+        <a href="/signin" class="tv-nav-signin" id="tv-home-signin">Sign In</a>
         <a href="/go" class="tv-nav-cta">[ Dashboard ]</a>
       </div>
     </div>
@@ -1246,16 +1245,16 @@ const PRO_FEATURES = [
     tick();
   }
 
-  // ---------- reveal Sign in for anonymous visitors ----------
+  // ---------- auth reconcile (Sign In renders pre-paint via html.tv-authed;
+  // this only corrects the cached flag so the nav never reflows) ----------
   (async () => {
-    const show = () => document.getElementById('tv-home-signin')?.style.setProperty('display', '');
+    let authed = false;
     try {
       const res = await fetch('/api/auth/session');
-      const data = await res.json();
-      if (!data.authenticated) show();
-    } catch {
-      show();
-    }
+      authed = !!(await res.json()).authenticated;
+    } catch { /* treat as anonymous */ }
+    try { localStorage.setItem('ptpm-authed', authed ? '1' : '0'); } catch {}
+    document.documentElement.classList.toggle('tv-authed', authed);
   })();
 
   // ---------- logo glitch + rare malfunction ----------
@@ -1498,7 +1497,7 @@ const PRO_FEATURES = [
       spec.type = 'speculationrules';
       spec.textContent = JSON.stringify({
         prefetch: [{
-          urls: ['/download/', '/pricing/', '/whats-new/', '/about/', '/docs/releases/', '/telegram/'],
+          urls: ['/download/', '/pricing/', '/about/', '/docs/releases/', '/telegram/'],
           eagerness: 'eager',
         }],
       });

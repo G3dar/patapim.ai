@@ -274,6 +274,7 @@
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
+  white-space: nowrap;
   padding: 3px 12px;
   font-size: 10px;
   letter-spacing: 0.2em;

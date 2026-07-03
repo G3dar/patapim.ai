@@ -35,7 +35,11 @@ const siteUrl = 'https://patapim.ai';
        3. inline view-transition opt-in — the incoming page's opt-in must not
           wait for external CSS. is:inline keeps all of it verbatim in HTML. -->
   <meta name="color-scheme" content="dark" />
-  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}::view-transition-old(root),::view-transition-new(root){animation:none!important}</style>
+  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}::view-transition-old(root),::view-transition-new(root){animation:none!important}.tv-authed .tv-nav-signin,.tv-authed #mobile-signin{display:none}</style>
+  <!-- auth state resolved BEFORE first paint from the cached flag, so the
+       Sign In link never pops in post-paint and reflows the header. The
+       session fetch (Navbar/home) only reconciles the cache afterwards. -->
+  <script is:inline>try{if(localStorage.getItem('ptpm-authed')==='1')document.documentElement.classList.add('tv-authed')}catch(e){}</script>
   <meta name="theme-color" content="#000000" />
   <title>{title}</title>
   <meta name="description" content={description} />
@@ -116,6 +120,9 @@ const siteUrl = 'https://patapim.ai';
         var EXCL = '.tv-nav,.site-nav,nav,footer,.tvf-footer,script,style,noscript,#session-bar,[data-no-type]';
         var vh = window.innerHeight || 800;
         var LIMIT = vh * 1.35;
+        // pages tagged [data-type-cascade] get a looser, more organic build:
+        // stronger top-to-bottom stagger, per-block speed variation, stutter
+        var casc = !!document.querySelector('[data-type-cascade]');
         var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
         var nodes = [];
         while (walker.nextNode()) {
@@ -137,9 +144,11 @@ const siteUrl = 'https://patapim.ai';
           n.parentNode.replaceChild(hidden, n);
           hidden.parentNode.insertBefore(shown, hidden);
           jobs.push({
-            s: shown, h: hidden, f: full, i: 0,
-            rate: Math.max(1, Math.ceil(full.length / 22)),
-            delay: Math.floor(Math.random() * 4 + Math.max(0, Math.min(tops[i], 1200)) / 1200 * 26)
+            s: shown, h: hidden, f: full, i: 0, st: casc,
+            rate: Math.max(1, Math.ceil(full.length / (casc ? 10 + Math.random() * 30 : 22))),
+            delay: casc
+              ? Math.floor(Math.random() * 24 + Math.max(0, Math.min(tops[i], 1600)) / 1600 * 85)
+              : Math.floor(Math.random() * 4 + Math.max(0, Math.min(tops[i], 1200)) / 1200 * 26)
           });
         });
         if (!jobs.length) return;
@@ -149,10 +158,11 @@ const siteUrl = 'https://patapim.ai';
             var j = jobs[k];
             if (j.delay > 0) { j.delay--; active = true; continue; }
             if (j.i < j.f.length) {
+              active = true;
+              if (j.st && Math.random() < 0.25) continue; // organic stutter
               j.i = Math.min(j.f.length, j.i + j.rate);
               j.s.textContent = j.f.slice(0, j.i);
               j.h.textContent = j.f.slice(j.i);
-              active = true;
             }
           }
           if (active) requestAnimationFrame(step);

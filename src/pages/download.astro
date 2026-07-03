@@ -5,15 +5,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import SessionBar from '../components/SessionBar.astro';
 import Footer from '../components/Footer.astro';
-import { getLocaleFromUrl, t, getLocalePath } from '../i18n';
-import en from '../i18n/translations/en';
-import ja from '../i18n/translations/ja';
+import { getLocaleFromUrl, t } from '../i18n';
 
 const locale = getLocaleFromUrl(Astro.url);
-const lp = (path: string) => getLocalePath(locale, path);
-const translations = locale === 'ja' ? ja : en;
-
-const sysReqs = translations.download.sysReqs;
 
 // terminal-aesthetic tier features (mirrors the v2 home lineup)
 const FREE_FEATURES = [
@@ -132,7 +126,7 @@ const LIFETIME_FEATURES = [
         <div class="tv-price-grid upgrade-cards">
 
           <div class="tv-pcard tv-pcard-hero">
-            <div class="tv-pcard-tag">VERY POWERFUL</div>
+            <div class="tv-pcard-tag">INCLUDES ALL FEATURES</div>
             <div class="tv-pcard-head">
               <span class="tv-pcard-name">{t(locale, 'pricing.freeTitle')}</span>
               <span class="tv-pcard-sub">{t(locale, 'pricing.freeDesc')}</span>
@@ -147,7 +141,9 @@ const LIFETIME_FEATURES = [
             <span class="plan-tag-free">✓ included with download</span>
           </div>
 
-          <div class="tv-pcard">
+          <div class="tv-pcard plan-hoverable">
+            <span class="plan-trace" aria-hidden="true"></span>
+            <div class="plan-hover-tag">CANCEL ANYTIME</div>
             <div class="tv-pcard-head">
               <span class="tv-pcard-name">{t(locale, 'pricing.proTitle')}</span>
               <span class="tv-pcard-sub">{t(locale, 'pricing.proDesc')}</span>
@@ -162,7 +158,9 @@ const LIFETIME_FEATURES = [
             <a href="#" class="tv-pbtn" id="checkout-monthly">$ {t(locale, 'common.goPro').toLowerCase()}</a>
           </div>
 
-          <div class="tv-pcard">
+          <div class="tv-pcard plan-hoverable">
+            <span class="plan-trace" aria-hidden="true"></span>
+            <div class="plan-hover-tag">PERMANENT ACCESS</div>
             <div class="tv-pcard-head">
               <span class="tv-pcard-name">Lifetime</span>
               <span class="tv-pcard-sub">one payment. done.</span>
@@ -177,19 +175,6 @@ const LIFETIME_FEATURES = [
             <a href="#" class="tv-pbtn" id="checkout-lifetime">$ {t(locale, 'pricing.unlockButton').toLowerCase()}</a>
           </div>
 
-        </div>
-      </div>
-
-      <!-- Requirements -->
-      <div class="requirements">
-        <div class="tv-label"><span class="tv-label-prompt">$</span> patapim doctor <span class="tv-dim">— {t(locale, 'download.sysReqTitle').toLowerCase()}</span></div>
-        <div class="req-grid">
-          {sysReqs.map((req) => (
-            <div class="req-item tv-panel tv-panel-static">
-              <h3>{req.label}</h3>
-              <p>{req.value}</p>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -398,36 +383,71 @@ const LIFETIME_FEATURES = [
     background: rgba(34, 211, 238, 0.06);
   }
 
-  /* Requirements */
-  .requirements {
-    max-width: 980px;
-    margin: 88px auto 0;
+  /* Pro / Lifetime hover: a cyan box traces itself clockwise around the
+     card, then the plan promise tag pops in at the top edge */
+  .plan-trace {
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    z-index: 2;
   }
-  .req-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+  .plan-trace::before,
+  .plan-trace::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    box-sizing: border-box;
+    /* un-hover: fade out, then collapse instantly */
+    transition: opacity 0.12s, width 0s 0.12s, height 0s 0.12s;
   }
-  .req-item {
-    text-align: center;
-    padding: 22px 16px;
+  .plan-trace::before {
+    top: 0;
+    left: 0;
+    border-top: 1px solid var(--cy);
+    border-right: 1px solid var(--cy);
   }
-  .req-item h3 {
-    font-size: 10.5px;
+  .plan-trace::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: 1px solid var(--cy);
+    border-left: 1px solid var(--cy);
+  }
+  .plan-hoverable:hover .plan-trace::before {
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0s, width 0.14s ease-out, height 0.14s ease-out 0.14s;
+  }
+  .plan-hoverable:hover .plan-trace::after {
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0s 0.28s, width 0.14s ease-out 0.28s, height 0.14s ease-out 0.42s;
+  }
+  .plan-hover-tag {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    padding: 3px 12px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
     font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    margin: 0 0 10px;
-    background: var(--p-gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--cy);
+    background: #000;
+    border: 1px solid var(--cy);
+    opacity: 0;
+    z-index: 3;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: opacity 0.12s, transform 0.12s;
   }
-  .req-item p {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    line-height: 1.7;
-    margin: 0;
+  .plan-hoverable:hover .plan-hover-tag {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.16s 0.5s, transform 0.16s 0.5s;
   }
 
   @media (max-width: 900px) {
@@ -441,11 +461,7 @@ const LIFETIME_FEATURES = [
 
   @media (max-width: 768px) {
     .dl-grid { grid-template-columns: 1fr; }
-    .req-grid { grid-template-columns: 1fr 1fr; }
-    .upgrade-section, .requirements { margin-top: 64px; }
-  }
-  @media (max-width: 480px) {
-    .req-grid { grid-template-columns: 1fr; }
+    .upgrade-section { margin-top: 64px; }
   }
 </style>
 

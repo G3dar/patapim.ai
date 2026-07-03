@@ -21,13 +21,12 @@ const featuresHref = locale === 'ja' ? `${lp('/')}#why-patapim` : `${lp('/')}#de
       <a href={featuresHref}>{t(locale, 'nav.features')}</a>
       <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
       <a href={lp('/docs/releases')}>{t(locale, 'nav.docs')}</a>
-      <a href="/whats-new">{t(locale, 'nav.whatsNew')}</a>
       <a href={lp('/about')}>{t(locale, 'nav.about')}</a>
     </div>
 
     <div class="tv-nav-actions">
       <LanguageSwitcher />
-      <a href="/signin" class="tv-nav-signin" id="nav-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+      <a href="/signin" class="tv-nav-signin" id="nav-signin">{t(locale, 'nav.signIn')}</a>
       <a href={lp('/go')} class="tv-nav-cta">[ {t(locale, 'nav.dashboard')} ]</a>
     </div>
 
@@ -39,9 +38,8 @@ const featuresHref = locale === 'ja' ? `${lp('/')}#why-patapim` : `${lp('/')}#de
     <a href={featuresHref}>{t(locale, 'nav.features')}</a>
     <a href={lp('/download')}>{t(locale, 'nav.download')}</a>
     <a href={lp('/docs/releases')}>{t(locale, 'nav.docs')}</a>
-    <a href="/whats-new">{t(locale, 'nav.whatsNew')}</a>
     <a href={lp('/about')}>{t(locale, 'nav.about')}</a>
-    <a href="/signin" id="mobile-signin" style="display:none;">{t(locale, 'nav.signIn')}</a>
+    <a href="/signin" id="mobile-signin">{t(locale, 'nav.signIn')}</a>
     <a href={lp('/go')} class="tv-nav-cta">[ {t(locale, 'nav.dashboard')} ]</a>
   </div>
 </nav>
@@ -54,18 +52,17 @@ const featuresHref = locale === 'ja' ? `${lp('/')}#why-patapim` : `${lp('/')}#de
     menu?.classList.toggle('open');
   });
 
-  // Auth state check — reveal Sign In for anonymous visitors
+  // Auth reconcile — the header renders Sign In from the pre-paint cached
+  // state (html.tv-authed, set in BaseLayout head), so it never pops in and
+  // reflows the nav. This fetch only corrects the cache when the server
+  // disagrees (login/logout since last visit) — a one-time self-heal.
   (async () => {
+    let authed = false;
     try {
       const res = await fetch('/api/auth/session');
-      const data = await res.json();
-      if (!data.authenticated) {
-        document.getElementById('nav-signin')?.style.setProperty('display', '');
-        document.getElementById('mobile-signin')?.style.setProperty('display', '');
-      }
-    } catch {
-      document.getElementById('nav-signin')?.style.setProperty('display', '');
-      document.getElementById('mobile-signin')?.style.setProperty('display', '');
-    }
+      authed = !!(await res.json()).authenticated;
+    } catch { /* treat as anonymous */ }
+    try { localStorage.setItem('ptpm-authed', authed ? '1' : '0'); } catch {}
+    document.documentElement.classList.toggle('tv-authed', authed);
   })();
 </script>
