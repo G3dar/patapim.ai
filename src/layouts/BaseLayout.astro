@@ -28,10 +28,14 @@ const siteUrl = 'https://patapim.ai';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- critical: paint black before any stylesheet arrives — no white blink, ever.
-       is:inline keeps it verbatim in the HTML (a processed <style> gets
-       extracted to the async CSS bundle, defeating the whole point) -->
-  <style is:inline>html{background:#000;color-scheme:dark}</style>
+  <!-- critical trio against the white navigation flash:
+       1. meta color-scheme dark — Chrome uses this for the DEFAULT canvas
+          between documents (the CSS property alone is too late for that frame)
+       2. inline black background — first paint is black before any stylesheet
+       3. inline view-transition opt-in — the incoming page's opt-in must not
+          wait for external CSS. is:inline keeps all of it verbatim in HTML. -->
+  <meta name="color-scheme" content="dark" />
+  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}</style>
   <meta name="theme-color" content="#000000" />
   <title>{title}</title>
   <meta name="description" content={description} />
@@ -89,10 +93,11 @@ const siteUrl = 'https://patapim.ai';
     @import '../styles/global.css';
   </style>
 
-  <!-- Speculative prerender: hovering a link warms the next page so
-       navigation lands instantly — the shell (nav) never appears to reload -->
+  <!-- Speculative prefetch: hovering a link warms the next page so
+       navigation lands instantly. Prefetch (not prerender): prerender
+       activation has its own rendering path with white-flash bugs. -->
   <script type="speculationrules" set:html={JSON.stringify({
-    prerender: [{ where: { and: [{ href_matches: '/*' }] }, eagerness: 'moderate' }]
+    prefetch: [{ where: { and: [{ href_matches: '/*' }] }, eagerness: 'moderate' }]
   })} />
 </head>
 <body>

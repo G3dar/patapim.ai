@@ -7,7 +7,8 @@ export const prerender = true;
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style is:inline>html{background:#000;color-scheme:dark}</style>
+  <meta name="color-scheme" content="dark" />
+  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}</style>
   <title>PATAPIM × Telegram — Talk to your terminal from your phone</title>
   <meta name="description" content="Reply to Claude from Telegram. No bots to create, no tokens to copy. One click, one paste, done." />
   <meta name="robots" content="noindex, nofollow" />
