@@ -307,11 +307,12 @@ a:hover {
 ::view-transition {
   background-color: #000;
 }
-/* near-instant crossfade: fast enough to read as a cut, but it masks the
-   document swap so nothing pops. The nav is pixel-identical on every page,
-   so it appears static through the root crossfade — no separate layer
-   (snapshotting a backdrop-filtered nav renders white in Chromium). */
+/* HARD CUT, no crossfade: Chromium can capture the outgoing root snapshot
+   as solid WHITE (frame-capture confirmed), so any fade that displays the
+   old snapshot paints a white flash. animation:none ends the transition on
+   its first frame — we keep the atomic hold of the document swap, and the
+   typed entrance provides the visual continuity. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 90ms;
+  animation: none;
 }

@@ -35,7 +35,7 @@ const siteUrl = 'https://patapim.ai';
        3. inline view-transition opt-in — the incoming page's opt-in must not
           wait for external CSS. is:inline keeps all of it verbatim in HTML. -->
   <meta name="color-scheme" content="dark" />
-  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}</style>
+  <style is:inline>html{background:#000;color-scheme:dark}@view-transition{navigation:auto}::view-transition{background-color:#000}::view-transition-old(root),::view-transition-new(root){animation:none!important}</style>
   <meta name="theme-color" content="#000000" />
   <title>{title}</title>
   <meta name="description" content={description} />
