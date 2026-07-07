@@ -2186,6 +2186,38 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
+    function getCellHeight() {
+      try {
+        return term._core._renderService.dimensions.css.cell.height || 16;
+      } catch (e) {
+        const screen = terminalWrap.querySelector('.xterm-screen');
+        if (screen && term.rows > 0) return screen.offsetHeight / term.rows;
+        return 16;
+      }
+    }
+
+    // Alt-screen TUIs (Claude Code, vim…) keep xterm in the alternate buffer,
+    // which has NO scrollback by design — the app owns scrolling. Scrolling
+    // them means asking the HOST app to scroll: dispatch wheel events on the
+    // xterm screen so xterm (in the TUI's mouse-tracking mode, restored by the
+    // snapshot's serialized modes) converts them into wheel reports that flow
+    // through term.onData → ws input → host PTY. One event per line so slow
+    // drags never get rounded away.
+    function forwardWheelToTui(lines, clientX, clientY) {
+      if (!term || !lines) return;
+      const screen = terminalWrap.querySelector('.xterm-screen');
+      if (!screen) return;
+      const cellH = getCellHeight();
+      const opts = { bubbles: true, cancelable: true, view: window, clientX, clientY,
+                     deltaMode: 0, deltaY: lines > 0 ? cellH : -cellH };
+      const n = Math.min(Math.abs(lines), 40); // clamp a single burst
+      for (let i = 0; i < n; i++) screen.dispatchEvent(new WheelEvent('wheel', opts));
+    }
+
+    function isAltScreen() {
+      return !!(term && term.buffer && term.buffer.active.type === 'alternate');
+    }
+
     let isUserTouchScrolling = false;
     let autoScrollDisabled = false;
     let userIsTyping = false;
@@ -2429,6 +2461,14 @@ Astro.response.headers.set('Expires', '0');
       term.onData(data => {
         if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
 
+        // Mouse reports (wheel scroll forwarded to an alt-screen TUI) are not
+        // typing: send verbatim — no modifier rewriting, no h-autoscroll
+        // re-enable, no markTyping (which would yank hOffset mid-scroll).
+        if (data.startsWith('\x1b[<') || data.startsWith('\x1b[M')) {
+          ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data }));
+          return;
+        }
+
         // Any key press re-enables auto horizontal scroll (suspended by manual touch scroll)
         autoScrollDisabled = false;
 
@@ -2612,8 +2652,12 @@ Astro.response.headers.set('Expires', '0');
         // Track last touch X for manual horizontal scroll
         // (xterm-viewport captures vertical scroll, blocking terminal-wrap's horizontal scroll)
         let lastTouchX = 0;
+        let lastTouchY = 0;
+        let tuiScrollAccum = 0;
         terminalWrap.addEventListener('touchstart', (e2) => {
           lastTouchX = e2.touches[0].clientX;
+          lastTouchY = e2.touches[0].clientY;
+          tuiScrollAccum = 0;
         }, { passive: true, capture: true });
 
         terminalWrap.addEventListener('touchmove', (e) => {
@@ -2640,7 +2684,22 @@ Astro.response.headers.set('Expires', '0');
               autoScrollDisabled = true;
             }
           }
+          // Vertical drag over an alt-screen TUI (Claude Code, vim…) → forward
+          // to the host app as wheel reports. The alt buffer has no scrollback,
+          // so the native .xterm-viewport scroll (which handles normal-buffer
+          // terminals) is a no-op there and the drag previously did nothing.
+          if (isAltScreen()) {
+            const cellH = getCellHeight();
+            tuiScrollAccum += (lastTouchY - t.clientY); // finger up → toward newer output
+            const lines = Math.trunc(tuiScrollAccum / cellH);
+            if (lines !== 0) {
+              tuiScrollAccum -= lines * cellH;
+              isUserTouchScrolling = true;
+              forwardWheelToTui(lines, t.clientX, t.clientY);
+            }
+          }
           lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
         }, { passive: true });
         terminalWrap.addEventListener('touchend', () => {
           setTimeout(() => { isUserTouchScrolling = false; }, 300);
@@ -2658,6 +2717,13 @@ Astro.response.headers.set('Expires', '0');
         // directly (xterm's own API for scrollback navigation).
         terminalWrap.addEventListener('wheel', (e) => {
           if (!term) return;
+          // Alt-screen TUIs (Claude Code, vim…) have no scrollback to scroll
+          // locally — fall through to xterm's own wheel handling, which (with
+          // the TUI's mouse mode active) forwards wheel reports the host app
+          // scrolls by. The scrollLines bypass below is only for plain-shell
+          // (normal-buffer) terminals, where mouse reporting would otherwise
+          // eat the wheel and block scrollback navigation.
+          if (isAltScreen()) return;
           e.preventDefault();
           e.stopPropagation();
           const dims = term._core && term._core._renderService && term._core._renderService.dimensions;
