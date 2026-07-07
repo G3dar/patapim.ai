@@ -192,7 +192,7 @@ const en = {
   coreFeatures: {
     label: 'Core Feature',
     multiTerminalTitle: 'Organized Multi-Terminal',
-    multiTerminalDesc: 'Persistent sessions that survive app restarts. Run up to 9 terminals simultaneously and multitask across multiple AI agents \u2014 each in its own dedicated space.',
+    multiTerminalDesc: 'Persistent sessions that survive app restarts. Run multiple terminals simultaneously and multitask across your AI agents \u2014 each in its own dedicated space.',
     multiTerminalItems: [
       'Tab view for focus, grid view for overview',
       'Layouts: 2x1, 2x2, 3x2, 3x3',
@@ -225,7 +225,7 @@ const en = {
     title: 'Everything You Need, Nothing You Don\'t',
     subtitle: '30+ features designed for terminal-centric AI development. No bloat, no complexity \u2014 just the tools that matter.',
     features: [
-      { title: 'Multi-Terminal', desc: 'Up to 9 terminals simultaneously. Tab view for focus, grid view for multitasking. 2x1, 2x2, 3x2, 3x3 layouts.', tag: 'Core' },
+      { title: 'Multi-Terminal', desc: 'Multiple terminals simultaneously. Tab view for focus, grid view for multitasking. 2x1, 2x2, 3x2, 3x3 layouts.', tag: 'Core' },
       { title: 'Remote Access', desc: 'Access PATAPIM from anywhere via Cloudflare Tunnels. Work from your phone, tablet, or any browser.', tag: 'Pro' },
       { title: 'Voice Dictation', desc: 'Talk to your terminals. Whisper API for accuracy, Web Speech as free fallback. Persistent dictation mode.', tag: 'Pro' },
       { title: 'Task Management', desc: 'Built-in task panel synced with tasks.json. Create, track, delegate tasks directly to Claude Code.', tag: 'Pro' },
@@ -340,10 +340,10 @@ const en = {
     freePeriod: 'forever',
     freeDesc: 'Everything you need to get started.',
     freeFeatures: [
-      'Up to 9 terminals',
-      'Up to 3 projects',
+      'Up to 3 terminals',
+      'Unlimited projects',
       '30 min dictation included',
-      'Remote access',
+      'Full remote access',
       'Task management',
       'File editor',
       'Context preservation',
@@ -356,7 +356,6 @@ const en = {
     proBadge: 'Most Popular',
     proFeatures: [
       'Unlimited terminals',
-      'Unlimited projects',
       'Unlimited dictation',
       'Everything in Free',
       'Priority support',
@@ -396,8 +395,8 @@ const en = {
     enterpriseCta: 'Talk to us',
     enterpriseNote: 'Tailored to your team size & stack',
     featuresCompare: [
-      { name: 'Terminals', free: 'Up to 9', pro: 'Unlimited' },
-      { name: 'Active Projects', free: 'Up to 3', pro: 'Unlimited' },
+      { name: 'Terminals', free: 'Up to 3', pro: 'Unlimited' },
+      { name: 'Projects', free: 'Unlimited', pro: 'Unlimited' },
       { name: 'Voice Dictation', free: '30 min included', pro: 'Unlimited' },
       { name: 'Remote Access', free: 'Yes', pro: 'Yes' },
       { name: 'Task Management', free: 'Yes', pro: 'Yes' },
@@ -419,7 +418,7 @@ const en = {
       },
       {
         q: 'Can I use PATAPIM commercially for free?',
-        a: 'Yes. The Free plan is free for commercial use. Pro removes the limits on terminals, projects, and voice dictation.',
+        a: 'Yes. The Free plan is free for commercial use. Pro removes the limits on terminals and voice dictation — projects are unlimited on every plan.',
       },
       {
         q: 'What payment methods are accepted?',

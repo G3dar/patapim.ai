@@ -1,12 +1,12 @@
 ---
 title: "Multi-Terminal"
-description: "Run up to 9 terminals simultaneously"
+description: "Run multiple terminals simultaneously"
 order: 1
 ---
 
 ## Overview
 
-PATAPIM supports up to 9 concurrent terminals using **xterm.js 5.3** and **node-pty 1.0** for real pseudo-terminal allocation.
+PATAPIM runs multiple concurrent terminals using **xterm.js 5.3** and **node-pty 1.0** for real pseudo-terminal allocation.
 
 ## View Modes
 
@@ -34,5 +34,5 @@ Terminals start in the active project directory. Switching projects switches all
 
 ## Plan Limits
 
-- **Free**: Up to 9 terminals
+- **Free**: Up to 3 concurrent terminals (projects are unlimited)
 - **Pro / Lifetime**: Unlimited
