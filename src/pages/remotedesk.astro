@@ -6,7 +6,12 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- maximum-scale=1: iOS auto-zooms the TOP page (this one — the iframe rides
+       along) when a sub-16px input inside the embedded /desktop view gets focus,
+       and never zooms back out. maximum-scale kills that focus auto-zoom; iOS
+       still allows pinch-zoom regardless (accessibility override), so nothing
+       is lost. Same viewport /remote-mobile has used all along. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>PATAPIM Desktop — connecting…</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <style is:inline>
