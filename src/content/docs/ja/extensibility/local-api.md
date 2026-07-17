@@ -1,55 +1,55 @@
 ---
-title: "Local API"
-description: "Control and automate PATAPIM from your own scripts over a local HTTP + WebSocket API"
+title: "ローカルAPI"
+description: "ローカルのHTTP + WebSocket APIから、自分のスクリプトでPATAPIMを操作・自動化する"
 order: 1
 ---
 
-## Overview
+## 概要
 
-PATAPIM runs a local **HTTP + WebSocket API** on `http://127.0.0.1:31415` — the same API its built-in MCP server uses. Any script or tool on your machine can drive PATAPIM through it: create terminals, send prompts to an AI CLI, read output, manage tasks, send notifications, and drive the embedded browser.
+PATAPIMは `http://127.0.0.1:31415` でローカルの**HTTP + WebSocket API**を提供します（内蔵のMCPサーバーが使うのと同じAPIです）。マシン上のあらゆるスクリプトやツールから、ターミナルの作成、AI CLIへのプロンプト送信、出力の読み取り、タスク管理、通知送信、内蔵ブラウザの操作ができます。
 
-The API is **off by default**. Turn it on in **Preferences → Local API**, then create a token.
+APIは**デフォルトで無効**です。**設定 → ローカルAPI**から有効化し、トークンを作成してください。
 
-## Tokens & scopes
+## トークンとスコープ
 
-Every request needs a scoped token (`ppat_…`), created in **Preferences → Local API → Create token**. The token is shown once — store it like a password. Pass it in the `x-patapim-token` header (or `Authorization: Bearer`).
+すべてのリクエストにはスコープ付きトークン（`ppat_…`）が必要です。**設定 → ローカルAPI → トークン作成**で発行します。トークンは一度だけ表示されるので、パスワードのように保管してください。`x-patapim-token` ヘッダー（または `Authorization: Bearer`）で渡します。
 
-Each token carries only the scopes you check at creation time:
+各トークンは作成時にチェックしたスコープのみを持ちます：
 
-| Scope | Grants |
+| スコープ | 権限 |
 |-------|--------|
-| `terminals:read` | List terminals, read buffers and live state |
-| `terminals:write` | Create terminals, send input, resize, close |
-| `tasks` | Read/manage project tasks and scheduled commands |
-| `notifications` | Send notifications through your configured channels |
-| `browser` | Drive the embedded browser (navigate, click, fill, screenshot) |
-| `files:read` | Read files in project directories |
-| `files:write` | Write files in project directories |
-| `events` | Subscribe to the WebSocket event stream |
+| `terminals:read` | ターミナルの一覧、バッファと状態の読み取り |
+| `terminals:write` | ターミナルの作成、入力送信、リサイズ、クローズ |
+| `tasks` | プロジェクトタスクとスケジュールコマンドの読み書き |
+| `notifications` | 設定済みチャンネルへの通知送信 |
+| `browser` | 内蔵ブラウザの操作（ナビゲート、クリック、入力、スクショ） |
+| `files:read` | プロジェクトディレクトリのファイル読み取り |
+| `files:write` | プロジェクトディレクトリへのファイル書き込み |
+| `events` | WebSocketイベントストリームの購読 |
 
-## Quick start
+## クイックスタート
 
 ```bash
-# What can this token do?
+# このトークンで何ができる？
 curl http://127.0.0.1:31415/api/v1/meta -H "x-patapim-token: ppat_..."
 
-# List terminals (scope: terminals:read)
+# ターミナル一覧（スコープ: terminals:read）
 curl http://127.0.0.1:31415/api/v1/terminals -H "x-patapim-token: ppat_..."
 
-# Send a prompt to terminal 3 (scope: terminals:write)
+# ターミナル3にプロンプトを送信（スコープ: terminals:write）
 curl -X POST http://127.0.0.1:31415/api/v1/terminals/3/write \
   -H "x-patapim-token: ppat_..." -H "Content-Type: application/json" \
   -d '{"data": "Summarize the failing tests", "pressEnter": true}'
 ```
 
-## Event stream
+## イベントストリーム
 
-Connect a WebSocket to `ws://127.0.0.1:31415?token=ppat_...` (token needs the `events` scope) and subscribe to topics — `terminals`, `terminal-output:<id>`, `tasks`, `notifications`. The `notifications` topic fires exactly when PATAPIM raises its own bell/toast, which makes it ideal for routing "Claude needs attention" to Slack, Discord, or anywhere.
+`ws://127.0.0.1:31415?token=ppat_...` にWebSocketで接続し（トークンに `events` スコープが必要）、トピックを購読します — `terminals`、`terminal-output:<id>`、`tasks`、`notifications`。`notifications` トピックはPATAPIM自身がベル/トーストを出すのと同じタイミングで発火するため、「Claudeが応答待ち」をSlackやDiscordなどへ転送するのに最適です。
 
-## Versioning & safety
+## バージョニングと安全性
 
-- Everything lives under **`/api/v1`** and is **additive-only**: routes, parameters and response fields are never removed or renamed.
-- Plan limits (e.g. the free-tier terminal cap) are enforced regardless of how a request originates — the API never bypasses them.
-- The full machine-readable spec is published as an OpenAPI document in the [SDK repo](https://github.com/G3dar/patapim-sdk).
+- すべては **`/api/v1`** 配下にあり、**追加のみ**です：ルート・パラメータ・レスポンスフィールドが削除・改名されることはありません。
+- プラン制限（無料枠のターミナル上限など）はリクエストの発生元に関わらず適用されます — APIがそれを回避することはありません。
+- 機械可読な完全仕様はOpenAPIドキュメントとして[SDKリポジトリ](https://github.com/G3dar/patapim-sdk)で公開されています。
 
-Next: the [TypeScript SDK](/docs/extensibility/sdk) wraps all of this in a typed client.
+次は、これらすべてを型付きクライアントでラップする[TypeScript SDK](/docs/extensibility/sdk)です。

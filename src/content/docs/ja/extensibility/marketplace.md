@@ -1,26 +1,26 @@
 ---
-title: "Plugin Marketplace"
-description: "Browse, install and publish PATAPIM plugins"
+title: "プラグインマーケットプレイス"
+description: "PATAPIMプラグインの閲覧・インストール・公開"
 order: 4
 ---
 
-## Browse & install
+## 閲覧とインストール
 
-In PATAPIM: **Preferences → Local API → Marketplace**. The default catalog is the official community index; you can add any other catalog repo or URL alongside it.
+PATAPIMで **設定 → ローカルAPI → マーケットプレイス** を開きます。デフォルトのカタログは公式コミュニティインデックスで、他のカタログのリポジトリやURLを追加することもできます。
 
-You can also **install from a URL directly** — paste a link to a plugin's `.tar.gz` (any GitHub repo tarball works) and PATAPIM downloads, verifies and stages it.
+**URLから直接インストール**も可能です — プラグインの `.tar.gz` へのリンク（任意のGitHubリポジトリのtarballでOK）を貼れば、PATAPIMがダウンロード・検証・ステージングします。
 
-Every plugin installs **disabled**: you review and approve its permissions (browser-extension style) before it can run.
+すべてのプラグインは**無効の状態**でインストールされます：実行前に、その権限を確認して承認します（ブラウザ拡張と同じ方式）。
 
-## The community index
+## コミュニティインデックス
 
-The official catalog lives at **[github.com/G3dar/patapim-plugins](https://github.com/G3dar/patapim-plugins)** — a `marketplace.json` listing community plugins. It's the default entry in the app, and it's open for submissions.
+公式カタログは **[github.com/G3dar/patapim-plugins](https://github.com/G3dar/patapim-plugins)** にあります — コミュニティのプラグインを列挙した `marketplace.json` です。アプリのデフォルトエントリであり、投稿を受け付けています。
 
-## Publish your plugin
+## プラグインを公開する
 
-1. Host your plugin in its own public repo with `plugin.json` at the root. Minimal example: [patapim-plugin-hello-world](https://github.com/G3dar/patapim-plugin-hello-world).
-2. Open a PR adding an entry to [`marketplace.json`](https://github.com/G3dar/patapim-plugins) in the community index.
+1. プラグインを、ルートに `plugin.json` を置いた公開リポジトリでホストします。最小のサンプル：[patapim-plugin-hello-world](https://github.com/G3dar/patapim-plugin-hello-world)。
+2. コミュニティインデックスの [`marketplace.json`](https://github.com/G3dar/patapim-plugins) にエントリを追加するPRを開きます。
 
-Guidelines: request the minimum permissions your plugin needs, don't circumvent plan limits, and don't imply official status. See the [plugin terms](https://github.com/G3dar/patapim-sdk/blob/main/PLUGIN_TERMS.md).
+ガイドライン：必要最小限の権限だけを要求し、プラン制限を回避せず、公式であるかのように見せないこと。[プラグイン規約](https://github.com/G3dar/patapim-sdk/blob/main/PLUGIN_TERMS.md)を参照してください。
 
-Anyone can also install your plugin directly from your repo URL without the index — the marketplace is optional discovery, not a gatekeeper.
+インデックスを介さず、リポジトリURLから直接インストールすることもできます — マーケットプレイスは任意の発見手段であり、ゲートキーパーではありません。

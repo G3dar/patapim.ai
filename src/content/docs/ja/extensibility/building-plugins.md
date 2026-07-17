@@ -1,21 +1,21 @@
 ---
-title: "Building Plugins"
-description: "Write a PATAPIM plugin: MCP tools, commands, panels, toolbar buttons, scheduled tasks and instruction blocks"
+title: "プラグイン開発"
+description: "PATAPIMプラグインを作る：MCPツール、コマンド、パネル、ツールバーボタン、スケジュールタスク、コンテキストブロック"
 order: 3
 ---
 
-## Overview
+## 概要
 
-A PATAPIM plugin is a folder in `~/.patapim/plugins/<name>/` that runs **isolated** from the app, with a token scoped to exactly the permissions you approve. The headline capability: **a plugin can register MCP tools that appear in every Claude Code / Codex session** running inside PATAPIM — automatically, no per-session setup.
+PATAPIMプラグインは `~/.patapim/plugins/<name>/` に置くフォルダで、アプリから**隔離**して実行され、承認した権限だけを持つスコープ付きトークンで動きます。目玉となる機能は、**PATAPIM内で動くすべてのClaude Code / Codexセッションに、プラグインがMCPツールを登録できる**こと — 自動的に、セッションごとの設定は不要です。
 
-> This is distinct from Claude Code's own plugins (`~/.claude/plugins/`). See the [Plugin System](/docs/features/plugin-system) overview for the difference.
+> これはClaude Code独自のプラグイン（`~/.claude/plugins/`）とは別物です。違いは[プラグインシステム](/docs/features/plugin-system)の概要を参照してください。
 
-## Anatomy
+## 構成
 
 ```
 ~/.patapim/plugins/my-plugin/
-  plugin.json      # manifest
-  index.js         # entry module (CommonJS)
+  plugin.json      # マニフェスト
+  index.js         # エントリモジュール（CommonJS）
 ```
 
 `plugin.json`:
@@ -24,7 +24,7 @@ A PATAPIM plugin is a folder in `~/.patapim/plugins/<name>/` that runs **isolate
 {
   "name": "my-plugin",
   "version": "1.0.0",
-  "description": "What it does",
+  "description": "何をするか",
   "main": "index.js",
   "permissions": ["terminals:read", "notifications"],
   "contributes": {
@@ -35,13 +35,13 @@ A PATAPIM plugin is a folder in `~/.patapim/plugins/<name>/` that runs **isolate
 }
 ```
 
-- `permissions` are [Local API scopes](/docs/extensibility/local-api) — exactly what the plugin's token carries. The user approves them when enabling the plugin, browser-extension style.
+- `permissions` は[ローカルAPIのスコープ](/docs/extensibility/local-api)そのものです — プラグインのトークンが持つ権限そのもの。ユーザーがプラグインを有効化する際に、ブラウザ拡張のように承認します。
 
-## The entry module
+## エントリモジュール
 
 ```js
 module.exports.activate = async (patapim) => {
-  // Becomes `plugin_my-plugin_summarize` in every AI CLI session
+  // すべてのAI CLIセッションで `plugin_my-plugin_summarize` になる
   patapim.registerMcpTool({
     name: 'summarize',
     description: 'Summarize the state of all open terminals',
@@ -54,24 +54,24 @@ module.exports.activate = async (patapim) => {
   patapim.registerCommand('sync', async () => { /* ... */ return 'synced'; });
 };
 
-module.exports.deactivate = async () => { /* optional cleanup */ };
+module.exports.deactivate = async () => { /* 任意のクリーンアップ */ };
 ```
 
-## Contribution points
+## コントリビューションポイント
 
-| Contribution | What it does |
+| コントリビューション | 内容 |
 |--------------|--------------|
-| **MCP tools** | `registerMcpTool` — available to Claude Code / Codex as `plugin_<name>_<tool>` |
-| **Commands** | Buttons on the plugin's card that dispatch to your handler |
-| **Toolbar buttons** | Buttons in the terminal toolbar bound to a command |
-| **Panels** | A sandboxed UI window (`panel.html`) talking to the Local API |
-| **Instruction blocks** | Standing context injected into the AI memory files while enabled |
-| **Scheduled tasks** | Fire a command on a cron schedule while the plugin runs |
+| **MCPツール** | `registerMcpTool` — Claude Code / Codexに `plugin_<name>_<tool>` として表示 |
+| **コマンド** | プラグインのカードに表示され、ハンドラを呼び出すボタン |
+| **ツールバーボタン** | ターミナルツールバー上のボタン（コマンドに紐づく） |
+| **パネル** | ローカルAPIと通信するサンドボックス化されたUIウィンドウ（`panel.html`） |
+| **コンテキストブロック** | 有効化中、AIメモリファイルに注入される常設コンテキスト |
+| **スケジュールタスク** | プラグイン稼働中、cronスケジュールでコマンドを実行 |
 
-## Security model
+## セキュリティモデル
 
-Each enabled plugin runs in its own isolated process with **no Electron, renderer or app-internals access** — its only capability is the Local API with a token scoped to the granted permissions. Everything lives under `~/.patapim`, so plugins survive app updates.
+有効化された各プラグインは独立したプロセスで実行され、**Electron・レンダラー・アプリ内部へのアクセスは一切ありません** — 唯一の権限は、承認された権限にスコープされたトークンでのローカルAPIアクセスだけです。すべては `~/.patapim` 配下にあるため、アプリ更新後も残ります。
 
-## Full guide
+## 完全ガイド
 
-The complete reference — the `patapim` host API, panels, the exact runtime contract, and a working `hello-world` example — lives in the SDK repo: **[docs/plugins.md](https://github.com/G3dar/patapim-sdk/blob/main/docs/plugins.md)**.
+完全なリファレンス — `patapim` ホストAPI、パネル、正確なランタイム契約、動作する `hello-world` サンプル — はSDKリポジトリにあります：**[docs/plugins.md](https://github.com/G3dar/patapim-sdk/blob/main/docs/plugins.md)**。
