@@ -20,6 +20,7 @@ const sidebarTitles: Record<string, Record<string, string>> = {
     gettingStarted: 'Getting Started',
     coreConcepts: 'Core Concepts',
     features: 'Features',
+    extensibility: 'Extensibility',
     reference: 'Reference',
   },
   ja: {
@@ -27,6 +28,7 @@ const sidebarTitles: Record<string, Record<string, string>> = {
     gettingStarted: 'はじめに',
     coreConcepts: 'コアコンセプト',
     features: '機能',
+    extensibility: '拡張機能',
     reference: 'リファレンス',
   },
 };
@@ -62,6 +64,12 @@ const sidebarLinks: Record<string, Record<string, Record<string, string>>> = {
       'features/auto-updates': 'Auto-Updates',
       'features/account-licensing': 'Account & Licensing',
       'features/referral-program': 'Referral Program',
+    },
+    extensibility: {
+      'extensibility/local-api': 'Local API',
+      'extensibility/sdk': 'TypeScript SDK',
+      'extensibility/building-plugins': 'Building Plugins',
+      'extensibility/marketplace': 'Plugin Marketplace',
     },
     reference: {
       'reference/keyboard-shortcuts': 'Keyboard Shortcuts',
@@ -101,6 +109,12 @@ const sidebarLinks: Record<string, Record<string, Record<string, string>>> = {
       'features/account-licensing': 'アカウントとライセンス',
       'features/referral-program': '紹介プログラム',
     },
+    extensibility: {
+      'extensibility/local-api': 'ローカルAPI',
+      'extensibility/sdk': 'TypeScript SDK',
+      'extensibility/building-plugins': 'プラグイン開発',
+      'extensibility/marketplace': 'プラグインマーケットプレイス',
+    },
     reference: {
       'reference/keyboard-shortcuts': 'キーボードショートカット',
       'reference/configuration': '設定',
@@ -124,6 +138,10 @@ const sidebar = [
   {
     title: titles.features,
     items: Object.entries(links.features).map(([slug, label]) => ({ title: label, slug })),
+  },
+  {
+    title: titles.extensibility,
+    items: Object.entries(links.extensibility).map(([slug, label]) => ({ title: label, slug })),
   },
   {
     title: titles.reference,
