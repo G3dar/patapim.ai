@@ -308,6 +308,40 @@ const PRO_FEATURES = [
       </div>
     </section>
 
+    <!-- ============ BUILD ON PATAPIM (extensibility) ============ -->
+    <section class="tv-build" id="build">
+      <div class="tv-label"><span class="tv-label-prompt">$</span> patapim extend <span class="tv-dim">— build on it.</span></div>
+      <h2 class="tv-build-head">PATAPIM is <span class="tv-fetch-grad">extensible</span>.</h2>
+      <p class="tv-build-sub">A local API, a typed SDK, and a plugin system. Your plugins register MCP tools that show up in <b>every Claude&nbsp;Code session</b> — automatically.</p>
+      <div class="tv-build-grid">
+        <div class="tv-build-card">
+          <div class="tv-build-cardhead">Local API</div>
+          <pre class="tv-build-code"><span class="c-dim">$</span> curl 127.0.0.1:31415<span class="c-key">/api/v1/</span>terminals \
+    <span class="c-dim">-H</span> <span class="c-str">"x-patapim-token: ppat_…"</span></pre>
+          <p class="tv-build-cdesc">Scoped-token HTTP + WebSocket API. Drive terminals, tasks, notifications and the browser from any script.</p>
+        </div>
+        <div class="tv-build-card">
+          <div class="tv-build-cardhead">TypeScript SDK</div>
+          <pre class="tv-build-code"><span class="c-dim">$</span> npm i <span class="c-key">@patapim/sdk</span>
+
+<span class="c-kw">await</span> patapim.terminals.<span class="c-fn">write</span>(<span class="c-str">'3'</span>, prompt)</pre>
+          <p class="tv-build-cdesc">A zero-dependency typed client for the API and its event stream. On npm, open-source on GitHub.</p>
+        </div>
+        <div class="tv-build-card">
+          <div class="tv-build-cardhead">Plugins</div>
+          <pre class="tv-build-code"><span class="c-key">"contributes"</span>: &#123;
+  <span class="c-key">"mcpTools"</span>: [ … ]
+&#125;<span class="c-dim">  → tool in Claude Code</span></pre>
+          <p class="tv-build-cdesc">Isolated plugins add MCP tools, UI panels, toolbar buttons and scheduled tasks. Browse the marketplace or ship your own.</p>
+        </div>
+      </div>
+      <div class="tv-build-cta">
+        <a href="/docs/extensibility/local-api" class="tv-build-btn tv-build-btn-primary">Read the docs →</a>
+        <a href="/plugins" class="tv-build-btn">Browse plugins</a>
+        <a href="https://github.com/G3dar/patapim-sdk" class="tv-build-btn" target="_blank" rel="noopener">GitHub SDK</a>
+      </div>
+    </section>
+
     <!-- ============ PRICING ============ -->
     <section class="tv-pricing" id="pricing">
       <div class="tv-label"><span class="tv-label-prompt">$</span> patapim upgrade <span class="tv-dim">— start free. upgrade when you're ready.</span></div>
@@ -883,6 +917,42 @@ const PRO_FEATURES = [
   .tvf-key { color: var(--text-tertiary); width: 92px; flex-shrink: 0; }
   .tvf-key::after { content: ' →'; color: var(--text-muted); }
   .tvf-val { color: var(--text-secondary); text-decoration: none; }
+
+  /* Build on PATAPIM (extensibility) */
+  .tv-build { padding: 8px 0 72px; }
+  .tv-build-head { font-size: clamp(1.5rem, 3.4vw, 2.2rem); font-weight: 700; margin: 14px 0 6px; color: var(--text-primary); }
+  .tv-build-sub { max-width: 640px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 24px; }
+  .tv-build-sub b { color: var(--text-primary); }
+  .tv-build-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  @media (max-width: 820px) { .tv-build-grid { grid-template-columns: 1fr; } }
+  .tv-build-card {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 16px; border-radius: 12px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+    border: 1px solid var(--border-subtle, #2a2a2c);
+  }
+  .tv-build-cardhead { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+  .tv-build-code {
+    margin: 0; padding: 11px 12px; border-radius: 8px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle, #2a2a2c);
+    font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.76rem; line-height: 1.5;
+    color: var(--text-secondary); white-space: pre-wrap; overflow-x: auto;
+  }
+  .tv-build-code .c-dim { color: var(--text-muted); }
+  .tv-build-code .c-key { color: var(--cy); }
+  .tv-build-code .c-str { color: #9ece6a; }
+  .tv-build-code .c-kw { color: var(--vi); }
+  .tv-build-code .c-fn { color: #7aa2f7; }
+  .tv-build-cdesc { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); }
+  .tv-build-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tv-build-btn {
+    display: inline-block; padding: 9px 16px; border-radius: 8px; text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; color: var(--text-primary);
+    border: 1px solid var(--border-strong, #3a3a3c); transition: border-color .15s, filter .15s;
+  }
+  .tv-build-btn:hover { border-color: var(--cy); }
+  .tv-build-btn-primary { background: var(--p-gradient); color: #0a0a12; border-color: transparent; font-weight: 600; }
+  .tv-build-btn-primary:hover { filter: brightness(1.08); }
   a.tvf-val:hover {
     background: var(--p-gradient);
     -webkit-background-clip: text;
