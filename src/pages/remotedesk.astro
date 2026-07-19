@@ -73,6 +73,10 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       // reach our authenticated APIs itself — see the message broker below).
       var currentDeviceToken = d || null;
       var currentTunnelOrigin = null;
+      // Guard for iframe-requested re-auths (expired/rotated token inside the
+      // embedded /desktop): mint-and-reload at most twice per device so a
+      // genuinely dead session can't loop forever. Reset on device switch.
+      var reauthAttempts = 0;
       function originOf(u) { try { return new URL(u).origin; } catch (e) { return null; } }
 
       // ── Soft-keyboard fit (touch phones only) ──────────────────────────────
@@ -215,42 +219,75 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
           document.body.classList.remove('framed');
           var f = document.getElementById('frame');
           if (f) { f.classList.remove('visible'); f.src = 'about:blank'; }
+          reauthAttempts = 0;
           connectByToken(data.token, data.name);
+        } else if (data.type === 'reauth') {
+          // The embedded /desktop's token was rejected (one-time token replayed,
+          // or the device rotated its persistent token after a restart). We hold
+          // the account session, so mint a fresh connect token and reload the
+          // iframe instead of leaving it on a manual token form.
+          if (reauthAttempts >= 2) return;
+          reauthAttempts++;
+          document.body.classList.remove('framed');
+          if (frame) { frame.classList.remove('visible'); frame.src = 'about:blank'; }
+          if (currentDeviceToken) {
+            connectByToken(currentDeviceToken);
+          } else {
+            autoDiscoverAndConnect();
+          }
         } else if (data.type === 'disconnect') {
           location.href = '/go';
         }
       });
 
-      // 1. Direct: connectToken + tunnelUrl already supplied.
-      if (t && url) { go(url, t); return; }
+      // 1. Direct: connectToken + tunnelUrl already supplied. Scrub the
+      //    one-time token from the address bar right away: a refresh must NOT
+      //    replay the consumed token — with only d/n left it falls into
+      //    connectByToken/discovery below, which mint a fresh one.
+      if (t && url) {
+        try {
+          var keep = new URLSearchParams();
+          if (d) keep.set('d', d);
+          if (n) keep.set('n', n);
+          var kept = keep.toString();
+          history.replaceState(null, '', location.pathname + (kept ? '?' + kept : ''));
+        } catch (e) {}
+        go(url, t);
+        return;
+      }
 
       // 2. Explicit device token supplied (e.g. cross-link from the mobile UI).
       if (d) { connectByToken(d); return; }
 
       // 3. Automatic discovery. One online machine → connect straight away.
       //    Several online → show a picker so we never open the wrong computer.
-      set('Looking for your devices…');
-      fetch('/api/device/list', { credentials: 'same-origin' })
-        .then(function (r) {
-          if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
-          return r.ok ? r.json() : null;
-        })
-        .then(function (data) {
-          if (!data) return;
-          var devices = (data && data.devices) || [];
-          var avail = devices.filter(function (x) {
-            return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
-          });
-          // Online first, then heartbeat — and within each, the picker keeps list order.
-          avail.sort(function (a, b) {
-            var rank = function (s) { return s === 'online' ? 0 : 1; };
-            return rank(a.status) - rank(b.status);
-          });
-          if (!avail.length) { fail('No device is online right now. Open PATAPIM on the computer you want to reach.'); return; }
-          if (avail.length === 1) { connectByToken(avail[0].token, avail[0].deviceName); return; }
-          showPicker(avail);
-        })
-        .catch(function () { fail('Failed to reach the server.'); });
+      autoDiscoverAndConnect();
+
+      function autoDiscoverAndConnect() {
+        picker.innerHTML = '';
+        set('Looking for your devices…');
+        fetch('/api/device/list', { credentials: 'same-origin' })
+          .then(function (r) {
+            if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
+            return r.ok ? r.json() : null;
+          })
+          .then(function (data) {
+            if (!data) return;
+            var devices = (data && data.devices) || [];
+            var avail = devices.filter(function (x) {
+              return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
+            });
+            // Online first, then heartbeat — and within each, the picker keeps list order.
+            avail.sort(function (a, b) {
+              var rank = function (s) { return s === 'online' ? 0 : 1; };
+              return rank(a.status) - rank(b.status);
+            });
+            if (!avail.length) { fail('No device is online right now. Open PATAPIM on the computer you want to reach.'); return; }
+            if (avail.length === 1) { connectByToken(avail[0].token, avail[0].deviceName); return; }
+            showPicker(avail);
+          })
+          .catch(function () { fail('Failed to reach the server.'); });
+      }
     })();
   </script>
 </body>

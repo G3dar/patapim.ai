@@ -1740,6 +1740,11 @@ Astro.response.headers.set('Expires', '0');
     let reconnectTimer = null;
     let wsConnectTimeout = null;
     let isAuthenticated = false;
+    // Auth-failure auto-recovery: a stale one-time connectToken (page refresh
+    // before the URL scrub, old Telegram deep-link) is re-mintable right here —
+    // the patapim.ai session cookie is same-origin. Capped so a genuinely
+    // broken session can't loop mint→fail forever.
+    let authRetryCount = 0;
     const modifiers = { ctrl: false, alt: false };
     let fabOpen = false;
     let isPlanMode = false;
@@ -1951,8 +1956,60 @@ Astro.response.headers.set('Expires', '0');
       activeConnectToken = result.connectToken;
       activeTunnelUrl = result.tunnelUrl;
       activeDeviceToken = stored.deviceToken;
+      restoreLastTerminal(stored);
       initTerminal();
       connect();
+    }
+
+    // A refresh should drop you back on the terminal you were looking at, not
+    // the device's default one. Reuses the Telegram deep-link machinery: seeding
+    // pendingTerminalId makes the 'terminals' handler switch to it (including
+    // cross-project selection via the sidebar_data branch). Explicit deep-links
+    // (?terminal=) always win over the remembered one.
+    function restoreLastTerminal(stored) {
+      if (!pendingTerminalId && stored && stored.lastTerminalId) {
+        pendingTerminalId = stored.lastTerminalId;
+      }
+    }
+
+    // Auth failed (typically a stale one-time connectToken from the URL: the
+    // user refreshed before the post-auth scrub, or reopened an old Telegram
+    // deep-link). We hold a same-origin patapim.ai session, so instead of a
+    // dead-end error, mint a fresh token for the same device and reconnect —
+    // "go back one level and come in again", automatically.
+    async function handleAuthFailure(msg) {
+      let stored = null;
+      try { stored = JSON.parse(localStorage.getItem('patapim_device') || 'null'); } catch {}
+      const devToken = activeDeviceToken || stored?.deviceToken;
+
+      if (devToken && authRetryCount < 2) {
+        authRetryCount++;
+        setStatus('connecting', 'Refreshing session...');
+        loadingEl.classList.remove('hidden');
+        loadingText && (loadingText.textContent = 'Session expired — reconnecting...');
+        const result = await fetchConnectToken(devToken);
+        if (result.error === 'session_expired') {
+          localStorage.removeItem('patapim_device');
+          window.location.href = '/go';
+          return;
+        }
+        if (result.connectToken && result.tunnelUrl) {
+          activeConnectToken = result.connectToken;
+          activeTunnelUrl = result.tunnelUrl;
+          activeDeviceToken = devToken;
+          restoreLastTerminal(stored);
+          // Retire the failed socket silently — its onclose would otherwise
+          // flash the disconnected overlay over the new connection attempt.
+          if (ws) { try { ws.onclose = null; ws.close(); } catch {} }
+          connect();
+          return;
+        }
+      }
+
+      showError(
+        'Authentication failed: ' + (msg.error || 'Unknown error') +
+        '<br><br><a href="/go">Go back to dashboard</a>'
+      );
     }
 
     function showError(html) {
@@ -2885,6 +2942,7 @@ Astro.response.headers.set('Expires', '0');
         case 'auth_result':
           if (msg.success) {
             isAuthenticated = true;
+            authRetryCount = 0;
             setStatus('connected', 'Connected');
             loadingEl.classList.add('hidden');
             enableActions(true);
@@ -2910,10 +2968,7 @@ Astro.response.headers.set('Expires', '0');
               applyPtyDims({ forceRefresh: true });
             }
           } else {
-            showError(
-              'Authentication failed: ' + (msg.error || 'Unknown error') +
-              '<br><br><a href="/go">Go back to dashboard</a>'
-            );
+            handleAuthFailure(msg);
           }
           break;
 
@@ -3126,6 +3181,15 @@ Astro.response.headers.set('Expires', '0');
               // processor, causing the buffer write to never complete.
             }
             currentTerminalId = newId;
+            // Remember the terminal being viewed so a page refresh (which mints
+            // a fresh connect token) can land back on it via restoreLastTerminal.
+            try {
+              const stored = JSON.parse(localStorage.getItem('patapim_device') || 'null');
+              if (stored && stored.deviceToken && stored.lastTerminalId !== newId) {
+                stored.lastTerminalId = newId;
+                localStorage.setItem('patapim_device', JSON.stringify(stored));
+              }
+            } catch {}
             syncTerminalFocus(currentTerminalId);
             highlightTab(currentTerminalId);
           }
