@@ -1537,7 +1537,7 @@ Astro.response.headers.set('Expires', '0');
             </div>
 
             <div class="fab-toast" id="fab-toast"></div>
-            <input type="file" id="image-picker" accept="image/*" style="display:none" />
+            <input type="file" id="image-picker" accept="image/*" multiple style="display:none" />
           </div>
 
           <!-- Non-scrolling overlay for floating buttons -->
@@ -1573,7 +1573,7 @@ Astro.response.headers.set('Expires', '0');
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    Insert image file
+                    Insert image(s)
                   </button>
                   <button class="fab-menu-item" id="fab-compact">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1891,14 +1891,65 @@ Astro.response.headers.set('Expires', '0');
         btn.className = cls.join(' ');
         btn.dataset.token = d.token;
         const safeName = (d.deviceName || 'Unnamed').replace(/[<>&]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
-        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : status);
+        const canWake = !isCurrent && status === 'offline' && d.wakeable;
+        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : (canWake ? 'wake' : status));
         btn.innerHTML = '<span class="dot"></span><span class="name">' + safeName + '</span>'
           + (badge ? '<span class="badge">' + badge + '</span>' : '');
         if (!isCurrent && status !== 'offline') {
           btn.addEventListener('click', () => switchToDevice(d.token));
+        } else if (canWake) {
+          btn.style.pointerEvents = 'auto';
+          btn.style.cursor = 'pointer';
+          btn.addEventListener('click', () => wakeFromPicker(d, btn));
         }
         host.appendChild(btn);
       }
+    }
+
+    // Tap "wake" on an offline machine → queue a Wake-on-LAN request. The
+    // account's LAN agent (Flic Hub / awake PATAPIM) fires the magic packet.
+    // Poll the list until it boots, then re-render so it becomes switchable.
+    async function wakeFromPicker(dev, btn) {
+      const badge = btn.querySelector('.badge');
+      if (badge) badge.textContent = 'waking…';
+      btn.style.pointerEvents = 'none';
+      try {
+        const r = await fetch('/api/wake/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ deviceToken: dev.token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (j && j.ok) {
+          if (badge) badge.textContent = 'sent';
+          pollPickerUntilOnline(dev.token, badge, Date.now() + 150000);
+        } else {
+          if (badge) badge.textContent = 'failed';
+          btn.style.pointerEvents = 'auto';
+        }
+      } catch {
+        if (badge) badge.textContent = 'failed';
+        btn.style.pointerEvents = 'auto';
+      }
+    }
+
+    function pollPickerUntilOnline(token, badge, deadline) {
+      if (Date.now() > deadline) { if (badge) badge.textContent = 'wake'; return; }
+      setTimeout(async () => {
+        try {
+          const r = await fetch('/api/device/list', { credentials: 'same-origin' });
+          const data = r.ok ? await r.json() : null;
+          const devs = (data && data.devices) || [];
+          const t = devs.find(x => x.token === token);
+          if (t && t.status !== 'offline') {
+            deviceListCache = devs;
+            renderDeviceList(devs);
+          } else {
+            pollPickerUntilOnline(token, badge, deadline);
+          }
+        } catch { pollPickerUntilOnline(token, badge, deadline); }
+      }, 5000);
     }
 
     async function switchToDevice(targetToken) {
@@ -2931,6 +2982,12 @@ Astro.response.headers.set('Expires', '0');
 
     function handleMessage(msg) {
       switch (msg.type) {
+        case 'file_upload_result':
+          // Resolve the in-flight sequential upload (if any). Single-image
+          // fire-and-forget uploads leave pendingUploadResolve null — harmless.
+          if (pendingUploadResolve) pendingUploadResolve(msg);
+          break;
+
         case 'welcome':
           // Server sent welcome, now authenticate with connect token
           ws.send(JSON.stringify({
@@ -4256,6 +4313,56 @@ Astro.response.headers.set('Expires', '0');
       reader.readAsDataURL(blob);
     }
 
+    // Multi-image insert. The SERVER is what types each saved path into the
+    // terminal, so the client can't add separators after the fact. To work
+    // correctly even against PATAPIM apps whose remote server hasn't been
+    // updated, we upload strictly ONE image at a time — waiting for each
+    // file_upload_result (the server sends it AFTER typing the path) — and
+    // inject a space between paths so they don't concatenate.
+    let pendingUploadResolve = null;
+    function awaitUploadResult(timeoutMs) {
+      return new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if (done) return; done = true; if (pendingUploadResolve === finish) pendingUploadResolve = null; resolve(v); };
+        pendingUploadResolve = finish;
+        setTimeout(() => finish(null), timeoutMs || 30000);
+      });
+    }
+    // Like sendImageBlob but no per-file toast and no focus churn; the batch
+    // driver handles UX. Returns false if it can't even start the read.
+    function streamImageBlob(blob, fileName) {
+      if (blob.size > 10 * 1024 * 1024) { showToast('Skipped (max 10 MB): ' + fileName); return false; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        ws.send(JSON.stringify({
+          type: 'file_upload', terminalId: currentTerminalId, fileName,
+          mimeType: blob.type || 'image/png', size: blob.size, data: base64,
+        }));
+      };
+      reader.onerror = () => { showToast('Failed to read: ' + fileName); if (pendingUploadResolve) pendingUploadResolve(null); };
+      reader.readAsDataURL(blob);
+      return true;
+    }
+    async function sendImagesSequential(files) {
+      let typed = 0;
+      for (const file of files) {
+        // Separator before every path except the first, so paths stay
+        // space-separated regardless of the remote server version.
+        if (typed > 0) {
+          ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: ' ' }));
+        }
+        const result = awaitUploadResult();
+        if (!streamImageBlob(file, file.name)) { if (pendingUploadResolve) pendingUploadResolve(null); await result; continue; }
+        const res = await result;
+        if (res && res.success) typed++;
+        showToast('Inserting images… ' + typed + '/' + files.length);
+      }
+      showToast(typed > 0 ? ('Inserted ' + typed + ' image' + (typed === 1 ? '' : 's')) : 'No images inserted');
+      term.focus();
+      syncTerminalFocus();
+    }
+
     // ── FAB: Paste from clipboard (text or image) ─────────────────
     fabPaste.addEventListener('click', async () => {
       closeFab();
@@ -4310,10 +4417,17 @@ Astro.response.headers.set('Expires', '0');
     });
 
     imagePicker.addEventListener('change', () => {
-      const file = imagePicker.files[0];
-      if (!file) return;
-      sendImageBlob(file, file.name);
+      const files = Array.from(imagePicker.files || []);
       imagePicker.value = '';
+      if (!files.length) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      // Single image keeps the simple fire-and-forget path; multiple images go
+      // through the sequential driver so their paths land space-separated.
+      if (files.length === 1) sendImageBlob(files[0], files[0].name);
+      else sendImagesSequential(files);
     });
 
     // Native paste (Cmd/Ctrl+V on a desktop browser, iOS "Paste" callout):

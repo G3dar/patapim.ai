@@ -178,6 +178,74 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         });
       }
 
+      // Nothing online, but one or more machines are asleep and wakeable (we
+      // know their MAC and a Wake-on-LAN agent is registered on the account).
+      // Offer a Wake button per machine instead of a dead-end error.
+      function showWakeList(devices) {
+        set('No computer is online. Wake one up:');
+        msg.className = 'msg';
+        devices.forEach(function (dev) {
+          var btn = document.createElement('button');
+          btn.className = 'device';
+          btn.innerHTML =
+            '<span class="name"><span class="dot" style="background:#71717a"></span>' +
+            (dev.deviceName || 'PATAPIM') + '</span>' +
+            '<span class="meta">' + (dev.platform || 'asleep') + ' · tap to wake</span>';
+          btn.addEventListener('click', function () { wakeDevice(dev, btn); });
+          picker.appendChild(btn);
+        });
+      }
+
+      function wakeDevice(dev, btn) {
+        btn.disabled = true;
+        var meta = btn.querySelector('.meta');
+        if (meta) meta.textContent = 'sending wake signal…';
+        fetch('/api/wake/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ deviceToken: dev.token }),
+        })
+          .then(function (r) { return r.ok ? r.json() : r.json().catch(function () { return null; }); })
+          .then(function (j) {
+            if (!j || !j.ok) {
+              if (meta) meta.textContent = (j && j.error) || 'wake failed';
+              btn.disabled = false;
+              return;
+            }
+            if (meta) meta.textContent = 'waking… this can take a minute';
+            pollUntilOnline(dev, btn, meta, Date.now() + 150000);
+          })
+          .catch(function () { if (meta) meta.textContent = 'wake failed — tap to retry'; btn.disabled = false; });
+      }
+
+      // Poll the device list until the woken machine comes online, then connect
+      // to it automatically. Gives up after the deadline so the button frees up.
+      function pollUntilOnline(dev, btn, meta, deadline) {
+        if (Date.now() > deadline) {
+          if (meta) meta.textContent = 'still asleep — tap to retry';
+          btn.disabled = false;
+          return;
+        }
+        setTimeout(function () {
+          fetch('/api/device/list', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+              var devs = (data && data.devices) || [];
+              var t = null;
+              for (var i = 0; i < devs.length; i++) { if (devs[i].token === dev.token) { t = devs[i]; break; } }
+              if (t && (t.status === 'online' || t.status === 'heartbeat') && t.tunnelUrl) {
+                if (meta) meta.textContent = 'online! connecting…';
+                picker.innerHTML = '';
+                connectByToken(dev.token, dev.deviceName);
+              } else {
+                pollUntilOnline(dev, btn, meta, deadline);
+              }
+            })
+            .catch(function () { pollUntilOnline(dev, btn, meta, deadline); });
+        }, 5000);
+      }
+
       // Broker for the embedded /desktop view's "Connected" dropdown. That view
       // is cross-origin (served from the device's tunnel), so it can't call our
       // authenticated device APIs — it asks us via postMessage and we answer
@@ -282,7 +350,12 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
               var rank = function (s) { return s === 'online' ? 0 : 1; };
               return rank(a.status) - rank(b.status);
             });
-            if (!avail.length) { fail('No device is online right now. Open PATAPIM on the computer you want to reach.'); return; }
+            if (!avail.length) {
+              var wakeable = devices.filter(function (x) { return x.wakeable; });
+              if (wakeable.length) { showWakeList(wakeable); return; }
+              fail('No device is online right now. Open PATAPIM on the computer you want to reach.');
+              return;
+            }
             if (avail.length === 1) { connectByToken(avail[0].token, avail[0].deviceName); return; }
             showPicker(avail);
           })

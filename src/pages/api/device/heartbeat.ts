@@ -36,7 +36,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; remoteUI?: string } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; remoteUI?: string; macs?: string[] } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -82,6 +82,18 @@ export const POST: APIRoute = async (context) => {
     const v = body.syncthingDeviceId;
     if (v === '') device.syncthingDeviceId = null;
     else if (typeof v === 'string' && /^[A-Z2-7-]{50,70}$/.test(v)) device.syncthingDeviceId = v;
+  }
+  // Physical NIC MAC addresses, published so an always-on LAN agent (a Flic Hub,
+  // or another awake PATAPIM on the same network) can send a Wake-on-LAN magic
+  // packet to this machine when it's asleep. Validate strictly and cap the count
+  // so a hostile client can't bloat the record or poison it with junk.
+  if (Array.isArray(body.macs)) {
+    const macRe = /^[0-9a-f]{2}([:-][0-9a-f]{2}){5}$/i;
+    device.macs = body.macs
+      .filter((m): m is string => typeof m === 'string' && macRe.test(m))
+      .map((m) => m.toUpperCase().replace(/-/g, ':'))
+      .filter((m, i, a) => a.indexOf(m) === i)
+      .slice(0, 8);
   }
   await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
 

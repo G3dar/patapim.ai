@@ -25,6 +25,11 @@ export const GET: APIRoute = async (context) => {
   const now = Date.now();
   const stalledTokens = new Set<string>();
 
+  // Whether this account has an always-on Wake-on-LAN agent registered (a Flic
+  // Hub or another PATAPIM polling /api/wake/poll). Only then is an offline
+  // device actually wakeable — otherwise the Wake button would be a dead end.
+  const hasWakeAgent = !!(await env.LICENSES.get(`wake-agent-account:${user.googleId}`));
+
   const devices = await Promise.all(
     deviceList.map(async (entry) => {
       const raw = await env.LICENSES.get(`device:${entry.token}`);
@@ -88,6 +93,11 @@ export const GET: APIRoute = async (context) => {
         appVersion: d.appVersion || null,
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
+        // Wake-on-LAN: the machine's physical NIC MACs, and whether it can be
+        // woken right now (offline, we know a MAC, and a wake agent is online to
+        // send the magic packet on its LAN).
+        macs: Array.isArray(d.macs) ? d.macs : [],
+        wakeable: !online && Array.isArray(d.macs) && d.macs.length > 0 && hasWakeAgent,
         // Per-machine mobile UI preference: 'simple' → /remote-mobile,
         // else (default) → /remotedesk. /remote routes the phone by this.
         remoteUI: d.remoteUI === 'simple' ? 'simple' : 'desktop',
