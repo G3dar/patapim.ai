@@ -549,6 +549,25 @@ const scriptI18n = {
     box-shadow: none;
   }
 
+  /* Asleep-but-wakeable: greyed like offline, but clickable to wake — brightens
+     on hover so it clearly reads as an action, not a dead entry. */
+  .device-card.device-wakeable {
+    cursor: pointer;
+  }
+  .device-card.device-wakeable:hover {
+    opacity: 0.85;
+    border-color: var(--border-strong);
+    box-shadow: none;
+  }
+  .online-badge.wake {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+  }
+  .online-badge.wake::before {
+    background: var(--text-secondary);
+  }
+
   .device-card.device-heartbeat {
     opacity: 0.75;
     cursor: default;
@@ -740,11 +759,10 @@ const scriptI18n = {
       document.getElementById('devices-loading').style.display = 'none';
       container.style.display = 'block';
 
-      // Only show currently-online sessions. Devices with stale heartbeats
-      // or offline are kept in the API response (other consumers may need
-      // them) but the dashboard shouldn't surface old, no-longer-running
-      // sessions.
-      const devices = (data.devices || []).filter(d => d.status === 'online');
+      // Show currently-online sessions plus any asleep-but-wakeable machine
+      // (offline, we know its MAC, and a Wake-on-LAN agent is registered) so the
+      // user can tap to wake it. Plain offline devices stay hidden.
+      const devices = (data.devices || []).filter(d => d.status === 'online' || d.wakeable);
 
       if (devices.length === 0) {
         container.innerHTML = `
@@ -765,16 +783,19 @@ const scriptI18n = {
       function badgeClass(d) {
         if (d.status === 'online') return 'online';
         if (d.status === 'heartbeat') return 'heartbeat';
+        if (d.wakeable) return 'wake';
         return 'offline';
       }
       function badgeLabel(d) {
         if (d.status === 'online') return i18n.online || 'Online';
         if (d.status === 'heartbeat') return i18n.connecting || 'Connecting\u2026';
+        if (d.wakeable) return 'Tap to wake';
         return i18n.offline || 'Offline';
       }
       function cardClass(d) {
         if (d.status === 'online') return 'device-card';
         if (d.status === 'heartbeat') return 'device-card device-heartbeat';
+        if (d.wakeable) return 'device-card device-offline device-wakeable';
         return 'device-card device-offline';
       }
       function lastSeenText(d) {
@@ -915,8 +936,10 @@ const scriptI18n = {
       container.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', async (e) => {
           if (e.target.closest('.device-name')) return;
-          if (card.classList.contains('device-offline') || card.classList.contains('device-heartbeat')) return;
           if (card.classList.contains('connecting')) return;
+          // Asleep-but-wakeable → send a Wake-on-LAN request instead of connecting.
+          if (card.classList.contains('device-wakeable')) { wakeCard(card); return; }
+          if (card.classList.contains('device-offline') || card.classList.contains('device-heartbeat')) return;
           card.classList.add('connecting');
           card.style.opacity = '0.6';
           try {
@@ -953,6 +976,71 @@ const scriptI18n = {
           card.style.opacity = '';
         });
       });
+
+      // Wake-on-LAN: enqueue a wake for an asleep machine, then poll until it
+      // comes online and connect automatically. The magic packet is fired by the
+      // account's LAN agent (Flic Hub / awake PATAPIM) draining /api/wake/poll.
+      async function wakeCard(card) {
+        const token = card.dataset.token;
+        const badge = card.querySelector('.online-badge');
+        card.classList.add('connecting');
+        if (badge) badge.textContent = 'Waking…';
+        try {
+          const res = await fetch('/api/wake/enqueue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceToken: token }),
+          });
+          const result = await res.json().catch(() => null);
+          if (!result || !result.ok) {
+            if (badge) badge.textContent = (result && result.error) || 'Wake failed';
+            card.classList.remove('connecting');
+            return;
+          }
+          pollWakeUntilOnline(token, card, badge, Date.now() + 150000);
+        } catch {
+          if (badge) badge.textContent = 'Wake failed';
+          card.classList.remove('connecting');
+        }
+      }
+
+      function pollWakeUntilOnline(token, card, badge, deadline) {
+        if (Date.now() > deadline) {
+          if (badge) badge.textContent = 'Still asleep';
+          card.classList.remove('connecting');
+          return;
+        }
+        setTimeout(async () => {
+          try {
+            const res = await fetch('/api/device/list');
+            const data = res.ok ? await res.json() : null;
+            const devs = (data && data.devices) || [];
+            const t = devs.find(x => x.token === token);
+            if (t && t.status === 'online' && t.tunnelUrl) {
+              if (badge) badge.textContent = 'Online! connecting…';
+              const cr = await fetch('/api/device/connect-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceToken: token }),
+              });
+              const result = await cr.json().catch(() => null);
+              if (result && result.connectToken && result.tunnelUrl) {
+                window.location.href =
+                  '/remote?t=' + encodeURIComponent(result.connectToken) +
+                  '&url=' + encodeURIComponent(result.tunnelUrl) +
+                  '&d=' + encodeURIComponent(token) +
+                  '&v=' + Date.now();
+                return;
+              }
+              window.location.reload();
+            } else {
+              pollWakeUntilOnline(token, card, badge, deadline);
+            }
+          } catch {
+            pollWakeUntilOnline(token, card, badge, deadline);
+          }
+        }, 5000);
+      }
     } catch {
       document.getElementById('devices-loading').textContent = 'Failed to load devices.'; // Not translated — error state
     }
