@@ -36,6 +36,11 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
     .device .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; flex:0 0 auto; }
     .device .dot.heartbeat { background:#f59e0b; }
     .device .name { display:flex; align-items:center; gap:8px; font-weight:600; }
+    /* Asleep-but-wakeable machine: greyed out, but still tappable to wake it.
+       Brightens on hover so it clearly reads as clickable, not disabled. */
+    .device.wake { opacity:.5; }
+    .device.wake:hover { opacity:1; border-color:var(--accent); background:#191920; }
+    .device.wake .dot { background:#71717a; }
     /* Full-screen frame that hosts the desktop UI without exposing the tunnel
        URL in the address bar (stays on patapim.ai/remotedesk).
        On touch phones its height is driven from window.visualViewport by JS
@@ -159,8 +164,8 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 
       // Several machines online → let the user choose instead of silently
       // guessing (picking the wrong one would connect to the wrong computer).
-      function showPicker(devices) {
-        set('Choose a computer to open:');
+      function showPicker(devices, wakeable) {
+        set('Your computers:');
         msg.className = 'msg';
         devices.forEach(function (dev) {
           var btn = document.createElement('button');
@@ -176,6 +181,18 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
           });
           picker.appendChild(btn);
         });
+        // Also offer any asleep-but-wakeable machines, so the user can wake one
+        // even while other computers are online (not only when everything's off).
+        (wakeable || []).forEach(function (dev) {
+          var btn = document.createElement('button');
+          btn.className = 'device wake';
+          btn.innerHTML =
+            '<span class="name"><span class="dot"></span>' +
+            (dev.deviceName || 'PATAPIM') + '</span>' +
+            '<span class="meta">' + (dev.platform || 'asleep') + ' · tap to wake</span>';
+          btn.addEventListener('click', function () { wakeDevice(dev, btn); });
+          picker.appendChild(btn);
+        });
       }
 
       // Nothing online, but one or more machines are asleep and wakeable (we
@@ -186,9 +203,9 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         msg.className = 'msg';
         devices.forEach(function (dev) {
           var btn = document.createElement('button');
-          btn.className = 'device';
+          btn.className = 'device wake';
           btn.innerHTML =
-            '<span class="name"><span class="dot" style="background:#71717a"></span>' +
+            '<span class="name"><span class="dot"></span>' +
             (dev.deviceName || 'PATAPIM') + '</span>' +
             '<span class="meta">' + (dev.platform || 'asleep') + ' · tap to wake</span>';
           btn.addEventListener('click', function () { wakeDevice(dev, btn); });
@@ -350,14 +367,17 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
               var rank = function (s) { return s === 'online' ? 0 : 1; };
               return rank(a.status) - rank(b.status);
             });
+            var wakeable = devices.filter(function (x) { return x.wakeable; });
             if (!avail.length) {
-              var wakeable = devices.filter(function (x) { return x.wakeable; });
               if (wakeable.length) { showWakeList(wakeable); return; }
               fail('No device is online right now. Open PATAPIM on the computer you want to reach.');
               return;
             }
-            if (avail.length === 1) { connectByToken(avail[0].token, avail[0].deviceName); return; }
-            showPicker(avail);
+            // One online and nothing asleep to wake → connect straight away.
+            // But if a machine is wakeable, show the picker so the user can
+            // choose between the online box and waking the sleeping one.
+            if (avail.length === 1 && !wakeable.length) { connectByToken(avail[0].token, avail[0].deviceName); return; }
+            showPicker(avail, wakeable);
           })
           .catch(function () { fail('Failed to reach the server.'); });
       }
