@@ -980,31 +980,34 @@ const scriptI18n = {
       // Wake-on-LAN: enqueue a wake for an asleep machine, then poll until it
       // comes online and connect automatically. The magic packet is fired by the
       // account's LAN agent (Flic Hub / awake PATAPIM) draining /api/wake/poll.
-      async function wakeCard(card) {
-        const token = card.dataset.token;
-        const badge = card.querySelector('.online-badge');
-        card.classList.add('connecting');
-        if (badge) badge.textContent = 'Waking…';
+      async function enqueueWake(token) {
         try {
           const res = await fetch('/api/wake/enqueue', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceToken: token }),
           });
-          const result = await res.json().catch(() => null);
-          if (!result || !result.ok) {
-            if (badge) badge.textContent = (result && result.error) || 'Wake failed';
-            card.classList.remove('connecting');
-            return;
-          }
-          pollWakeUntilOnline(token, card, badge, Date.now() + 150000);
-        } catch {
-          if (badge) badge.textContent = 'Wake failed';
-          card.classList.remove('connecting');
-        }
+          return await res.json().catch(() => null);
+        } catch { return null; }
       }
 
-      function pollWakeUntilOnline(token, card, badge, deadline) {
+      async function wakeCard(card) {
+        const token = card.dataset.token;
+        const badge = card.querySelector('.online-badge');
+        card.classList.add('connecting');
+        if (badge) badge.textContent = 'Waking…';
+        const result = await enqueueWake(token);
+        if (!result || !result.ok) {
+          if (badge) badge.textContent = (result && result.error) || 'Wake failed';
+          card.classList.remove('connecting');
+          return;
+        }
+        pollWakeUntilOnline(token, card, badge, Date.now() + 150000, 0);
+      }
+
+      // Poll every 5s. Wi-Fi silently drops magic packets, so re-queue the wake
+      // every ~30s (3 extra tries) rather than making the user tap again.
+      function pollWakeUntilOnline(token, card, badge, deadline, ticks) {
         if (Date.now() > deadline) {
           if (badge) badge.textContent = 'Still asleep';
           card.classList.remove('connecting');
@@ -1016,7 +1019,16 @@ const scriptI18n = {
             const data = res.ok ? await res.json() : null;
             const devs = (data && data.devices) || [];
             const t = devs.find(x => x.token === token);
-            if (t && t.status === 'online' && t.tunnelUrl) {
+            if (!(t && t.status === 'online' && t.tunnelUrl)) {
+              const next = (ticks || 0) + 1;
+              if (next % 6 === 0 && next < 24) {
+                if (badge) badge.textContent = 'Waking… retrying';
+                enqueueWake(token);
+              }
+              pollWakeUntilOnline(token, card, badge, deadline, next);
+              return;
+            }
+            {
               if (badge) badge.textContent = 'Online! connecting…';
               const cr = await fetch('/api/device/connect-token', {
                 method: 'POST',
@@ -1033,11 +1045,9 @@ const scriptI18n = {
                 return;
               }
               window.location.reload();
-            } else {
-              pollWakeUntilOnline(token, card, badge, deadline);
             }
           } catch {
-            pollWakeUntilOnline(token, card, badge, deadline);
+            pollWakeUntilOnline(token, card, badge, deadline, (ticks || 0) + 1);
           }
         }, 5000);
       }

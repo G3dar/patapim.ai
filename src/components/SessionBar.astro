@@ -102,37 +102,41 @@
     // Wake-on-LAN: queue a wake for a sleeping machine, then poll until it is
     // online and reload so it shows up as a connectable session. The magic packet
     // is sent by the account's LAN agent draining /api/wake/poll.
-    async function wakeSession(btn: HTMLElement) {
-      const token = btn.dataset.token;
-      const label = btn.querySelector('.session-terminals');
-      btn.classList.add('connecting');
-      if (label) label.textContent = 'Waking…';
+    async function enqueueWake(token: string | undefined) {
       try {
         const res = await fetch('/api/wake/enqueue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ deviceToken: token }),
         });
-        const result = await res.json().catch(() => null);
-        if (!result || !result.ok) {
-          if (label) label.textContent = (result && result.error) || 'Wake failed';
-          btn.classList.remove('connecting');
-          return;
-        }
-        pollWake(token, btn, label, Date.now() + 150000);
-      } catch {
-        if (label) label.textContent = 'Wake failed';
-        btn.classList.remove('connecting');
-      }
+        return await res.json().catch(() => null);
+      } catch { return null; }
     }
 
-    function pollWake(token: string | undefined, btn: HTMLElement, label: Element | null, deadline: number) {
+    async function wakeSession(btn: HTMLElement) {
+      const token = btn.dataset.token;
+      const label = btn.querySelector('.session-terminals');
+      btn.classList.add('connecting');
+      if (label) label.textContent = 'Waking…';
+      const result = await enqueueWake(token);
+      if (!result || !result.ok) {
+        if (label) label.textContent = (result && result.error) || 'Wake failed';
+        btn.classList.remove('connecting');
+        return;
+      }
+      pollWake(token, btn, label, Date.now() + 150000, 0);
+    }
+
+    // Poll every 5s. Wi-Fi silently drops magic packets, so re-queue the wake
+    // every ~30s (3 extra tries) rather than making the user tap again.
+    function pollWake(token: string | undefined, btn: HTMLElement, label: Element | null, deadline: number, ticks: number) {
       if (Date.now() > deadline) {
         if (label) label.textContent = 'Still asleep';
         btn.classList.remove('connecting');
         return;
       }
       setTimeout(async () => {
+        let next = (ticks || 0) + 1;
         try {
           const res = await fetch('/api/device/list');
           const data = res.ok ? await res.json() : null;
@@ -143,10 +147,12 @@
             window.location.reload();
             return;
           }
-          pollWake(token, btn, label, deadline);
-        } catch {
-          pollWake(token, btn, label, deadline);
-        }
+          if (next % 6 === 0 && next < 24) {
+            if (label) label.textContent = 'Waking… retrying';
+            enqueueWake(token);
+          }
+        } catch {}
+        pollWake(token, btn, label, deadline, next);
       }, 5000);
     }
 
