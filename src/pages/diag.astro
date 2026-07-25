@@ -1,0 +1,203 @@
+---
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PATAPIM Remote Diag</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style is:inline>
+    body { margin:0; background:#0a0a0b; color:#e4e4e7; font-family:-apple-system,system-ui,sans-serif; padding:18px; }
+    h1 { font-size:17px; margin:0 0 4px; }
+    .sub { color:#8b8b93; font-size:12px; margin-bottom:14px; }
+    .step { padding:9px 10px; border:1px solid #26262b; border-radius:8px; margin-bottom:7px;
+            font-size:13px; line-height:1.45; word-break:break-word; }
+    .step .name { font-weight:600; }
+    .ok { border-color:#14532d; } .ok .name { color:#4ade80; }
+    .fail { border-color:#7f1d1d; } .fail .name { color:#f87171; }
+    .run .name { color:#fbbf24; }
+    .detail { color:#a1a1aa; font-size:11.5px; font-family:ui-monospace,monospace; white-space:pre-wrap; }
+    #done { margin-top:14px; font-size:14px; font-weight:600; display:none; }
+  </style>
+</head>
+<body>
+  <h1>Diagnóstico Remote</h1>
+  <div class="sub">Corriendo tests… dejá esta página abierta ~15 segundos.</div>
+  <div id="steps"></div>
+  <div id="done">✅ Listo — reporte enviado. Ya podés cerrar.</div>
+
+  <script is:inline>
+    (function () {
+      var DEV_TUNNEL = 'https://response-thinks-carry-motion.trycloudflare.com';
+      var reportId = 'r' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      var steps = [];
+      var box = document.getElementById('steps');
+
+      function render(name, status, detail) {
+        var id = 'st_' + name.replace(/[^a-zA-Z0-9]/g, '');
+        var el = document.getElementById(id);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = id;
+          box.appendChild(el);
+        }
+        el.className = 'step ' + (status === 'ok' ? 'ok' : status === 'fail' ? 'fail' : 'run');
+        el.innerHTML = '<span class="name">' + (status === 'ok' ? '✓ ' : status === 'fail' ? '✗ ' : '… ') + name + '</span>' +
+          (detail ? '<div class="detail"></div>' : '');
+        if (detail) el.querySelector('.detail').textContent = detail;
+      }
+
+      function log(name, status, detail) {
+        steps.push({ t: Date.now(), name: name, status: status, detail: String(detail || '').slice(0, 500) });
+        render(name, status, detail);
+        // Primary channel: same-origin KV sink (full snapshot each time, idempotent by id).
+        try {
+          fetch('/api/diag/report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: reportId, steps: steps }),
+            keepalive: true
+          }).catch(function () {});
+        } catch (_) {}
+        // Secondary channel: dev tunnel client-log (also implicitly tests tunnel reachability).
+        try {
+          if (navigator.sendBeacon) navigator.sendBeacon(DEV_TUNNEL + '/client-log', 'DIAG ' + reportId + ' | ' + name + ' = ' + status + ' | ' + (detail || ''));
+        } catch (_) {}
+      }
+
+      function timedFetch(url, opts, ms) {
+        return new Promise(function (resolve) {
+          var t0 = Date.now();
+          var done = false;
+          var timer = setTimeout(function () { if (!done) { done = true; resolve({ ok: false, error: 'timeout ' + ms + 'ms' }); } }, ms);
+          fetch(url, opts).then(function (r) {
+            if (done) return;
+            done = true; clearTimeout(timer);
+            resolve({ ok: true, status: r.status, ms: Date.now() - t0, resp: r });
+          }).catch(function (e) {
+            if (done) return;
+            done = true; clearTimeout(timer);
+            resolve({ ok: false, error: String(e && e.message || e), ms: Date.now() - t0 });
+          });
+        });
+      }
+
+      window.addEventListener('error', function (e) {
+        log('js-error', 'fail', (e.message || '?') + ' @ ' + (e.filename || '').split('/').pop() + ':' + (e.lineno || '?'));
+      }, true);
+
+      log('inicio', 'ok', navigator.userAgent + ' | ' + window.innerWidth + 'x' + window.innerHeight + ' | online=' + navigator.onLine);
+
+      var casa = null, casaDev = null, minted = null;
+
+      // 1. Session + device list
+      log('sesion-y-devices', 'run', '');
+      timedFetch('/api/device/list', { credentials: 'include' }, 8000).then(function (r) {
+        if (!r.ok) { log('sesion-y-devices', 'fail', r.error); return null; }
+        if (r.status === 401 || r.status === 403) { log('sesion-y-devices', 'fail', 'SIN SESION (http ' + r.status + ')'); return null; }
+        return r.resp.json().then(function (j) {
+          var devs = (j && j.devices) || [];
+          var summary = devs.map(function (d) {
+            return d.deviceName + '[' + (d.online ? 'on' : 'off') + ',' + (d.remoteUI || '?') + ',' + (d.tunnelUrl ? d.tunnelUrl.replace('https://', '').split('.')[0] : 'no-tunnel') + ']';
+          }).join(' ');
+          for (var i = 0; i < devs.length; i++) {
+            if (devs[i].deviceName === 'CASA') casa = devs[i];
+            if (devs[i].deviceName === 'CASA [dev]') casaDev = devs[i];
+          }
+          log('sesion-y-devices', 'ok', summary || 'lista vacia');
+        });
+      }).then(function () {
+        // 2. Ping dev tunnel (hardcoded)
+        log('ping-tunel-dev', 'run', '');
+        return timedFetch(DEV_TUNNEL + '/ping', { mode: 'cors' }, 8000);
+      }).then(function (r) {
+        log('ping-tunel-dev', r && r.ok && r.status === 200 ? 'ok' : 'fail', r ? (r.ok ? 'http ' + r.status + ' en ' + r.ms + 'ms' : r.error) : '?');
+        // 3. Ping CASA tunnel (from list)
+        if (!casa || !casa.tunnelUrl) { log('ping-tunel-casa', 'fail', 'sin tunnelUrl de CASA'); return null; }
+        log('ping-tunel-casa', 'run', '');
+        return timedFetch(casa.tunnelUrl + '/ping', { mode: 'cors' }, 8000).then(function (r2) {
+          log('ping-tunel-casa', r2.ok && r2.status === 200 ? 'ok' : 'fail', r2.ok ? 'http ' + r2.status + ' en ' + r2.ms + 'ms' : r2.error);
+        });
+      }).then(function () {
+        // 4. Mint connect token for CASA
+        if (!casa) { log('mint-token', 'fail', 'no hay device CASA'); return null; }
+        log('mint-token', 'run', '');
+        return timedFetch('/api/device/connect-token', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceToken: casa.token })
+        }, 8000).then(function (r) {
+          if (!r.ok) { log('mint-token', 'fail', r.error); return; }
+          return r.resp.json().then(function (j) {
+            if (j && j.connectToken) { minted = j; log('mint-token', 'ok', 'token ok, tunnel ' + (j.tunnelUrl || '?').replace('https://', '')); }
+            else log('mint-token', 'fail', 'http ' + r.status + ' body ' + JSON.stringify(j).slice(0, 200));
+          });
+        });
+      }).then(function () {
+        // 5. WebSocket auth against CASA tunnel with the minted token
+        if (!minted) { log('websocket-auth', 'fail', 'sin token minteado'); return null; }
+        log('websocket-auth', 'run', '');
+        return new Promise(function (resolve) {
+          var wsUrl = minted.tunnelUrl.replace(/^https/, 'wss');
+          var settled = false;
+          var timer = setTimeout(function () { if (!settled) { settled = true; log('websocket-auth', 'fail', 'timeout 10s (ws no responde)'); resolve(); } }, 10000);
+          try {
+            var ws = new WebSocket(wsUrl);
+            ws.onopen = function () {
+              try { ws.send(JSON.stringify({ type: 'auth', connectToken: minted.connectToken })); } catch (e) {}
+            };
+            ws.onmessage = function (ev) {
+              if (settled) return;
+              settled = true; clearTimeout(timer);
+              var t = '';
+              try { t = JSON.parse(ev.data).type; } catch (_) { t = String(ev.data).slice(0, 60); }
+              log('websocket-auth', 'ok', 'respuesta: ' + t);
+              try { ws.close(); } catch (_) {}
+              resolve();
+            };
+            ws.onerror = function () {
+              if (settled) return;
+              settled = true; clearTimeout(timer);
+              log('websocket-auth', 'fail', 'ws error (conexion rechazada/bloqueada)');
+              resolve();
+            };
+            ws.onclose = function (ev) {
+              if (settled) return;
+              settled = true; clearTimeout(timer);
+              log('websocket-auth', 'fail', 'ws cerrado temprano code=' + ev.code);
+              resolve();
+            };
+          } catch (e) {
+            settled = true; clearTimeout(timer);
+            log('websocket-auth', 'fail', String(e && e.message || e));
+            resolve();
+          }
+        });
+      }).then(function () {
+        // 6. Iframe render test (no token: auth screen is enough to prove iframe+tunnel render on this browser)
+        if (!casa || !casa.tunnelUrl) { log('iframe-desktop', 'fail', 'sin tunnel CASA'); finish(); return; }
+        log('iframe-desktop', 'run', '');
+        var done = false;
+        var f = document.createElement('iframe');
+        f.style.cssText = 'width:1px;height:1px;opacity:0;position:absolute;';
+        var timer = setTimeout(function () { if (!done) { done = true; log('iframe-desktop', 'fail', 'onload no disparo en 10s'); finish(); } }, 10000);
+        f.onload = function () { if (!done) { done = true; clearTimeout(timer); log('iframe-desktop', 'ok', 'iframe onload OK'); finish(); } };
+        f.src = casa.tunnelUrl + '/desktop';
+        document.body.appendChild(f);
+      }).catch(function (e) {
+        log('battery-error', 'fail', String(e && e.message || e));
+        finish();
+      });
+
+      function finish() {
+        log('fin', 'ok', 'bateria completa');
+        document.getElementById('done').style.display = 'block';
+      }
+    })();
+  </script>
+</body>
+</html>
