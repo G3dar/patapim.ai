@@ -17,6 +17,7 @@ import V2VoiceDictationScene from '../components/V2VoiceDictationScene.astro';
 import V2RemoteAccessScene from '../components/V2RemoteAccessScene.astro';
 import V2ConnectedTabsScene from '../components/V2ConnectedTabsScene.astro';
 import V2BrowserCommsScene from '../components/V2BrowserCommsScene.astro';
+import ScreenshotGallery from '../components/ScreenshotGallery.astro';
 
 const ASCII_LOGO = `██████╗  █████╗ ████████╗ █████╗ ██████╗ ██╗███╗   ███╗
 ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗██║████╗ ████║
@@ -341,6 +342,9 @@ const PRO_FEATURES = [
         <a href="https://github.com/G3dar/patapim-sdk" class="tv-build-btn" target="_blank" rel="noopener">GitHub SDK</a>
       </div>
     </section>
+
+    <!-- ============ SEE IT IN ACTION (screenshots + demo) ============ -->
+    <ScreenshotGallery />
 
     <!-- ============ PRICING ============ -->
     <section class="tv-pricing" id="pricing">
