@@ -4,10 +4,15 @@
 
 import { getUserFromRequest, type SessionUser } from './auth';
 
-const ADMIN_EMAIL = 'g@3dar.com';
+// Emails allowed into /admin (compared case-insensitively — Google may report
+// the address with different casing than it was granted with).
+const ADMIN_EMAILS = [
+  'g@3dar.com',
+  'jp@ids-outsourcing.com',
+];
 
 export function isAdmin(user: SessionUser): boolean {
-  return user.email === ADMIN_EMAIL;
+  return ADMIN_EMAILS.includes((user.email || '').toLowerCase());
 }
 
 export async function requireAdmin(
