@@ -1740,6 +1740,18 @@ Astro.response.headers.set('Expires', '0');
     let reconnectTimer = null;
     let wsConnectTimeout = null;
     let isAuthenticated = false;
+    // True once ANY auth succeeded this page-load. Reconnects key off this
+    // (not the live isAuthenticated, which is false during every drop) so a
+    // drop before the first reconnect-auth completes still retries, while a
+    // genuinely revoked token stops the loop (handleAuthFailure clears it).
+    let hasEverAuthenticated = false;
+    // Reconnect deferred because the page was hidden — resumed on visible.
+    let pendingReconnect = false;
+    // Half-open-socket detection. pongCapable flips on the FIRST pong ever so
+    // enforcement never triggers against an older desktop build that doesn't
+    // answer pings.
+    let pongCapable = false;
+    let pongTimer = null;
     // Auth-failure auto-recovery: a stale one-time connectToken (page refresh
     // before the URL scrub, old Telegram deep-link) is re-mintable right here —
     // the patapim.ai session cookie is same-origin. Capped so a genuinely
@@ -2057,6 +2069,8 @@ Astro.response.headers.set('Expires', '0');
         }
       }
 
+      // Token genuinely rejected — stop the auto-reconnect loop too.
+      hasEverAuthenticated = false;
       showError(
         'Authentication failed: ' + (msg.error || 'Unknown error') +
         '<br><br><a href="/go">Go back to dashboard</a>'
@@ -2928,6 +2942,7 @@ Astro.response.headers.set('Expires', '0');
         setStatus('connecting', 'Authenticating...');
         loadingText && (loadingText.textContent = 'Authenticating...');
         reconnectAttempts = 0;
+        pendingReconnect = false;
         lastFocusSync = { terminalId: null, focused: null };
         // Auth is sent after receiving 'welcome' message to avoid double-auth
       };
@@ -2958,14 +2973,15 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function scheduleReconnect() {
-      if (!isAuthenticated || !activeDeviceToken) return;
-      if (reconnectAttempts >= 10) return;
+      // NEVER permanently give up (the old 10-attempt cap left the page dead
+      // after ~1 min of bad connectivity, silently). Backoff caps at 30s; a
+      // hidden page defers to visibilitychange instead of burning token mints.
+      if (!hasEverAuthenticated || !activeDeviceToken) return;
       if (reconnectTimer) return;
-      // Exponential-ish backoff capped at 10s so a temporarily unavailable
-      // tunnel URL doesn't burn through all retries in 20s.
-      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 10000);
+      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
       reconnectTimer = setTimeout(async () => {
         reconnectTimer = null;
+        if (document.visibilityState !== 'visible') { pendingReconnect = true; return; }
         reconnectAttempts++;
         setStatus('connecting', 'Reconnecting...');
         const result = await fetchConnectToken(activeDeviceToken);
@@ -2973,6 +2989,9 @@ Astro.response.headers.set('Expires', '0');
           activeConnectToken = result.connectToken;
           activeTunnelUrl = result.tunnelUrl;
           connect();
+        } else if (result.error === 'session_expired') {
+          localStorage.removeItem('patapim_device');
+          window.location.href = '/go';
         } else {
           // Token/tunnel not ready yet — keep trying instead of silently giving up.
           scheduleReconnect();
@@ -2980,7 +2999,19 @@ Astro.response.headers.set('Expires', '0');
       }, delay);
     }
 
+    // Immediate reconnect with a fresh backoff — used when we KNOW conditions
+    // changed (page became visible, network came back, user gesture).
+    function kickReconnect() {
+      pendingReconnect = false;
+      reconnectAttempts = 0;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      scheduleReconnect();
+    }
+
     function handleMessage(msg) {
+      // ANY inbound message proves the socket is alive — a pong can coalesce
+      // behind a burst of terminal output, so don't require the pong itself.
+      if (pongTimer) { clearTimeout(pongTimer); pongTimer = null; }
       switch (msg.type) {
         case 'file_upload_result':
           // Resolve the in-flight sequential upload (if any). Single-image
@@ -2999,6 +3030,7 @@ Astro.response.headers.set('Expires', '0');
         case 'auth_result':
           if (msg.success) {
             isAuthenticated = true;
+            hasEverAuthenticated = true;
             authRetryCount = 0;
             setStatus('connected', 'Connected');
             loadingEl.classList.add('hidden');
@@ -3431,6 +3463,7 @@ Astro.response.headers.set('Expires', '0');
           break;
 
         case 'pong':
+          pongCapable = true; // this desktop answers pings → enforcement may arm
           break;
       }
     }
@@ -4115,6 +4148,7 @@ Astro.response.headers.set('Expires', '0');
       closeStatusDropdown();
       sendTerminalFocus(false);
       isAuthenticated = false;
+      hasEverAuthenticated = false; // explicit disconnect — no auto-reconnect
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (ws) ws.close();
       location.href = '/go';
@@ -4202,6 +4236,11 @@ Astro.response.headers.set('Expires', '0');
       if (document.hidden || document.visibilityState !== 'visible') {
         sendTerminalFocus(false);
       } else {
+        // Coming back to a dead/deferred connection: reconnect NOW with a
+        // fresh backoff instead of waiting out (or having exhausted) the old
+        // schedule. Skip while a socket is already connecting/open.
+        const wsAlive = ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN);
+        if (!wsAlive && hasEverAuthenticated && activeDeviceToken) kickReconnect();
         syncTerminalFocus();
         // Re-apply PTY dims so mobile gets correct cols (not a raw fitAddon.fit
         // which would reset to narrow mobile cols while PTY uses desktop cols).
@@ -4212,6 +4251,12 @@ Astro.response.headers.set('Expires', '0');
           });
         }
       }
+    });
+
+    // Network came back (cell↔Wi-Fi handoff, airplane mode off) — same fast path.
+    window.addEventListener('online', () => {
+      const wsAlive = ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN);
+      if (!wsAlive && hasEverAuthenticated && activeDeviceToken) kickReconnect();
     });
 
     // iOS bfcache: page restored from freeze — show loading overlay immediately
@@ -4684,10 +4729,24 @@ Astro.response.headers.set('Expires', '0');
       syncTerminalFocus();
     }
 
-    // Keepalive ping
+    // Keepalive ping + half-open detection: a socket left half-open by a
+    // cell↔Wi-Fi handoff or a sleeping desktop keeps readyState OPEN while
+    // nothing flows — the view just froze forever. If no message at all
+    // arrives within 10s of a ping, close the socket so onclose reconnects.
+    // Gated on pongCapable so an old desktop build that never answers pings
+    // can't be close-looped.
     setInterval(() => {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'ping' }));
+        if (pongCapable && !pongTimer) {
+          pongTimer = setTimeout(() => {
+            pongTimer = null;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              console.warn('[patapim] no traffic after ping — closing half-open socket');
+              try { ws.close(); } catch {}
+            }
+          }, 10000);
+        }
       }
     }, 30000);
   </script>
