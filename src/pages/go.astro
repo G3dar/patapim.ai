@@ -578,6 +578,85 @@ const scriptI18n = {
     box-shadow: none;
   }
 
+  /* "Put to sleep" button — only rendered on online cards */
+  .device-sleep-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin-left: 4px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    opacity: 0.45;
+    cursor: pointer;
+    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  }
+  .device-sleep-btn svg { width: 15px; height: 15px; }
+  .device-card:hover .device-sleep-btn { opacity: 0.8; }
+  .device-sleep-btn:hover {
+    opacity: 1 !important;
+    color: var(--text-primary);
+    background: rgba(139, 124, 248, 0.18);
+  }
+  .device-sleep-btn:disabled { opacity: 0.25; cursor: default; }
+
+  /* Sleep confirmation dialog */
+  .sleep-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .sleep-confirm {
+    background: linear-gradient(180deg, #0e0e12 0%, #08080a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 22px 24px;
+    max-width: 360px;
+    width: calc(100% - 40px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  }
+  .sleep-confirm h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+  .sleep-confirm p {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+  }
+  .sleep-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .sleep-confirm-actions button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    background: none;
+    color: var(--text-secondary);
+  }
+  .sleep-confirm-actions button:hover { color: var(--text-primary); }
+  .sleep-confirm-actions .sleep-go {
+    background: rgba(139, 124, 248, 0.9);
+    border-color: transparent;
+    color: #fff;
+  }
+  .sleep-confirm-actions .sleep-go:hover { background: rgba(139, 124, 248, 1); color: #fff; }
+
   .device-meta {
     font-size: 13px;
     color: var(--text-tertiary);
@@ -841,6 +920,11 @@ const scriptI18n = {
               <div class="device-card-header">
                 <span class="device-name" data-token="${escapeHtml(d.token)}" title="Click to rename">${escapeHtml(d.deviceName)}</span>
                 <span class="online-badge ${badgeClass(d)}">${badgeLabel(d)}</span>
+                ${d.status === 'online'
+                  ? '<button class="device-sleep-btn" data-token="' + escapeHtml(d.token) + '" data-name="' + escapeHtml(d.deviceName) + '" title="Put to sleep" aria-label="Put to sleep">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>' +
+                    '</button>'
+                  : ''}
               </div>
               <div class="device-meta">
                 <span>${renderTerminalBadges(d)}</span>
@@ -932,10 +1016,92 @@ const scriptI18n = {
         }
       }
 
+      // ── Put to sleep (online cards) ─────────────────────────────────
+      // Confirmation dialog → connect-token → short-lived WS to the device's
+      // tunnel → `sleep_machine` → device acks and suspends itself.
+      function sleepConfirmDialog(name) {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'sleep-confirm-overlay';
+          overlay.innerHTML =
+            '<div class="sleep-confirm" role="dialog" aria-modal="true">' +
+              '<h3>Put ' + escapeHtml(name) + ' to sleep?</h3>' +
+              '<p>The machine will suspend. If it supports Wake-on-LAN you can wake it back up from here.</p>' +
+              '<div class="sleep-confirm-actions">' +
+                '<button type="button" class="sleep-cancel">Cancel</button>' +
+                '<button type="button" class="sleep-go">Put to sleep</button>' +
+              '</div>' +
+            '</div>';
+          const done = (val) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); };
+          const onKey = (e) => { if (e.key === 'Escape') done(false); };
+          overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+          overlay.querySelector('.sleep-cancel').addEventListener('click', () => done(false));
+          overlay.querySelector('.sleep-go').addEventListener('click', () => done(true));
+          document.addEventListener('keydown', onKey);
+          document.body.appendChild(overlay);
+          overlay.querySelector('.sleep-go').focus();
+        });
+      }
+
+      function wsSleep(tunnelUrl, connectToken) {
+        return new Promise((resolve, reject) => {
+          let settled = false;
+          const finish = (fn, arg) => { if (settled) return; settled = true; clearTimeout(timer); try { ws.close(); } catch {} fn(arg); };
+          let ws;
+          try { ws = new WebSocket(tunnelUrl.replace(/^https?:/, 'wss:')); }
+          catch { reject(new Error('connection failed')); return; }
+          const timer = setTimeout(() => finish(reject, new Error('timed out reaching the device')), 12000);
+          ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', connectToken }));
+          ws.onerror = () => finish(reject, new Error('connection failed'));
+          ws.onmessage = (ev) => {
+            let m; try { m = JSON.parse(ev.data); } catch { return; }
+            if (m.type === 'auth_result') {
+              if (m.success) ws.send(JSON.stringify({ type: 'sleep_machine' }));
+              else finish(reject, new Error(m.error || 'not authorized'));
+            } else if (m.type === 'sleep_ack') {
+              finish(resolve);
+            }
+          };
+        });
+      }
+
+      container.querySelectorAll('.device-sleep-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const name = btn.dataset.name || 'this machine';
+          const ok = await sleepConfirmDialog(name);
+          if (!ok) return;
+          btn.disabled = true;
+          try {
+            const res = await fetch('/api/device/connect-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceToken: btn.dataset.token }),
+            });
+            const j = await res.json();
+            if (!j.connectToken || !j.tunnelUrl) throw new Error(j.error || 'device unreachable');
+            await wsSleep(j.tunnelUrl, j.connectToken);
+            // Ack received — the machine is suspending. Grey the card out.
+            const card = btn.closest('.device-card');
+            if (card) {
+              card.classList.add('device-offline');
+              const badge = card.querySelector('.online-badge');
+              if (badge) { badge.className = 'online-badge offline'; badge.textContent = 'Sleeping…'; }
+              btn.remove();
+            }
+          } catch (err) {
+            btn.disabled = false;
+            alert('Could not put ' + name + ' to sleep: ' + (err && err.message ? err.message : 'unknown error') +
+              '\n\nIf the machine is running an older PATAPIM version, restart PATAPIM on it once to enable remote sleep.');
+          }
+        });
+      });
+
       // Click-to-connect on online device cards
       container.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', async (e) => {
           if (e.target.closest('.device-name')) return;
+          if (e.target.closest('.device-sleep-btn')) return;
           if (card.classList.contains('connecting')) return;
           // Asleep-but-wakeable → send a Wake-on-LAN request instead of connecting.
           if (card.classList.contains('device-wakeable')) { wakeCard(card); return; }
