@@ -701,14 +701,16 @@ const scriptI18n = {
     display: inline-block;
   }
 
+  /* Same color language as the app's sidebar: red = working (processing),
+     green = finished/asking (needs you), cyan = plan mode, grey = idle. */
   .device-badges .tbadge.attention {
-    background: var(--error-subtle);
-    color: var(--error);
+    background: var(--success-subtle);
+    color: var(--success);
   }
 
   .device-badges .tbadge.busy {
-    background: rgba(216, 180, 90, 0.14);
-    color: var(--warning);
+    background: var(--error-subtle);
+    color: var(--error);
   }
 
   .device-badges .tbadge.plan {
