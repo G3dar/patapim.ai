@@ -713,8 +713,8 @@ const en = {
   },
   screenshots: {
     label: 'see it in action',
-    title: 'Real screenshots. <span class="g">Real app.</span>',
-    subtitle: 'No mockups — this is PATAPIM actually running, plus a 43-second demo below.',
+    title: 'Take a look. <span class="g">This is PATAPIM.</span>',
+    subtitle: 'Nine screenshots from daily use, plus a 43-second demo below — click any to expand.',
     videoTitle: 'Watch it run',
     videoSub: '43 seconds, the real interface — remote control, voice, terminals and computer control.',
     videoLink: 'Full quality on YouTube',
