@@ -373,6 +373,10 @@ Astro.response.headers.set('Expires', '0');
       background: var(--bg-surface);
       border-right: 1px solid var(--border);
       overflow: hidden;
+      /* iOS ignores user-scalable=no: quick taps (Later header, then a
+         project) read as double-tap-to-zoom. manipulation keeps pan/scroll
+         but kills the double-tap zoom inside the panel. */
+      touch-action: manipulation;
     }
 
     .sidebar-header {
