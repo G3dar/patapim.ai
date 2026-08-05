@@ -1478,7 +1478,7 @@ Astro.response.headers.set('Expires', '0');
             </div>
           </div>
         </div>
-        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r55</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r58</span></a>
         <div id="topbar-switcher" title="Switch terminal">
           <span id="topbar-project"></span>
           <span id="topbar-switcher-caret">&#9662;</span>
@@ -1799,7 +1799,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r57  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r58  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -3096,7 +3096,29 @@ Astro.response.headers.set('Expires', '0');
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             const _sb0 = term.buffer.active;
             const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
-            writePreservingScroll('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            // Viewport-only repaints (\x1b[2J) never feed xterm's scrollback, so
+            // without help the phone's scroll-up history stays frozen at whatever
+            // the terminal_init/switched buffer carried. Newer desktop hosts send
+            // `scrolled`: how many rows left the host viewport since the previous
+            // snapshot. Push exactly that many of our current top rows — which
+            // ARE the previous frame — into scrollback first (LF at the bottom
+            // row scrolls one line up), then repaint. Clamp to rows (beyond that
+            // the pushed rows would be blanks). Normal buffer only: the alt
+            // screen has no scrollback. Old hosts omit the field → prefix empty,
+            // behavior unchanged.
+            // alt:false (new hosts): host is on the normal buffer — if we're
+            // stuck on the alt buffer (the frame that entered it carried
+            // \x1b[?1049h but nothing ever exits it), switch back first;
+            // ?1049l restores our saved normal screen, which is exactly the
+            // pre-alt frame the scroll push feeds from.
+            const _inAlt = _sb0.type === 'alternate';
+            const _exitAlt = msg.alt === false && _inAlt;
+            let _scrollPush = _exitAlt ? '\x1b[?1049l' : '';
+            if (typeof msg.scrolled === 'number' && msg.scrolled > 0 && (!_inAlt || _exitAlt)) {
+              const _push = Math.min(msg.scrolled, term.rows);
+              _scrollPush += '\x1b[' + term.rows + ';1H' + '\n'.repeat(_push);
+            }
+            writePreservingScroll('\x1b[?2026h\x1b[?25l' + _scrollPush + '\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
             if (isDebugMode) requestAnimationFrame(() => {
               const _sb1 = term.buffer.active;
               if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
