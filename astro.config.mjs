@@ -10,6 +10,12 @@ export default defineConfig({
     workerEntryPoint: {
       path: 'src/worker.ts',
     },
+    routes: {
+      extend: {
+        // serve the private download folder as pure static assets (bypass the SSR worker)
+        exclude: [{ pattern: '/dl-cc31d4fc7e9d/*' }],
+      },
+    },
   }),
   redirects: {
     // the terminal design graduated from /v2 to the homepage
