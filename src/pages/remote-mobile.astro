@@ -1369,6 +1369,15 @@ Astro.response.headers.set('Expires', '0');
       .fab-actions { display: flex; }
     }
 
+    /* Touch devices wider than the phone breakpoint — landscape phones,
+       tablets, "desktop site" mode. These were width-gated before, so
+       rotating to landscape silently dropped the ✈ TG key and the FAB's
+       Plan Mode toggle while ⌨/🎤 stayed, reading as "buttons missing". */
+    @media (pointer: coarse) and (min-width: 769px) {
+      .keys-bar { display: flex; }
+      .fab-actions { display: flex; }
+    }
+
     /* Loading screen */
     .loading-screen {
       position: absolute;
@@ -3054,6 +3063,12 @@ Astro.response.headers.set('Expires', '0');
             // Request sidebar data first, which will trigger get_terminals with correct project
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
 
+            // The ✈ TG button state was localStorage-only (default ON), so a
+            // fresh browser showed "on" regardless of the desktop's real
+            // Telegram-forward toggle, and two devices could desync. Ask the
+            // host for the truth; the reply lands as telegram_notifications_state.
+            ws.send(JSON.stringify({ type: 'get_telegram_notifications' }));
+
             term.focus();
             syncTerminalFocus();
             // Re-apply dims after reconnect so terminal cols match PTY
@@ -3063,6 +3078,13 @@ Astro.response.headers.set('Expires', '0');
           } else {
             handleAuthFailure(msg);
           }
+          break;
+
+        // Host's authoritative Telegram-forward toggle — answer to our
+        // get_telegram_notifications on auth, and echo of any client's
+        // set_telegram_notifications. Server truth wins over localStorage.
+        case 'telegram_notifications_state':
+          applyTelegramNotifState(msg.enabled);
           break;
 
         case 'snapshot':
@@ -4703,10 +4725,16 @@ Astro.response.headers.set('Expires', '0');
 
     // ── Telegram notifications toggle ──────────────────────────────
     const keyTelegram = document.getElementById('key-telegram');
+    // localStorage is only the pre-auth fallback; the host's real state
+    // arrives via telegram_notifications_state (requested on auth) and wins.
+    let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
+    const renderTelegram = () => { if (keyTelegram) keyTelegram.classList.toggle('tg-active', telegramOn); };
+    function applyTelegramNotifState(enabled) {
+      telegramOn = !!enabled;
+      localStorage.setItem('patapim_telegram_notifs', telegramOn ? '1' : '0');
+      renderTelegram();
+    }
     if (keyTelegram) {
-      // Restore last choice (default: on)
-      let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
-      const renderTelegram = () => keyTelegram.classList.toggle('tg-active', telegramOn);
       renderTelegram();
       keyTelegram.addEventListener('click', () => {
         telegramOn = !telegramOn;
