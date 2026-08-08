@@ -18,10 +18,23 @@ export async function GET(ctx: APIContext) {
   const manifest = await manifestObj.json<{ version: string; file: string; notes: string }>();
   const fileObj = await bucket.get(manifest.file);
 
+  // The installer crossed 300 MiB in v1.5.17, which is wrangler's hard cap for
+  // `r2 object put` — so the release pipeline can no longer mirror the .exe to
+  // R2 and bucket.get() misses, exactly like the portable .zip already did (see
+  // latest-zip.ts). Fall back to the PUBLIC GitHub release, the same place
+  // electron-updater already downloads from anonymously, instead of 404ing the
+  // website's Download button and both install scripts.
   if (!fileObj) {
-    return new Response(JSON.stringify({ error: 'Installer file not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
+    const RELEASES_REPO = 'G3dar/patapim-releases';
+    const githubUrl = `https://github.com/${RELEASES_REPO}/releases/download/v${manifest.version}/${manifest.file}`;
+    ctx.locals.runtime.ctx.waitUntil(logSfDownload(env, ctx.request, 'windows'));
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: githubUrl,
+        'Cache-Control': 'public, max-age=300',
+        'X-Patapim-Version': manifest.version,
+      },
     });
   }
 
