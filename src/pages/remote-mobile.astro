@@ -1484,7 +1484,7 @@ Astro.response.headers.set('Expires', '0');
             </div>
           </div>
         </div>
-        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r58</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r59</span></a>
         <div id="topbar-switcher" title="Switch terminal">
           <span id="topbar-project"></span>
           <span id="topbar-switcher-caret">&#9662;</span>
@@ -1659,6 +1659,11 @@ Astro.response.headers.set('Expires', '0');
   <script is:inline type="module">
     import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
     import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+    // Shared snapshot planner — BYTE-IDENTICAL to patapim's
+    // src/shared/remoteSnapshotApply.mjs (source of truth; parity enforced by
+    // the app repo's unit test). Decides seq staleness, the scrolled push
+    // (gated on the REAL local dims + alt buffer) and the alt-exit escape.
+    import { planSnapshotApply } from '/js/remoteSnapshotApply.mjs';
 
     // Parse URL params
     const params = new URLSearchParams(location.search);
@@ -1805,7 +1810,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r58  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r59  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -2394,25 +2399,21 @@ Astro.response.headers.set('Expires', '0');
       return cur && cur.isProcessing;
     }
 
-    // Never auto-scroll while the user is reading scrollback (desktop AND mobile).
-    // Snapshot writes (\x1b[2J\x1b[H + viewport-data) and cursor positioning
-    // in live output can yank viewportY back to baseY. We capture the scroll
-    // position before the write and restore it after xterm processes the data.
-    // Mobile previously passed through unchanged, which forced the viewport back
-    // to the bottom every time new output arrived while the user was scrolled up.
+    // Plain write. The old absolute-viewportY "restore" here is deliberately
+    // GONE: xterm 5.5 already anchors a scrolled-up reader by itself —
+    // scrollLines(-N) sets isUserScrolling, under which scroll() advances
+    // ybase without moving ydisp (below the scrollback cap) and compensates
+    // ydisp on trim (at the cap). The rAF restore re-applied that compensated
+    // drift ~30×/s once the 5000-line cap bound — walking the reader toward
+    // the present through content they'd already read ("I keep scrolling up
+    // and re-see the same parts") — and its `scrollLines` toward the bottom
+    // even cleared isUserScrolling, fully un-anchoring them. It also queued up
+    // while the page was hidden and fired as a stale burst on resume. The one
+    // real yank source (resize/reflow) is handled by applyPtyDims' relative
+    // lines-from-bottom restore, which is the correct anchor for that case.
     function writePreservingScroll(data) {
       if (!term) return;
-      const buf = term.buffer.active;
-      const targetY = buf.viewportY;
-      const isScrolledUp = targetY < buf.baseY;
       term.write(data);
-      if (!isScrolledUp) return;
-      requestAnimationFrame(() => {
-        const newBuf = term.buffer.active;
-        const clampedY = Math.min(targetY, newBuf.baseY);
-        const delta = clampedY - newBuf.viewportY;
-        if (delta !== 0) term.scrollLines(delta);
-      });
     }
 
     function isClientFocused() {
@@ -3109,35 +3110,22 @@ Astro.response.headers.set('Expires', '0');
             break;
           }
           if (term && msg.terminalId === currentTerminalId) {
-            if (msg.seq) lastBufferSeq = msg.seq;
             window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
-            // Replace visible viewport: clear screen, home cursor, write snapshot.
-            // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             const _sb0 = term.buffer.active;
             const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
-            // Viewport-only repaints (\x1b[2J) never feed xterm's scrollback, so
-            // without help the phone's scroll-up history stays frozen at whatever
-            // the terminal_init/switched buffer carried. Newer desktop hosts send
-            // `scrolled`: how many rows left the host viewport since the previous
-            // snapshot. Push exactly that many of our current top rows — which
-            // ARE the previous frame — into scrollback first (LF at the bottom
-            // row scrolls one line up), then repaint. Clamp to rows (beyond that
-            // the pushed rows would be blanks). Normal buffer only: the alt
-            // screen has no scrollback. Old hosts omit the field → prefix empty,
-            // behavior unchanged.
-            // alt:false (new hosts): host is on the normal buffer — if we're
-            // stuck on the alt buffer (the frame that entered it carried
-            // \x1b[?1049h but nothing ever exits it), switch back first;
-            // ?1049l restores our saved normal screen, which is exactly the
-            // pre-alt frame the scroll push feeds from.
-            const _inAlt = _sb0.type === 'alternate';
-            const _exitAlt = msg.alt === false && _inAlt;
-            let _scrollPush = _exitAlt ? '\x1b[?1049l' : '';
-            if (typeof msg.scrolled === 'number' && msg.scrolled > 0 && (!_inAlt || _exitAlt)) {
-              const _push = Math.min(msg.scrolled, term.rows);
-              _scrollPush += '\x1b[' + term.rows + ';1H' + '\n'.repeat(_push);
-            }
-            writePreservingScroll('\x1b[?2026h\x1b[?25l' + _scrollPush + '\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            // Everything about HOW to apply the frame — the scrolled push into
+            // scrollback (gated on OUR live cols/rows matching the host's, and
+            // off the alt buffer), the stale-alt ?1049l escape, the seq
+            // staleness guard, no \x1b[3J ever — lives in the shared planner.
+            const plan = planSnapshotApply(msg, {
+              cols: term.cols,
+              rows: term.rows,
+              bufferType: _sb0.type,
+              lastSeq: lastBufferSeq,
+            });
+            if (plan.drop) break; // stale frame (older than one already applied)
+            lastBufferSeq = plan.nextSeq;
+            writePreservingScroll(plan.write);
             if (isDebugMode) requestAnimationFrame(() => {
               const _sb1 = term.buffer.active;
               if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
