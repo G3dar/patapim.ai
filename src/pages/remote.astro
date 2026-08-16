@@ -1,6 +1,6 @@
 ---
-export const prerender = false;
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+// Prerendered static asset (see remotedesk.astro note): no SSR, no middleware
+// tax on the hottest redirect page. Freshness via public/_headers no-cache.
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -38,20 +38,60 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         location.replace(target + (qs ? '?' + qs : ''));
       }
 
+      // Warm DNS+TLS to the device's tunnel origin while we redirect — the
+      // connection pool survives into the next document, overlapping the
+      // *.trycloudflare.com handshake with the /remotedesk load.
+      function preconnect(url) {
+        try {
+          var origin = new URL(url).origin;
+          var l = document.createElement('link');
+          l.rel = 'preconnect'; l.href = origin; l.crossOrigin = 'anonymous';
+          document.head.appendChild(l);
+          var l2 = document.createElement('link');
+          l2.rel = 'dns-prefetch'; l2.href = origin;
+          document.head.appendChild(l2);
+        } catch (e) {}
+      }
+
       // Manual override wins — no device lookup needed.
       if (view === 'mobile' || view === 'desktop') { go(view); return; }
 
-      // Resolve the target device's per-machine preference. Cap the wait so a
-      // slow/needs-auth list never hangs the redirect — fall back to /remotedesk.
-      var done = false;
-      var fallback = setTimeout(function () { if (!done) { done = true; go('desktop'); } }, 2500);
+      // Route cache: the per-machine remoteUI preference almost never changes,
+      // so re-resolving it over the network on EVERY open (0.5-4s) is waste.
+      // Cache {token → {ui, tunnelUrl}} + the single-device answer; redirect
+      // instantly on a hit and let /remotedesk self-heal a stale entry (it
+      // writes-through on successful connects, and a 'simple' machine's page
+      // redirects itself). TTL 7 days.
+      var CACHE_KEY = 'patapim_route_cache';
+      var cache = null;
+      try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
+      if (cache && (Date.now() - (cache.at || 0)) < 7 * 24 * 3600 * 1000) {
+        var hit = null;
+        if (d && cache.byToken && cache.byToken[d]) hit = cache.byToken[d];
+        else if (!d && cache.single) hit = cache.single;
+        if (hit) {
+          if (hit.tunnelUrl) preconnect(hit.tunnelUrl);
+          go(hit.ui === 'simple' ? 'simple' : 'desktop');
+          return;
+        }
+      }
 
-      fetch('/api/device/list', { credentials: 'include' })
+      // Resolve the target device's per-machine preference from the LITE list
+      // (KV-only, no tunnel pings — ~100-250ms; the old full list took up to
+      // 4s per dead device and routinely blew the old 2.5s fallback). Cap the
+      // wait so a slow/needs-auth list never hangs the redirect.
+      var done = false;
+      var fallback = setTimeout(function () { if (!done) { done = true; go('desktop'); } }, 1500);
+
+      fetch('/api/device/list?lite=1&connect=1', { credentials: 'include' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
           if (done) return;
           done = true; clearTimeout(fallback);
           var devices = (data && data.devices) || [];
+          // Hand the freshly-fetched list to /remotedesk so it doesn't fetch
+          // it again cold (its discovery consumes this when < 5s old).
+          try { sessionStorage.setItem('patapim_devlist', JSON.stringify({ at: Date.now(), data: data })); } catch (e) {}
           var target = null;
           if (d) {
             for (var i = 0; i < devices.length; i++) {
@@ -59,9 +99,20 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
             }
           }
           if (!target) {
-            var online = devices.filter(function (x) { return x.online; });
-            if (online.length === 1) target = online[0];
+            var up = devices.filter(function (x) { return x.online || x.status === 'heartbeat'; });
+            if (up.length === 1) target = up[0];
           }
+          // Refresh the route cache for next time.
+          try {
+            var byToken = (cache && cache.byToken) || {};
+            if (target) byToken[target.token] = { ui: target.remoteUI, tunnelUrl: target.tunnelUrl || null };
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              at: Date.now(),
+              byToken: byToken,
+              single: (!d && target) ? { token: target.token, ui: target.remoteUI, tunnelUrl: target.tunnelUrl || null } : (cache && cache.single) || null,
+            }));
+          } catch (e) {}
+          if (target && target.tunnelUrl) preconnect(target.tunnelUrl);
           go(target && target.remoteUI === 'simple' ? 'simple' : 'desktop');
         })
         .catch(function () { if (!done) { done = true; clearTimeout(fallback); go('desktop'); } });

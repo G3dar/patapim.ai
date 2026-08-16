@@ -1,8 +1,6 @@
 ---
-export const prerender = false;
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-Astro.response.headers.set('Pragma', 'no-cache');
-Astro.response.headers.set('Expires', '0');
+// Prerendered static asset (see remotedesk.astro note): no SSR, no middleware
+// tax. Freshness via public/_headers no-cache (ETag revalidation).
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +12,10 @@ Astro.response.headers.set('Expires', '0');
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+  <!-- Self-hosted (was cdn.jsdelivr.net — a third origin whose DNS+TLS and
+       module fetch sat on the phone's critical path before the terminal could
+       even initialize). Files vendored in public/vendor/xterm/. -->
+  <link rel="stylesheet" href="/vendor/xterm/xterm.min.css" />
   <style is:inline>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1657,8 +1658,8 @@ Astro.response.headers.set('Expires', '0');
   </div>
 
   <script is:inline type="module">
-    import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
-    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+    import { Terminal } from '/vendor/xterm/xterm.mjs';
+    import { FitAddon } from '/vendor/xterm/addon-fit.mjs';
     // Shared snapshot planner — BYTE-IDENTICAL to patapim's
     // src/shared/remoteSnapshotApply.mjs (source of truth; parity enforced by
     // the app repo's unit test). Decides seq staleness, the scrolled push

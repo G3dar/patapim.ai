@@ -1,6 +1,8 @@
 ---
-export const prerender = false;
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+// Prerendered static asset: served by the Workers assets binding BEFORE the
+// worker runs — no SSR, no middleware, TTFB ~30-50ms instead of 500-1000ms.
+// Freshness after deploys is preserved via public/_headers (Cache-Control:
+// no-cache → ETag revalidation, cheap 304s). This page has zero server logic.
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -84,6 +86,31 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       var reauthAttempts = 0;
       function originOf(u) { try { return new URL(u).origin; } catch (e) { return null; } }
 
+      // Boot-timing marks (beaconed to /api/stats/remote-timing on connect).
+      var t0 = performance.now();
+      var marks = {};
+      function mark(name) { marks[name] = Math.round(performance.now() - t0); }
+
+      // Warm DNS+TLS to the tunnel origin as soon as we know it — overlaps the
+      // *.trycloudflare.com handshake with the connect-token round trip.
+      var _preconnected = {};
+      function preconnect(url) {
+        try {
+          var origin = new URL(url).origin;
+          if (_preconnected[origin]) return;
+          _preconnected[origin] = true;
+          var l = document.createElement('link');
+          l.rel = 'preconnect'; l.href = origin; l.crossOrigin = 'anonymous';
+          document.head.appendChild(l);
+        } catch (e) {}
+      }
+      // The router already resolved this device once — start the handshake now.
+      try {
+        var rc = JSON.parse(localStorage.getItem('patapim_route_cache') || 'null');
+        var rcHit = rc && (d ? (rc.byToken || {})[d] : rc.single);
+        if (rcHit && rcHit.tunnelUrl) preconnect(rcHit.tunnelUrl);
+      } catch (e) {}
+
       // ── Soft-keyboard fit (touch phones only) ──────────────────────────────
       // The embedded /desktop is a CROSS-ORIGIN iframe: when the on-screen
       // keyboard opens, only the TOP-LEVEL visualViewport shrinks — the iframe's
@@ -126,12 +153,41 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       // Open the device's full desktop web UI (served by the user's own PATAPIM
       // at <tunnelUrl>/desktop) inside a full-screen iframe, so the address bar
       // stays on patapim.ai/remotedesk instead of exposing the raw tunnel URL.
-      function go(tunnel, ct, name) {
+      function go(tunnel, ct, name, opts) {
         var dest = tunnel.replace(/\/+$/, '') + '/desktop?connectToken=' + encodeURIComponent(ct);
         var host = name || n;
         if (host) dest += '&host=' + encodeURIComponent(host); // cosmetic device label
         currentTunnelOrigin = originOf(tunnel); // origin the iframe posts from
         var frame = document.getElementById('frame');
+        // Unverified (lite/'heartbeat') targets: the tunnel wasn't live-pinged,
+        // so it may be dead (page never loads). frame.onload DOES fire for a
+        // successful cross-origin load — if it hasn't within 10s, fall back to
+        // the full (ping-verified) discovery instead of a black screen.
+        var unverified = opts && opts.unverified;
+        var watchdog = unverified ? setTimeout(function () {
+          document.body.classList.remove('framed');
+          frame.classList.remove('visible');
+          frame.src = 'about:blank';
+          set('That computer did not answer — checking your devices…');
+          autoDiscoverAndConnect({ full: true });
+        }, 10000) : null;
+        frame.onload = function () {
+          if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+          mark('frame_load');
+          beaconTiming();
+          // Successful connect — remember this device's UI choice so the
+          // /remote router can redirect instantly next time.
+          try {
+            var rc = JSON.parse(localStorage.getItem('patapim_route_cache') || 'null') || {};
+            rc.at = Date.now();
+            rc.byToken = rc.byToken || {};
+            if (currentDeviceToken) {
+              rc.byToken[currentDeviceToken] = { ui: 'desktop', tunnelUrl: tunnel };
+              if (!d) rc.single = { token: currentDeviceToken, ui: 'desktop', tunnelUrl: tunnel };
+            }
+            localStorage.setItem('patapim_route_cache', JSON.stringify(rc));
+          } catch (e) {}
+        };
         frame.src = dest;
         frame.classList.add('visible');
         document.body.classList.add('framed');
@@ -139,11 +195,22 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         if (host) { try { document.title = 'PATAPIM · ' + host; } catch (e) {} }
       }
 
+      var _timingSent = false;
+      function beaconTiming() {
+        if (_timingSent) return;
+        _timingSent = true;
+        try {
+          navigator.sendBeacon('/api/stats/remote-timing', JSON.stringify(marks));
+        } catch (e) {}
+      }
+
       // Mint a fresh one-time connect token for a device (session cookie auth),
       // then redirect to its /desktop view. The token is consumed by /desktop.
-      function connectByToken(deviceToken, name) {
+      function connectByToken(deviceToken, name, opts) {
         currentDeviceToken = deviceToken;
         set('Connecting to ' + (name || 'your device') + '…');
+        // Overlap the tunnel origin's DNS+TLS with the connect-token mint.
+        if (opts && opts.tunnelUrl) preconnect(opts.tunnelUrl);
         return fetch('/api/device/connect-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -155,7 +222,11 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
             return r.ok ? r.json() : null;
           })
           .then(function (j) {
-            if (j && j.connectToken && j.tunnelUrl) { go(j.tunnelUrl, j.connectToken, name); return true; }
+            mark('connect_token');
+            if (j && j.connectToken && j.tunnelUrl) {
+              go(j.tunnelUrl, j.connectToken, name, { unverified: !!(opts && opts.unverified) });
+              return true;
+            }
             if (j !== null) fail((j && j.error) || 'Device offline or not found.');
             return false;
           })
@@ -177,7 +248,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
             '<span class="meta">' + (dev.platform || '') + (heartbeat ? ' · connecting' : '') + '</span>';
           btn.addEventListener('click', function () {
             picker.innerHTML = '';
-            connectByToken(dev.token, dev.deviceName);
+            connectByToken(dev.token, dev.deviceName, { tunnelUrl: dev.tunnelUrl, unverified: dev.status === 'heartbeat' });
           });
           picker.appendChild(btn);
         });
@@ -290,7 +361,8 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         }
 
         if (data.type === 'request-devices') {
-          fetch('/api/device/list', { credentials: 'same-origin' })
+          // Lite: the dropdown only needs names/status — no 4s tunnel pings.
+          fetch('/api/device/list?lite=1', { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (j) {
               var devices = ((j && j.devices) || [])
@@ -358,38 +430,88 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       //    Several online → show a picker so we never open the wrong computer.
       autoDiscoverAndConnect();
 
-      function autoDiscoverAndConnect() {
+      function autoDiscoverAndConnect(discoverOpts) {
+        var full = !!(discoverOpts && discoverOpts.full);
         picker.innerHTML = '';
         set('Looking for your devices…');
-        fetch('/api/device/list', { credentials: 'same-origin' })
+
+        // The /remote router fetched the (lite) list moments ago and handed it
+        // over — consume it instead of a second cold round trip.
+        if (!full) {
+          try {
+            var handoff = JSON.parse(sessionStorage.getItem('patapim_devlist') || 'null');
+            sessionStorage.removeItem('patapim_devlist');
+            if (handoff && handoff.data && (Date.now() - (handoff.at || 0)) < 5000) {
+              mark('devlist');
+              handleDeviceList(handoff.data);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Lite (KV-only, ~100-250ms) by default; the FULL ping-verified list is
+        // the fallback after an unverified connect attempt failed. Either way,
+        // never hang forever — the old call here had no timeout at all.
+        var ctrl = ('AbortController' in window) ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, full ? 12000 : 6000) : null;
+        fetch('/api/device/list' + (full ? '' : '?lite=1&connect=1'), {
+          credentials: 'same-origin',
+          signal: ctrl ? ctrl.signal : undefined,
+        })
           .then(function (r) {
+            if (timer) clearTimeout(timer);
             if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
             return r.ok ? r.json() : null;
           })
           .then(function (data) {
             if (!data) return;
-            var devices = (data && data.devices) || [];
-            var avail = devices.filter(function (x) {
-              return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
-            });
-            // Online first, then heartbeat — and within each, the picker keeps list order.
-            avail.sort(function (a, b) {
-              var rank = function (s) { return s === 'online' ? 0 : 1; };
-              return rank(a.status) - rank(b.status);
-            });
-            var wakeable = devices.filter(function (x) { return x.wakeable; });
-            if (!avail.length) {
-              if (wakeable.length) { showWakeList(wakeable); return; }
-              fail('No device is online right now. Open PATAPIM on the computer you want to reach.');
-              return;
-            }
-            // One online and nothing asleep to wake → connect straight away.
-            // But if a machine is wakeable, show the picker so the user can
-            // choose between the online box and waking the sleeping one.
-            if (avail.length === 1 && !wakeable.length) { connectByToken(avail[0].token, avail[0].deviceName); return; }
-            showPicker(avail, wakeable);
+            mark('devlist');
+            handleDeviceList(data, full);
           })
-          .catch(function () { fail('Failed to reach the server.'); });
+          .catch(function () {
+            if (timer) clearTimeout(timer);
+            if (!full) { autoDiscoverAndConnect({ full: true }); return; } // lite timed out — try the verified list
+            fail('Failed to reach the server.');
+          });
+      }
+
+      function handleDeviceList(data, wasFull) {
+        var devices = (data && data.devices) || [];
+        var avail = devices.filter(function (x) {
+          return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
+        });
+        // Online first, then heartbeat — and within each, the picker keeps list order.
+        avail.sort(function (a, b) {
+          var rank = function (s) { return s === 'online' ? 0 : 1; };
+          return rank(a.status) - rank(b.status);
+        });
+        var wakeable = devices.filter(function (x) { return x.wakeable; });
+        if (!avail.length) {
+          if (wakeable.length) { showWakeList(wakeable); return; }
+          fail('No device is online right now. Open PATAPIM on the computer you want to reach.');
+          return;
+        }
+        // One online and nothing asleep to wake → connect straight away.
+        // But if a machine is wakeable, show the picker so the user can
+        // choose between the online box and waking the sleeping one.
+        if (avail.length === 1 && !wakeable.length) {
+          // The lite list may have pre-minted the connect token inline
+          // (v2-capable single device) — skip the /connect-token POST.
+          var pre = data && data.connect;
+          if (pre && pre.deviceToken === avail[0].token && pre.connectToken && pre.tunnelUrl) {
+            currentDeviceToken = avail[0].token;
+            mark('connect_token'); // inline — cost was inside the list call
+            set('Connecting to ' + (avail[0].deviceName || 'your device') + '…');
+            go(pre.tunnelUrl, pre.connectToken, avail[0].deviceName, { unverified: avail[0].status === 'heartbeat' });
+            return;
+          }
+          connectByToken(avail[0].token, avail[0].deviceName, {
+            tunnelUrl: avail[0].tunnelUrl,
+            unverified: avail[0].status === 'heartbeat',
+          });
+          return;
+        }
+        showPicker(avail, wakeable);
       }
     })();
   </script>

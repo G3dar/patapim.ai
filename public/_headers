@@ -8,6 +8,20 @@
 /_assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Remote pages are prerendered static assets (no SSR/middleware) — always
+# revalidate so a deploy shows up on the next open (cheap ETag 304s).
+# /remotedesk embeds the device's /desktop in an iframe with allow="microphone
+# …" — the global Permissions-Policy above denies microphone, which would
+# break voice dictation delegation once these are asset-served, so re-allow it.
+/remote
+  Cache-Control: no-cache
+/remotedesk
+  Cache-Control: no-cache
+  Permissions-Policy: camera=(), microphone=*, geolocation=()
+/remote-mobile
+  Cache-Control: no-cache
+  Permissions-Policy: camera=(), microphone=(self), geolocation=()
+
 # Remote UIs ship their JS inline in the HTML document, so the HTML response IS
 # the cache surface. Force revalidation so deploys reach phones without a manual
 # hard-reload / cache-bust query.
