@@ -21,15 +21,19 @@
   Cache-Control: no-cache
 /remotedesk
   Cache-Control: no-cache
+  ! Permissions-Policy
   Permissions-Policy: camera=(), microphone=*, geolocation=()
 /remotedesk/
   Cache-Control: no-cache
+  ! Permissions-Policy
   Permissions-Policy: camera=(), microphone=*, geolocation=()
 /remote-mobile
   Cache-Control: no-cache
+  ! Permissions-Policy
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
 /remote-mobile/
   Cache-Control: no-cache
+  ! Permissions-Policy
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
 
 # Remote UIs ship their JS inline in the HTML document, so the HTML response IS
