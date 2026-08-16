@@ -34,7 +34,9 @@
       var qs = p.toString();
 
       function go(ui) {
-        var target = (ui === 'mobile' || ui === 'simple') ? '/remote-mobile' : '/remotedesk';
+        // Trailing slash: the prerendered pages live at /remotedesk/ etc. —
+        // targeting them directly skips the assets binding's 307 hop.
+        var target = (ui === 'mobile' || ui === 'simple') ? '/remote-mobile/' : '/remotedesk/';
         location.replace(target + (qs ? '?' + qs : ''));
       }
 
