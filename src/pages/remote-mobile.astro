@@ -1666,7 +1666,7 @@
     // src/shared/remoteSnapshotApply.mjs (source of truth; parity enforced by
     // the app repo's unit test). Decides seq staleness, the scrolled push
     // (gated on the REAL local dims + alt buffer) and the alt-exit escape.
-    import { planSnapshotApply } from '/js/remoteSnapshotApply.mjs';
+    import { planSnapshotApply, applyUnscroll } from '/js/remoteSnapshotApply.mjs';
 
     // Parse URL params
     const params = new URLSearchParams(location.search);
@@ -3120,6 +3120,11 @@
             // scrollback (gated on OUR live cols/rows matching the host's, and
             // off the alt buffer), the stale-alt ?1049l escape, the seq
             // staleness guard, no \x1b[3J ever — lives in the shared planner.
+            // Host spliced rows it had already pushed to us (duplicate caught
+            // after export) — remove them from our scrollback first.
+            if (msg.unscroll > 0) {
+              try { applyUnscroll(term, msg.unscroll); } catch (_) {}
+            }
             const plan = planSnapshotApply(msg, {
               cols: term.cols,
               rows: term.rows,

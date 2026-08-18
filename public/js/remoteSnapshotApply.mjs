@@ -90,6 +90,42 @@ export function planSnapshotApply(msg, view) {
 }
 
 /**
+ * Remove the N most recently PUSHED rows from the client's scrollback (the
+ * rows sitting directly above the viewport). Sent by the host as `unscroll`
+ * when its dedup spliced rows that had already been exported to this client —
+ * the multi-chunk-repaint race: a flush can ship a duplicate's scroll before
+ * the completing chunk lets the host splice it. Touches xterm internals the
+ * same way the host-side dedup does; scrollback-only by construction.
+ *
+ * @param {object} term - the live xterm instance
+ * @param {number} n - rows to remove
+ * @returns {number} rows actually removed
+ */
+export function applyUnscroll(term, n) {
+  const count = Math.max(0, n | 0);
+  if (!count || !term) return 0;
+  try {
+    const buf = term.buffer && term.buffer.active;
+    if (!buf || buf.type === 'alternate') return 0; // pushes only exist on normal
+    const core = term._core;
+    const coreBuf = (core && core._bufferService && core._bufferService.buffer)
+      || (core && core.buffers && core.buffers.active);
+    const lines = coreBuf && coreBuf.lines;
+    if (!lines || typeof lines.splice !== 'function') return 0;
+    const at = Math.max(0, coreBuf.ybase - count);
+    const len = Math.min(count, coreBuf.ybase - at);
+    if (len <= 0) return 0;
+    lines.splice(at, len);
+    const shift = (v) => (v < at ? v : (v >= at + len ? v - len : at));
+    coreBuf.ybase = shift(coreBuf.ybase);
+    coreBuf.ydisp = shift(coreBuf.ydisp);
+    return len;
+  } catch (_) {
+    return 0;
+  }
+}
+
+/**
  * Accumulates snapshots that arrive before the client terminal is ready to
  * render them (e.g. the /desktop renderer before mountTerminal). Writing them
  * into an unmounted xterm and then appending the full history duplicates the
@@ -106,8 +142,10 @@ export class PendingSnapshotAccumulator {
 
   /** @param {object} msg - a snapshot wire message */
   add(msg) {
-    this._scrolled += Math.max(0, msg.scrolled | 0);
-    this._msg = { ...msg };
+    // `unscroll` retracts rows an earlier accumulated push would have added —
+    // net them out (nothing was written yet, so there is nothing to splice).
+    this._scrolled = Math.max(0, this._scrolled + Math.max(0, msg.scrolled | 0) - Math.max(0, msg.unscroll | 0));
+    this._msg = { ...msg, unscroll: 0 };
   }
 
   /** @returns {object|null} the merged snapshot message, and resets */
