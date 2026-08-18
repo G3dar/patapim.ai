@@ -1548,7 +1548,9 @@
             </div>
 
             <div class="fab-toast" id="fab-toast"></div>
-            <input type="file" id="image-picker" accept="image/*" multiple style="display:none" />
+            <!-- Any file type: the file_upload channel writes whatever bytes it
+                 gets into the terminal CWD (PDFs, zips, …), not just images. -->
+            <input type="file" id="image-picker" multiple style="display:none" />
           </div>
 
           <!-- Non-scrolling overlay for floating buttons -->
@@ -1584,7 +1586,7 @@
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    Insert image(s)
+                    Insert file(s)
                   </button>
                   <button class="fab-menu-item" id="fab-compact">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -4365,12 +4367,14 @@
       sendAICommand('claude --dangerously-skip-permissions');
     });
 
-    // Base64-encode an image blob and stream it over the file_upload channel.
-    // The server writes it into the terminal's CWD and types the path in, so
-    // CLI tools (Claude Code, Codex) read the image from the remote disk.
+    // Base64-encode a file blob (any type — images, PDFs, zips, …) and stream
+    // it over the file_upload channel. The server writes it into the terminal's
+    // CWD and types the path in, so CLI tools (Claude Code, Codex) read the
+    // file from the remote disk. 50 MB cap matches the host's; hosts older
+    // than that still enforce their own 10 MB server-side and reply an error.
     function sendImageBlob(blob, fileName) {
-      if (blob.size > 10 * 1024 * 1024) {
-        showToast('Image too large (max 10 MB)');
+      if (blob.size > 50 * 1024 * 1024) {
+        showToast('File too large (max 50 MB)');
         return;
       }
       const reader = new FileReader();
@@ -4380,7 +4384,7 @@
           type: 'file_upload',
           terminalId: currentTerminalId,
           fileName,
-          mimeType: blob.type || 'image/png',
+          mimeType: blob.type || 'application/octet-stream',
           size: blob.size,
           data: base64,
         }));
@@ -4388,7 +4392,7 @@
         term.focus();
         syncTerminalFocus();
       };
-      reader.onerror = () => showToast('Failed to read image');
+      reader.onerror = () => showToast('Failed to read file');
       reader.readAsDataURL(blob);
     }
 
@@ -4410,13 +4414,13 @@
     // Like sendImageBlob but no per-file toast and no focus churn; the batch
     // driver handles UX. Returns false if it can't even start the read.
     function streamImageBlob(blob, fileName) {
-      if (blob.size > 10 * 1024 * 1024) { showToast('Skipped (max 10 MB): ' + fileName); return false; }
+      if (blob.size > 50 * 1024 * 1024) { showToast('Skipped (max 50 MB): ' + fileName); return false; }
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result.split(',')[1];
         ws.send(JSON.stringify({
           type: 'file_upload', terminalId: currentTerminalId, fileName,
-          mimeType: blob.type || 'image/png', size: blob.size, data: base64,
+          mimeType: blob.type || 'application/octet-stream', size: blob.size, data: base64,
         }));
       };
       reader.onerror = () => { showToast('Failed to read: ' + fileName); if (pendingUploadResolve) pendingUploadResolve(null); };
@@ -4435,9 +4439,9 @@
         if (!streamImageBlob(file, file.name)) { if (pendingUploadResolve) pendingUploadResolve(null); await result; continue; }
         const res = await result;
         if (res && res.success) typed++;
-        showToast('Inserting images… ' + typed + '/' + files.length);
+        showToast('Inserting files… ' + typed + '/' + files.length);
       }
-      showToast(typed > 0 ? ('Inserted ' + typed + ' image' + (typed === 1 ? '' : 's')) : 'No images inserted');
+      showToast(typed > 0 ? ('Inserted ' + typed + ' file' + (typed === 1 ? '' : 's')) : 'No files inserted');
       term.focus();
       syncTerminalFocus();
     }
@@ -4510,20 +4514,39 @@
     });
 
     // Native paste (Cmd/Ctrl+V on a desktop browser, iOS "Paste" callout):
-    // when the clipboard carries an image, upload it instead of letting the
-    // browser drop it — the terminal can't accept raw image data.
+    // when the clipboard carries a file of ANY type, upload it instead of
+    // letting the browser drop it — the terminal can't accept raw file data.
     document.addEventListener('paste', (e) => {
       if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) return;
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
       for (const item of items) {
-        if (item.kind === 'file' && item.type.startsWith('image/')) {
+        if (item.kind === 'file') {
           e.preventDefault();
           const blob = item.getAsFile();
-          if (blob) sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.png'));
+          if (blob) {
+            const ext = (blob.type && blob.type.split('/')[1]) || 'bin';
+            sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.' + ext));
+          }
           return;
         }
       }
+    });
+
+    // Drag-and-drop upload (desktop browsers / iPad): any file type, same
+    // pipeline as the picker. dragover must preventDefault or the browser
+    // navigates to the dropped file instead of firing our drop handler.
+    document.addEventListener('dragover', (e) => { e.preventDefault(); });
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+      if (!files.length) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      if (files.length === 1) sendImageBlob(files[0], files[0].name);
+      else sendImagesSequential(files);
     });
 
     // ── Voice dictation (MediaRecorder → local transcription) ─────────────────
