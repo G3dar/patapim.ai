@@ -202,6 +202,18 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     }
   }
 
+  // Unsupported media kinds: refuse here with a specific reply. Without this
+  // they fall through to the text path and PATAPIM answers a bare "Empty
+  // message — nothing to inject", which reads like a bug.
+  if (msg.video || msg.animation || msg.sticker || msg.video_note) {
+    await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+      chat_id: chatId,
+      reply_to_message_id: msg.message_id,
+      text: '🖼 Only photos, images-as-files and voice notes are supported for now — videos, GIFs and stickers are not.',
+    });
+    return;
+  }
+
   // Photos / image documents: ship the bytes inline as base64, the same tunnel
   // short voice notes use. Telegram's compressed `photo` renditions are a few
   // hundred KB so they fit comfortably; anything bigger we refuse rather than
@@ -236,6 +248,19 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
 
     try {
       const imgBuf = await downloadTelegramFile(env, pick.file_id);
+      // Re-check the ACTUAL bytes: `fits()` trusted Telegram's declared
+      // file_size, which is optional and can be absent (treated as 0) or wrong.
+      // An oversized frame would make ws.send throw on every socket in the DO,
+      // so the message would be misclassified as "PATAPIM offline" and queued
+      // with the media stripped — a confusing failure. Refuse cleanly instead.
+      if (imgBuf.byteLength > IMAGE_INLINE_MAX_BYTES) {
+        await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+          chat_id: chatId,
+          reply_to_message_id: msg.message_id,
+          text: `🖼 That image is ${Math.round(imgBuf.byteLength / 1024)} KB — over the ${Math.round(IMAGE_INLINE_MAX_BYTES / 1024)} KB relay limit. Send it as a photo (compressed), not a file.`,
+        });
+        return;
+      }
       (msg as any).image_b64 = arrayBufferToBase64(imgBuf);
       (msg as any).image_mime = pick.mime_type || 'image/jpeg';
       (msg as any).image_name = pick.file_name || '';
