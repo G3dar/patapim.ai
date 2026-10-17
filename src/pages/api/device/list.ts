@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
+import { getLatestVersion, isOlderVersion } from '../../../lib/latestVersion';
 
 export const prerender = false;
 
@@ -16,9 +17,11 @@ export const GET: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
+  const latestVersion = await getLatestVersion();
+
   const devicesRaw = await env.LICENSES.get(`devices:${user.googleId}`);
   if (!devicesRaw) {
-    return new Response(JSON.stringify({ devices: [] }), { status: 200, headers });
+    return new Response(JSON.stringify({ devices: [], latestVersion }), { status: 200, headers });
   }
 
   const deviceList: Array<{ token: string; deviceName: string; createdAt: string }> = JSON.parse(devicesRaw);
@@ -86,6 +89,7 @@ export const GET: APIRoute = async (context) => {
         country: d.country,
         platform: d.platform || null,
         appVersion: d.appVersion || null,
+        outdated: !!(d.appVersion && latestVersion && isOlderVersion(d.appVersion, latestVersion)),
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
         // Per-machine mobile UI preference: 'simple' → /remote-mobile,
@@ -126,5 +130,6 @@ export const GET: APIRoute = async (context) => {
 
   return new Response(JSON.stringify({
     devices: Array.from(byName.values()),
+    latestVersion,
   }), { status: 200, headers });
 };

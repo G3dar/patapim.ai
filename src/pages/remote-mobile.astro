@@ -373,6 +373,10 @@ Astro.response.headers.set('Expires', '0');
       background: var(--bg-surface);
       border-right: 1px solid var(--border);
       overflow: hidden;
+      /* iOS ignores user-scalable=no: quick taps (Later header, then a
+         project) read as double-tap-to-zoom. manipulation keeps pan/scroll
+         but kills the double-tap zoom inside the panel. */
+      touch-action: manipulation;
     }
 
     .sidebar-header {
@@ -429,6 +433,21 @@ Astro.response.headers.set('Expires', '0');
       background: var(--bg-elevated);
       color: var(--text);
     }
+
+    /* MASTER: header-like, first in the list, single terminal */
+    .project-item.master-item { gap: 7px; margin-bottom: 8px; }
+    .master-item .master-title {
+      color: var(--text); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .project-item.master-item.active .master-title { color: var(--accent); }
+    .master-item .master-updated {
+      color: var(--text-dim); font-size: 9px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .master-item .master-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+    .master-item .master-dot.working { background: #f59e0b; }
+    .master-item .master-dot.attention { background: #22c55e; }
 
     .project-item.active {
       background: var(--accent-dim);
@@ -1262,6 +1281,8 @@ Astro.response.headers.set('Expires', '0');
       padding: 4px 0 0 4px;
       -webkit-user-select: text;
       user-select: text;
+      -webkit-touch-callout: default;
+      touch-action: auto;
       cursor: text;
       -webkit-overflow-scrolling: touch;
     }
@@ -2542,6 +2563,7 @@ Astro.response.headers.set('Expires', '0');
       // overflow-x: hidden prevents xterm auto-scroll. Touch-drag uses transform.
 
       terminalWrap.addEventListener('click', () => {
+        if (selectMode) return; // don't steal focus (and the selection) from the overlay
         term.focus();
         syncTerminalFocus();
       });
@@ -2882,7 +2904,29 @@ Astro.response.headers.set('Expires', '0');
             // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             const _sb0 = term.buffer.active;
             const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
-            writePreservingScroll('\x1b[?2026h\x1b[?25l\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            // Viewport-only repaints (\x1b[2J) never feed xterm's scrollback, so
+            // without help the phone's scroll-up history stays frozen at whatever
+            // the terminal_init/switched buffer carried. Newer desktop hosts send
+            // `scrolled`: how many rows left the host viewport since the previous
+            // snapshot. Push exactly that many of our current top rows — which
+            // ARE the previous frame — into scrollback first (LF at the bottom
+            // row scrolls one line up), then repaint. Clamp to rows (beyond that
+            // the pushed rows would be blanks). Normal buffer only: the alt
+            // screen has no scrollback. Old hosts omit the field → prefix empty,
+            // behavior unchanged.
+            // alt:false (new hosts): host is on the normal buffer — if we're
+            // stuck on the alt buffer (the frame that entered it carried
+            // \x1b[?1049h but nothing ever exits it), switch back first;
+            // ?1049l restores our saved normal screen, which is exactly the
+            // pre-alt frame the scroll push feeds from.
+            const _inAlt = _sb0.type === 'alternate';
+            const _exitAlt = msg.alt === false && _inAlt;
+            let _scrollPush = _exitAlt ? '\x1b[?1049l' : '';
+            if (typeof msg.scrolled === 'number' && msg.scrolled > 0 && (!_inAlt || _exitAlt)) {
+              const _push = Math.min(msg.scrolled, term.rows);
+              _scrollPush += '\x1b[' + term.rows + ';1H' + '\n'.repeat(_push);
+            }
+            writePreservingScroll('\x1b[?2026h\x1b[?25l' + _scrollPush + '\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
             if (isDebugMode) requestAnimationFrame(() => {
               const _sb1 = term.buffer.active;
               if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
@@ -3250,8 +3294,78 @@ Astro.response.headers.set('Expires', '0');
 
     // -- Sidebar: projects --
 
-    function renderProjects() {
-      projectsList.innerHTML = '';
+    // Render scheduling. #projects-list is its own scroller: `innerHTML = ''`
+    // collapsed its scrollHeight and the browser clamped scrollTop to 0 — the
+    // list "refreshed and jumped to the top" on every sidebar_data push (one
+    // per terminal state flip). Three layers:
+    //  1. renderProjects() skips the rebuild when projectsRenderKeyNow() —
+    //     everything the rows display — equals the last painted key;
+    //  2. renderProjectsNow() builds into a DocumentFragment, swaps the children
+    //     in one step and restores scrollTop (clamped to the new range);
+    //  3. while a finger is on the list (touch/scroll) renders are held and
+    //     flushed PROJECTS_SETTLE_MS after the last scroll/touchend;
+    //     PROJECTS_HOLD_MAX_MS caps a touch whose touchend never arrives.
+    const PROJECTS_SETTLE_MS = 250;
+    const PROJECTS_HOLD_MAX_MS = 1500;
+    let projectsRenderKey = null;
+    let projectsDirty = false;
+    let projectsScrolling = false;
+    let projectsTouching = false;
+    let projectsFlushTimer = null;
+    function flushProjects() {
+      projectsFlushTimer = null; projectsScrolling = false; projectsTouching = false;
+      if (projectsDirty) renderProjects();
+    }
+    (function hookProjectsScroller() {
+      if (!projectsList) return;
+      const opts = { passive: true };
+      const settle = (ms) => { clearTimeout(projectsFlushTimer); projectsFlushTimer = setTimeout(flushProjects, ms); };
+      const down = () => { projectsTouching = true; projectsScrolling = true; settle(PROJECTS_HOLD_MAX_MS); };
+      const up = () => { projectsTouching = false; projectsScrolling = true; settle(PROJECTS_SETTLE_MS); };
+      projectsList.addEventListener('touchstart', down, opts);
+      projectsList.addEventListener('touchmove', down, opts);
+      projectsList.addEventListener('touchend', up, opts);
+      projectsList.addEventListener('touchcancel', up, opts);
+      projectsList.addEventListener('scroll', () => {
+        projectsScrolling = true;
+        settle(projectsTouching ? PROJECTS_HOLD_MAX_MS : PROJECTS_SETTLE_MS);
+      }, opts);
+    })();
+
+    // Exactly what renderProjectsNow / createMasterItem / createProjectItem /
+    // createSubfolderItem read — audit them together; a field missing here
+    // means a stale list, an extra one only costs a rebuild.
+    function projectsRenderKeyNow() {
+      const counts = (c) => c ? [c.attention | 0, c.busy | 0, c.planMode | 0, c.idle | 0].join(',') : '';
+      const parts = [sidebarData.currentProject || '', sidebarData.currentSubfolder || '', laterExpanded ? 1 : 0];
+      for (const p of sidebarData.projects || []) {
+        parts.push(p.path, p.name || '', +!!p.archived, +!!p.isMaster, +!!p.isQuickTasks,
+          p.lastOpenedAt || '', p.addedAt || '', p.masterTerminalId || '',
+          masterAgo(p.masterUpdatedAt), counts(p.terminalCounts));
+        const subfolders = Array.isArray(p.subfolders) ? p.subfolders : [];
+        for (const sf of subfolders) parts.push(sf.path, sf.name || '', counts(sf.terminalCounts));
+      }
+      return parts.join('\u001e');
+    }
+
+    // Host pushes call renderProjects() (held while scrolling); taps inside the
+    // list call renderProjects({ now: true }) so they never feel delayed.
+    function renderProjects(opts) {
+      if (projectsScrolling && !(opts && opts.now)) { projectsDirty = true; return; }
+      const key = projectsRenderKeyNow();
+      projectsDirty = false;
+      if (key === projectsRenderKey) return;
+      projectsRenderKey = key;
+      renderProjectsNow();
+    }
+
+    function renderProjectsNow() {
+      const top = projectsList.scrollTop;
+      const frag = document.createDocumentFragment();
+      const commit = () => {
+        projectsList.replaceChildren(frag);
+        projectsList.scrollTop = Math.max(0, Math.min(top, projectsList.scrollHeight - projectsList.clientHeight));
+      };
 
       const allProjects = sidebarData.projects || [];
       const sortByTime = (a, b) => {
@@ -3260,21 +3374,27 @@ Astro.response.headers.set('Expires', '0');
         return tb.localeCompare(ta);
       };
 
+      // MASTER (the host's orchestrator agent) — a single terminal, pinned
+      // above everything else.
+      const master = allProjects.find(p => p.isMaster);
       const quickTasks = allProjects.filter(p => p.isQuickTasks);
-      const active = allProjects.filter(p => !p.archived && !p.isQuickTasks).sort(sortByTime);
-      const archived = allProjects.filter(p => p.archived && !p.isQuickTasks).sort(sortByTime);
+      const active = allProjects.filter(p => !p.archived && !p.isQuickTasks && !p.isMaster).sort(sortByTime);
+      const archived = allProjects.filter(p => p.archived && !p.isQuickTasks && !p.isMaster).sort(sortByTime);
 
-      if (active.length === 0 && archived.length === 0 && quickTasks.length === 0) {
+      if (master) frag.appendChild(createMasterItem(master));
+
+      if (!master && active.length === 0 && archived.length === 0 && quickTasks.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'no-projects';
         empty.textContent = 'No projects found';
-        projectsList.appendChild(empty);
+        frag.appendChild(empty);
+        commit();
         return;
       }
 
       // Pin Quick Tasks to the top, above regular projects
-      quickTasks.forEach(p => projectsList.appendChild(createProjectItem(p, false)));
-      active.forEach(p => projectsList.appendChild(createProjectItem(p, false)));
+      quickTasks.forEach(p => frag.appendChild(createProjectItem(p, false)));
+      active.forEach(p => frag.appendChild(createProjectItem(p, false)));
 
       if (archived.length > 0) {
         const header = document.createElement('div');
@@ -3304,9 +3424,52 @@ Astro.response.headers.set('Expires', '0');
           container.classList.toggle('open', laterExpanded);
         });
 
-        projectsList.appendChild(header);
-        projectsList.appendChild(container);
+        frag.appendChild(header);
+        frag.appendChild(container);
       }
+      commit();
+    }
+
+    function masterAgo(iso) {
+      const t = Date.parse(iso || '');
+      if (!t) return '';
+      const mins = Math.floor((Date.now() - t) / 60000);
+      if (mins < 1) return 'UPDATED JUST NOW';
+      if (mins < 60) return 'UPDATED ' + mins + ' MIN' + (mins === 1 ? '' : 'S') + ' AGO';
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return 'UPDATED ' + hrs + ' HR' + (hrs === 1 ? '' : 'S') + ' AGO';
+      const days = Math.floor(hrs / 24);
+      return 'UPDATED ' + days + ' DAY' + (days === 1 ? '' : 'S') + ' AGO';
+    }
+
+    // MASTER row: no subfolders, no archive, no expand — a tap opens its one terminal.
+    function createMasterItem(p) {
+      const item = document.createElement('div');
+      item.className = 'project-item master-item';
+      if (sidebarData.currentProject === p.path) item.classList.add('active');
+
+      const title = document.createElement('span');
+      title.className = 'master-title';
+      title.textContent = 'MASTER';
+      item.appendChild(title);
+
+      const c = p.terminalCounts || {};
+      if (c.attention || c.busy) {
+        const dot = document.createElement('span');
+        dot.className = 'master-dot ' + (c.attention ? 'attention' : 'working');
+        item.appendChild(dot);
+      }
+
+      const updated = document.createElement('span');
+      updated.className = 'master-updated';
+      updated.textContent = masterAgo(p.masterUpdatedAt);
+      item.appendChild(updated);
+
+      item.addEventListener('click', () => {
+        selectProject(p.path);
+        if (p.masterTerminalId) setTimeout(() => switchTerminal(p.masterTerminalId), 150);
+      });
+      return item;
     }
 
     function createProjectItem(p, isArchived) {
@@ -3396,7 +3559,7 @@ Astro.response.headers.set('Expires', '0');
           }));
           // Optimistic update
           p.archived = !isArchived;
-          renderProjects();
+          renderProjects({ now: true });
           // Also request fresh data from backend
           ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
         });
@@ -3478,7 +3641,7 @@ Astro.response.headers.set('Expires', '0');
 
       sidebarData.currentProject = path;
       sidebarData.currentSubfolder = null; // tapping the project always clears subfolder scope
-      renderProjects();
+      renderProjects({ now: true });
       updateTopbarProject();
 
       // Queue output during the switch to prevent old terminal's output from
@@ -3508,7 +3671,7 @@ Astro.response.headers.set('Expires', '0');
 
       sidebarData.currentProject = projectPath;
       sidebarData.currentSubfolder = subfolderPath;
-      renderProjects();
+      renderProjects({ now: true });
       updateTopbarProject();
 
       isSwitching = true;
@@ -4416,7 +4579,21 @@ Astro.response.headers.set('Expires', '0');
       selectionOverlay.className = 'selection-overlay';
       selectionOverlay.textContent = text;
       selectionOverlay.style.fontSize = fontSize + 'px';
+      // Isolate the overlay from terminal-wrap's touch/click handlers: they
+      // steal focus back to xterm's hidden textarea (clearing the native
+      // selection), re-open the keyboard on quick taps, and pan the terminal
+      // on touchmove while the user drags selection handles.
+      for (const ev of ['touchstart', 'touchmove', 'touchend', 'touchcancel', 'click']) {
+        selectionOverlay.addEventListener(ev, (e) => e.stopPropagation(), { passive: true });
+      }
       terminalWrap.appendChild(selectionOverlay);
+      // Drop focus from xterm's helper textarea — on iOS a focused textarea
+      // hijacks long-press selection gestures aimed at the overlay.
+      const helperTa = terminalWrap.querySelector('.xterm-helper-textarea');
+      if (helperTa) {
+        if (isMobileClient) helperTa.setAttribute('readonly', 'readonly');
+        helperTa.blur();
+      }
       // Scroll to bottom to match terminal viewport
       selectionOverlay.scrollTop = selectionOverlay.scrollHeight;
       keySelect.textContent = 'Done';

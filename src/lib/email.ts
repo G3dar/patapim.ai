@@ -30,33 +30,52 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-async function send(env: ResendEnv, input: SendInput): Promise<void> {
+/**
+ * POST a payload to Resend with retries. A transient failure (429 rate limit,
+ * 5xx, network error) used to be logged once and dropped — which silently lost
+ * two bug reports in Aug 2026 (KV had them; no email ever reached Resend).
+ * Runs inside ctx.waitUntil, so the retry delays don't block the response.
+ * 4xx other than 429 is a permanent request error — no retry.
+ */
+async function postToResend(env: ResendEnv, payload: Record<string, unknown>, label: string): Promise<void> {
   if (!env.RESEND_API_KEY) {
     // Local dev / misconfigured: log and skip silently. Never throw — email
     // failures must not fail the user-facing API call.
-    console.warn('RESEND_API_KEY not set; skipping email to', input.to);
+    console.warn('RESEND_API_KEY not set; skipping email', label);
     return;
   }
-
-  const res = await fetch(RESEND_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: FROM,
-      to: [input.to],
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    console.error('Resend send failed', res.status, body);
+  const delaysMs = [0, 4000, 12000];
+  for (let attempt = 0; attempt < delaysMs.length; attempt++) {
+    if (delaysMs[attempt]) await new Promise((r) => setTimeout(r, delaysMs[attempt]));
+    try {
+      const res = await fetch(RESEND_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) return;
+      const body = await res.text().catch(() => '');
+      const retryable = res.status === 429 || res.status >= 500;
+      console.error(`Resend send failed (${label}, attempt ${attempt + 1})`, res.status, body);
+      if (!retryable) return;
+    } catch (e) {
+      console.error(`Resend send error (${label}, attempt ${attempt + 1})`, e);
+    }
   }
+  console.error(`Resend send gave up after retries (${label})`);
+}
+
+async function send(env: ResendEnv, input: SendInput): Promise<void> {
+  await postToResend(env, {
+    from: FROM,
+    to: [input.to],
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+  }, input.subject.slice(0, 60));
 }
 
 export async function sendWelcomeAndVerify(env: ResendEnv, to: string, name: string, verifyUrl: string): Promise<void> {
@@ -108,13 +127,6 @@ interface SendEmailInput {
 }
 
 export async function sendEmail(env: ResendEnv, input: SendEmailInput): Promise<void> {
-  if (!env.RESEND_API_KEY) {
-    // Local dev / misconfigured: log and skip. Never throw — email failures
-    // must not fail the user-facing API call.
-    console.warn('RESEND_API_KEY not set; skipping email to', input.to);
-    return;
-  }
-
   const payload: Record<string, unknown> = {
     from: FROM,
     to: [input.to],
@@ -129,20 +141,7 @@ export async function sendEmail(env: ResendEnv, input: SendEmailInput): Promise<
       content: a.content,
     }));
   }
-
-  const res = await fetch(RESEND_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    console.error('Resend send failed', res.status, body);
-  }
+  await postToResend(env, payload, input.subject.slice(0, 60));
 }
 
 // Notify a team owner that someone requested a subdomain, with a one-click

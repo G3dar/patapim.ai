@@ -673,6 +673,30 @@ const scriptI18n = {
   if (urlNative) sessionStorage.setItem('patapim_native', urlNative);
   const isNativeApp = sessionStorage.getItem('patapim_native') === 'ios';
 
+  // Same persistence trick for `picker=native`: the iOS app's SwiftUI device
+  // picker (not this page) should drive device selection, so instead of
+  // auto-connecting to a device here it mints a long-lived native session
+  // token and hands it back via patapimremote://auth?nt=...
+  const urlPicker = new URLSearchParams(window.location.search).get('picker');
+  if (urlPicker) sessionStorage.setItem('patapim_picker', urlPicker);
+  const isNativePicker = sessionStorage.getItem('patapim_picker') === 'native';
+
+  if (isNativeApp && isNativePicker) {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/native-session', { method: 'POST' });
+        const result = await res.json();
+        if (result.token) {
+          sessionStorage.removeItem('patapim_picker');
+          window.location.href = 'patapimremote://auth?nt=' + encodeURIComponent(result.token) +
+            '&email=' + encodeURIComponent(result.email || '');
+        }
+      } catch (e) {
+        console.error('[native picker]', e);
+      }
+    })();
+  }
+
   // Load devices immediately on page load
   loadDevices();
 
@@ -881,9 +905,11 @@ const scriptI18n = {
         });
       });
 
-      // Native iOS app: auto-connect to first online device immediately
-      // so ASWebAuthenticationSession can close via patapimremote:// callback
-      if (isNativeApp) {
+      // Native iOS app (legacy Cloud/Local flow only — native picker mode
+      // mints its own token above and never reaches this branch): auto-connect
+      // to first online device immediately so ASWebAuthenticationSession can
+      // close via patapimremote:// callback
+      if (isNativeApp && !isNativePicker) {
         const onlineDevices = devices.filter(d => d.status === 'online');
         if (onlineDevices.length > 0) {
           const autoDevice = onlineDevices[0];
