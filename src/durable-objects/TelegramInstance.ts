@@ -34,6 +34,24 @@ interface QueuedMessage {
   update: TelegramUpdate;
 }
 
+/**
+ * Drop inline media bytes from an update before it goes into the offline queue.
+ *
+ * The whole queue lives under a single DO storage key, which caps at 128 KiB —
+ * one base64 photo (or voice note) would blow that and take the entire queue
+ * down with it. The text still gets through; the flag lets PATAPIM explain that
+ * the attachment was dropped instead of silently losing it.
+ */
+function stripInlineMedia(update: TelegramUpdate): TelegramUpdate {
+  const msg = (update as any)?.message;
+  if (!msg || (!msg.audio_b64 && !msg.image_b64)) return update;
+  const copy: any = { ...update, message: { ...msg } };
+  delete copy.message.audio_b64;
+  delete copy.message.image_b64;
+  copy.message._patapim_media_dropped = true;
+  return copy;
+}
+
 interface PairingEntry {
   code: string;
   expires_at: number;
@@ -364,7 +382,7 @@ export class TelegramInstance extends DurableObject<RelayEnv> {
     // Deliver live if possible, else enqueue.
     const delivered = this.broadcast({ type: 'message', update });
     if (!delivered) {
-      await this.enqueue({ ts: Date.now(), update });
+      await this.enqueue({ ts: Date.now(), update: stripInlineMedia(update) });
     }
     return new Response(JSON.stringify({ delivered }), {
       headers: { 'Content-Type': 'application/json' },

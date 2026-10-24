@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
 import { getLatestVersion, isOlderVersion } from '../../../lib/latestVersion';
+import { mintV2ConnectToken, appVersionAtLeast, MIN_V2_APP_VERSION } from '../../../lib/connectToken';
 
 export const prerender = false;
 
@@ -10,23 +11,48 @@ const STALE_DELETE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days — auto-delete fro
 
 export const GET: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
-  const headers = { 'Content-Type': 'application/json' };
+  const t0 = Date.now();
+  // ?lite=1 — routing/first-paint mode: skip the per-device live tunnel pings
+  // (each up to 4s, Promise.all → the slowest device gates the response) and
+  // answer from KV alone in ~100-250ms. Consumers treat status 'heartbeat' as
+  // "probably up, unverified" and must handle a connect that then fails.
+  const params = new URL(context.request.url).searchParams;
+  const lite = params.get('lite') === '1';
+  // &connect=1 — when exactly one device is connectable AND its app verifies
+  // v2 tokens locally, mint the connect token inline (stateless, free) so the
+  // client skips the separate POST /connect-token round trip entirely.
+  const wantConnect = params.get('connect') === '1';
 
   const user = await getUserFromRequestOrDeviceToken(env.SESSIONS, env.LICENSES, context.request);
+  const tAuth = Date.now();
+  const timing = () => ({
+    'Content-Type': 'application/json',
+    'Server-Timing': `auth;dur=${tAuth - t0}, total;dur=${Date.now() - t0}${lite ? ', lite' : ''}`,
+  });
   if (!user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: timing() });
   }
 
-  const latestVersion = await getLatestVersion();
-
-  const devicesRaw = await env.LICENSES.get(`devices:${user.googleId}`);
+  // Parallel: the devices blob, the wake-agent flag and the latest release
+  // version are independent reads.
+  const [devicesRaw, wakeAgentRaw, latestVersion] = await Promise.all([
+    env.LICENSES.get(`devices:${user.googleId}`),
+    env.LICENSES.get(`wake-agent-account:${user.googleId}`),
+    getLatestVersion(),
+  ]);
   if (!devicesRaw) {
-    return new Response(JSON.stringify({ devices: [], latestVersion }), { status: 200, headers });
+    return new Response(JSON.stringify({ devices: [], latestVersion }), { status: 200, headers: timing() });
   }
 
   const deviceList: Array<{ token: string; deviceName: string; createdAt: string }> = JSON.parse(devicesRaw);
   const now = Date.now();
   const stalledTokens = new Set<string>();
+  const deferredKv: Promise<unknown>[] = [];
+
+  // Whether this account has an always-on Wake-on-LAN agent registered (a Flic
+  // Hub or another PATAPIM polling /api/wake/poll). Only then is an offline
+  // device actually wakeable — otherwise the Wake button would be a dead end.
+  const hasWakeAgent = !!wakeAgentRaw;
 
   const devices = await Promise.all(
     deviceList.map(async (entry) => {
@@ -36,18 +62,18 @@ export const GET: APIRoute = async (context) => {
       const heartbeatAge = now - new Date(d.lastSeen).getTime();
       const heartbeatOnline = heartbeatAge < ONLINE_THRESHOLD_MS;
 
-      // Auto-delete devices offline for more than 7 days
+      // Auto-delete devices offline for more than 7 days (off the critical path)
       if (heartbeatAge > STALE_DELETE_MS) {
-        await env.LICENSES.delete(`device:${entry.token}`);
+        deferredKv.push(env.LICENSES.delete(`device:${entry.token}`).catch(() => {}));
         stalledTokens.add(entry.token);
         return null;
       }
 
-      // Server-side ping to tunnel URL for real-time status
+      // Server-side ping to tunnel URL for real-time status (skipped in lite mode)
       let online = false;
       let terminalCount = d.terminalCount;
       let terminalCounts = d.terminalCounts || null;
-      if (d.tunnelUrl && heartbeatOnline) {
+      if (!lite && d.tunnelUrl && heartbeatOnline) {
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 4000);
@@ -72,7 +98,10 @@ export const GET: APIRoute = async (context) => {
       // which clients painted yellow and still offered to connect to (the
       // connection then failed). Collapse it to 'offline' and stop advertising a
       // dead tunnelUrl so no client treats it as connectable.
-      const status = online ? 'online' : 'offline';
+      // Lite mode reintroduces 'heartbeat' DELIBERATELY: it's the "probably up"
+      // answer that lets routing/UI paint instantly; connect paths that use it
+      // must fall back gracefully when the tunnel turns out to be dead.
+      const status = online ? 'online' : (lite && heartbeatOnline ? 'heartbeat' : 'offline');
 
       return {
         token: entry.token,
@@ -81,7 +110,10 @@ export const GET: APIRoute = async (context) => {
         online,
         status,
         lastSeen: d.lastSeen,
-        tunnelUrl: online ? d.tunnelUrl : null,
+        // Lite mode advertises the tunnelUrl on heartbeat-fresh devices too —
+        // consumers know 'heartbeat' means unverified and must tolerate a
+        // failed connect (the full mode only advertises ping-verified ones).
+        tunnelUrl: (online || status === 'heartbeat') ? d.tunnelUrl : null,
         terminalCount,
         terminalCounts,
         ip: d.ip,
@@ -92,6 +124,11 @@ export const GET: APIRoute = async (context) => {
         outdated: !!(d.appVersion && latestVersion && isOlderVersion(d.appVersion, latestVersion)),
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
+        // Wake-on-LAN: the machine's physical NIC MACs, and whether it can be
+        // woken right now (offline, we know a MAC, and a wake agent is online to
+        // send the magic packet on its LAN).
+        macs: Array.isArray(d.macs) ? d.macs : [],
+        wakeable: !online && Array.isArray(d.macs) && d.macs.length > 0 && hasWakeAgent,
         // Per-machine mobile UI preference: 'simple' → /remote-mobile,
         // else (default) → /remotedesk. /remote routes the phone by this.
         remoteUI: d.remoteUI === 'simple' ? 'simple' : 'desktop',
@@ -99,10 +136,14 @@ export const GET: APIRoute = async (context) => {
     })
   );
 
-  // Remove stale tokens from the user's device list
+  // Remove stale tokens from the user's device list (off the critical path)
   if (stalledTokens.size > 0) {
     const updated = deviceList.filter(e => !stalledTokens.has(e.token));
-    await env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(updated));
+    deferredKv.push(env.LICENSES.put(`devices:${user.googleId}`, JSON.stringify(updated)).catch(() => {}));
+  }
+  if (deferredKv.length > 0) {
+    const ctx = (context.locals as any).runtime?.ctx;
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(Promise.all(deferredKv));
   }
 
   // Collapse multiple registrations of the SAME machine. Re-pairing (or a
@@ -128,8 +169,27 @@ export const GET: APIRoute = async (context) => {
     if (!prev || isBetter(d, prev)) byName.set(key, d);
   }
 
+  const finalDevices = Array.from(byName.values());
+
+  let connect: { deviceToken: string; connectToken: string; tunnelUrl: string } | null = null;
+  if (wantConnect) {
+    const bearer = (context.request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+    const candidates = finalDevices.filter(x =>
+      (x.online || x.status === 'heartbeat') && x.tunnelUrl
+      && x.token !== bearer // same self-targeting guard as connect-token.ts
+      && appVersionAtLeast(x.appVersion, MIN_V2_APP_VERSION));
+    if (candidates.length === 1) {
+      connect = {
+        deviceToken: candidates[0].token,
+        connectToken: await mintV2ConnectToken(candidates[0].token, user, 300),
+        tunnelUrl: candidates[0].tunnelUrl as string,
+      };
+    }
+  }
+
   return new Response(JSON.stringify({
-    devices: Array.from(byName.values()),
+    devices: finalDevices,
     latestVersion,
-  }), { status: 200, headers });
+    ...(connect ? { connect } : {}),
+  }), { status: 200, headers: timing() });
 };

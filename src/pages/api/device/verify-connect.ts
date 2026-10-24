@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
+import { verifyV2ConnectToken } from '../../../lib/connectToken';
 
 export const prerender = false;
 
@@ -37,10 +38,30 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ valid: false, error: 'connectToken required' }), { status: 400, headers });
   }
 
-  // Look up connect token (retry once for KV eventual consistency across edge POPs)
+  // v2 self-verifying token posted by an app that doesn't verify locally yet
+  // (mixed rollout — issuance is gated on appVersion, but be permissive):
+  // recompute the HMAC with the Bearer deviceToken. Stateless — no KV, no
+  // consistency race. NOTE: server-side one-time-use is not enforced on this
+  // fallback path (v2 replay protection lives in the verifying desktop's jti
+  // set); exposure is bounded by the 300s exp, same window legacy always had.
+  if (connectToken.startsWith('v2.')) {
+    const v2 = await verifyV2ConnectToken(connectToken, deviceToken);
+    if (!v2.valid) {
+      return new Response(JSON.stringify({ valid: false, error: v2.error }), { status: 200, headers });
+    }
+    return new Response(JSON.stringify({
+      valid: true,
+      googleId: v2.payload!.googleId,
+      email: v2.payload!.email,
+    }), { status: 200, headers });
+  }
+
+  // Look up connect token. KV writes from the phone's POP can lag at this
+  // POP — retry with short sleeps (was a single blind 1.5s; the desktop's own
+  // retry loop still covers deep inconsistency).
   let connectRaw = await env.SESSIONS.get(`connect:${connectToken}`);
-  if (!connectRaw) {
-    await new Promise(r => setTimeout(r, 1500));
+  for (let i = 0; i < 2 && !connectRaw; i++) {
+    await new Promise(r => setTimeout(r, 500));
     connectRaw = await env.SESSIONS.get(`connect:${connectToken}`);
   }
   if (!connectRaw) {

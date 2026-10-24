@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 import { getUserFromRequestOrDeviceToken } from '../../../lib/auth';
+import { mintV2ConnectToken, appVersionAtLeast, MIN_V2_APP_VERSION } from '../../../lib/connectToken';
 
 export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
   const env = context.locals.runtime.env;
+  const t0 = Date.now();
   const headers = { 'Content-Type': 'application/json' };
 
   // Auth via session cookie (web) or bearer device token (desktop)
@@ -52,20 +54,30 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device is not online or tunnel not available' }), { status: 400, headers });
   }
 
-  // Generate one-time connect token
-  const connectToken = crypto.randomUUID();
-
-  // Store in KV with 5-minute TTL
-  await env.SESSIONS.put(`connect:${connectToken}`, JSON.stringify({
-    googleId: user.googleId,
-    email: user.email,
-    deviceToken,
-    createdAt: new Date().toISOString(),
-  }), { expirationTtl: 300 });
+  // v2 self-verifying token when the target device's app can verify it
+  // locally (no KV write here, no KV read + consistency stall on the device —
+  // the whole verify-connect round trip disappears from auth). Older apps get
+  // the legacy KV-backed UUID. Kill-switch: bump MIN_V2_APP_VERSION sky-high.
+  let connectToken: string;
+  if (appVersionAtLeast(device.appVersion, MIN_V2_APP_VERSION)) {
+    connectToken = await mintV2ConnectToken(deviceToken, user, 300);
+  } else {
+    connectToken = crypto.randomUUID();
+    // Store in KV with 5-minute TTL
+    await env.SESSIONS.put(`connect:${connectToken}`, JSON.stringify({
+      googleId: user.googleId,
+      email: user.email,
+      deviceToken,
+      createdAt: new Date().toISOString(),
+    }), { expirationTtl: 300 });
+  }
 
   return new Response(JSON.stringify({
     connectToken,
     tunnelUrl: device.tunnelUrl,
     expiresIn: 300,
-  }), { status: 200, headers });
+  }), {
+    status: 200,
+    headers: { ...headers, 'Server-Timing': `total;dur=${Date.now() - t0};desc="${connectToken.startsWith('v2.') ? 'v2' : 'legacy'}"` },
+  });
 };

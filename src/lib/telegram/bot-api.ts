@@ -105,9 +105,13 @@ export interface TelegramUpdate {
     text?: string;
     caption?: string;
     voice?: { file_id: string; duration: number; mime_type?: string };
-    audio?: { file_id: string };
+    audio?: { file_id: string; duration?: number; mime_type?: string };
     photo?: Array<{ file_id: string; width: number; height: number; file_size?: number }>;
-    document?: { file_id: string; file_name?: string; mime_type?: string };
+    document?: { file_id: string; file_name?: string; mime_type?: string; file_size?: number };
+    video?: { file_id: string };
+    animation?: { file_id: string };
+    sticker?: { file_id: string };
+    video_note?: { file_id: string };
     reply_to_message?: { message_id: number; text?: string };
   };
   callback_query?: {

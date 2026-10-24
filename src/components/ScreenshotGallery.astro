@@ -1,0 +1,265 @@
+---
+import { getLocaleFromUrl, t } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+
+// Curated 9 shots — order and captions chosen by German.
+const shots = [
+  { img: '/screenshots/shot-remote.jpg', k: 'remote' },
+  { img: '/screenshots/shot-agents.jpg', k: 'agents' },
+  { img: '/screenshots/shot-grid.jpg', k: 'grid' },
+  { img: '/screenshots/shot-voice.jpg', k: 'voice' },
+  { img: '/screenshots/shot-buttons.jpg', k: 'buttons' },
+  { img: '/screenshots/shot-machines.jpg', k: 'machines' },
+  { img: '/screenshots/shot-remote2.jpg', k: 'remote2' },
+  { img: '/screenshots/shot-claude.jpg', k: 'claude' },
+  { img: '/screenshots/shot-browser.jpg', k: 'browser' },
+];
+---
+
+<section class="sg" id="screenshots">
+  <div class="sg-label"><span class="sg-prompt">$</span> patapim demo <span class="sg-dim">— {t(locale, 'screenshots.label')}</span></div>
+  <h2 class="sg-head" set:html={t(locale, 'screenshots.title')} />
+  <p class="sg-sub">{t(locale, 'screenshots.subtitle')}</p>
+
+  <div class="sg-grid">
+    {shots.map((s) => (
+      <figure class="sg-card">
+        <button class="sg-imgbox" type="button" aria-label={t(locale, `screenshots.caps.${s.k}`)}>
+          <img src={s.img} loading="lazy" decoding="async" alt={t(locale, `screenshots.caps.${s.k}`)} />
+        </button>
+        <figcaption>{t(locale, `screenshots.caps.${s.k}`)}</figcaption>
+      </figure>
+    ))}
+  </div>
+
+  <div class="sg-lightbox" hidden>
+    <button class="sg-lb-close" type="button" aria-label="Close">×</button>
+    <button class="sg-lb-nav sg-lb-prev" type="button" aria-label="Previous">‹</button>
+    <img class="sg-lb-img" src="" alt="" />
+    <button class="sg-lb-nav sg-lb-next" type="button" aria-label="Next">›</button>
+    <p class="sg-lb-cap"></p>
+  </div>
+
+  <div class="sg-video">
+    <h3 class="sg-vhead">{t(locale, 'screenshots.videoTitle')}</h3>
+    <p class="sg-vsub">{t(locale, 'screenshots.videoSub')}</p>
+    <div class="sg-frame">
+      <video
+        autoplay
+        muted
+        loop
+        playsinline
+        controls
+        preload="metadata"
+        poster="/screenshots/demo-poster.jpg"
+      >
+        <source src="/patapim-demo-720.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="sg-vlink">
+      <a href="https://youtu.be/KRYwqbOgq20" target="_blank" rel="noopener">{t(locale, 'screenshots.videoLink')} ↗</a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .sg {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 8px 24px 72px;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    box-sizing: border-box;
+  }
+  .sg-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 18px; }
+  .sg-prompt {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  .sg-dim { color: var(--text-muted); }
+
+  .sg-head {
+    font-size: clamp(1.5rem, 3.4vw, 2.2rem);
+    font-weight: 700;
+    margin: 14px 0 6px;
+    color: var(--text-primary);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .sg-head :global(.g) {
+    background: var(--p-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sg-sub { max-width: 640px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 28px; }
+
+  .sg-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 560px) { .sg-grid { grid-template-columns: 1fr; } }
+
+  .sg-card {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0b0b0e 0%, #070708 100%);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  .sg-card:hover {
+    border-color: rgba(139, 124, 248, 0.45);
+    box-shadow: 0 0 0 1px rgba(139, 124, 248, 0.22), 0 0 28px rgba(139, 124, 248, 0.22), 0 22px 60px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px);
+  }
+  .sg-imgbox {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #000;
+    border: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0;
+    display: block;
+    width: 100%;
+    cursor: zoom-in;
+  }
+  .sg-imgbox img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+  .sg-card figcaption {
+    padding: 16px 18px 18px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+  }
+
+  .sg-video { max-width: 940px; margin: 64px auto 0; text-align: center; }
+  .sg-vhead { font-size: clamp(1.25rem, 3vw, 1.75rem); font-weight: 700; margin: 0 0 8px; color: var(--text-primary); }
+  .sg-vsub { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.55; margin: 0 auto 22px; max-width: 620px; }
+  .sg-frame {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    background: #000;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .sg-frame video { width: 100%; display: block; }
+  .sg-vlink { margin-top: 14px; font-size: 0.8rem; color: var(--text-muted); }
+  .sg-vlink a { color: var(--cy); text-decoration: none; }
+  .sg-vlink a:hover { text-decoration: underline; }
+
+  .sg-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 28px;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: zoom-out;
+    box-sizing: border-box;
+  }
+  .sg-lightbox[hidden] { display: none; }
+  .sg-lb-img {
+    max-width: min(1400px, 100%);
+    max-height: calc(100% - 70px);
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    cursor: default;
+  }
+  .sg-lb-cap {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+  }
+  .sg-lb-close,
+  .sg-lb-nav {
+    position: fixed;
+    background: rgba(20, 20, 24, 0.85);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2001;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .sg-lb-close:hover,
+  .sg-lb-nav:hover { border-color: rgba(139, 124, 248, 0.6); }
+  .sg-lb-close { top: 18px; right: 18px; }
+  .sg-lb-prev { left: 14px; top: 50%; transform: translateY(-50%); }
+  .sg-lb-next { right: 14px; top: 50%; transform: translateY(-50%); }
+  @media (max-width: 560px) {
+    .sg-lightbox { padding: 12px; }
+    .sg-lb-nav { width: 38px; height: 38px; font-size: 22px; }
+  }
+</style>
+
+<script>
+  const box = document.querySelector('.sg-lightbox') as HTMLElement | null;
+  if (box) {
+    const lbImg = box.querySelector('.sg-lb-img') as HTMLImageElement;
+    const lbCap = box.querySelector('.sg-lb-cap') as HTMLElement;
+    const thumbs = Array.from(document.querySelectorAll('.sg-imgbox img')) as HTMLImageElement[];
+    let idx = 0;
+
+    const show = (i: number) => {
+      idx = (i + thumbs.length) % thumbs.length;
+      lbImg.src = thumbs[idx].src;
+      lbImg.alt = thumbs[idx].alt;
+      lbCap.textContent = thumbs[idx].alt;
+      box.hidden = false;
+      document.documentElement.style.overflow = 'hidden';
+    };
+    const close = () => {
+      box.hidden = true;
+      document.documentElement.style.overflow = '';
+    };
+
+    thumbs.forEach((img, i) => {
+      (img.closest('.sg-imgbox') as HTMLElement).addEventListener('click', () => show(i));
+    });
+    box.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('.sg-lb-prev')) show(idx - 1);
+      else if (t.closest('.sg-lb-next')) show(idx + 1);
+      else if (!t.closest('.sg-lb-img')) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (box.hidden) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowLeft') show(idx - 1);
+      else if (e.key === 'ArrowRight') show(idx + 1);
+    });
+  }
+</script>

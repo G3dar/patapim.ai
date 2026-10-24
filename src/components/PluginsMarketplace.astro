@@ -1,0 +1,144 @@
+---
+// Plugins gallery — fetches the official community index at build time and
+// renders installable plugin cards. Degrades gracefully if the index is
+// unreachable (empty catalog + "browse on GitHub" fallback).
+import { getLocaleFromUrl, getLocalePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const lp = (path: string) => getLocalePath(locale, path);
+
+const CATALOG_URL = 'https://raw.githubusercontent.com/G3dar/patapim-plugins/main/marketplace.json';
+
+type Plugin = {
+  name: string;
+  displayName?: string;
+  description?: string;
+  author?: { name?: string } | string;
+  category?: string;
+  homepage?: string;
+  keywords?: string[];
+};
+
+let plugins: Plugin[] = [];
+let fetchOk = false;
+try {
+  const res = await fetch(CATALOG_URL);
+  if (res.ok) {
+    const cat = await res.json();
+    plugins = Array.isArray(cat.plugins) ? cat.plugins : [];
+    fetchOk = true;
+  }
+} catch { /* offline build — fall back to the GitHub link */ }
+
+const authorName = (a: Plugin['author']) =>
+  typeof a === 'string' ? a : (a && a.name) || '';
+---
+
+<main class="plugins-page" data-type-cascade>
+  <section class="plugins-hero">
+    <div class="container-narrow">
+      <div class="tv-label"><span class="tv-label-prompt">$</span> patapim plugins <span class="tv-dim">— extend the cockpit</span></div>
+      <h1 class="plugins-headline">Build on PATAPIM.<br/><span class="tv-grad">Your plugins become tools in every Claude Code session.</span></h1>
+      <p class="plugins-sub">
+        PATAPIM plugins run isolated with a permission you approve. They can register MCP tools that appear
+        automatically in every Claude Code / Codex session, add UI panels and toolbar buttons, run scheduled
+        tasks, and inject standing context for your AI. Install with one click — or from any repo URL.
+      </p>
+      <div class="plugins-cta">
+        <a class="pbtn pbtn-primary" href={lp('/docs/extensibility/building-plugins')}>Build a plugin →</a>
+        <a class="pbtn" href="https://github.com/G3dar/patapim-plugins" target="_blank" rel="noopener">Submit yours</a>
+        <a class="pbtn" href="https://www.npmjs.com/package/@patapim/sdk" target="_blank" rel="noopener">@patapim/sdk</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="plugins-list">
+    <div class="container-narrow">
+      <div class="tv-label"><span class="tv-label-prompt">$</span> ls ~/.patapim/plugins <span class="tv-dim">— community index</span></div>
+
+      {plugins.length > 0 ? (
+        <div class="plugin-grid">
+          {plugins.map((p) => (
+            <a class="plugin-card" href={p.homepage || 'https://github.com/G3dar/patapim-plugins'} target="_blank" rel="noopener">
+              <div class="plugin-card-head">
+                <span class="plugin-name">{p.displayName || p.name}</span>
+                {p.category && <span class="plugin-cat">{p.category}</span>}
+              </div>
+              <p class="plugin-desc">{p.description || ''}</p>
+              <div class="plugin-meta">
+                {authorName(p.author) && <span class="plugin-author">by {authorName(p.author)}</span>}
+                <span class="plugin-install">Install in PATAPIM →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="plugins-empty">
+          Browse the community index on <a href="https://github.com/G3dar/patapim-plugins" target="_blank" rel="noopener">GitHub</a>.
+        </p>
+      )}
+
+      <p class="plugins-howto">
+        <strong>To install:</strong> open PATAPIM → <em>Preferences → Local API → Marketplace</em>, or paste a plugin's
+        repo URL to install directly. Every plugin installs disabled — you review its permissions before it runs.
+      </p>
+    </div>
+  </section>
+</main>
+
+<style>
+  .plugins-page { padding: 3rem 0 5rem; }
+  .container-narrow { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+  .plugins-hero { padding: 2rem 0 3rem; }
+  .plugins-headline {
+    font-size: clamp(1.8rem, 4vw, 2.9rem);
+    line-height: 1.15; font-weight: 700; margin: 1rem 0 1.2rem;
+    color: var(--text-primary, #e8e6e3);
+  }
+  .plugins-sub {
+    font-size: 1.02rem; line-height: 1.6; max-width: 680px;
+    color: var(--text-secondary, #a09b94); margin-bottom: 1.8rem;
+  }
+  .plugins-cta { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+  .pbtn {
+    display: inline-block; padding: 0.6rem 1.1rem; border-radius: 8px;
+    border: 1px solid var(--border-strong, #3a3a3c); text-decoration: none;
+    font-size: 0.92rem; font-weight: 500; color: var(--text-primary, #e8e6e3);
+    transition: border-color .15s, background .15s;
+  }
+  .pbtn:hover { border-color: #49F0F8; }
+  .pbtn-primary { background: linear-gradient(90deg, #49F0F8, #D855E9); color: #0a0a12; border-color: transparent; font-weight: 600; }
+  .pbtn-primary:hover { filter: brightness(1.08); }
+
+  .plugins-list { padding-top: 1.5rem; }
+  .plugin-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem; margin: 1.2rem 0 1.8rem;
+  }
+  .plugin-card {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    padding: 1.1rem 1.2rem; border-radius: 10px; text-decoration: none;
+    background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--border-subtle, #2a2a2c);
+    transition: border-color .15s, transform .15s;
+  }
+  .plugin-card:hover { border-color: #49F0F8; transform: translateY(-2px); }
+  .plugin-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .plugin-name { font-weight: 600; font-size: 1.02rem; color: var(--text-primary, #e8e6e3); }
+  .plugin-cat {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 2px 7px; border-radius: 5px; color: #49F0F8;
+    background: rgba(73,240,248,0.08); border: 1px solid rgba(73,240,248,0.2);
+  }
+  .plugin-desc { font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary, #a09b94); flex: 1; margin: 0; }
+  .plugin-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.3rem; }
+  .plugin-author { font-size: 0.78rem; color: var(--text-tertiary, #6b6660); }
+  .plugin-install { font-size: 0.8rem; color: #49F0F8; }
+  .plugins-empty { color: var(--text-secondary, #a09b94); margin: 1.2rem 0; }
+  .plugins-empty a, .plugins-howto a { color: #49F0F8; }
+  .plugins-howto {
+    font-size: 0.92rem; line-height: 1.6; color: var(--text-secondary, #a09b94);
+    padding: 1rem 1.2rem; border-radius: 10px; margin-top: 0.5rem;
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle, #2a2a2c);
+  }
+</style>

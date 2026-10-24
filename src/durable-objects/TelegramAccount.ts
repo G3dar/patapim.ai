@@ -3,8 +3,11 @@
  *
  * One instance per PATAPIM *account*, addressed by the account email (v2 model).
  * Supersedes the per-install TelegramInstance for accounts that have migrated:
- * a single Telegram chat pairing is shared across all of a user's installs, and
- * one install at a time is the "active" receiver.
+ * a single Telegram chat pairing is shared across all of a user's installs.
+ * Inbound routing: swipe-replies are hard-bound to the install/terminal that
+ * sent the original message; free-form messages follow `last_route` (the
+ * conversation head — see LastRoute). `active_instance_id` + claim_active are
+ * kept for pre-multi-active desktop builds only.
  *
  * Holds:
  *   - email (account identity)
@@ -61,6 +64,17 @@ interface InstancePresence {
   last_seen: number;
 }
 
+// Conversation head: the terminal that most recently sent an outbound bot
+// message, received an injected inbound (route_hint), or was hit by a
+// swipe-reply. Free-form (non-reply) inbound messages follow it. boot_id lets
+// the desktop reject the stamp after a restart (terminal ids are reused).
+interface LastRoute {
+  instance_id: string;
+  terminal_id: string;
+  boot_id: string;
+  ts: number;
+}
+
 interface AccountState {
   email: string;
   chat_id: number | null;
@@ -69,6 +83,7 @@ interface AccountState {
   pairing: PairingEntry | null;
   instances: Record<string, InstancePresence>;
   active_instance_id: string | null;
+  last_route?: LastRoute | null;
 }
 
 interface QueuedMessage {
@@ -77,6 +92,9 @@ interface QueuedMessage {
   // When set, only the install with this instance_id may receive the entry
   // (a reply/callback bound to a specific machine). Absent = untargeted.
   target_instance_id?: string;
+  // Soft target: preference (conversation head), not a binding. Drains to the
+  // target when possible, but to any live install once the target is gone.
+  soft?: boolean;
 }
 
 interface SocketAttachment {
@@ -150,11 +168,13 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
       chat_id_hint: state.chat_id_hint || '',
       active_instance_id: state.active_instance_id,
       instance_count: Object.keys(state.instances).length,
+      connected_instances: this.countConnectedInstances(),
     }));
     // Unconditional: targeted entries must reach their owning install even
     // when it isn't the active one. drainQueueFor gates untargeted entries
     // on the active role internally.
     await this.drainQueueFor(server, instanceId);
+    this.broadcastPresence();
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -213,6 +233,17 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
               console.warn('[TelegramAccount] msg-map KV put failed:', err);
             }
           }
+          // A terminal-bound outbound message moves the conversation head.
+          // Terminal-less sends (voice echoes, error replies) don't.
+          if (terminalId && att.instance_id) {
+            state.last_route = {
+              instance_id: att.instance_id,
+              terminal_id: terminalId,
+              boot_id: msg.boot_id ? String(msg.boot_id) : '',
+              ts: Date.now(),
+            };
+            await this.ctx.storage.put('state', state);
+          }
           if (id) ws.send(JSON.stringify({
             id,
             type: 'ack',
@@ -228,6 +259,22 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
         case 'claim_active': {
           const result = await this.claimActiveInternal(att.instance_id);
           if (id) ws.send(JSON.stringify({ id, type: 'ack', result }));
+          return;
+        }
+        case 'route_hint': {
+          // Fire-and-forget from the desktop after it injects an inbound
+          // message: the receiving terminal becomes the conversation head so
+          // follow-up free-form messages keep landing there.
+          const terminalId = msg.terminal_id ? String(msg.terminal_id) : '';
+          if (!terminalId || !att.instance_id) return;
+          const state = await this.loadState();
+          state.last_route = {
+            instance_id: att.instance_id,
+            terminal_id: terminalId,
+            boot_id: msg.boot_id ? String(msg.boot_id) : '',
+            ts: Date.now(),
+          };
+          await this.ctx.storage.put('state', state);
           return;
         }
         case 'set_reaction': {
@@ -324,10 +371,28 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
 
   async webSocketClose(_ws: WebSocket, _code: number, _reason: string, _wasClean: boolean): Promise<void> {
     this.sockets = this.ctx.getWebSockets();
+    this.broadcastPresence();
   }
 
   async webSocketError(_ws: WebSocket, _error: unknown): Promise<void> {
     this.sockets = this.ctx.getWebSockets();
+    this.broadcastPresence();
+  }
+
+  /** Distinct instance_ids among live sockets. */
+  countConnectedInstances(): number {
+    const ids = new Set<string>();
+    for (const ws of this.ctx.getWebSockets()) {
+      const att: SocketAttachment = ws.deserializeAttachment() || {};
+      if (att.instance_id) ids.add(att.instance_id);
+    }
+    return ids.size;
+  }
+
+  /** Desktops label outbound replies with the terminal name when >1 install
+   * is connected — keep them updated as installs come and go. */
+  broadcastPresence(): void {
+    this.broadcast({ type: 'presence', connected_instances: this.countConnectedInstances() });
   }
 
   // ---------- Internal RPC from Worker ----------
@@ -377,10 +442,34 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
       target_instance_id?: string;
     };
     const target = target_instance_id || '';
-    const delivered = await this.deliverInbound({ type: 'message', update }, target);
+    const m = (update as any)?.message;
+    let softTarget = '';
+    const state = await this.loadState();
+    if (target && m && m._patapim_terminal_id) {
+      // Hard reply overlay hit → that binding becomes the conversation head,
+      // so subsequent free-form messages follow the terminal the user just
+      // replied to.
+      state.last_route = {
+        instance_id: target,
+        terminal_id: String(m._patapim_terminal_id),
+        boot_id: m._patapim_boot_id ? String(m._patapim_boot_id) : '',
+        ts: Date.now(),
+      };
+      await this.ctx.storage.put('state', state);
+    } else if (!target && m && state.last_route) {
+      // Free-form → stamp the conversation head as a SOFT preference. New
+      // field names on purpose: old desktops treat _patapim_terminal_id as a
+      // hard reply target and would error on boot mismatch.
+      m._patapim_soft_terminal_id = state.last_route.terminal_id;
+      m._patapim_soft_boot_id = state.last_route.boot_id;
+      softTarget = state.last_route.instance_id;
+    }
+    const soft = !target && !!softTarget;
+    const delivered = await this.deliverInbound({ type: 'message', update }, target || softTarget, soft);
     if (!delivered) {
       const entry: QueuedMessage = { ts: Date.now(), update };
-      if (target) entry.target_instance_id = target;
+      if (target || softTarget) entry.target_instance_id = target || softTarget;
+      if (soft) entry.soft = true;
       await this.enqueue(entry);
       if (target) {
         await this.notifyTargetOffline(target, update);
@@ -461,9 +550,12 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
    *
    * With targetInstanceId set (reply/callback bound to a specific install),
    * ONLY that install's sockets are eligible — no active/any-socket fallback;
-   * the caller queues the frame for that instance instead.
+   * the caller queues the frame for that instance instead. Unless `soft` is
+   * set (conversation-head preference, not a binding): then a missed target
+   * falls through to the active/any-socket cascade — the stamp stays on the
+   * update and the receiving desktop's boot check neutralizes it there.
    */
-  async deliverInbound(payload: { type: string; update: unknown }, targetInstanceId = ''): Promise<boolean> {
+  async deliverInbound(payload: { type: string; update: unknown }, targetInstanceId = '', soft = false): Promise<boolean> {
     const frame = JSON.stringify(payload);
     this.sockets = this.ctx.getWebSockets();
     if (this.sockets.length === 0) return false;
@@ -479,7 +571,7 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
           }
         }
       }
-      return delivered;
+      if (delivered || !soft) return delivered;
     }
     const state = await this.loadState();
     const active = state.active_instance_id;
@@ -519,6 +611,7 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
       pairing: null,
       instances: {},
       active_instance_id: null,
+      last_route: null,
     };
   }
 
@@ -585,20 +678,40 @@ export class TelegramAccount extends DurableObject<AccountEnv> {
   }
 
   /**
-   * Flush queued entries to a freshly-connected install. Entries targeted at
-   * this instance always flush; untargeted entries flush only when this
-   * instance is (or can become) the active receiver — the pre-targeting
-   * behavior. Everything else stays queued for its owner.
+   * Flush queued entries to a freshly-connected install.
+   *   - Hard-targeted entries (reply/callback bound to a machine) flush only
+   *     to that exact instance — never rerouted.
+   *   - Soft-targeted entries (conversation-head preference) flush to their
+   *     instance, or to anyone once that instance has no live socket.
+   *   - Untargeted entries flush to the active instance, or to anyone once
+   *     the active instance has no live socket (active_instance_id can be
+   *     frozen stale now that new desktops no longer claim_active — it must
+   *     not strand the queue).
    */
   async drainQueueFor(ws: WebSocket, instanceId: string): Promise<void> {
     const queue = await this.getQueue();
     if (!queue.length) return;
     const state = await this.loadState();
-    const takesUntargeted = !state.active_instance_id || state.active_instance_id === instanceId;
+    // Live instance ids, including the connecting socket (already accepted).
+    const live = new Set<string>();
+    for (const s of this.ctx.getWebSockets()) {
+      const a: SocketAttachment = s.deserializeAttachment() || {};
+      if (a.instance_id) live.add(a.instance_id);
+    }
+    const takesUntargeted = !state.active_instance_id
+      || state.active_instance_id === instanceId
+      || !live.has(state.active_instance_id);
     const keep: QueuedMessage[] = [];
     for (const entry of queue) {
       const target = entry.target_instance_id || '';
-      const mine = target ? target === instanceId : takesUntargeted;
+      let mine: boolean;
+      if (!target) {
+        mine = takesUntargeted;
+      } else if (entry.soft) {
+        mine = target === instanceId || !live.has(target);
+      } else {
+        mine = target === instanceId;
+      }
       if (!mine) {
         keep.push(entry);
         continue;

@@ -202,6 +202,80 @@ async function routeUpdate(update: TelegramUpdate, env: any) {
     }
   }
 
+  // Unsupported media kinds: refuse here with a specific reply. Without this
+  // they fall through to the text path and PATAPIM answers a bare "Empty
+  // message — nothing to inject", which reads like a bug.
+  if (msg.video || msg.animation || msg.sticker || msg.video_note) {
+    await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+      chat_id: chatId,
+      reply_to_message_id: msg.message_id,
+      text: '🖼 Only photos, images-as-files and voice notes are supported for now — videos, GIFs and stickers are not.',
+    });
+    return;
+  }
+
+  // Photos / image documents: ship the bytes inline as base64, the same tunnel
+  // short voice notes use. Telegram's compressed `photo` renditions are a few
+  // hundred KB so they fit comfortably; anything bigger we refuse rather than
+  // blow the 1 MiB cap on the WebSocket frame the relay delivers on.
+  const IMAGE_INLINE_MAX_BYTES = 700 * 1024;
+  if (msg.photo?.length || msg.document) {
+    const doc = msg.document;
+    const isImageDoc = !!doc && (
+      (doc.mime_type || '').startsWith('image/') ||
+      /\.(png|jpe?g|gif|webp|bmp)$/i.test(doc.file_name || '')
+    );
+    // Telegram ships several renditions of the same photo. Take the biggest one
+    // that still fits — degrading to a smaller size beats refusing the message.
+    const fits = (size?: number) => (size || 0) <= IMAGE_INLINE_MAX_BYTES;
+    const rendition = [...(msg.photo || [])]
+      .sort((a, b) => (b.file_size || 0) - (a.file_size || 0))
+      .find((s) => fits(s.file_size));
+    const pick: { file_id: string; mime_type?: string; file_name?: string } | null =
+      rendition || (isImageDoc && fits(doc!.file_size) ? doc! : null);
+
+    if (!pick) {
+      const why = (!msg.photo?.length && !isImageDoc)
+        ? 'Only images are supported for now — send a photo, or type the command.'
+        : `That image is too big to relay (limit ${Math.round(IMAGE_INLINE_MAX_BYTES / 1024)} KB). Send it as a photo instead of a file.`;
+      await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+        chat_id: chatId,
+        reply_to_message_id: msg.message_id,
+        text: `🖼 ${why}`,
+      });
+      return;
+    }
+
+    try {
+      const imgBuf = await downloadTelegramFile(env, pick.file_id);
+      // Re-check the ACTUAL bytes: `fits()` trusted Telegram's declared
+      // file_size, which is optional and can be absent (treated as 0) or wrong.
+      // An oversized frame would make ws.send throw on every socket in the DO,
+      // so the message would be misclassified as "PATAPIM offline" and queued
+      // with the media stripped — a confusing failure. Refuse cleanly instead.
+      if (imgBuf.byteLength > IMAGE_INLINE_MAX_BYTES) {
+        await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+          chat_id: chatId,
+          reply_to_message_id: msg.message_id,
+          text: `🖼 That image is ${Math.round(imgBuf.byteLength / 1024)} KB — over the ${Math.round(IMAGE_INLINE_MAX_BYTES / 1024)} KB relay limit. Send it as a photo (compressed), not a file.`,
+        });
+        return;
+      }
+      (msg as any).image_b64 = arrayBufferToBase64(imgBuf);
+      (msg as any).image_mime = pick.mime_type || 'image/jpeg';
+      (msg as any).image_name = pick.file_name || '';
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn('[telegram/webhook] image download failed:', errMsg);
+      await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+        chat_id: chatId,
+        reply_to_message_id: msg.message_id,
+        text: `🖼 Couldn't fetch that image: ${errMsg.slice(0, 160)}`,
+      });
+      return;
+    }
+  }
+
   const doStub = getRouteStub(env, route);
   await doStub.fetch('https://do/__internal/message', {
     method: 'POST',

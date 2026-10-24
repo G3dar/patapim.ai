@@ -1,8 +1,6 @@
 ---
-export const prerender = false;
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-Astro.response.headers.set('Pragma', 'no-cache');
-Astro.response.headers.set('Expires', '0');
+// Prerendered static asset (see remotedesk.astro note): no SSR, no middleware
+// tax. Freshness via public/_headers no-cache (ETag revalidation).
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +12,10 @@ Astro.response.headers.set('Expires', '0');
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+  <!-- Self-hosted (was cdn.jsdelivr.net — a third origin whose DNS+TLS and
+       module fetch sat on the phone's critical path before the terminal could
+       even initialize). Files vendored in public/vendor/xterm/. -->
+  <link rel="stylesheet" href="/vendor/xterm/xterm.min.css" />
   <style is:inline>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1386,6 +1387,15 @@ Astro.response.headers.set('Expires', '0');
       .fab-actions { display: flex; }
     }
 
+    /* Touch devices wider than the phone breakpoint — landscape phones,
+       tablets, "desktop site" mode. These were width-gated before, so
+       rotating to landscape silently dropped the ✈ TG key and the FAB's
+       Plan Mode toggle while ⌨/🎤 stayed, reading as "buttons missing". */
+    @media (pointer: coarse) and (min-width: 769px) {
+      .keys-bar { display: flex; }
+      .fab-actions { display: flex; }
+    }
+
     /* Loading screen */
     .loading-screen {
       position: absolute;
@@ -1468,9 +1478,6 @@ Astro.response.headers.set('Expires', '0');
       #sidebar-terminals { display: block; }
     }
 
-    @media (min-width: 769px) {
-      .voice-preview { display: none !important; }
-    }
   </style>
 </head>
 <body>
@@ -1495,7 +1502,7 @@ Astro.response.headers.set('Expires', '0');
             </div>
           </div>
         </div>
-        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r55</span></a>
+        <a href="/go" class="topbar-logo">P <span style="font-size:9px;opacity:0.6;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 3px;vertical-align:middle">r59</span></a>
         <div id="topbar-switcher" title="Switch terminal">
           <span id="topbar-project"></span>
           <span id="topbar-switcher-caret">&#9662;</span>
@@ -1558,7 +1565,9 @@ Astro.response.headers.set('Expires', '0');
             </div>
 
             <div class="fab-toast" id="fab-toast"></div>
-            <input type="file" id="image-picker" accept="image/*" style="display:none" />
+            <!-- Any file type: the file_upload channel writes whatever bytes it
+                 gets into the terminal CWD (PDFs, zips, …), not just images. -->
+            <input type="file" id="image-picker" multiple style="display:none" />
           </div>
 
           <!-- Non-scrolling overlay for floating buttons -->
@@ -1594,7 +1603,7 @@ Astro.response.headers.set('Expires', '0');
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    Insert image file
+                    Insert file(s)
                   </button>
                   <button class="fab-menu-item" id="fab-compact">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1668,8 +1677,13 @@ Astro.response.headers.set('Expires', '0');
   </div>
 
   <script is:inline type="module">
-    import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
-    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
+    import { Terminal } from '/vendor/xterm/xterm.mjs';
+    import { FitAddon } from '/vendor/xterm/addon-fit.mjs';
+    // Shared snapshot planner — BYTE-IDENTICAL to patapim's
+    // src/shared/remoteSnapshotApply.mjs (source of truth; parity enforced by
+    // the app repo's unit test). Decides seq staleness, the scrolled push
+    // (gated on the REAL local dims + alt buffer) and the alt-exit escape.
+    import { planSnapshotApply, applyUnscroll } from '/js/remoteSnapshotApply.mjs';
 
     // Parse URL params
     const params = new URLSearchParams(location.search);
@@ -1761,6 +1775,23 @@ Astro.response.headers.set('Expires', '0');
     let reconnectTimer = null;
     let wsConnectTimeout = null;
     let isAuthenticated = false;
+    // True once ANY auth succeeded this page-load. Reconnects key off this
+    // (not the live isAuthenticated, which is false during every drop) so a
+    // drop before the first reconnect-auth completes still retries, while a
+    // genuinely revoked token stops the loop (handleAuthFailure clears it).
+    let hasEverAuthenticated = false;
+    // Reconnect deferred because the page was hidden — resumed on visible.
+    let pendingReconnect = false;
+    // Half-open-socket detection. pongCapable flips on the FIRST pong ever so
+    // enforcement never triggers against an older desktop build that doesn't
+    // answer pings.
+    let pongCapable = false;
+    let pongTimer = null;
+    // Auth-failure auto-recovery: a stale one-time connectToken (page refresh
+    // before the URL scrub, old Telegram deep-link) is re-mintable right here —
+    // the patapim.ai session cookie is same-origin. Capped so a genuinely
+    // broken session can't loop mint→fail forever.
+    let authRetryCount = 0;
     const modifiers = { ctrl: false, alt: false };
     let fabOpen = false;
     let isPlanMode = false;
@@ -1799,7 +1830,7 @@ Astro.response.headers.set('Expires', '0');
       const xtermEls = document.querySelectorAll('.xterm').length;
       const canvases = document.querySelectorAll('.xterm canvas').length;
       dbgState.innerHTML = [
-        'build=r57  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
+        'build=r59  isMobile=' + (isMobileResizeMode ? isMobileResizeMode() : '?'),
         'ptyDims=' + (ptyDims ? ptyDims.cols+'×'+ptyDims.rows : 'null'),
         'term: rows=' + (term ? term.rows : '?') + ' cols=' + (term ? term.cols : '?') + ' font=' + (term ? term.options.fontSize : '?') + 'px',
         'containerH=' + (wrap ? wrap.clientHeight : '?') + ' screenH=' + (screen ? screen.clientHeight : '?') + ' screenW=' + (screen ? screen.clientWidth : '?'),
@@ -1907,14 +1938,65 @@ Astro.response.headers.set('Expires', '0');
         btn.className = cls.join(' ');
         btn.dataset.token = d.token;
         const safeName = (d.deviceName || 'Unnamed').replace(/[<>&]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
-        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : status);
+        const canWake = !isCurrent && status === 'offline' && d.wakeable;
+        const badge = isCurrent ? 'this one' : (status === 'online' ? '' : (canWake ? 'wake' : status));
         btn.innerHTML = '<span class="dot"></span><span class="name">' + safeName + '</span>'
           + (badge ? '<span class="badge">' + badge + '</span>' : '');
         if (!isCurrent && status !== 'offline') {
           btn.addEventListener('click', () => switchToDevice(d.token));
+        } else if (canWake) {
+          btn.style.pointerEvents = 'auto';
+          btn.style.cursor = 'pointer';
+          btn.addEventListener('click', () => wakeFromPicker(d, btn));
         }
         host.appendChild(btn);
       }
+    }
+
+    // Tap "wake" on an offline machine → queue a Wake-on-LAN request. The
+    // account's LAN agent (Flic Hub / awake PATAPIM) fires the magic packet.
+    // Poll the list until it boots, then re-render so it becomes switchable.
+    async function wakeFromPicker(dev, btn) {
+      const badge = btn.querySelector('.badge');
+      if (badge) badge.textContent = 'waking…';
+      btn.style.pointerEvents = 'none';
+      try {
+        const r = await fetch('/api/wake/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ deviceToken: dev.token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (j && j.ok) {
+          if (badge) badge.textContent = 'sent';
+          pollPickerUntilOnline(dev.token, badge, Date.now() + 150000);
+        } else {
+          if (badge) badge.textContent = 'failed';
+          btn.style.pointerEvents = 'auto';
+        }
+      } catch {
+        if (badge) badge.textContent = 'failed';
+        btn.style.pointerEvents = 'auto';
+      }
+    }
+
+    function pollPickerUntilOnline(token, badge, deadline) {
+      if (Date.now() > deadline) { if (badge) badge.textContent = 'wake'; return; }
+      setTimeout(async () => {
+        try {
+          const r = await fetch('/api/device/list', { credentials: 'same-origin' });
+          const data = r.ok ? await r.json() : null;
+          const devs = (data && data.devices) || [];
+          const t = devs.find(x => x.token === token);
+          if (t && t.status !== 'offline') {
+            deviceListCache = devs;
+            renderDeviceList(devs);
+          } else {
+            pollPickerUntilOnline(token, badge, deadline);
+          }
+        } catch { pollPickerUntilOnline(token, badge, deadline); }
+      }, 5000);
     }
 
     async function switchToDevice(targetToken) {
@@ -1972,8 +2054,62 @@ Astro.response.headers.set('Expires', '0');
       activeConnectToken = result.connectToken;
       activeTunnelUrl = result.tunnelUrl;
       activeDeviceToken = stored.deviceToken;
+      restoreLastTerminal(stored);
       initTerminal();
       connect();
+    }
+
+    // A refresh should drop you back on the terminal you were looking at, not
+    // the device's default one. Reuses the Telegram deep-link machinery: seeding
+    // pendingTerminalId makes the 'terminals' handler switch to it (including
+    // cross-project selection via the sidebar_data branch). Explicit deep-links
+    // (?terminal=) always win over the remembered one.
+    function restoreLastTerminal(stored) {
+      if (!pendingTerminalId && stored && stored.lastTerminalId) {
+        pendingTerminalId = stored.lastTerminalId;
+      }
+    }
+
+    // Auth failed (typically a stale one-time connectToken from the URL: the
+    // user refreshed before the post-auth scrub, or reopened an old Telegram
+    // deep-link). We hold a same-origin patapim.ai session, so instead of a
+    // dead-end error, mint a fresh token for the same device and reconnect —
+    // "go back one level and come in again", automatically.
+    async function handleAuthFailure(msg) {
+      let stored = null;
+      try { stored = JSON.parse(localStorage.getItem('patapim_device') || 'null'); } catch {}
+      const devToken = activeDeviceToken || stored?.deviceToken;
+
+      if (devToken && authRetryCount < 2) {
+        authRetryCount++;
+        setStatus('connecting', 'Refreshing session...');
+        loadingEl.classList.remove('hidden');
+        loadingText && (loadingText.textContent = 'Session expired — reconnecting...');
+        const result = await fetchConnectToken(devToken);
+        if (result.error === 'session_expired') {
+          localStorage.removeItem('patapim_device');
+          window.location.href = '/go';
+          return;
+        }
+        if (result.connectToken && result.tunnelUrl) {
+          activeConnectToken = result.connectToken;
+          activeTunnelUrl = result.tunnelUrl;
+          activeDeviceToken = devToken;
+          restoreLastTerminal(stored);
+          // Retire the failed socket silently — its onclose would otherwise
+          // flash the disconnected overlay over the new connection attempt.
+          if (ws) { try { ws.onclose = null; ws.close(); } catch {} }
+          connect();
+          return;
+        }
+      }
+
+      // Token genuinely rejected — stop the auto-reconnect loop too.
+      hasEverAuthenticated = false;
+      showError(
+        'Authentication failed: ' + (msg.error || 'Unknown error') +
+        '<br><br><a href="/go">Go back to dashboard</a>'
+      );
     }
 
     function showError(html) {
@@ -2207,6 +2343,38 @@ Astro.response.headers.set('Expires', '0');
       }
     }
 
+    function getCellHeight() {
+      try {
+        return term._core._renderService.dimensions.css.cell.height || 16;
+      } catch (e) {
+        const screen = terminalWrap.querySelector('.xterm-screen');
+        if (screen && term.rows > 0) return screen.offsetHeight / term.rows;
+        return 16;
+      }
+    }
+
+    // Alt-screen TUIs (Claude Code, vim…) keep xterm in the alternate buffer,
+    // which has NO scrollback by design — the app owns scrolling. Scrolling
+    // them means asking the HOST app to scroll: dispatch wheel events on the
+    // xterm screen so xterm (in the TUI's mouse-tracking mode, restored by the
+    // snapshot's serialized modes) converts them into wheel reports that flow
+    // through term.onData → ws input → host PTY. One event per line so slow
+    // drags never get rounded away.
+    function forwardWheelToTui(lines, clientX, clientY) {
+      if (!term || !lines) return;
+      const screen = terminalWrap.querySelector('.xterm-screen');
+      if (!screen) return;
+      const cellH = getCellHeight();
+      const opts = { bubbles: true, cancelable: true, view: window, clientX, clientY,
+                     deltaMode: 0, deltaY: lines > 0 ? cellH : -cellH };
+      const n = Math.min(Math.abs(lines), 40); // clamp a single burst
+      for (let i = 0; i < n; i++) screen.dispatchEvent(new WheelEvent('wheel', opts));
+    }
+
+    function isAltScreen() {
+      return !!(term && term.buffer && term.buffer.active.type === 'alternate');
+    }
+
     let isUserTouchScrolling = false;
     let autoScrollDisabled = false;
     let userIsTyping = false;
@@ -2251,25 +2419,21 @@ Astro.response.headers.set('Expires', '0');
       return cur && cur.isProcessing;
     }
 
-    // Never auto-scroll while the user is reading scrollback (desktop AND mobile).
-    // Snapshot writes (\x1b[2J\x1b[H + viewport-data) and cursor positioning
-    // in live output can yank viewportY back to baseY. We capture the scroll
-    // position before the write and restore it after xterm processes the data.
-    // Mobile previously passed through unchanged, which forced the viewport back
-    // to the bottom every time new output arrived while the user was scrolled up.
+    // Plain write. The old absolute-viewportY "restore" here is deliberately
+    // GONE: xterm 5.5 already anchors a scrolled-up reader by itself —
+    // scrollLines(-N) sets isUserScrolling, under which scroll() advances
+    // ybase without moving ydisp (below the scrollback cap) and compensates
+    // ydisp on trim (at the cap). The rAF restore re-applied that compensated
+    // drift ~30×/s once the 5000-line cap bound — walking the reader toward
+    // the present through content they'd already read ("I keep scrolling up
+    // and re-see the same parts") — and its `scrollLines` toward the bottom
+    // even cleared isUserScrolling, fully un-anchoring them. It also queued up
+    // while the page was hidden and fired as a stale burst on resume. The one
+    // real yank source (resize/reflow) is handled by applyPtyDims' relative
+    // lines-from-bottom restore, which is the correct anchor for that case.
     function writePreservingScroll(data) {
       if (!term) return;
-      const buf = term.buffer.active;
-      const targetY = buf.viewportY;
-      const isScrolledUp = targetY < buf.baseY;
       term.write(data);
-      if (!isScrolledUp) return;
-      requestAnimationFrame(() => {
-        const newBuf = term.buffer.active;
-        const clampedY = Math.min(targetY, newBuf.baseY);
-        const delta = clampedY - newBuf.viewportY;
-        if (delta !== 0) term.scrollLines(delta);
-      });
     }
 
     function isClientFocused() {
@@ -2449,6 +2613,14 @@ Astro.response.headers.set('Expires', '0');
       // Handle user input
       term.onData(data => {
         if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated) return;
+
+        // Mouse reports (wheel scroll forwarded to an alt-screen TUI) are not
+        // typing: send verbatim — no modifier rewriting, no h-autoscroll
+        // re-enable, no markTyping (which would yank hOffset mid-scroll).
+        if (data.startsWith('\x1b[<') || data.startsWith('\x1b[M')) {
+          ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data }));
+          return;
+        }
 
         // Any key press re-enables auto horizontal scroll (suspended by manual touch scroll)
         autoScrollDisabled = false;
@@ -2634,8 +2806,12 @@ Astro.response.headers.set('Expires', '0');
         // Track last touch X for manual horizontal scroll
         // (xterm-viewport captures vertical scroll, blocking terminal-wrap's horizontal scroll)
         let lastTouchX = 0;
+        let lastTouchY = 0;
+        let tuiScrollAccum = 0;
         terminalWrap.addEventListener('touchstart', (e2) => {
           lastTouchX = e2.touches[0].clientX;
+          lastTouchY = e2.touches[0].clientY;
+          tuiScrollAccum = 0;
         }, { passive: true, capture: true });
 
         terminalWrap.addEventListener('touchmove', (e) => {
@@ -2662,7 +2838,22 @@ Astro.response.headers.set('Expires', '0');
               autoScrollDisabled = true;
             }
           }
+          // Vertical drag over an alt-screen TUI (Claude Code, vim…) → forward
+          // to the host app as wheel reports. The alt buffer has no scrollback,
+          // so the native .xterm-viewport scroll (which handles normal-buffer
+          // terminals) is a no-op there and the drag previously did nothing.
+          if (isAltScreen()) {
+            const cellH = getCellHeight();
+            tuiScrollAccum += (lastTouchY - t.clientY); // finger up → toward newer output
+            const lines = Math.trunc(tuiScrollAccum / cellH);
+            if (lines !== 0) {
+              tuiScrollAccum -= lines * cellH;
+              isUserTouchScrolling = true;
+              forwardWheelToTui(lines, t.clientX, t.clientY);
+            }
+          }
           lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
         }, { passive: true });
         terminalWrap.addEventListener('touchend', () => {
           setTimeout(() => { isUserTouchScrolling = false; }, 300);
@@ -2680,6 +2871,13 @@ Astro.response.headers.set('Expires', '0');
         // directly (xterm's own API for scrollback navigation).
         terminalWrap.addEventListener('wheel', (e) => {
           if (!term) return;
+          // Alt-screen TUIs (Claude Code, vim…) have no scrollback to scroll
+          // locally — fall through to xterm's own wheel handling, which (with
+          // the TUI's mouse mode active) forwards wheel reports the host app
+          // scrolls by. The scrollLines bypass below is only for plain-shell
+          // (normal-buffer) terminals, where mouse reporting would otherwise
+          // eat the wheel and block scrollback navigation.
+          if (isAltScreen()) return;
           e.preventDefault();
           e.stopPropagation();
           const dims = term._core && term._core._renderService && term._core._renderService.dimensions;
@@ -2776,6 +2974,7 @@ Astro.response.headers.set('Expires', '0');
         setStatus('connecting', 'Authenticating...');
         loadingText && (loadingText.textContent = 'Authenticating...');
         reconnectAttempts = 0;
+        pendingReconnect = false;
         lastFocusSync = { terminalId: null, focused: null };
         // Auth is sent after receiving 'welcome' message to avoid double-auth
       };
@@ -2806,14 +3005,15 @@ Astro.response.headers.set('Expires', '0');
     }
 
     function scheduleReconnect() {
-      if (!isAuthenticated || !activeDeviceToken) return;
-      if (reconnectAttempts >= 10) return;
+      // NEVER permanently give up (the old 10-attempt cap left the page dead
+      // after ~1 min of bad connectivity, silently). Backoff caps at 30s; a
+      // hidden page defers to visibilitychange instead of burning token mints.
+      if (!hasEverAuthenticated || !activeDeviceToken) return;
       if (reconnectTimer) return;
-      // Exponential-ish backoff capped at 10s so a temporarily unavailable
-      // tunnel URL doesn't burn through all retries in 20s.
-      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 10000);
+      const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
       reconnectTimer = setTimeout(async () => {
         reconnectTimer = null;
+        if (document.visibilityState !== 'visible') { pendingReconnect = true; return; }
         reconnectAttempts++;
         setStatus('connecting', 'Reconnecting...');
         const result = await fetchConnectToken(activeDeviceToken);
@@ -2821,6 +3021,9 @@ Astro.response.headers.set('Expires', '0');
           activeConnectToken = result.connectToken;
           activeTunnelUrl = result.tunnelUrl;
           connect();
+        } else if (result.error === 'session_expired') {
+          localStorage.removeItem('patapim_device');
+          window.location.href = '/go';
         } else {
           // Token/tunnel not ready yet — keep trying instead of silently giving up.
           scheduleReconnect();
@@ -2828,8 +3031,26 @@ Astro.response.headers.set('Expires', '0');
       }, delay);
     }
 
+    // Immediate reconnect with a fresh backoff — used when we KNOW conditions
+    // changed (page became visible, network came back, user gesture).
+    function kickReconnect() {
+      pendingReconnect = false;
+      reconnectAttempts = 0;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      scheduleReconnect();
+    }
+
     function handleMessage(msg) {
+      // ANY inbound message proves the socket is alive — a pong can coalesce
+      // behind a burst of terminal output, so don't require the pong itself.
+      if (pongTimer) { clearTimeout(pongTimer); pongTimer = null; }
       switch (msg.type) {
+        case 'file_upload_result':
+          // Resolve the in-flight sequential upload (if any). Single-image
+          // fire-and-forget uploads leave pendingUploadResolve null — harmless.
+          if (pendingUploadResolve) pendingUploadResolve(msg);
+          break;
+
         case 'welcome':
           // Server sent welcome, now authenticate with connect token
           ws.send(JSON.stringify({
@@ -2841,6 +3062,8 @@ Astro.response.headers.set('Expires', '0');
         case 'auth_result':
           if (msg.success) {
             isAuthenticated = true;
+            hasEverAuthenticated = true;
+            authRetryCount = 0;
             setStatus('connected', 'Connected');
             loadingEl.classList.add('hidden');
             enableActions(true);
@@ -2859,6 +3082,12 @@ Astro.response.headers.set('Expires', '0');
             // Request sidebar data first, which will trigger get_terminals with correct project
             ws.send(JSON.stringify({ type: 'get_sidebar_data' }));
 
+            // The ✈ TG button state was localStorage-only (default ON), so a
+            // fresh browser showed "on" regardless of the desktop's real
+            // Telegram-forward toggle, and two devices could desync. Ask the
+            // host for the truth; the reply lands as telegram_notifications_state.
+            ws.send(JSON.stringify({ type: 'get_telegram_notifications' }));
+
             term.focus();
             syncTerminalFocus();
             // Re-apply dims after reconnect so terminal cols match PTY
@@ -2866,11 +3095,15 @@ Astro.response.headers.set('Expires', '0');
               applyPtyDims({ forceRefresh: true });
             }
           } else {
-            showError(
-              'Authentication failed: ' + (msg.error || 'Unknown error') +
-              '<br><br><a href="/go">Go back to dashboard</a>'
-            );
+            handleAuthFailure(msg);
           }
+          break;
+
+        // Host's authoritative Telegram-forward toggle — answer to our
+        // get_telegram_notifications on auth, and echo of any client's
+        // set_telegram_notifications. Server truth wins over localStorage.
+        case 'telegram_notifications_state':
+          applyTelegramNotifState(msg.enabled);
           break;
 
         case 'snapshot':
@@ -2898,35 +3131,27 @@ Astro.response.headers.set('Expires', '0');
             break;
           }
           if (term && msg.terminalId === currentTerminalId) {
-            if (msg.seq) lastBufferSeq = msg.seq;
             window._switchLog.push({ t: Date.now(), ev: 'snapshot-APPLIED', tid: msg.terminalId, dataLen: (msg.data||'').length, seq: msg.seq });
-            // Replace visible viewport: clear screen, home cursor, write snapshot.
-            // No \x1b[3J — viewport-only snapshots shouldn't clear scrollback.
             const _sb0 = term.buffer.active;
             const _sbBase0 = _sb0.baseY, _sbView0 = _sb0.viewportY, _sbLen0 = _sb0.length;
-            // Viewport-only repaints (\x1b[2J) never feed xterm's scrollback, so
-            // without help the phone's scroll-up history stays frozen at whatever
-            // the terminal_init/switched buffer carried. Newer desktop hosts send
-            // `scrolled`: how many rows left the host viewport since the previous
-            // snapshot. Push exactly that many of our current top rows — which
-            // ARE the previous frame — into scrollback first (LF at the bottom
-            // row scrolls one line up), then repaint. Clamp to rows (beyond that
-            // the pushed rows would be blanks). Normal buffer only: the alt
-            // screen has no scrollback. Old hosts omit the field → prefix empty,
-            // behavior unchanged.
-            // alt:false (new hosts): host is on the normal buffer — if we're
-            // stuck on the alt buffer (the frame that entered it carried
-            // \x1b[?1049h but nothing ever exits it), switch back first;
-            // ?1049l restores our saved normal screen, which is exactly the
-            // pre-alt frame the scroll push feeds from.
-            const _inAlt = _sb0.type === 'alternate';
-            const _exitAlt = msg.alt === false && _inAlt;
-            let _scrollPush = _exitAlt ? '\x1b[?1049l' : '';
-            if (typeof msg.scrolled === 'number' && msg.scrolled > 0 && (!_inAlt || _exitAlt)) {
-              const _push = Math.min(msg.scrolled, term.rows);
-              _scrollPush += '\x1b[' + term.rows + ';1H' + '\n'.repeat(_push);
+            // Everything about HOW to apply the frame — the scrolled push into
+            // scrollback (gated on OUR live cols/rows matching the host's, and
+            // off the alt buffer), the stale-alt ?1049l escape, the seq
+            // staleness guard, no \x1b[3J ever — lives in the shared planner.
+            // Host spliced rows it had already pushed to us (duplicate caught
+            // after export) — remove them from our scrollback first.
+            if (msg.unscroll > 0) {
+              try { applyUnscroll(term, msg.unscroll); } catch (_) {}
             }
-            writePreservingScroll('\x1b[?2026h\x1b[?25l' + _scrollPush + '\x1b[0m\x1b[2J\x1b[H' + msg.data + '\x1b[?25h\x1b[?2026l');
+            const plan = planSnapshotApply(msg, {
+              cols: term.cols,
+              rows: term.rows,
+              bufferType: _sb0.type,
+              lastSeq: lastBufferSeq,
+            });
+            if (plan.drop) break; // stale frame (older than one already applied)
+            lastBufferSeq = plan.nextSeq;
+            writePreservingScroll(plan.write);
             if (isDebugMode) requestAnimationFrame(() => {
               const _sb1 = term.buffer.active;
               if (_sb1.baseY !== _sbBase0 || _sb1.length !== _sbLen0) {
@@ -3104,6 +3329,15 @@ Astro.response.headers.set('Expires', '0');
               // processor, causing the buffer write to never complete.
             }
             currentTerminalId = newId;
+            // Remember the terminal being viewed so a page refresh (which mints
+            // a fresh connect token) can land back on it via restoreLastTerminal.
+            try {
+              const stored = JSON.parse(localStorage.getItem('patapim_device') || 'null');
+              if (stored && stored.deviceToken && stored.lastTerminalId !== newId) {
+                stored.lastTerminalId = newId;
+                localStorage.setItem('patapim_device', JSON.stringify(stored));
+              }
+            } catch {}
             syncTerminalFocus(currentTerminalId);
             highlightTab(currentTerminalId);
           }
@@ -3288,6 +3522,7 @@ Astro.response.headers.set('Expires', '0');
           break;
 
         case 'pong':
+          pongCapable = true; // this desktop answers pings → enforcement may arm
           break;
       }
     }
@@ -4091,6 +4326,7 @@ Astro.response.headers.set('Expires', '0');
       closeStatusDropdown();
       sendTerminalFocus(false);
       isAuthenticated = false;
+      hasEverAuthenticated = false; // explicit disconnect — no auto-reconnect
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (ws) ws.close();
       location.href = '/go';
@@ -4178,6 +4414,11 @@ Astro.response.headers.set('Expires', '0');
       if (document.hidden || document.visibilityState !== 'visible') {
         sendTerminalFocus(false);
       } else {
+        // Coming back to a dead/deferred connection: reconnect NOW with a
+        // fresh backoff instead of waiting out (or having exhausted) the old
+        // schedule. Skip while a socket is already connecting/open.
+        const wsAlive = ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN);
+        if (!wsAlive && hasEverAuthenticated && activeDeviceToken) kickReconnect();
         syncTerminalFocus();
         // Re-apply PTY dims so mobile gets correct cols (not a raw fitAddon.fit
         // which would reset to narrow mobile cols while PTY uses desktop cols).
@@ -4188,6 +4429,12 @@ Astro.response.headers.set('Expires', '0');
           });
         }
       }
+    });
+
+    // Network came back (cell↔Wi-Fi handoff, airplane mode off) — same fast path.
+    window.addEventListener('online', () => {
+      const wsAlive = ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN);
+      if (!wsAlive && hasEverAuthenticated && activeDeviceToken) kickReconnect();
     });
 
     // iOS bfcache: page restored from freeze — show loading overlay immediately
@@ -4262,12 +4509,14 @@ Astro.response.headers.set('Expires', '0');
       sendAICommand('claude --dangerously-skip-permissions');
     });
 
-    // Base64-encode an image blob and stream it over the file_upload channel.
-    // The server writes it into the terminal's CWD and types the path in, so
-    // CLI tools (Claude Code, Codex) read the image from the remote disk.
+    // Base64-encode a file blob (any type — images, PDFs, zips, …) and stream
+    // it over the file_upload channel. The server writes it into the terminal's
+    // CWD and types the path in, so CLI tools (Claude Code, Codex) read the
+    // file from the remote disk. 50 MB cap matches the host's; hosts older
+    // than that still enforce their own 10 MB server-side and reply an error.
     function sendImageBlob(blob, fileName) {
-      if (blob.size > 10 * 1024 * 1024) {
-        showToast('Image too large (max 10 MB)');
+      if (blob.size > 50 * 1024 * 1024) {
+        showToast('File too large (max 50 MB)');
         return;
       }
       const reader = new FileReader();
@@ -4277,7 +4526,7 @@ Astro.response.headers.set('Expires', '0');
           type: 'file_upload',
           terminalId: currentTerminalId,
           fileName,
-          mimeType: blob.type || 'image/png',
+          mimeType: blob.type || 'application/octet-stream',
           size: blob.size,
           data: base64,
         }));
@@ -4285,8 +4534,58 @@ Astro.response.headers.set('Expires', '0');
         term.focus();
         syncTerminalFocus();
       };
-      reader.onerror = () => showToast('Failed to read image');
+      reader.onerror = () => showToast('Failed to read file');
       reader.readAsDataURL(blob);
+    }
+
+    // Multi-image insert. The SERVER is what types each saved path into the
+    // terminal, so the client can't add separators after the fact. To work
+    // correctly even against PATAPIM apps whose remote server hasn't been
+    // updated, we upload strictly ONE image at a time — waiting for each
+    // file_upload_result (the server sends it AFTER typing the path) — and
+    // inject a space between paths so they don't concatenate.
+    let pendingUploadResolve = null;
+    function awaitUploadResult(timeoutMs) {
+      return new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if (done) return; done = true; if (pendingUploadResolve === finish) pendingUploadResolve = null; resolve(v); };
+        pendingUploadResolve = finish;
+        setTimeout(() => finish(null), timeoutMs || 30000);
+      });
+    }
+    // Like sendImageBlob but no per-file toast and no focus churn; the batch
+    // driver handles UX. Returns false if it can't even start the read.
+    function streamImageBlob(blob, fileName) {
+      if (blob.size > 50 * 1024 * 1024) { showToast('Skipped (max 50 MB): ' + fileName); return false; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        ws.send(JSON.stringify({
+          type: 'file_upload', terminalId: currentTerminalId, fileName,
+          mimeType: blob.type || 'application/octet-stream', size: blob.size, data: base64,
+        }));
+      };
+      reader.onerror = () => { showToast('Failed to read: ' + fileName); if (pendingUploadResolve) pendingUploadResolve(null); };
+      reader.readAsDataURL(blob);
+      return true;
+    }
+    async function sendImagesSequential(files) {
+      let typed = 0;
+      for (const file of files) {
+        // Separator before every path except the first, so paths stay
+        // space-separated regardless of the remote server version.
+        if (typed > 0) {
+          ws.send(JSON.stringify({ type: 'input', terminalId: currentTerminalId, data: ' ' }));
+        }
+        const result = awaitUploadResult();
+        if (!streamImageBlob(file, file.name)) { if (pendingUploadResolve) pendingUploadResolve(null); await result; continue; }
+        const res = await result;
+        if (res && res.success) typed++;
+        showToast('Inserting files… ' + typed + '/' + files.length);
+      }
+      showToast(typed > 0 ? ('Inserted ' + typed + ' file' + (typed === 1 ? '' : 's')) : 'No files inserted');
+      term.focus();
+      syncTerminalFocus();
     }
 
     // ── FAB: Paste from clipboard (text or image) ─────────────────
@@ -4343,27 +4642,53 @@ Astro.response.headers.set('Expires', '0');
     });
 
     imagePicker.addEventListener('change', () => {
-      const file = imagePicker.files[0];
-      if (!file) return;
-      sendImageBlob(file, file.name);
+      const files = Array.from(imagePicker.files || []);
       imagePicker.value = '';
+      if (!files.length) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      // Single image keeps the simple fire-and-forget path; multiple images go
+      // through the sequential driver so their paths land space-separated.
+      if (files.length === 1) sendImageBlob(files[0], files[0].name);
+      else sendImagesSequential(files);
     });
 
     // Native paste (Cmd/Ctrl+V on a desktop browser, iOS "Paste" callout):
-    // when the clipboard carries an image, upload it instead of letting the
-    // browser drop it — the terminal can't accept raw image data.
+    // when the clipboard carries a file of ANY type, upload it instead of
+    // letting the browser drop it — the terminal can't accept raw file data.
     document.addEventListener('paste', (e) => {
       if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) return;
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
       for (const item of items) {
-        if (item.kind === 'file' && item.type.startsWith('image/')) {
+        if (item.kind === 'file') {
           e.preventDefault();
           const blob = item.getAsFile();
-          if (blob) sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.png'));
+          if (blob) {
+            const ext = (blob.type && blob.type.split('/')[1]) || 'bin';
+            sendImageBlob(blob, blob.name || ('clipboard-' + Date.now() + '.' + ext));
+          }
           return;
         }
       }
+    });
+
+    // Drag-and-drop upload (desktop browsers / iPad): any file type, same
+    // pipeline as the picker. dragover must preventDefault or the browser
+    // navigates to the dropped file instead of firing our drop handler.
+    document.addEventListener('dragover', (e) => { e.preventDefault(); });
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+      if (!files.length) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !isAuthenticated || !currentTerminalId) {
+        showToast('Not connected');
+        return;
+      }
+      if (files.length === 1) sendImageBlob(files[0], files[0].name);
+      else sendImagesSequential(files);
     });
 
     // ── Voice dictation (MediaRecorder → local transcription) ─────────────────
@@ -4551,10 +4876,16 @@ Astro.response.headers.set('Expires', '0');
 
     // ── Telegram notifications toggle ──────────────────────────────
     const keyTelegram = document.getElementById('key-telegram');
+    // localStorage is only the pre-auth fallback; the host's real state
+    // arrives via telegram_notifications_state (requested on auth) and wins.
+    let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
+    const renderTelegram = () => { if (keyTelegram) keyTelegram.classList.toggle('tg-active', telegramOn); };
+    function applyTelegramNotifState(enabled) {
+      telegramOn = !!enabled;
+      localStorage.setItem('patapim_telegram_notifs', telegramOn ? '1' : '0');
+      renderTelegram();
+    }
     if (keyTelegram) {
-      // Restore last choice (default: on)
-      let telegramOn = localStorage.getItem('patapim_telegram_notifs') !== '0';
-      const renderTelegram = () => keyTelegram.classList.toggle('tg-active', telegramOn);
       renderTelegram();
       keyTelegram.addEventListener('click', () => {
         telegramOn = !telegramOn;
@@ -4617,10 +4948,24 @@ Astro.response.headers.set('Expires', '0');
       syncTerminalFocus();
     }
 
-    // Keepalive ping
+    // Keepalive ping + half-open detection: a socket left half-open by a
+    // cell↔Wi-Fi handoff or a sleeping desktop keeps readyState OPEN while
+    // nothing flows — the view just froze forever. If no message at all
+    // arrives within 10s of a ping, close the socket so onclose reconnects.
+    // Gated on pongCapable so an old desktop build that never answers pings
+    // can't be close-looped.
     setInterval(() => {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'ping' }));
+        if (pongCapable && !pongTimer) {
+          pongTimer = setTimeout(() => {
+            pongTimer = null;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              console.warn('[patapim] no traffic after ping — closing half-open socket');
+              try { ws.close(); } catch {}
+            }
+          }, 10000);
+        }
       }
     }, 30000);
   </script>

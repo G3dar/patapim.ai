@@ -1,12 +1,19 @@
 ---
-export const prerender = false;
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+// Prerendered static asset: served by the Workers assets binding BEFORE the
+// worker runs — no SSR, no middleware, TTFB ~30-50ms instead of 500-1000ms.
+// Freshness after deploys is preserved via public/_headers (Cache-Control:
+// no-cache → ETag revalidation, cheap 304s). This page has zero server logic.
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- maximum-scale=1: iOS auto-zooms the TOP page (this one — the iframe rides
+       along) when a sub-16px input inside the embedded /desktop view gets focus,
+       and never zooms back out. maximum-scale kills that focus auto-zoom; iOS
+       still allows pinch-zoom regardless (accessibility override), so nothing
+       is lost. Same viewport /remote-mobile has used all along. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>PATAPIM Desktop — connecting…</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <style is:inline>
@@ -31,6 +38,11 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
     .device .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; flex:0 0 auto; }
     .device .dot.heartbeat { background:#f59e0b; }
     .device .name { display:flex; align-items:center; gap:8px; font-weight:600; }
+    /* Asleep-but-wakeable machine: greyed out, but still tappable to wake it.
+       Brightens on hover so it clearly reads as clickable, not disabled. */
+    .device.wake { opacity:.5; }
+    .device.wake:hover { opacity:1; border-color:var(--accent); background:#191920; }
+    .device.wake .dot { background:#71717a; }
     /* Full-screen frame that hosts the desktop UI without exposing the tunnel
        URL in the address bar (stays on patapim.ai/remotedesk).
        On touch phones its height is driven from window.visualViewport by JS
@@ -68,7 +80,36 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       // reach our authenticated APIs itself — see the message broker below).
       var currentDeviceToken = d || null;
       var currentTunnelOrigin = null;
+      // Guard for iframe-requested re-auths (expired/rotated token inside the
+      // embedded /desktop): mint-and-reload at most twice per device so a
+      // genuinely dead session can't loop forever. Reset on device switch.
+      var reauthAttempts = 0;
       function originOf(u) { try { return new URL(u).origin; } catch (e) { return null; } }
+
+      // Boot-timing marks (beaconed to /api/stats/remote-timing on connect).
+      var t0 = performance.now();
+      var marks = {};
+      function mark(name) { marks[name] = Math.round(performance.now() - t0); }
+
+      // Warm DNS+TLS to the tunnel origin as soon as we know it — overlaps the
+      // *.trycloudflare.com handshake with the connect-token round trip.
+      var _preconnected = {};
+      function preconnect(url) {
+        try {
+          var origin = new URL(url).origin;
+          if (_preconnected[origin]) return;
+          _preconnected[origin] = true;
+          var l = document.createElement('link');
+          l.rel = 'preconnect'; l.href = origin; l.crossOrigin = 'anonymous';
+          document.head.appendChild(l);
+        } catch (e) {}
+      }
+      // The router already resolved this device once — start the handshake now.
+      try {
+        var rc = JSON.parse(localStorage.getItem('patapim_route_cache') || 'null');
+        var rcHit = rc && (d ? (rc.byToken || {})[d] : rc.single);
+        if (rcHit && rcHit.tunnelUrl) preconnect(rcHit.tunnelUrl);
+      } catch (e) {}
 
       // ── Soft-keyboard fit (touch phones only) ──────────────────────────────
       // The embedded /desktop is a CROSS-ORIGIN iframe: when the on-screen
@@ -112,12 +153,41 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       // Open the device's full desktop web UI (served by the user's own PATAPIM
       // at <tunnelUrl>/desktop) inside a full-screen iframe, so the address bar
       // stays on patapim.ai/remotedesk instead of exposing the raw tunnel URL.
-      function go(tunnel, ct, name) {
+      function go(tunnel, ct, name, opts) {
         var dest = tunnel.replace(/\/+$/, '') + '/desktop?connectToken=' + encodeURIComponent(ct);
         var host = name || n;
         if (host) dest += '&host=' + encodeURIComponent(host); // cosmetic device label
         currentTunnelOrigin = originOf(tunnel); // origin the iframe posts from
         var frame = document.getElementById('frame');
+        // Unverified (lite/'heartbeat') targets: the tunnel wasn't live-pinged,
+        // so it may be dead (page never loads). frame.onload DOES fire for a
+        // successful cross-origin load — if it hasn't within 10s, fall back to
+        // the full (ping-verified) discovery instead of a black screen.
+        var unverified = opts && opts.unverified;
+        var watchdog = unverified ? setTimeout(function () {
+          document.body.classList.remove('framed');
+          frame.classList.remove('visible');
+          frame.src = 'about:blank';
+          set('That computer did not answer — checking your devices…');
+          autoDiscoverAndConnect({ full: true });
+        }, 10000) : null;
+        frame.onload = function () {
+          if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+          mark('frame_load');
+          beaconTiming();
+          // Successful connect — remember this device's UI choice so the
+          // /remote router can redirect instantly next time.
+          try {
+            var rc = JSON.parse(localStorage.getItem('patapim_route_cache') || 'null') || {};
+            rc.at = Date.now();
+            rc.byToken = rc.byToken || {};
+            if (currentDeviceToken) {
+              rc.byToken[currentDeviceToken] = { ui: 'desktop', tunnelUrl: tunnel };
+              if (!d) rc.single = { token: currentDeviceToken, ui: 'desktop', tunnelUrl: tunnel };
+            }
+            localStorage.setItem('patapim_route_cache', JSON.stringify(rc));
+          } catch (e) {}
+        };
         frame.src = dest;
         frame.classList.add('visible');
         document.body.classList.add('framed');
@@ -125,11 +195,22 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         if (host) { try { document.title = 'PATAPIM · ' + host; } catch (e) {} }
       }
 
+      var _timingSent = false;
+      function beaconTiming() {
+        if (_timingSent) return;
+        _timingSent = true;
+        try {
+          navigator.sendBeacon('/api/stats/remote-timing', JSON.stringify(marks));
+        } catch (e) {}
+      }
+
       // Mint a fresh one-time connect token for a device (session cookie auth),
       // then redirect to its /desktop view. The token is consumed by /desktop.
-      function connectByToken(deviceToken, name) {
+      function connectByToken(deviceToken, name, opts) {
         currentDeviceToken = deviceToken;
         set('Connecting to ' + (name || 'your device') + '…');
+        // Overlap the tunnel origin's DNS+TLS with the connect-token mint.
+        if (opts && opts.tunnelUrl) preconnect(opts.tunnelUrl);
         return fetch('/api/device/connect-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -141,7 +222,11 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
             return r.ok ? r.json() : null;
           })
           .then(function (j) {
-            if (j && j.connectToken && j.tunnelUrl) { go(j.tunnelUrl, j.connectToken, name); return true; }
+            mark('connect_token');
+            if (j && j.connectToken && j.tunnelUrl) {
+              go(j.tunnelUrl, j.connectToken, name, { unverified: !!(opts && opts.unverified) });
+              return true;
+            }
             if (j !== null) fail((j && j.error) || 'Device offline or not found.');
             return false;
           })
@@ -150,8 +235,8 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 
       // Several machines online → let the user choose instead of silently
       // guessing (picking the wrong one would connect to the wrong computer).
-      function showPicker(devices) {
-        set('Choose a computer to open:');
+      function showPicker(devices, wakeable) {
+        set('Your computers:');
         msg.className = 'msg';
         devices.forEach(function (dev) {
           var btn = document.createElement('button');
@@ -163,10 +248,100 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
             '<span class="meta">' + (dev.platform || '') + (heartbeat ? ' · connecting' : '') + '</span>';
           btn.addEventListener('click', function () {
             picker.innerHTML = '';
-            connectByToken(dev.token, dev.deviceName);
+            connectByToken(dev.token, dev.deviceName, { tunnelUrl: dev.tunnelUrl, unverified: dev.status === 'heartbeat' });
           });
           picker.appendChild(btn);
         });
+        // Also offer any asleep-but-wakeable machines, so the user can wake one
+        // even while other computers are online (not only when everything's off).
+        (wakeable || []).forEach(function (dev) {
+          var btn = document.createElement('button');
+          btn.className = 'device wake';
+          btn.innerHTML =
+            '<span class="name"><span class="dot"></span>' +
+            (dev.deviceName || 'PATAPIM') + '</span>' +
+            '<span class="meta">' + (dev.platform || 'asleep') + ' · tap to wake</span>';
+          btn.addEventListener('click', function () { wakeDevice(dev, btn); });
+          picker.appendChild(btn);
+        });
+      }
+
+      // Nothing online, but one or more machines are asleep and wakeable (we
+      // know their MAC and a Wake-on-LAN agent is registered on the account).
+      // Offer a Wake button per machine instead of a dead-end error.
+      function showWakeList(devices) {
+        set('No computer is online. Wake one up:');
+        msg.className = 'msg';
+        devices.forEach(function (dev) {
+          var btn = document.createElement('button');
+          btn.className = 'device wake';
+          btn.innerHTML =
+            '<span class="name"><span class="dot"></span>' +
+            (dev.deviceName || 'PATAPIM') + '</span>' +
+            '<span class="meta">' + (dev.platform || 'asleep') + ' · tap to wake</span>';
+          btn.addEventListener('click', function () { wakeDevice(dev, btn); });
+          picker.appendChild(btn);
+        });
+      }
+
+      function enqueueWake(dev) {
+        return fetch('/api/wake/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ deviceToken: dev.token }),
+        })
+          .then(function (r) { return r.ok ? r.json() : r.json().catch(function () { return null; }); })
+          .catch(function () { return null; });
+      }
+
+      function wakeDevice(dev, btn) {
+        btn.disabled = true;
+        var meta = btn.querySelector('.meta');
+        if (meta) meta.textContent = 'sending wake signal…';
+        enqueueWake(dev).then(function (j) {
+          if (!j || !j.ok) {
+            if (meta) meta.textContent = (j && j.error) || 'wake failed';
+            btn.disabled = false;
+            return;
+          }
+          if (meta) meta.textContent = 'waking… this can take a minute';
+          pollUntilOnline(dev, btn, meta, Date.now() + 150000, 0);
+        });
+      }
+
+      // Poll the device list until the woken machine comes online, then connect
+      // to it automatically. Gives up after the deadline so the button frees up.
+      // Poll every 5s. Wi-Fi silently drops magic packets, so re-queue the wake
+      // every ~30s (3 extra tries) rather than making the user tap again.
+      function pollUntilOnline(dev, btn, meta, deadline, ticks) {
+        if (Date.now() > deadline) {
+          if (meta) meta.textContent = 'still asleep — tap to retry';
+          btn.disabled = false;
+          return;
+        }
+        var next = (ticks || 0) + 1;
+        setTimeout(function () {
+          fetch('/api/device/list', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+              var devs = (data && data.devices) || [];
+              var t = null;
+              for (var i = 0; i < devs.length; i++) { if (devs[i].token === dev.token) { t = devs[i]; break; } }
+              if (t && (t.status === 'online' || t.status === 'heartbeat') && t.tunnelUrl) {
+                if (meta) meta.textContent = 'online! connecting…';
+                picker.innerHTML = '';
+                connectByToken(dev.token, dev.deviceName);
+              } else {
+                if (next % 6 === 0 && next < 24) {
+                  if (meta) meta.textContent = 'waking… retrying';
+                  enqueueWake(dev);
+                }
+                pollUntilOnline(dev, btn, meta, deadline, next);
+              }
+            })
+            .catch(function () { pollUntilOnline(dev, btn, meta, deadline, next); });
+        }, 5000);
       }
 
       // Broker for the embedded /desktop view's "Connected" dropdown. That view
@@ -186,7 +361,8 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
         }
 
         if (data.type === 'request-devices') {
-          fetch('/api/device/list', { credentials: 'same-origin' })
+          // Lite: the dropdown only needs names/status — no 4s tunnel pings.
+          fetch('/api/device/list?lite=1', { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (j) {
               var devices = ((j && j.devices) || [])
@@ -210,42 +386,133 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
           document.body.classList.remove('framed');
           var f = document.getElementById('frame');
           if (f) { f.classList.remove('visible'); f.src = 'about:blank'; }
+          reauthAttempts = 0;
           connectByToken(data.token, data.name);
+        } else if (data.type === 'reauth') {
+          // The embedded /desktop's token was rejected (one-time token replayed,
+          // or the device rotated its persistent token after a restart). We hold
+          // the account session, so mint a fresh connect token and reload the
+          // iframe instead of leaving it on a manual token form.
+          if (reauthAttempts >= 2) return;
+          reauthAttempts++;
+          document.body.classList.remove('framed');
+          if (frame) { frame.classList.remove('visible'); frame.src = 'about:blank'; }
+          if (currentDeviceToken) {
+            connectByToken(currentDeviceToken);
+          } else {
+            autoDiscoverAndConnect();
+          }
         } else if (data.type === 'disconnect') {
           location.href = '/go';
         }
       });
 
-      // 1. Direct: connectToken + tunnelUrl already supplied.
-      if (t && url) { go(url, t); return; }
+      // 1. Direct: connectToken + tunnelUrl already supplied. Scrub the
+      //    one-time token from the address bar right away: a refresh must NOT
+      //    replay the consumed token — with only d/n left it falls into
+      //    connectByToken/discovery below, which mint a fresh one.
+      if (t && url) {
+        try {
+          var keep = new URLSearchParams();
+          if (d) keep.set('d', d);
+          if (n) keep.set('n', n);
+          var kept = keep.toString();
+          history.replaceState(null, '', location.pathname + (kept ? '?' + kept : ''));
+        } catch (e) {}
+        go(url, t);
+        return;
+      }
 
       // 2. Explicit device token supplied (e.g. cross-link from the mobile UI).
       if (d) { connectByToken(d); return; }
 
       // 3. Automatic discovery. One online machine → connect straight away.
       //    Several online → show a picker so we never open the wrong computer.
-      set('Looking for your devices…');
-      fetch('/api/device/list', { credentials: 'same-origin' })
-        .then(function (r) {
-          if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
-          return r.ok ? r.json() : null;
+      autoDiscoverAndConnect();
+
+      function autoDiscoverAndConnect(discoverOpts) {
+        var full = !!(discoverOpts && discoverOpts.full);
+        picker.innerHTML = '';
+        set('Looking for your devices…');
+
+        // The /remote router fetched the (lite) list moments ago and handed it
+        // over — consume it instead of a second cold round trip.
+        if (!full) {
+          try {
+            var handoff = JSON.parse(sessionStorage.getItem('patapim_devlist') || 'null');
+            sessionStorage.removeItem('patapim_devlist');
+            if (handoff && handoff.data && (Date.now() - (handoff.at || 0)) < 5000) {
+              mark('devlist');
+              handleDeviceList(handoff.data);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Lite (KV-only, ~100-250ms) by default; the FULL ping-verified list is
+        // the fallback after an unverified connect attempt failed. Either way,
+        // never hang forever — the old call here had no timeout at all.
+        var ctrl = ('AbortController' in window) ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, full ? 12000 : 6000) : null;
+        fetch('/api/device/list' + (full ? '' : '?lite=1&connect=1'), {
+          credentials: 'same-origin',
+          signal: ctrl ? ctrl.signal : undefined,
         })
-        .then(function (data) {
-          if (!data) return;
-          var devices = (data && data.devices) || [];
-          var avail = devices.filter(function (x) {
-            return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
+          .then(function (r) {
+            if (timer) clearTimeout(timer);
+            if (r.status === 401) { fail('Please sign in at patapim.ai first.'); return null; }
+            return r.ok ? r.json() : null;
+          })
+          .then(function (data) {
+            if (!data) return;
+            mark('devlist');
+            handleDeviceList(data, full);
+          })
+          .catch(function () {
+            if (timer) clearTimeout(timer);
+            if (!full) { autoDiscoverAndConnect({ full: true }); return; } // lite timed out — try the verified list
+            fail('Failed to reach the server.');
           });
-          // Online first, then heartbeat — and within each, the picker keeps list order.
-          avail.sort(function (a, b) {
-            var rank = function (s) { return s === 'online' ? 0 : 1; };
-            return rank(a.status) - rank(b.status);
+      }
+
+      function handleDeviceList(data, wasFull) {
+        var devices = (data && data.devices) || [];
+        var avail = devices.filter(function (x) {
+          return (x.status === 'online' || x.status === 'heartbeat') && x.tunnelUrl;
+        });
+        // Online first, then heartbeat — and within each, the picker keeps list order.
+        avail.sort(function (a, b) {
+          var rank = function (s) { return s === 'online' ? 0 : 1; };
+          return rank(a.status) - rank(b.status);
+        });
+        var wakeable = devices.filter(function (x) { return x.wakeable; });
+        if (!avail.length) {
+          if (wakeable.length) { showWakeList(wakeable); return; }
+          fail('No device is online right now. Open PATAPIM on the computer you want to reach.');
+          return;
+        }
+        // One online and nothing asleep to wake → connect straight away.
+        // But if a machine is wakeable, show the picker so the user can
+        // choose between the online box and waking the sleeping one.
+        if (avail.length === 1 && !wakeable.length) {
+          // The lite list may have pre-minted the connect token inline
+          // (v2-capable single device) — skip the /connect-token POST.
+          var pre = data && data.connect;
+          if (pre && pre.deviceToken === avail[0].token && pre.connectToken && pre.tunnelUrl) {
+            currentDeviceToken = avail[0].token;
+            mark('connect_token'); // inline — cost was inside the list call
+            set('Connecting to ' + (avail[0].deviceName || 'your device') + '…');
+            go(pre.tunnelUrl, pre.connectToken, avail[0].deviceName, { unverified: avail[0].status === 'heartbeat' });
+            return;
+          }
+          connectByToken(avail[0].token, avail[0].deviceName, {
+            tunnelUrl: avail[0].tunnelUrl,
+            unverified: avail[0].status === 'heartbeat',
           });
-          if (!avail.length) { fail('No device is online right now. Open PATAPIM on the computer you want to reach.'); return; }
-          if (avail.length === 1) { connectByToken(avail[0].token, avail[0].deviceName); return; }
-          showPicker(avail);
-        })
-        .catch(function () { fail('Failed to reach the server.'); });
+          return;
+        }
+        showPicker(avail, wakeable);
+      }
     })();
   </script>
 </body>

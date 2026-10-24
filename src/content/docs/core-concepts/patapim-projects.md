@@ -15,7 +15,7 @@ PATAPIM manages projects through a workspace system. Your workspace configuratio
 3. Select an existing project folder
 4. PATAPIM adds it to your workspace and opens it
 
-You can add as many projects as you want. The Free plan allows up to 3 active projects; Pro and Lifetime are unlimited.
+You can add as many projects as you want — projects are unlimited on every plan.
 
 ### Switching Projects
 

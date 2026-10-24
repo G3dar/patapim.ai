@@ -32,7 +32,9 @@
     try {
       const res = await fetch('/api/device/list');
       const data = await res.json();
-      devices = (data.devices || []).filter((d: any) => d.status === 'online');
+      // Online sessions plus any asleep-but-wakeable machine (MAC on record and a
+      // Wake-on-LAN agent registered), so it can be woken straight from here.
+      devices = (data.devices || []).filter((d: any) => d.status === 'online' || d.wakeable);
     } catch { return; }
     if (devices.length === 0) return;
 
@@ -46,13 +48,16 @@
 
       // per-state badges only; fall back to a total when the device
       // doesn't report the breakdown (older app versions)
-      const terminalLine = badges
-        ? badges
-        : esc(totalTerminals > 0
-            ? totalTerminals + ' terminal' + (totalTerminals > 1 ? 's' : '')
-            : 'Online');
+      const asleep = d.status !== 'online' && d.wakeable;
+      const terminalLine = asleep
+        ? 'Tap to wake'
+        : (badges
+            ? badges
+            : esc(totalTerminals > 0
+                ? totalTerminals + ' terminal' + (totalTerminals > 1 ? 's' : '')
+                : 'Online'));
 
-      return `<button class="session-device" data-token="${esc(d.token)}">
+      return `<button class="session-device${asleep ? ' session-wake' : ''}" data-token="${esc(d.token)}">
         <span class="session-icon">${deviceIcon(d.platform)}</span>
         <div class="session-info">
           <span class="session-name">${esc(d.deviceName)}</span>
@@ -70,6 +75,8 @@
     container.addEventListener('click', async (e: Event) => {
       const btn = (e.target as Element).closest('.session-device') as HTMLElement | null;
       if (!btn || btn.classList.contains('connecting')) return;
+      // Asleep-but-wakeable → fire a Wake-on-LAN request instead of connecting.
+      if (btn.classList.contains('session-wake')) { wakeSession(btn); return; }
       btn.classList.add('connecting');
       btn.style.opacity = '0.5';
       try {
@@ -91,6 +98,63 @@
       btn.classList.remove('connecting');
       btn.style.opacity = '';
     });
+
+    // Wake-on-LAN: queue a wake for a sleeping machine, then poll until it is
+    // online and reload so it shows up as a connectable session. The magic packet
+    // is sent by the account's LAN agent draining /api/wake/poll.
+    async function enqueueWake(token: string | undefined) {
+      try {
+        const res = await fetch('/api/wake/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceToken: token }),
+        });
+        return await res.json().catch(() => null);
+      } catch { return null; }
+    }
+
+    async function wakeSession(btn: HTMLElement) {
+      const token = btn.dataset.token;
+      const label = btn.querySelector('.session-terminals');
+      btn.classList.add('connecting');
+      if (label) label.textContent = 'Waking…';
+      const result = await enqueueWake(token);
+      if (!result || !result.ok) {
+        if (label) label.textContent = (result && result.error) || 'Wake failed';
+        btn.classList.remove('connecting');
+        return;
+      }
+      pollWake(token, btn, label, Date.now() + 150000, 0);
+    }
+
+    // Poll every 5s. Wi-Fi silently drops magic packets, so re-queue the wake
+    // every ~30s (3 extra tries) rather than making the user tap again.
+    function pollWake(token: string | undefined, btn: HTMLElement, label: Element | null, deadline: number, ticks: number) {
+      if (Date.now() > deadline) {
+        if (label) label.textContent = 'Still asleep';
+        btn.classList.remove('connecting');
+        return;
+      }
+      setTimeout(async () => {
+        let next = (ticks || 0) + 1;
+        try {
+          const res = await fetch('/api/device/list');
+          const data = res.ok ? await res.json() : null;
+          const devs = (data && data.devices) || [];
+          const t = devs.find((x: any) => x.token === token);
+          if (t && t.status === 'online') {
+            if (label) label.textContent = 'Online!';
+            window.location.reload();
+            return;
+          }
+          if (next % 6 === 0 && next < 24) {
+            if (label) label.textContent = 'Waking… retrying';
+            enqueueWake(token);
+          }
+        } catch {}
+        pollWake(token, btn, label, deadline, next);
+      }, 5000);
+    }
 
     function deviceIcon(platform: string) {
       const p = (platform || '').toLowerCase();
@@ -174,6 +238,18 @@
   }
   .session-device.connecting {
     pointer-events: none;
+  }
+
+  /* Asleep-but-wakeable machine: greyed out but tappable to wake it. */
+  .session-device.session-wake {
+    opacity: 0.5;
+  }
+  .session-device.session-wake:hover {
+    opacity: 1;
+  }
+  .session-device.session-wake .session-icon {
+    background: rgba(113, 113, 122, 0.15);
+    color: var(--text-muted);
   }
 
   .session-dot {
