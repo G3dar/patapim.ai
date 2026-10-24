@@ -34,6 +34,10 @@ const plan = license?.plan || userData?.plan || 'free';
 const stripeCustomerId = license?.stripeCustomerId || userData?.stripeCustomerId || null;
 
 const paired = Astro.url.searchParams.get('paired') === '1';
+// Opened from the iOS app's sign-in sheet (the returnTo keeps the query through
+// OAuth). The App Store build is a free app: no upgrade/billing/pricing links
+// may show up inside it (App Review 3.1.1).
+const isNativeIos = Astro.url.searchParams.get('native') === 'ios';
 
 const scriptI18n = {
   manageBilling: t(locale, 'common.manageBilling'),
@@ -51,7 +55,7 @@ const scriptI18n = {
 ---
 
 <BaseLayout title={t(locale, 'meta.dashboardTitle')} description={t(locale, 'meta.dashboardDescription')}>
-  <Navbar />
+  {!isNativeIos && <Navbar />}
 
   <!-- Success overlay for post-pairing -->
   {paired && (
@@ -83,11 +87,11 @@ const scriptI18n = {
           </span>
         </div>
         <div class="dash-actions">
-          <a href={lp('/account')} class="btn-link">Account settings</a>
-          {stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
+          {!isNativeIos && <a href={lp('/account')} class="btn-link">Account settings</a>}
+          {!isNativeIos && stripeCustomerId && stripeCustomerId.startsWith('cus_') && (
             <button class="btn-link" id="manage-billing-btn">{t(locale, 'common.manageBilling')}</button>
           )}
-          {plan === 'free' && (
+          {!isNativeIos && plan === 'free' && (
             <a href={lp('/pricing')} class="btn-link btn-link-accent">{t(locale, 'common.upgrade')}</a>
           )}
           <button class="btn-link" id="sign-out-btn">{t(locale, 'common.signOut')}</button>
@@ -111,7 +115,7 @@ const scriptI18n = {
     </div>
   </main>
 
-  <Footer />
+  {!isNativeIos && <Footer />}
 </BaseLayout>
 
 <style>
