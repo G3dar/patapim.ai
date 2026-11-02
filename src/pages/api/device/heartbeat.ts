@@ -36,7 +36,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; remoteUI?: string; macs?: string[] } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; syncthingAddresses?: string[]; remoteUI?: string; macs?: string[] } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -82,6 +82,15 @@ export const POST: APIRoute = async (context) => {
     const v = body.syncthingDeviceId;
     if (v === '') device.syncthingDeviceId = null;
     else if (typeof v === 'string' && /^[A-Z2-7-]{50,70}$/.test(v)) device.syncthingDeviceId = v;
+  }
+  // Direct Syncthing addresses on this machine's networks (tcp:// / quic://
+  // IPv4:port). Peers on the same LAN dial these first instead of relying on
+  // broadcast discovery or a relay. Strict format + cap: they end up in other
+  // machines' Syncthing configs.
+  if (Array.isArray(body.syncthingAddresses)) {
+    device.syncthingAddresses = body.syncthingAddresses
+      .filter((a: unknown) => typeof a === 'string' && /^(tcp|quic):\/\/\d{1,3}(\.\d{1,3}){3}:\d{2,5}$/.test(a))
+      .slice(0, 12);
   }
   // Physical NIC MAC addresses, published so an always-on LAN agent (a Flic Hub,
   // or another awake PATAPIM on the same network) can send a Wake-on-LAN magic

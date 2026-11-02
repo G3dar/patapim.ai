@@ -124,6 +124,7 @@ export const GET: APIRoute = async (context) => {
         outdated: !!(d.appVersion && latestVersion && isOlderVersion(d.appVersion, latestVersion)),
         lastPrompt: d.lastPrompt || null,
         syncthingDeviceId: d.syncthingDeviceId || null,
+        syncthingAddresses: Array.isArray(d.syncthingAddresses) ? d.syncthingAddresses : [],
         // Wake-on-LAN: the machine's physical NIC MACs, and whether it can be
         // woken right now (offline, we know a MAC, and a wake agent is online to
         // send the magic packet on its LAN).
