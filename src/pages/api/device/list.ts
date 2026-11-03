@@ -107,6 +107,10 @@ export const GET: APIRoute = async (context) => {
         token: entry.token,
         deviceName: d.deviceName,
         machineId: d.machineId || null,
+        // Stable install identity + the tokens this device replaced (re-pairs);
+        // the mobile app re-keys its pins/history from an alias to this token.
+        instanceId: d.instanceId || null,
+        aliases: Array.isArray(d.aliases) ? d.aliases : [],
         online,
         status,
         lastSeen: d.lastSeen,

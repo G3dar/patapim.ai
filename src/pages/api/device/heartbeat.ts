@@ -36,7 +36,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'Device not found' }), { status: 404, headers });
   }
 
-  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; syncthingAddresses?: string[]; remoteUI?: string; macs?: string[] } = {};
+  let body: { tunnelUrl?: string; terminalCount?: number; terminalCounts?: { attention: number; busy: number; planMode: number; idle: number }; deviceName?: string; platform?: string; appVersion?: string; lastPrompt?: string; syncthingDeviceId?: string; syncthingAddresses?: string[]; remoteUI?: string; macs?: string[]; instanceId?: string } = {};
   try {
     body = await context.request.json();
   } catch {}
@@ -103,6 +103,43 @@ export const POST: APIRoute = async (context) => {
       .map((m) => m.toUpperCase().replace(/-/g, ':'))
       .filter((m, i, a) => a.indexOf(m) === i)
       .slice(0, 8);
+  }
+  // Stable per-install identity (the app's remote.instanceId, minted once and
+  // kept in ~/.patapim/settings.json). A device token is minted per pairing,
+  // so a re-pair (sign-in again, revoked token, 14 days offline) gives the
+  // SAME machine a new token — and every phone pin / history keyed by the old
+  // token stops working. The first heartbeat that carries an instanceId this
+  // record did not have looks for the account's older records of the same
+  // install: a dead predecessor (no heartbeat for 20 min) is absorbed — its
+  // token goes into `aliases` so clients (the mobile app) can re-key what they
+  // stored, and its record is removed from the list. Dev-sibling devices
+  // share the install's id with their stable instance and are never merged.
+  let absorbed: string[] = [];
+  const incomingInstanceId = typeof body.instanceId === 'string' && /^[A-Za-z0-9:_-]{8,64}$/.test(body.instanceId) ? body.instanceId : null;
+  if (incomingInstanceId && device.instanceId !== incomingInstanceId) {
+    device.instanceId = incomingInstanceId;
+    if (device.machineId !== 'dev-sibling' && device.googleId) {
+      const devicesRaw = await env.LICENSES.get(`devices:${device.googleId}`);
+      const list: Array<{ token: string; deviceName: string; createdAt: string }> = devicesRaw ? JSON.parse(devicesRaw) : [];
+      const DEAD_MS = 20 * 60 * 1000;
+      for (const entry of list) {
+        if (entry.token === deviceToken) continue;
+        const otherRaw = await env.LICENSES.get(`device:${entry.token}`);
+        if (!otherRaw) continue;
+        let other: any; try { other = JSON.parse(otherRaw); } catch { continue; }
+        if (other.instanceId !== incomingInstanceId || other.machineId === 'dev-sibling') continue;
+        if (Date.now() - new Date(other.lastSeen || 0).getTime() < DEAD_MS) continue; // still alive: not ours to take
+        absorbed.push(entry.token, ...(Array.isArray(other.aliases) ? other.aliases : []));
+        // A name the user set on the dashboard outlives the re-pair.
+        if ((!device.deviceName || device.deviceName === 'PATAPIM Desktop') && other.deviceName) device.deviceName = other.deviceName;
+        await env.LICENSES.delete(`device:${entry.token}`).catch(() => {});
+      }
+      if (absorbed.length) {
+        device.aliases = Array.from(new Set([...(Array.isArray(device.aliases) ? device.aliases : []), ...absorbed])).slice(0, 20);
+        const kept = list.filter((d) => !absorbed.includes(d.token));
+        await env.LICENSES.put(`devices:${device.googleId}`, JSON.stringify(kept));
+      }
+    }
   }
   await env.LICENSES.put(`device:${deviceToken}`, JSON.stringify(device));
 
