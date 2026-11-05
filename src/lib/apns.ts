@@ -196,8 +196,10 @@ export interface ApnsPayload {
   /** Shown under the title on iOS — we use the computer (host) name. */
   subtitle?: string;
   body: string;
-  /** Custom top-level keys delivered to the app (terminalId, kind, deviceName). */
+  /** Custom top-level keys delivered to the app (terminalId, kind, deviceName, deviceToken, durableId). */
   data?: Record<string, string>;
+  /** aps.category — selects the action buttons the app registered (Open / Reply / Voice). */
+  category?: string;
   /** aps.thread-id — groups banners per terminal in Notification Center. */
   threadId?: string;
   /** apns-collapse-id — a newer push with the same id replaces the older banner. */
@@ -235,6 +237,7 @@ export async function sendApns(
       alert,
       sound: 'default',
       'thread-id': payload.threadId || 'patapim-terminal',
+      ...(payload.category ? { category: payload.category } : {}),
     },
   };
 

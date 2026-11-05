@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCorsHeaders, corsOptions } from '../../../lib/cors';
-import { getUserFromDeviceToken } from '../../../lib/auth';
+import { getUserFromDeviceToken, parseBearerToken } from '../../../lib/auth';
 import { apnsConfigured, loadPushTokens, prunePushTokens, sanitizeCollapseId, sendApns } from '../../../lib/apns';
 import type { ApnsResult } from '../../../lib/apns';
 
@@ -18,7 +18,14 @@ export const OPTIONS: APIRoute = ({ request }) => corsOptions(request);
 // BadDeviceToken is reported in `error` but NOT pruned (it is also what APNs
 // answers for a valid token sent to the wrong environment).
 //
-// Body: { terminalId, terminalName, kind, title, subtitle?, body, collapseId?, deviceName? }
+// Body: { terminalId, durableId?, terminalName, kind, title, subtitle?, body, collapseId?, deviceName? }
+//
+// The push carries aps.category PATAPIM_TERMINAL whenever it names a terminal:
+// the app registers Open / Reply (text) / Voice actions under that category.
+// Custom data echoes the caller's own device token (the one it authenticated
+// with) so the phone can route a reply to THIS computer without opening the
+// app, plus the terminal's durableId so a host restart that renumbered
+// term-N ids still resolves.
 // Reply: 200 { ok, sent, pruned, error? }   — `error` is precise so the host can
 //                                             surface it: an APNs reason
 //                                             (BadDeviceToken, TopicDisallowed…),
@@ -28,6 +35,8 @@ export const OPTIONS: APIRoute = ({ request }) => corsOptions(request);
 //        401 { error:'Unauthorized' }
 
 const KNOWN_KINDS = new Set(['needsAttention', 'awaiting', 'planReady', 'test']);
+/** Must match the UNNotificationCategory registered in mobile/ios/App/App/AppDelegate.swift. */
+const TERMINAL_CATEGORY = 'PATAPIM_TERMINAL';
 
 function sanitizeKind(value: unknown): string {
   if (typeof value !== 'string') return '';
@@ -63,9 +72,12 @@ export const POST: APIRoute = async (context) => {
   const subtitle = text(body.subtitle, 120) || text(body.deviceName, 120) || undefined;
   const message = text(body.body, 240) || 'An agent needs you.';
   const terminalId = text(body.terminalId, 64);
+  const durableId = text(body.durableId, 64);
   const kind = sanitizeKind(body.kind);
   const deviceName = text(body.deviceName, 120);
   const collapseId = sanitizeCollapseId(body.collapseId) || sanitizeCollapseId(terminalId);
+  const deviceToken = parseBearerToken(context.request) || '';
+  const category = terminalId ? TERMINAL_CATEGORY : undefined;
 
   const list = await loadPushTokens(env.LICENSES, user.googleId);
   if (!list.length) {
@@ -81,8 +93,9 @@ export const POST: APIRoute = async (context) => {
       body: message,
       threadId: terminalId || 'patapim-terminal',
       collapseId,
+      category,
       environment: t.environment,
-      data: { terminalId, kind, deviceName },
+      data: { terminalId, durableId, kind, deviceName, deviceToken },
     });
     if (r.gone) dead.push(t.token);
     if (r.ok) sent++;
